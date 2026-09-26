@@ -1,263 +1,231 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import VerificationBadge from '@/components/VerificationBadge';
-import api from '@/lib/api';
+import { useState } from 'react';
+import { Building2, Globe, MapPin, Users, Mail, Phone, Edit2, CheckCircle, Clock, XCircle, Sparkles, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Save, Loader2, AlertCircle } from 'lucide-react';
-import axios from 'axios';
 
-interface CompanyProfile {
-  id: string;
-  name: string;
-  industry: string;
-  description: string;
-  size: string;
-  website: string;
-  official_email: string;
-  location: string;
-  hiring_contact_name: string;
-  hiring_contact_email: string;
-  hiring_contact_phone: string;
-  verification_status: string;
-}
+const MOCK = {
+  name: 'Acme Technologies Ltd.',
+  logo: 'AT',
+  industry: 'Enterprise Software & Artificial Intelligence',
+  description: 'Acme Technologies builds enterprise software solutions for mid-market companies. We specialize in cloud infrastructure, data platforms, and AI-driven products.',
+  website: 'https://acme.example.com',
+  location: 'London, United Kingdom',
+  size: '50-200 employees',
+  email: 'hr@acme.example.com',
+  phone: '+44 20 1234 5678',
+  recruiter: 'Sarah Connor',
+  verificationStatus: 'VERIFIED' as const,
+};
 
-const INDUSTRIES = [
-  'Technology', 'Finance & Banking', 'Healthcare', 'Education', 'Manufacturing',
-  'Retail & E-commerce', 'Media & Entertainment', 'Real Estate', 'Energy', 'Consulting',
-  'Legal', 'Agriculture', 'Transportation & Logistics', 'Other',
-];
-
-const SIZES = [
-  { value: '1-10', label: '1–10 employees' },
-  { value: '11-50', label: '11–50 employees' },
-  { value: '51-200', label: '51–200 employees' },
-  { value: '201-500', label: '201–500 employees' },
-  { value: '501-1000', label: '501–1,000 employees' },
-  { value: '1001-5000', label: '1,001–5,000 employees' },
-  { value: '5000+', label: '5,000+ employees' },
-];
+const VERIFICATION_CONFIG = {
+  VERIFIED: {
+    color: '#10b981',
+    bg: '#ecfdf5',
+    border: '#a7f3d0',
+    icon: ShieldCheck,
+    label: 'Verified Entity',
+    desc: 'Your company is fully verified by GenuAI Technologies. All vacancies can be published immediately.',
+  },
+  UNDER_REVIEW: {
+    color: '#f59e0b',
+    bg: '#fffbeb',
+    border: '#fde68a',
+    icon: Clock,
+    label: 'Under Review',
+    desc: 'Your verification is being reviewed by GenuAI Technologies Compliance.',
+  },
+  UNVERIFIED: {
+    color: '#64748b',
+    bg: '#f1f5f9',
+    border: '#e2e8f0',
+    icon: XCircle,
+    label: 'Unverified',
+    desc: 'Submit your company details to begin verification with GenuAI Technologies.',
+  },
+};
 
 export default function CompanyProfilePage() {
-  const { company: authCompany, refreshAuth } = useAuth();
-  const [profile, setProfile] = useState<CompanyProfile | null>(null);
-  const [form, setForm] = useState<Partial<CompanyProfile>>({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [error, setError] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState(MOCK);
+  const vc = VERIFICATION_CONFIG[form.verificationStatus];
+  const VIcon = vc.icon;
 
-  const fetchProfile = useCallback(async () => {
-    try {
-      const { data } = await api.get('/company');
-      setProfile(data.company);
-      setForm({
-        name: data.company.name,
-        industry: data.company.industry || '',
-        description: data.company.description || '',
-        size: data.company.size || '',
-        website: data.company.website || '',
-        official_email: data.company.official_email || '',
-        location: data.company.location || '',
-        hiring_contact_name: data.company.hiring_contact_name || '',
-        hiring_contact_email: data.company.hiring_contact_email || '',
-        hiring_contact_phone: data.company.hiring_contact_phone || '',
-      });
-    } catch {
-      setError('Failed to load company profile.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchProfile(); }, [fetchProfile]);
-
-  const set = (field: keyof CompanyProfile) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    setForm(prev => ({ ...prev, [field]: e.target.value }));
-    setFieldErrors(prev => ({ ...prev, [field]: '' }));
+  const handleSave = () => {
+    setEditing(false);
+    toast.success('Company Profile updated successfully!');
   };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setFieldErrors({});
-    try {
-      const payload = {
-        name: form.name,
-        industry: form.industry || undefined,
-        description: form.description || undefined,
-        size: form.size || undefined,
-        website: form.website || undefined,
-        officialEmail: form.official_email || undefined,
-        location: form.location || undefined,
-        hiringContactName: form.hiring_contact_name || undefined,
-        hiringContactEmail: form.hiring_contact_email || undefined,
-        hiringContactPhone: form.hiring_contact_phone || undefined,
-      };
-      const { data } = await api.patch('/company', payload);
-      setProfile(data.company);
-      await refreshAuth();
-      toast.success('Company profile saved');
-    } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.data?.errors) {
-        const map: Record<string, string> = {};
-        err.response.data.errors.forEach((fe: { path: string; msg: string }) => {
-          map[fe.path] = fe.msg;
-        });
-        setFieldErrors(map);
-      } else {
-        toast.error('Failed to save profile. Please try again.');
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="page-content">
-        <div className="page-header">
-          <div className="skeleton" style={{ height: 24, width: 200 }} />
-        </div>
-        <div className="card">
-          {[1,2,3,4].map(i => (
-            <div key={i} className="form-group">
-              <div className="skeleton" style={{ height: 12, width: 120, marginBottom: 8 }} />
-              <div className="skeleton" style={{ height: 38, width: '100%' }} />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="page-content">
-        <div className="alert alert-error"><AlertCircle size={15} /> {error}</div>
-      </div>
-    );
-  }
 
   return (
     <div className="page-content">
-      <div className="page-header page-header-row">
-        <div>
-          <h1 className="page-title">Company Profile</h1>
-          <p className="page-subtitle">Manage your company information visible to GenuAI and candidates.</p>
+      {/* Page Header */}
+      <div className="page-header">
+        <div className="breadcrumbs">
+          <span>Company</span>
+          <span className="breadcrumb-sep">/</span>
+          <span className="breadcrumb-current">Profile</span>
+        </div>
+        <div className="page-header-row">
+          <div>
+            <h1 className="page-title flex items-center gap-3">
+              Company Profile
+              <span className="gold-badge">
+                <Sparkles size={12} />
+                GenuAI Technologies Partner
+              </span>
+            </h1>
+            <p className="page-subtitle">Manage corporate identity, verified credentials, and recruiter contacts.</p>
+          </div>
+          <button className={`btn ${editing ? 'btn-secondary' : 'btn-gold'}`} onClick={() => setEditing(!editing)}>
+            <Edit2 size={15} />
+            {editing ? 'Cancel' : 'Edit Profile'}
+          </button>
         </div>
       </div>
 
-      {/* Verification status */}
-      <VerificationBadge status={profile?.verification_status ?? 'UNVERIFIED'} />
-
-      <form onSubmit={handleSave}>
-        {/* Basic Info */}
-        <div className="card" style={{ marginBottom: 16 }}>
-          <div className="card-header">
-            <div>
-              <div className="card-title">Company Information</div>
-              <div className="card-subtitle">Basic details about your company</div>
-            </div>
+      {/* Google Stitch Elevated Verification Banner */}
+      <div
+        className="verification-block"
+        style={{
+          borderLeft: `4px solid ${vc.color}`,
+          background: '#ffffff',
+          borderColor: 'var(--border)',
+        }}
+      >
+        <div
+          className="verification-icon"
+          style={{
+            background: `${vc.color}15`,
+            color: vc.color,
+            border: `1px solid ${vc.color}33`,
+          }}
+        >
+          <VIcon size={22} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div className="verification-label">GenuAI Technologies Verification Status</div>
+          <div className="verification-status flex items-center gap-2" style={{ color: vc.color }}>
+            <span>{vc.label}</span>
+            <span className="gold-badge" style={{ fontSize: 10 }}>Official Certified</span>
           </div>
+          <div className="verification-desc">{vc.desc}</div>
+        </div>
+      </div>
 
-          <div className="form-grid">
-            <div className="form-group">
-              <label className="form-label" htmlFor="cp-name">Company Name <span className="required">*</span></label>
-              <input id="cp-name" type="text" className={`form-input${fieldErrors.name ? ' error' : ''}`}
-                value={form.name ?? ''} onChange={set('name')} required />
-              {fieldErrors.name && <div className="form-error"><AlertCircle size={11} /> {fieldErrors.name}</div>}
+      {/* Grid Layout */}
+      <div className="grid-2" style={{ gap: 24, alignItems: 'flex-start' }}>
+        {/* Left Column — Identity */}
+        <div>
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">Corporate Identity</div>
+              <Building2 size={16} style={{ color: 'var(--text-muted)' }} />
             </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="cp-industry">Industry</label>
-              <select id="cp-industry" className="form-select" value={form.industry ?? ''} onChange={set('industry')}>
-                <option value="">Select industry</option>
-                {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
-              </select>
+            {/* Logo & Gold Name */}
+            <div className="flex items-center gap-4" style={{ marginBottom: 24 }}>
+              <div className="gold-logo-box" style={{ width: 56, height: 56, borderRadius: 14, fontSize: 20 }}>
+                {form.logo}
+              </div>
+              <div>
+                <div className="gold-company-title" style={{ fontSize: 20 }}>{form.name}</div>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2, fontWeight: 500 }}>{form.industry}</div>
+              </div>
             </div>
 
-            <div className="form-group full-width">
-              <label className="form-label" htmlFor="cp-description">Company Description</label>
-              <textarea id="cp-description" className="form-textarea"
-                placeholder="Describe what your company does, your mission, and culture..."
-                value={form.description ?? ''} onChange={set('description')}
-                style={{ minHeight: 120 }} />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="cp-size">Company Size</label>
-              <select id="cp-size" className="form-select" value={form.size ?? ''} onChange={set('size')}>
-                <option value="">Select size</option>
-                {SIZES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="cp-location">Location</label>
-              <input id="cp-location" type="text" className="form-input"
-                placeholder="e.g. London, UK" value={form.location ?? ''} onChange={set('location')} />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="cp-website">Official Website</label>
-              <input id="cp-website" type="url" className={`form-input${fieldErrors.website ? ' error' : ''}`}
-                placeholder="https://company.com" value={form.website ?? ''} onChange={set('website')} />
-              {fieldErrors.website && <div className="form-error"><AlertCircle size={11} /> {fieldErrors.website}</div>}
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="cp-email">Official Email / Domain</label>
-              <input id="cp-email" type="email" className={`form-input${fieldErrors.officialEmail ? ' error' : ''}`}
-                placeholder="hr@company.com" value={form.official_email ?? ''} onChange={set('official_email')} />
-              {fieldErrors.officialEmail && <div className="form-error"><AlertCircle size={11} /> {fieldErrors.officialEmail}</div>}
-            </div>
+            {editing ? (
+              <>
+                <div className="form-group">
+                  <label className="form-label">Company Name <span className="required">*</span></label>
+                  <input className="form-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Industry Domain</label>
+                  <input className="form-input" value={form.industry} onChange={e => setForm(f => ({ ...f, industry: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Company Overview</label>
+                  <textarea className="form-textarea" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+                </div>
+              </>
+            ) : (
+              <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+                {form.description}
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Hiring Contact */}
-        <div className="card" style={{ marginBottom: 20 }}>
-          <div className="card-header">
-            <div>
-              <div className="card-title">Hiring Contact</div>
-              <div className="card-subtitle">Primary point of contact for recruitment</div>
+        {/* Right Column — Details */}
+        <div>
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">Verification & Contact Info</div>
             </div>
-          </div>
-
-          <div className="form-grid">
-            <div className="form-group">
-              <label className="form-label" htmlFor="cp-hc-name">Contact Name</label>
-              <input id="cp-hc-name" type="text" className="form-input"
-                placeholder="Jane Smith" value={form.hiring_contact_name ?? ''} onChange={set('hiring_contact_name')} />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="cp-hc-phone">Contact Phone</label>
-              <input id="cp-hc-phone" type="tel" className="form-input"
-                placeholder="+44 7700 000000" value={form.hiring_contact_phone ?? ''} onChange={set('hiring_contact_phone')} />
-            </div>
-
-            <div className="form-group full-width">
-              <label className="form-label" htmlFor="cp-hc-email">Contact Email</label>
-              <input id="cp-hc-email" type="email" className={`form-input${fieldErrors.hiringContactEmail ? ' error' : ''}`}
-                placeholder="hiring@company.com" value={form.hiring_contact_email ?? ''} onChange={set('hiring_contact_email')} />
-              {fieldErrors.hiringContactEmail && <div className="form-error"><AlertCircle size={11} /> {fieldErrors.hiringContactEmail}</div>}
-            </div>
+            {editing ? (
+              <>
+                <div className="form-group">
+                  <label className="form-label">Official Website</label>
+                  <input className="form-input" value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">HQ Location</label>
+                  <input className="form-input" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Company Size</label>
+                  <select className="form-select" value={form.size} onChange={e => setForm(f => ({ ...f, size: e.target.value }))}>
+                    {['1-10', '11-50', '50-200', '200-1000', '1000+'].map(s => <option key={s}>{s} employees</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Contact Email</label>
+                  <input className="form-input" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Lead Recruiter</label>
+                  <input className="form-input" value={form.recruiter} onChange={e => setForm(f => ({ ...f, recruiter: e.target.value }))} />
+                </div>
+                <button className="btn btn-gold w-full mt-2" onClick={handleSave}>
+                  Save Profile Changes
+                </button>
+              </>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {[
+                  { icon: Globe, label: 'Website', value: form.website },
+                  { icon: MapPin, label: 'Location', value: form.location },
+                  { icon: Users, label: 'Company Size', value: form.size },
+                  { icon: Mail, label: 'Email', value: form.email },
+                  { icon: Phone, label: 'Phone', value: form.phone },
+                  { icon: Users, label: 'Lead Recruiter', value: form.recruiter },
+                ].map((d) => {
+                  const Icon = d.icon;
+                  return (
+                    <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <div style={{
+                        width: 34, height: 34, borderRadius: 10,
+                        background: '#f8fafc', border: '1px solid var(--border)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                      }}>
+                        <Icon size={15} style={{ color: 'var(--text-muted)' }} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                          {d.label}
+                        </div>
+                        <div style={{ fontSize: 13.5, color: 'var(--text-primary)', fontWeight: 600 }}>
+                          {d.value}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
-
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button id="save-profile" type="submit" className="btn btn-primary" disabled={saving}>
-            {saving
-              ? <><Loader2 size={14} style={{ animation: 'spin 0.6s linear infinite' }} /> Saving...</>
-              : <><Save size={14} /> Save Changes</>
-            }
-          </button>
-        </div>
-      </form>
+      </div>
     </div>
   );
 }

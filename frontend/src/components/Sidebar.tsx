@@ -2,132 +2,115 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
 import {
-  LayoutDashboard, Building2, Users2, FileCheck2,
-  Mic2, BrainCircuit, Settings, LogOut, ChevronRight,
+  LayoutDashboard, Building2, Briefcase, Target, ClipboardList,
+  Users, Shield, Mic2, BrainCircuit, FileCheck, Settings,
+  Bell, FileText, HandshakeIcon, LogOut, ChevronRight, Sparkles,
 } from 'lucide-react';
 
-interface NavItem {
-  label: string;
-  href?: string;
-  icon: React.ReactNode;
-  comingSoon?: boolean;
-}
-
-interface NavSection {
-  section: string;
-  items: NavItem[];
-}
-
-const NAV: NavSection[] = [
+const NAV = [
   {
     section: '',
     items: [
-      { label: 'Overview', href: '/dashboard', icon: <LayoutDashboard size={15} /> },
+      { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
     ],
   },
   {
-    section: 'Organization',
+    section: 'Company',
     items: [
-      { label: 'Company Profile', href: '/dashboard/company-profile', icon: <Building2 size={15} /> },
-      { label: 'Departments & Roles', href: '/dashboard/departments', icon: <Users2 size={15} /> },
+      { label: 'Company Profile', href: '/dashboard/company-profile', icon: Building2 },
     ],
   },
   {
     section: 'Recruitment',
     items: [
-      { label: 'Candidates', icon: <Users2 size={15} />, comingSoon: true },
+      { label: 'Vacancies', href: '/dashboard/vacancies', icon: Briefcase },
+      { label: 'Role Requirements', href: '/dashboard/requirements', icon: Target },
+      { label: 'Assessment Setup', href: '/dashboard/assessments', icon: ClipboardList },
     ],
   },
   {
-    section: 'Evaluations',
+    section: 'Candidates',
     items: [
-      { label: 'Assessments', icon: <FileCheck2 size={15} />, comingSoon: true },
-      { label: 'Interviews', icon: <Mic2 size={15} />, comingSoon: true },
+      { label: 'Candidates', href: '/dashboard/candidates', icon: Users },
+      { label: 'Evidence & Coverage', href: '/dashboard/evidence', icon: FileCheck },
+      { label: 'Interviews', href: '/dashboard/interviews', icon: Mic2 },
+      { label: 'Integrity Review', href: '/dashboard/integrity', icon: Shield },
     ],
   },
   {
     section: 'Intelligence',
     items: [
-      { label: 'Recruitment Intelligence', icon: <BrainCircuit size={15} />, comingSoon: true },
+      { label: 'Recruiter Intelligence', href: '/dashboard/intelligence', icon: BrainCircuit },
+      { label: 'Reports', href: '/dashboard/reports', icon: FileText },
     ],
   },
   {
-    section: 'Settings',
+    section: 'Platform',
     items: [
-      { label: 'Settings', icon: <Settings size={15} />, comingSoon: true },
+      { label: 'Notifications', href: '/dashboard/notifications', icon: Bell },
+      { label: 'Recruitment Agreement', href: '/dashboard/agreement', icon: HandshakeIcon },
+      { label: 'Settings', href: '/dashboard/settings', icon: Settings },
     ],
   },
 ];
 
+const MOCK_USER = { firstName: 'Sarah', lastName: 'Connor', email: 'sarah@acme.example.com', role: 'Company Admin' };
+const MOCK_COMPANY = { name: 'Acme Technologies Ltd.', verified: true };
+
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user, company, logout } = useAuth();
 
-  const isActive = (href?: string) => {
-    if (!href) return false;
-    if (href === '/dashboard') return pathname === '/dashboard';
-    return pathname.startsWith(href);
-  };
+  const isActive = (href: string) =>
+    href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href);
 
-  const initials = user
-    ? `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
-    : '?';
+  const initials = `${MOCK_USER.firstName[0]}${MOCK_USER.lastName[0]}`;
 
   return (
     <aside className="sidebar" role="navigation" aria-label="Main navigation">
-      {/* Logo */}
+      {/* GOLD BRANDING HEADER */}
       <div className="sidebar-logo">
-        <div className="sidebar-logo-mark">G</div>
+        <div className="gold-logo-box">
+          <Sparkles size={18} style={{ color: '#ffffff' }} />
+        </div>
         <div>
-          <div className="sidebar-logo-text">GenuAI</div>
-          <span className="sidebar-logo-sub">Technologies</span>
+          <div className="sidebar-logo-text gold-gradient-text" style={{ fontSize: 15 }}>GenuAI Technologies</div>
+          <span className="sidebar-logo-sub">Enterprise Suite</span>
         </div>
       </div>
 
-      {/* Company name */}
-      {company && (
-        <div style={{ padding: '10px 20px 8px', borderBottom: '1px solid var(--color-border)' }}>
-          <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 2 }}>Workspace</div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {company.name}
-          </div>
+      {/* Company Workspace */}
+      <div className="sidebar-workspace">
+        <div className="sidebar-workspace-label">Workspace</div>
+        <div className="flex items-center gap-2">
+          <div className="sidebar-workspace-name">{MOCK_COMPANY.name}</div>
+          {MOCK_COMPANY.verified && (
+            <span className="gold-badge" style={{ flexShrink: 0 }}>
+              <span className="badge-dot" style={{ background: '#d4af37' }} />
+              Verified
+            </span>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Navigation */}
       <nav className="sidebar-nav">
-        {NAV.map((section) => (
-          <div key={section.section || 'root'}>
-            {section.section && (
-              <div className="sidebar-section-label">{section.section}</div>
-            )}
-            {section.items.map((item) => {
-              if (item.comingSoon) {
-                return (
-                  <div
-                    key={item.label}
-                    className="sidebar-nav-item coming-soon"
-                    aria-disabled="true"
-                    title={`${item.label} — Coming soon`}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                    <span className="coming-soon-badge">Soon</span>
-                  </div>
-                );
-              }
+        {NAV.map((group) => (
+          <div key={group.section || 'root'}>
+            {group.section && <div className="sidebar-section-label">{group.section}</div>}
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.href);
               return (
                 <Link
                   key={item.label}
-                  href={item.href!}
-                  className={`sidebar-nav-item${isActive(item.href) ? ' active' : ''}`}
-                  aria-current={isActive(item.href) ? 'page' : undefined}
+                  href={item.href}
+                  className={`sidebar-nav-item${active ? ' active' : ''}`}
+                  aria-current={active ? 'page' : undefined}
                 >
-                  {item.icon}
+                  <Icon size={16} style={{ color: active ? '#a16207' : undefined }} />
                   <span>{item.label}</span>
-                  {isActive(item.href) && <ChevronRight size={13} style={{ marginLeft: 'auto', opacity: 0.4 }} />}
+                  {active && <ChevronRight size={13} style={{ marginLeft: 'auto', color: '#a16207' }} />}
                 </Link>
               );
             })}
@@ -135,16 +118,18 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* User footer */}
+      {/* User Footer */}
       <div className="sidebar-footer">
-        <div className="sidebar-user" onClick={logout} title="Sign out" role="button" tabIndex={0}
-          onKeyDown={(e) => { if (e.key === 'Enter') logout(); }}>
+        <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', padding: '0 8px 6px' }}>
+          {MOCK_USER.role}
+        </div>
+        <div className="sidebar-user" role="button" tabIndex={0} aria-label="User menu">
           <div className="user-avatar">{initials}</div>
-          <div className="user-info">
-            <div className="user-name">{user?.firstName} {user?.lastName}</div>
-            <div className="user-email">{user?.email}</div>
+          <div style={{ flex: 1, overflow: 'hidden' }}>
+            <div className="user-name">{MOCK_USER.firstName} {MOCK_USER.lastName}</div>
+            <div className="user-email">{MOCK_USER.email}</div>
           </div>
-          <LogOut size={14} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+          <LogOut size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
         </div>
       </div>
     </aside>

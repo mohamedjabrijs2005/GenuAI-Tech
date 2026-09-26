@@ -1,135 +1,253 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import {
+  Briefcase, Users, ClipboardCheck, Clock,
+  Calendar, AlertTriangle, CheckCircle, ChevronRight, TrendingUp,
+  ShieldAlert, Search, Sparkles, FileCheck, ShieldCheck,
+} from 'lucide-react';
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
-import VerificationBadge from '@/components/VerificationBadge';
-import api from '@/lib/api';
-import { Building2, FolderOpen, Briefcase, ChevronRight, AlertCircle } from 'lucide-react';
 
-interface OverviewData {
-  verificationStatus: string;
-  departmentCount: number;
-  roleCount: number;
-  draftRoleCount: number;
-}
+const stats = [
+  { label: 'Active Vacancies', value: '4', icon: Briefcase, sub: '2 in review, 2 active', cardClass: 'stat-card-gold', iconClass: 'stat-icon-gold' },
+  { label: 'Total Candidates', value: '36', icon: Users, sub: 'Across all vacancies', cardClass: 'stat-card-brand', iconClass: 'stat-icon-brand' },
+  { label: 'Assessed Candidates', value: '24', icon: ClipboardCheck, sub: 'Official assessment done', cardClass: 'stat-card-success', iconClass: 'stat-icon-success' },
+  { label: 'Integrity Signals', value: '3', icon: ShieldAlert, sub: 'Requires recruiter review', cardClass: 'stat-card-warning', iconClass: 'stat-icon-warning' },
+];
 
-export default function OverviewPage() {
-  const { user, company } = useAuth();
-  const [data, setData] = useState<OverviewData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+const actions = [
+  {
+    title: '12 candidates completed the official assessment',
+    desc: 'Software Developer · Results ready for review',
+    href: '/dashboard/candidates',
+    icon: ClipboardCheck,
+    iconBg: '#eff6ff',
+    iconColor: '#2563eb',
+    badge: 'Assessment Ready',
+    badgeClass: 'badge-blue',
+  },
+  {
+    title: '8 candidates have evidence gaps for high-priority requirements',
+    desc: 'AWS, Docker not yet evaluated',
+    href: '/dashboard/evidence',
+    icon: AlertTriangle,
+    iconBg: '#fffbeb',
+    iconColor: '#d97706',
+    badge: 'Action Required',
+    badgeClass: 'badge-yellow',
+  },
+  {
+    title: '5 interviews scheduled today',
+    desc: 'Next: Mohamed J. at 2:30 PM',
+    href: '/dashboard/interviews',
+    icon: Calendar,
+    iconBg: '#ecfdf5',
+    iconColor: '#10b981',
+    badge: 'Today',
+    badgeClass: 'badge-green',
+  },
+  {
+    title: '3 candidates have integrity signals requiring review',
+    desc: 'Signals detected — human review recommended',
+    href: '/dashboard/integrity',
+    icon: ShieldAlert,
+    iconBg: '#fef2f2',
+    iconColor: '#ef4444',
+    badge: 'Integrity Flag',
+    badgeClass: 'badge-red',
+  },
+];
 
-  useEffect(() => {
-    api.get('/company/overview')
-      .then((res) => setData(res.data))
-      .catch(() => setError('Failed to load overview data.'))
-      .finally(() => setLoading(false));
-  }, []);
+const recentVacancies = [
+  { title: 'Software Developer', dept: 'Engineering', applications: 18, assessments: 12, interviews: 5, status: 'active' },
+  { title: 'Senior DevOps Specialist', dept: 'Engineering', applications: 8, assessments: 6, interviews: 2, status: 'active' },
+  { title: 'Data Engineer', dept: 'Data & Analytics', applications: 10, assessments: 6, interviews: 0, status: 'under_review' },
+  { title: 'Product Manager', dept: 'Product', applications: 0, assessments: 0, interviews: 0, status: 'draft' },
+];
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+const statusBadge: Record<string, string> = {
+  active: 'badge-published',
+  under_review: 'badge-pending',
+  draft: 'badge-draft',
+};
 
+export default function DashboardPage() {
   return (
     <div className="page-content">
       {/* Header */}
       <div className="page-header">
-        <h1 className="page-title">{greeting}, {user?.firstName} 👋</h1>
-        <p className="page-subtitle">Here&apos;s your company workspace at a glance.</p>
+        <div className="page-header-row">
+          <div>
+            <h1 className="page-title flex items-center gap-3">
+              Dashboard Overview
+              <span className="gold-badge">
+                <Sparkles size={12} />
+                GenuAI Technologies
+              </span>
+            </h1>
+            <p className="page-subtitle">Welcome back, Sarah. Here is your recruitment pipeline activity for today.</p>
+          </div>
+          <Link href="/dashboard/vacancies" className="btn btn-gold">
+            + Create New Vacancy
+          </Link>
+        </div>
       </div>
 
-      {/* Verification status */}
-      {company && (
-        <VerificationBadge status={company.verificationStatus} />
-      )}
+      {/* Stats Grid */}
+      <div className="stats-grid">
+        {stats.map((s) => {
+          const Icon = s.icon;
+          return (
+            <div key={s.label} className={`stat-card ${s.cardClass}`}>
+              <div className={`stat-icon ${s.iconClass}`}>
+                <Icon size={20} />
+              </div>
+              <div className="stat-label">{s.label}</div>
+              <div className="stat-value">{s.value}</div>
+              <div className="stat-sub">{s.sub}</div>
+            </div>
+          );
+        })}
+      </div>
 
-      {/* Stats */}
-      {loading ? (
-        <div className="stats-grid">
-          {[1,2,3].map(i => (
-            <div key={i} className="stat-card">
-              <div className="skeleton" style={{ height: 12, width: '60%', marginBottom: 12 }} />
-              <div className="skeleton" style={{ height: 32, width: '40%' }} />
-            </div>
-          ))}
-        </div>
-      ) : error ? (
-        <div className="alert alert-error" style={{ marginBottom: 24 }}>
-          <AlertCircle size={15} /> {error}
-        </div>
-      ) : data ? (
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-label">Departments</div>
-            <div className="stat-value">{data.departmentCount}</div>
-            <div className="stat-sub">Active departments</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Roles</div>
-            <div className="stat-value">{data.roleCount}</div>
-            <div className="stat-sub">
-              {data.draftRoleCount > 0 ? `${data.draftRoleCount} in draft` : 'No roles yet'}
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Verification</div>
-            <div style={{ marginTop: 4 }}>
-              <span className={`badge badge-${data.verificationStatus.toLowerCase().replace('_', '-')}`}>
-                <span className="badge-dot" style={{
-                  background: data.verificationStatus === 'VERIFIED' ? 'var(--color-verified)'
-                    : data.verificationStatus === 'UNDER_REVIEW' ? 'var(--color-under-review)'
-                    : data.verificationStatus === 'SUSPENDED' ? 'var(--color-suspended)'
-                    : 'var(--color-unverified)'
-                }} />
-                {data.verificationStatus.replace('_', ' ')}
+      <div className="grid-2" style={{ gap: 24, alignItems: 'flex-start' }}>
+        {/* Left Column — Action Required (Figma & Google Stitch Styled) */}
+        <div>
+          <div className="card">
+            <div className="card-header">
+              <div>
+                <div className="card-title">Action Required</div>
+                <div className="card-subtitle">Items needing your attention in GenuAI Technologies</div>
+              </div>
+              <span className="gold-badge" style={{ padding: '4px 10px' }}>
+                4 Pending Items
               </span>
             </div>
-            <div className="stat-sub">Company status</div>
+
+            <div className="flex flex-col gap-3">
+              {actions.map((a, i) => {
+                const Icon = a.icon;
+                return (
+                  <Link href={a.href} key={i} style={{ textDecoration: 'none' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '14px',
+                        padding: '14px 16px',
+                        background: '#ffffff',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--r-md)',
+                        transition: 'all 0.2s ease',
+                        boxShadow: 'var(--shadow-xs)',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)';
+                        e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border)';
+                        e.currentTarget.style.boxShadow = 'var(--shadow-xs)';
+                      }}
+                    >
+                      {/* Crisp SVG Icon Badge */}
+                      <div
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 10,
+                          background: a.iconBg,
+                          color: a.iconColor,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                          border: `1px solid ${a.iconColor}33`,
+                        }}
+                      >
+                        <Icon size={19} />
+                      </div>
+
+                      {/* Text content */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="flex items-center gap-2">
+                          <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                            {a.title}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 3 }}>
+                          {a.desc}
+                        </div>
+                      </div>
+
+                      {/* Badge & Action Indicator */}
+                      <div className="flex items-center gap-2" style={{ flexShrink: 0 }}>
+                        <span className={`badge ${a.badgeClass}`} style={{ fontSize: 10.5 }}>
+                          {a.badge}
+                        </span>
+                        <ChevronRight size={16} style={{ color: 'var(--text-muted)' }} />
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </div>
-      ) : null}
 
-      {/* Quick actions */}
-      <div className="section-title">Quick Actions</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
-        <Link href="/dashboard/company-profile" className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', textDecoration: 'none', padding: 16, transition: 'border-color 150ms ease' }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-border-light)')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--color-brand-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-brand-light)', flexShrink: 0 }}>
-            <Building2 size={17} />
+        {/* Right Column — Active Vacancies & Trends */}
+        <div className="flex flex-col gap-6">
+          <div className="card">
+            <div className="card-header">
+              <div>
+                <div className="card-title">Active Vacancies</div>
+                <div className="card-subtitle">Recruitment pipeline summary</div>
+              </div>
+              <Link href="/dashboard/vacancies" className="btn btn-secondary btn-sm">
+                View All
+              </Link>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {recentVacancies.map((v) => (
+                <div key={v.title} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text-primary)', marginBottom: 4 }}>{v.title}</div>
+                    <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--text-muted)', fontWeight: 500 }}>
+                      <span>{v.applications} applied</span>
+                      <span>•</span>
+                      <span>{v.assessments} assessed</span>
+                      <span>•</span>
+                      <span>{v.interviews} interviews</span>
+                    </div>
+                  </div>
+                  <span className={`badge ${statusBadge[v.status] || 'badge-gray'}`} style={{ textTransform: 'capitalize' }}>
+                    {v.status.replace('_', ' ')}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 2 }}>Company Profile</div>
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>View & edit details</div>
-          </div>
-          <ChevronRight size={14} style={{ color: 'var(--color-text-muted)' }} />
-        </Link>
 
-        <Link href="/dashboard/departments" className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', textDecoration: 'none', padding: 16, transition: 'border-color 150ms ease' }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-border-light)')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(34,197,94,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-success)', flexShrink: 0 }}>
-            <FolderOpen size={17} />
+          {/* Weekly Trend Card */}
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">Weekly Pipeline Metrics</div>
+              <TrendingUp size={16} style={{ color: 'var(--success)' }} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[
+                { label: 'New Applications Received', value: '+12', color: 'var(--brand)' },
+                { label: 'Official Assessments Completed', value: '+8', color: 'var(--success)' },
+                { label: 'Technical Interviews Conducted', value: '+3', color: '#d97706' },
+                { label: 'Verified Offers Extended', value: '+1', color: '#6d28d9' },
+              ].map((r) => (
+                <div key={r.label} className="flex items-center justify-between" style={{ padding: '4px 0' }}>
+                  <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>{r.label}</span>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: r.color }}>{r.value}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 2 }}>Departments</div>
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Manage structure</div>
-          </div>
-          <ChevronRight size={14} style={{ color: 'var(--color-text-muted)' }} />
-        </Link>
-
-        <Link href="/dashboard/departments?tab=roles" className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', textDecoration: 'none', padding: 16, transition: 'border-color 150ms ease' }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-border-light)')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(245,158,11,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-warning)', flexShrink: 0 }}>
-            <Briefcase size={17} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 2 }}>Roles</div>
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Create & manage roles</div>
-          </div>
-          <ChevronRight size={14} style={{ color: 'var(--color-text-muted)' }} />
-        </Link>
+        </div>
       </div>
     </div>
   );
