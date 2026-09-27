@@ -132,9 +132,9 @@ export default function RoleIntelligencePage() {
               Normalized requirement intelligence synthesized from participating company metadata.
             </p>
           </div>
-          <div className="flex gap-2">
-            <span className="gold-badge flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold" style={{ background: '#fffbeb', border: '1px solid rgba(212,175,55,0.4)', color: '#854d0e' }}>
-              <ShieldCheck size={14} className="text-amber-700" />
+          <div className="flex items-center gap-2">
+            <span className="badge badge-gold flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold">
+              <ShieldCheck size={14} />
               Row-Level Tenant Isolation Active
             </span>
           </div>
@@ -152,13 +152,13 @@ export default function RoleIntelligencePage() {
       {/* Target Role Selector & Normalization Pipeline Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6">
         {/* Left Card: Target Role Category & Metadata Sources (4 cols on desktop) */}
-        <div className="card lg:col-span-4 flex flex-col justify-between" style={{ padding: '20px 22px' }}>
+        <div className="card lg:col-span-4 flex flex-col justify-between" style={{ padding: '20px 24px' }}>
           <div>
             <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
               Target Role Category
             </div>
             <select
-              className="form-select font-bold text-slate-900 w-full mb-4"
+              className="form-select font-bold text-slate-900 w-full mb-3"
               value={selectedRole}
               onChange={e => setSelectedRole(e.target.value)}
             >
@@ -168,13 +168,13 @@ export default function RoleIntelligencePage() {
               <option>DevOps Engineer</option>
             </select>
 
-            <div className="pt-3 border-t border-slate-200">
-              <div className="text-[11px] font-bold text-slate-600 uppercase mb-2.5">
+            <div className="pt-2.5 border-t border-slate-200">
+              <div className="text-[11px] font-bold text-slate-600 uppercase mb-2">
                 Participating Metadata Sources
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {PARTICIPATING_DEMO_COMPANIES.map(c => (
-                  <div key={c.name} className="flex items-center justify-between text-xs py-1">
+                  <div key={c.name} className="flex items-center justify-between text-xs py-0.5">
                     <span className={`font-semibold whitespace-nowrap overflow-hidden text-ellipsis ${c.name.includes('Your Company') ? 'text-amber-800 font-bold' : 'text-slate-700'}`}>
                       {c.name}
                     </span>
@@ -185,6 +185,13 @@ export default function RoleIntelligencePage() {
                 ))}
               </div>
             </div>
+          </div>
+
+          <div className="mt-4 text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200 flex items-center justify-between">
+            <span className="text-[11px] text-slate-600 font-medium">Data Privacy:</span>
+            <span className="text-emerald-700 font-bold text-[11px] flex items-center gap-1.5">
+              <span className="badge-dot-live" style={{ background: '#10b981' }} /> 4 Active Tenants Shared
+            </span>
           </div>
         </div>
 

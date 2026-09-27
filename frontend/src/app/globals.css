@@ -354,10 +354,19 @@ img { display: block; max-width: 100%; }
 }
 .page-header-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
+  gap: 20px;
+}
+.page-header-row > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.page-header-row > div:last-child,
+.page-header-row > button,
+.page-header-row > a,
+.page-header-row > span {
+  flex-shrink: 0;
 }
 .breadcrumbs {
   display: flex;
@@ -384,11 +393,22 @@ img { display: block; max-width: 100%; }
 }
 .card-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 16px;
   margin-bottom: 20px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border);
+}
+.card-header > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.card-header > div:last-child,
+.card-header > button,
+.card-header > a,
+.card-header > span {
+  flex-shrink: 0;
 }
 .card-title { font-size: 15px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.2px; }
 .card-subtitle { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }

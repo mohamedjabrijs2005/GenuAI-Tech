@@ -50,8 +50,10 @@ export default function IntelligencePage() {
       {/* Comparison table */}
       <div className="card" style={{ marginBottom: 24 }}>
         <div className="card-header">
-          <div className="card-title">Candidate Comparison</div>
-          <div className="card-subtitle">Evidence-based overview for Software Developer</div>
+          <div>
+            <div className="card-title">Candidate Comparison</div>
+            <div className="card-subtitle">Evidence-based overview for Software Developer</div>
+          </div>
         </div>
         <div className="table-wrapper" style={{ border: 'none', boxShadow: 'none' }}>
           <table>
