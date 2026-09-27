@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Search, Filter, Eye, ChevronRight, User, Sparkles, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 const STAGES = ['Applied', 'Eligible', 'Verified', 'Invited', 'Assessed', 'Review', 'Interview', 'Decision'];
@@ -182,10 +183,10 @@ export default function CandidatesPage() {
                 </td>
                 <td className="td-muted td-mono">{c.date}</td>
                 <td style={{ textAlign: 'right' }}>
-                  <button className="btn btn-gold btn-sm">
+                  <Link href={`/dashboard/candidates/c${c.id}`} className="btn btn-gold btn-sm">
                     <Eye size={14} />
                     Review Evidence
-                  </button>
+                  </Link>
                 </td>
               </tr>
             ))}
