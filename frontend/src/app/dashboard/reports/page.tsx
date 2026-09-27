@@ -53,12 +53,8 @@ export default function ReportsPage() {
         </div>
         <div className="page-header-row">
           <div>
-            <h1 className="page-title flex items-center gap-3">
+            <h1 className="page-title">
               Recruiter Intelligence Reports
-              <span className="gold-badge">
-                <Sparkles size={12} />
-                Gold Audit Certified
-              </span>
             </h1>
             <p className="page-subtitle">
               Export verified candidate evidence reports and audit summaries for hiring decisions.

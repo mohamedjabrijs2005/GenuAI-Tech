@@ -73,12 +73,8 @@ export default function AgreementPage() {
         </div>
         <div className="page-header-row">
           <div>
-            <h1 className="page-title flex items-center gap-3">
+            <h1 className="page-title">
               GenuAI — Company Agreement
-              <span className="gold-badge">
-                <ShieldCheck size={12} />
-                Official Binding Standard
-              </span>
             </h1>
             <p className="page-subtitle">
               Master authorization policies covering recruitment assessment, evidence mapping, role intelligence, confidentiality, and human decision authority.

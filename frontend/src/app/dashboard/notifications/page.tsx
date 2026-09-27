@@ -60,12 +60,8 @@ export default function NotificationsPage() {
         </div>
         <div className="page-header-row">
           <div>
-            <h1 className="page-title flex items-center gap-3">
-              Live Notifications & Alerts
-              <span className="gold-badge">
-                <span className="badge-dot-live" />
-                Real-Time Stream
-              </span>
+            <h1 className="page-title">
+              Live Notifications &amp; Alerts
             </h1>
             <p className="page-subtitle">
               Live stream of assessment completions, integrity flags, and candidate pipeline updates.

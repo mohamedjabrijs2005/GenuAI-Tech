@@ -176,12 +176,8 @@ export default function VacancyBuilderPage() {
         </div>
         <div className="page-header-row">
           <div>
-            <h1 className="page-title flex items-center gap-3">
-              Guided Vacancy & Requirement Builder
-              <span className="gold-badge">
-                <Sparkles size={12} />
-                Evidence-Driven Setup
-              </span>
+            <h1 className="page-title">
+              Guided Vacancy &amp; Requirement Builder
             </h1>
             <p className="page-subtitle">
               Define role requirements, configure structured assessments, and set explicit recruitment permissions.

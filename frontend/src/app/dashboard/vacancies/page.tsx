@@ -51,12 +51,8 @@ export default function VacanciesPage() {
         </div>
         <div className="page-header-row">
           <div>
-            <h1 className="page-title flex items-center gap-3">
-              Vacancies & Open Roles
-              <span className="gold-badge">
-                <Sparkles size={12} />
-                Active Hiring Pipeline
-              </span>
+            <h1 className="page-title">
+              Vacancies &amp; Open Roles
             </h1>
             <p className="page-subtitle">Define, verify, and publish role requirements for GenuAI Technologies.</p>
           </div>

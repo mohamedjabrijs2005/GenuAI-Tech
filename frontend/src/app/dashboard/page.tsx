@@ -77,12 +77,8 @@ export default function DashboardPage() {
       <div className="page-header">
         <div className="page-header-row">
           <div>
-            <h1 className="page-title flex items-center gap-3">
+            <h1 className="page-title">
               Dashboard Overview
-              <span className="gold-badge">
-                <Sparkles size={12} />
-                GenuAI Technologies
-              </span>
             </h1>
             <p className="page-subtitle">Welcome back, Sarah. Here is your recruitment pipeline activity for today.</p>
           </div>

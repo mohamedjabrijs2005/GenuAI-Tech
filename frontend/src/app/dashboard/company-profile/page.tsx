@@ -67,12 +67,8 @@ export default function CompanyProfilePage() {
         </div>
         <div className="page-header-row">
           <div>
-            <h1 className="page-title flex items-center gap-3">
+            <h1 className="page-title">
               Company Profile
-              <span className="gold-badge">
-                <Sparkles size={12} />
-                GenuAI Technologies Partner
-              </span>
             </h1>
             <p className="page-subtitle">Manage corporate identity, verified credentials, and recruiter contacts.</p>
           </div>

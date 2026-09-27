@@ -125,12 +125,8 @@ export default function RoleIntelligencePage() {
         </div>
         <div className="page-header-row">
           <div>
-            <h1 className="page-title flex items-center gap-3">
+            <h1 className="page-title">
               Cross-Company Role Intelligence Engine
-              <span className="gold-badge">
-                <Sparkles size={12} />
-                Aggregated Metadata Layer
-              </span>
             </h1>
             <p className="page-subtitle">
               Normalized requirement intelligence synthesized from participating company metadata.

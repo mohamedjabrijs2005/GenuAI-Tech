@@ -47,12 +47,8 @@ export default function CandidatesPage() {
         </div>
         <div className="page-header-row">
           <div>
-            <h1 className="page-title flex items-center gap-3">
+            <h1 className="page-title">
               Candidates Pipeline
-              <span className="gold-badge">
-                <Sparkles size={12} />
-                GenuAI Technologies Talent Pool
-              </span>
             </h1>
             <p className="page-subtitle">Track, evaluate evidence, and review candidate progress through all hiring stages.</p>
           </div>
