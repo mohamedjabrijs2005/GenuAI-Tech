@@ -51,7 +51,11 @@ export default function AssessmentSetupPage() {
       </div>
 
       {/* Principle note */}
-      <div className="alert alert-info" style={{ marginBottom: 24 }}>
+      <div style={{
+        display: 'flex', alignItems: 'flex-start', gap: 10,
+        padding: '12px 16px', background: '#eff6ff', borderRadius: 'var(--r-md)',
+        border: '1px solid #bfdbfe', marginBottom: 24, fontSize: 13.5, color: '#1e40af'
+      }}>
         <Info size={16} style={{ flexShrink: 0, marginTop: 1 }} />
         <span><strong>Assessment is mapped to Role Requirements</strong> — not generic tests. Each skill is evaluated through the most appropriate method.</span>
       </div>
@@ -106,7 +110,7 @@ export default function AssessmentSetupPage() {
                 )}
 
                 <div style={{ marginTop: 16, display: 'flex', gap: 10 }}>
-                  <button className="btn btn-primary btn-sm">Save Configuration</button>
+                  <button className="btn btn-gold btn-sm">Save Configuration</button>
                   <button className="btn btn-secondary btn-sm">Add Method</button>
                 </div>
               </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Bell, Search, Sparkles, ShieldCheck } from 'lucide-react';
+import { Bell, Search, ShieldCheck } from 'lucide-react';
 
 const BREADCRUMB_MAP: Record<string, string> = {
   '/dashboard': 'Dashboard Overview',
@@ -15,9 +15,11 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/dashboard/interviews': 'Interviews',
   '/dashboard/integrity': 'Integrity Review',
   '/dashboard/intelligence': 'Recruiter Intelligence',
+  '/dashboard/intelligence/role-intelligence': 'Cross-Company Role Intelligence',
+  '/dashboard/vacancies/builder': 'Guided Vacancy Builder',
   '/dashboard/reports': 'Intelligence Reports',
   '/dashboard/notifications': 'Live Notifications',
-  '/dashboard/agreement': 'Recruitment Agreement',
+  '/dashboard/agreement': 'Company Agreement',
   '/dashboard/settings': 'Settings & Preferences',
 };
 
@@ -38,15 +40,11 @@ export default function Topbar() {
 
   return (
     <header className="topbar">
-      {/* Title & Gold Badge (Left) */}
+      {/* Title (Left) */}
       <div className="flex items-center gap-2.5" style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
         <h2 style={{ fontWeight: 800, fontSize: 16, color: 'var(--text-primary)', letterSpacing: '-0.3px', whiteSpace: 'nowrap', margin: 0 }}>
           {title}
         </h2>
-        <span className="gold-badge" style={{ fontSize: 10, padding: '2px 8px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-          <Sparkles size={11} style={{ color: '#d4af37' }} />
-          Gold Standard
-        </span>
       </div>
 
       {/* Utilities & Live Ticker (Right) */}

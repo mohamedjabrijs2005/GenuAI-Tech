@@ -40,8 +40,8 @@ export default function IntelligencePage() {
       </div>
 
       {/* Key principle */}
-      <div style={{ background: 'var(--brand-pale)', border: '1px solid rgba(37,99,235,0.2)', borderRadius: 'var(--r-lg)', padding: '16px 20px', marginBottom: 24 }}>
-        <div style={{ fontWeight: 600, color: 'var(--brand)', marginBottom: 4 }}>GenuAI Principle</div>
+      <div style={{ background: '#fefce8', border: '1px solid rgba(212,175,55,0.35)', borderRadius: 'var(--r-lg)', padding: '16px 20px', marginBottom: 24 }}>
+        <div style={{ fontWeight: 700, color: '#a16207', marginBottom: 4, fontSize: 13 }}>GenuAI Principle</div>
         <div style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
           GenuAI does not make the hiring decision. Recruiters define what the role requires, receive evidence against those requirements, understand coverage and gaps, and conduct human review.
         </div>

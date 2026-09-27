@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Plus, Search, Briefcase, Users, ClipboardCheck, Calendar, MoreHorizontal, Eye, Sparkles } from 'lucide-react';
 
 const VACANCIES = [
@@ -59,10 +60,10 @@ export default function VacanciesPage() {
             </h1>
             <p className="page-subtitle">Define, verify, and publish role requirements for GenuAI Technologies.</p>
           </div>
-          <button className="btn btn-gold">
+          <Link href="/dashboard/vacancies/builder" className="btn btn-gold">
             <Plus size={16} />
             Create Vacancy
-          </button>
+          </Link>
         </div>
       </div>
 

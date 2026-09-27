@@ -75,7 +75,7 @@ export default function CandidatesPage() {
         </div>
 
         {/* Responsive Horizontal Pipeline Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(115px, 1fr))', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '10px' }}>
           {STAGES.map((s) => {
             const count = CANDIDATES.filter(c => c.stage === s).length;
             const isSelected = stageFilter === s;

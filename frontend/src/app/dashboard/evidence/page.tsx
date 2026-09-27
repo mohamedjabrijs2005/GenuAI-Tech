@@ -59,12 +59,12 @@ export default function EvidencePage() {
                   className="card"
                   style={{
                     padding: '14px 18px', cursor: 'pointer',
-                    borderLeft: `3px solid ${i === 0 ? 'var(--brand)' : 'var(--border)'}`,
-                    background: i === 0 ? 'var(--brand-pale)' : 'var(--white)',
+                    borderLeft: `3px solid ${i === 0 ? '#d4af37' : 'var(--border)'}`,
+                    background: i === 0 ? '#fefce8' : 'var(--white)',
                   }}
                 >
                   <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-                    <div style={{ fontWeight: 600, color: i === 0 ? 'var(--brand)' : 'var(--text-primary)', fontSize: 13.5 }}>{c.candidate}</div>
+                    <div style={{ fontWeight: 700, color: i === 0 ? '#a16207' : 'var(--text-primary)', fontSize: 13.5 }}>{c.candidate}</div>
                     <span className="badge badge-blue">{c.score}%</span>
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>{c.vacancy}</div>

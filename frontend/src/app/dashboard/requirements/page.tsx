@@ -48,7 +48,7 @@ export default function RequirementsPage() {
             <h1 className="page-title">Role Requirements</h1>
             <p className="page-subtitle">Define what each vacancy requires — this drives assessment and evidence mapping</p>
           </div>
-          <button className="btn btn-primary"><Plus size={15} />Add Requirement</button>
+          <button className="btn btn-gold"><Plus size={15} />Add Requirement</button>
         </div>
       </div>
 
@@ -64,14 +64,14 @@ export default function RequirementsPage() {
                 className={`card card-accent ${selected.id === r.id ? '' : ''}`}
                 style={{
                   textAlign: 'left', cursor: 'pointer', padding: '14px 18px',
-                  borderLeft: `3px solid ${selected.id === r.id ? 'var(--brand)' : 'var(--border)'}`,
-                  background: selected.id === r.id ? 'var(--brand-pale)' : 'var(--white)',
+                  borderLeft: `3px solid ${selected.id === r.id ? '#d4af37' : 'var(--border)'}`,
+                  background: selected.id === r.id ? '#fefce8' : 'var(--white)',
                   transition: 'all var(--t)',
                 }}
                 aria-pressed={selected.id === r.id}
                 aria-label={`Select ${r.vacancy}`}
               >
-                <div style={{ fontWeight: 600, color: selected.id === r.id ? 'var(--brand)' : 'var(--text-primary)', marginBottom: 4 }}>{r.vacancy}</div>
+                <div style={{ fontWeight: 700, color: selected.id === r.id ? '#a16207' : 'var(--text-primary)', marginBottom: 4 }}>{r.vacancy}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                   {r.required.length} required · {r.preferred.length} preferred · {r.openings} openings
                 </div>

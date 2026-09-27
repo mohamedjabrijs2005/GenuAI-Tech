@@ -42,6 +42,7 @@ const NAV = [
     section: 'Intelligence',
     items: [
       { label: 'Recruiter Intelligence', href: '/dashboard/intelligence', icon: BrainCircuit },
+      { label: 'Role Intelligence', href: '/dashboard/intelligence/role-intelligence', icon: Sparkles },
       { label: 'Reports', href: '/dashboard/reports', icon: FileText },
     ],
   },
@@ -61,8 +62,11 @@ const MOCK_COMPANY = { name: 'Acme Technologies Ltd.', verified: true };
 export default function Sidebar() {
   const pathname = usePathname();
 
-  const isActive = (href: string) =>
-    href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href);
+  const isActive = (href: string) => {
+    if (href === '/dashboard') return pathname === '/dashboard';
+    if (href === '/dashboard/intelligence') return pathname === '/dashboard/intelligence';
+    return pathname === href || (pathname.startsWith(href + '/') && href !== '/dashboard');
+  };
 
   const initials = `${MOCK_USER.firstName[0]}${MOCK_USER.lastName[0]}`;
 
@@ -80,16 +84,18 @@ export default function Sidebar() {
       </div>
 
       {/* Company Workspace */}
-      <div className="sidebar-workspace">
-        <div className="sidebar-workspace-label">Workspace</div>
-        <div className="flex items-center gap-2">
-          <div className="sidebar-workspace-name">{MOCK_COMPANY.name}</div>
+      <div className="sidebar-workspace" style={{ padding: '10px 18px' }}>
+        <div className="flex items-center justify-between" style={{ marginBottom: 2 }}>
+          <span className="sidebar-workspace-label" style={{ margin: 0 }}>WORKSPACE</span>
           {MOCK_COMPANY.verified && (
-            <span className="gold-badge" style={{ flexShrink: 0 }}>
-              <span className="badge-dot" style={{ background: '#d4af37' }} />
+            <span className="gold-badge" style={{ fontSize: 9.5, padding: '1px 6px', flexShrink: 0 }}>
+              <span className="badge-dot" style={{ background: '#d4af37', width: 5, height: 5 }} />
               Verified
             </span>
           )}
+        </div>
+        <div className="sidebar-workspace-name" style={{ fontSize: 13, fontWeight: 700 }}>
+          {MOCK_COMPANY.name}
         </div>
       </div>
 
