@@ -9,7 +9,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/dashboard/company-profile': 'Company Profile',
   '/dashboard/vacancies': 'Vacancies & Roles',
   '/dashboard/requirements': 'Role Requirements',
-  '/dashboard/assessments': 'Assessment Setup',
+  '/dashboard/assessments': 'Assessment Groups & Results',
   '/dashboard/candidates': 'Candidates Pipeline',
   '/dashboard/evidence': 'Evidence & Coverage',
   '/dashboard/interviews': 'Interviews',
@@ -25,7 +25,11 @@ const BREADCRUMB_MAP: Record<string, string> = {
 
 export default function Topbar() {
   const pathname = usePathname();
-  const title = BREADCRUMB_MAP[pathname] || 'Dashboard';
+  // Dynamic candidate detail route support
+  const candidateDetailMatch = pathname.match(/^\/dashboard\/candidates\/(c\d+)$/);
+  const title = candidateDetailMatch
+    ? `Candidate Detail — ${candidateDetailMatch[1].toUpperCase()}`
+    : BREADCRUMB_MAP[pathname] || 'Dashboard';
   const [time, setTime] = useState<string>('');
 
   useEffect(() => {
