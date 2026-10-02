@@ -36,6 +36,9 @@ router.get('/', async (req, res) => {
     const result = await pool.query(query, params);
     return res.json({ vacancies: result.rows });
   } catch (err) {
+    if (err.code === 'ECONNREFUSED' || err.message?.includes('connect ECONNREFUSED')) {
+      return res.json({ vacancies: [] });
+    }
     console.error('List vacancies error:', err);
     return res.status(500).json({ error: 'Failed to fetch vacancies' });
   }

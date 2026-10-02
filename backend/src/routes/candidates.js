@@ -45,6 +45,9 @@ router.get('/', async (req, res) => {
     const result = await pool.query(query, params);
     return res.json({ candidates: result.rows });
   } catch (err) {
+    if (err.code === 'ECONNREFUSED' || err.message?.includes('connect ECONNREFUSED')) {
+      return res.json({ candidates: [] });
+    }
     console.error('List candidates error:', err);
     return res.status(500).json({ error: 'Failed to fetch candidates' });
   }
