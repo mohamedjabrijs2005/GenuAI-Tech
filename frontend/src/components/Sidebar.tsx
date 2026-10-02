@@ -77,11 +77,8 @@ export default function Sidebar() {
 
   return (
     <aside className="sidebar" role="navigation" aria-label="Main navigation">
-      {/* GOLD BRANDING HEADER */}
+      {/* BRANDING HEADER */}
       <div className="sidebar-logo">
-        <div className="gold-logo-box">
-          <Sparkles size={18} style={{ color: '#ffffff' }} />
-        </div>
         <div>
           <div className="sidebar-logo-text gold-gradient-text" style={{ fontSize: 15 }}>GenuAI Technologies</div>
           <span className="sidebar-logo-sub">Enterprise Suite</span>

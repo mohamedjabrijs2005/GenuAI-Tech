@@ -152,9 +152,6 @@ export default function DashboardPage() {
         <div className="stitch-hero-top">
           {/* Brand & Workspace Info */}
           <div className="stitch-hero-brand">
-            <div className="stitch-hero-logo">
-              <Terminal size={24} />
-            </div>
             <div>
               <div className="stitch-hero-title-row">
                 <span className="stitch-brand-tag">GenuAI Technologies</span>
