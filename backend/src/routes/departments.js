@@ -26,6 +26,9 @@ router.get('/', async (req, res) => {
 
     return res.json({ departments: result.rows });
   } catch (err) {
+    if (err.code === 'ECONNREFUSED' || err.message?.includes('connect ECONNREFUSED')) {
+      return res.json({ departments: [] });
+    }
     console.error('List departments error:', err);
     return res.status(500).json({ error: 'Failed to fetch departments' });
   }

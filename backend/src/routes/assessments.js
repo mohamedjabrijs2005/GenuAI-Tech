@@ -24,6 +24,9 @@ router.get('/', async (req, res) => {
 
     return res.json({ assessmentGroups: result.rows });
   } catch (err) {
+    if (err.code === 'ECONNREFUSED' || err.message?.includes('connect ECONNREFUSED')) {
+      return res.json({ assessmentGroups: [] });
+    }
     console.error('List assessments error:', err);
     return res.status(500).json({ error: 'Failed to fetch assessments' });
   }

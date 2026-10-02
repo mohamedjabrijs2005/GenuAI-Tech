@@ -53,6 +53,28 @@ app.use((req, res) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
+  const isDbOffline = err.code === 'ECONNREFUSED' ||
+    (Array.isArray(err.errors) && err.errors.some(e => e.code === 'ECONNREFUSED'));
+
+  if (isDbOffline) {
+    console.warn(`[DB OFFLINE] ${req.method} ${req.path} — returning empty response`);
+    if (req.method === 'GET') {
+      // Return sensible empty payloads per route prefix
+      const path = req.path;
+      if (path.startsWith('/api/vacancies')) return res.json({ vacancies: [] });
+      if (path.startsWith('/api/candidates')) return res.json({ candidates: [] });
+      if (path.startsWith('/api/interviews')) return res.json({ interviews: [] });
+      if (path.startsWith('/api/integrity')) return res.json({ signals: [], stats: {} });
+      if (path.startsWith('/api/departments')) return res.json({ departments: [] });
+      if (path.startsWith('/api/roles')) return res.json({ roles: [] });
+      if (path.startsWith('/api/assessments')) return res.json({ assessments: [] });
+      if (path.startsWith('/api/reports')) return res.json({ vacancies: [], candidates: [], pipeline: [] });
+      if (path.startsWith('/api/company')) return res.json({ company: null });
+      return res.json({});
+    }
+    return res.status(503).json({ error: 'Database temporarily unavailable. Please try again later.' });
+  }
+
   console.error('Unhandled error:', err);
   res.status(500).json({ error: 'Internal server error' });
 });

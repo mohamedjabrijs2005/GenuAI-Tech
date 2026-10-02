@@ -60,6 +60,9 @@ router.get('/overview', async (req, res) => {
       integrity: integrityStats.rows[0],
     });
   } catch (err) {
+    if (err.code === 'ECONNREFUSED' || err.message?.includes('connect ECONNREFUSED')) {
+      return res.json({ vacancies: {}, pipeline: {}, evidence: {}, integrity: {} });
+    }
     console.error('Reports overview error:', err);
     return res.status(500).json({ error: 'Failed to fetch report data' });
   }

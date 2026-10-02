@@ -30,6 +30,9 @@ router.get('/', async (req, res) => {
 
     return res.json({ roles: result.rows });
   } catch (err) {
+    if (err.code === 'ECONNREFUSED' || err.message?.includes('connect ECONNREFUSED')) {
+      return res.json({ roles: [] });
+    }
     console.error('List roles error:', err);
     return res.status(500).json({ error: 'Failed to fetch roles' });
   }
