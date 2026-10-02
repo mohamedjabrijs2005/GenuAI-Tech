@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Bell, Search, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const BREADCRUMB_MAP: Record<string, string> = {
   '/dashboard': 'Dashboard Overview',
@@ -21,16 +22,26 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/dashboard/notifications': 'Live Notifications',
   '/dashboard/agreement': 'Company Agreement',
   '/dashboard/settings': 'Settings & Preferences',
+  '/dashboard/audit': 'Audit Log',
+  '/dashboard/departments': 'Departments',
 };
 
 export default function Topbar() {
   const pathname = usePathname();
+  const { company } = useAuth();
+
   // Dynamic candidate detail route support
-  const candidateDetailMatch = pathname.match(/^\/dashboard\/candidates\/(c\d+)$/);
+  const candidateDetailMatch = pathname.match(/^\/dashboard\/candidates\/(c\d+|[\w-]+)$/);
+  const vacancyDetailMatch = pathname.match(/^\/dashboard\/vacancies\/([\w-]+)$/);
+
   const title = candidateDetailMatch
-    ? `Candidate Detail — ${candidateDetailMatch[1].toUpperCase()}`
+    ? `Candidate Detail`
+    : vacancyDetailMatch
+    ? `Vacancy Details`
     : BREADCRUMB_MAP[pathname] || 'Dashboard';
+
   const [time, setTime] = useState<string>('');
+  const isVerified = company?.verificationStatus === 'VERIFIED';
 
   useEffect(() => {
     const updateTime = () => {
@@ -51,7 +62,7 @@ export default function Topbar() {
         </h2>
       </div>
 
-      {/* Utilities & Live Ticker (Right) */}
+      {/* Utilities (Right) */}
       <div className="flex items-center gap-3" style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
         {/* Live Real-time Sync Indicator */}
         <div
@@ -74,34 +85,18 @@ export default function Topbar() {
           <span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{time || 'Syncing...'}</span>
         </div>
 
-        {/* Global Search Box */}
-        <div className="search-box" style={{ width: '170px', padding: '5px 10px', flexShrink: 0 }}>
-          <Search size={14} style={{ color: 'var(--text-muted)' }} />
-          <input type="text" placeholder="Search..." style={{ fontSize: '12.5px' }} />
-        </div>
-
-        {/* Live Notifications Button */}
-        <button
-          className="btn btn-secondary btn-icon"
-          title="Notifications"
-          aria-label="Notifications"
-          style={{ position: 'relative', width: 34, height: 34, flexShrink: 0 }}
-        >
-          <Bell size={15} style={{ color: 'var(--text-secondary)' }} />
-          <span
-            style={{
-              position: 'absolute', top: 6, right: 6,
-              width: 7, height: 7, borderRadius: '50%',
-              background: '#d4af37', border: '1.5px solid var(--white)',
-            }}
-          />
-        </button>
-
-        {/* Verification Pill */}
-        <span className="badge badge-green" style={{ fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-          <ShieldCheck size={13} style={{ color: 'var(--success)' }} />
-          Verified Entity
-        </span>
+        {/* Company Verification Status Pill */}
+        {isVerified ? (
+          <span className="badge badge-green" style={{ fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <ShieldCheck size={13} style={{ color: 'var(--success)' }} />
+            Verified Entity
+          </span>
+        ) : (
+          <span className="badge badge-yellow" style={{ fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <ShieldCheck size={13} style={{ color: 'var(--warning)' }} />
+            {company?.verificationStatus || 'Pending Verification'}
+          </span>
+        )}
       </div>
     </header>
   );

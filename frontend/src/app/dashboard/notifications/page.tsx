@@ -19,16 +19,6 @@ interface Notification {
   created_at: string;
 }
 
-const MOCK_NOTIFICATIONS: Notification[] = [
-  { id: 'n1', type: 'candidate_applied', title: 'New Application Received', message: 'Carlos Mendez applied for Senior Software Developer.', read: false, entity_type: 'application', entity_id: 'a3', created_at: '2026-10-01T17:45:00Z' },
-  { id: 'n2', type: 'assessment_completed', title: 'Assessment Completed', message: 'Priya Sharma completed the Technical Assessment with a score of 91%.', read: false, entity_type: 'application', entity_id: 'a2', created_at: '2026-10-01T15:30:00Z' },
-  { id: 'n3', type: 'integrity_flag', title: 'Integrity Signal Flagged', message: 'A tab-switch event was detected for James Okonkwo\'s assessment session.', read: false, entity_type: 'integrity', entity_id: 'sig-001', created_at: '2026-10-01T14:10:00Z' },
-  { id: 'n4', type: 'interview_scheduled', title: 'Interview Scheduled', message: 'Interview with Alex Rivera is confirmed for 5th Oct 2026 at 10:00 AM.', read: true, entity_type: 'interview', entity_id: 'int-001', created_at: '2026-10-01T11:00:00Z' },
-  { id: 'n5', type: 'vacancy_verified', title: 'Vacancy Approved by GenuAI', message: 'Your vacancy "Senior Software Developer" has been verified and is now live.', read: true, entity_type: 'vacancy', entity_id: '1', created_at: '2026-09-30T16:30:00Z' },
-  { id: 'n6', type: 'evidence_gap', title: 'Evidence Gap Detected', message: 'Carlos Mendez has insufficient evidence for "AWS Cloud Architecture" requirement.', read: true, entity_type: 'evidence', entity_id: 'ev-001', created_at: '2026-09-30T14:00:00Z' },
-  { id: 'n7', type: 'assessment_completed', title: 'Assessment Completed', message: 'Alex Rivera completed the Technical Assessment with a score of 84%.', read: true, entity_type: 'application', entity_id: 'a1', created_at: '2026-09-29T17:45:00Z' },
-  { id: 'n8', type: 'candidate_applied', title: 'New Application Received', message: 'Sara Kim applied for Product Designer.', read: true, entity_type: 'application', entity_id: 'a4', created_at: '2026-09-28T09:30:00Z' },
-];
 
 const NOTIF_ICON: Record<string, React.ReactNode> = {
   candidate_applied: <Users size={16} style={{ color: '#2563eb' }} />,
@@ -66,13 +56,16 @@ function timeAgo(iso: string) {
 }
 
 export default function NotificationsPage() {
-  const [notifs, setNotifs] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const [notifs, setNotifs] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
   useEffect(() => {
+    setIsLoading(true);
     api.get('/reports/notifications')
-      .then(r => { if (r.data.notifications?.length) setNotifs(r.data.notifications); })
-      .catch(() => {});
+      .then(r => { if (r.data.notifications) setNotifs(r.data.notifications); })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, []);
 
   const filtered = filter === 'unread' ? notifs.filter(n => !n.read) : notifs;

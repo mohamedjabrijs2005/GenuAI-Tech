@@ -71,338 +71,214 @@ export interface InterviewRecord {
   notes?: string;
 }
 
-// Initial Realistic Seed Data
-const DEFAULT_VACANCIES: Vacancy[] = [
-  { id: 'vac-1', title: 'Senior Backend Engineer', dept: 'Engineering', openings: 3, applications: 45, assessments: 31, interviews: 8, status: 'published', created: '2026-09-10', location: 'Remote / London', experience_level: 'senior', employment_type: 'full_time', description: 'Architect distributed backend microservices and real-time Kafka event streaming pipelines.' },
-  { id: 'vac-2', title: 'Lead Product Designer', dept: 'Product Design', openings: 2, applications: 28, assessments: 12, interviews: 3, status: 'published', created: '2026-09-14', location: 'Hybrid / Berlin', experience_level: 'lead', employment_type: 'full_time', description: 'Lead enterprise design systems and UX architecture for GenuAI assessment suites.' },
-  { id: 'vac-3', title: 'Cloud DevOps & SRE', dept: 'Infrastructure', openings: 2, applications: 34, assessments: 21, interviews: 7, status: 'published', created: '2026-09-05', location: 'Remote', experience_level: 'senior', employment_type: 'full_time', description: 'Maintain Kubernetes clusters, multi-region CI/CD pipelines, and zero-trust infrastructure.' },
-  { id: 'vac-4', title: 'Data Platform Engineer', dept: 'Data & AI', openings: 1, applications: 19, assessments: 8, interviews: 2, status: 'pending', created: '2026-09-18', location: 'Remote / Singapore', experience_level: 'mid', employment_type: 'full_time', description: 'Build scalable ETL pipelines, Snowflake data models, and feature stores for ML models.' },
-  { id: 'vac-5', title: 'Security & Compliance Analyst', dept: 'Information Security', openings: 1, applications: 8, assessments: 0, interviews: 0, status: 'draft', created: '2026-09-24', location: 'London', experience_level: 'mid', employment_type: 'full_time', description: 'Oversee SOC2 compliance, ISO 27001 evidence matrices, and automated penetration testing.' },
-];
-
-const DEFAULT_CANDIDATES: Candidate[] = [
-  { id: 'cand-1', name: 'Mohamed Jabri', email: 'mohamed.jabri@example.com', vacancy: 'Senior Backend Engineer', vacancyId: 'vac-1', stage: 'Review', score: 88, evidence: '5/5', integrity: 'clear', date: '2026-09-22', phone: '+44 7700 900123', notes: 'Strong algorithms and distributed systems architecture background.' },
-  { id: 'cand-2', name: 'Aisha Rahman', email: 'aisha.rahman@example.com', vacancy: 'Senior Backend Engineer', vacancyId: 'vac-1', stage: 'Assessed', score: 78, evidence: '4/5', integrity: 'signals', date: '2026-09-21', phone: '+44 7700 900456', notes: 'Completed technical coding test. Tab switch signal noted for review.' },
-  { id: 'cand-3', name: 'James Okonkwo', email: 'james.o@example.com', vacancy: 'Senior Backend Engineer', vacancyId: 'vac-1', stage: 'Interview', score: 94, evidence: '5/5', integrity: 'clear', date: '2026-09-20', phone: '+44 7700 900789', notes: 'Exceptional system design and PostgreSQL query optimization score.' },
-  { id: 'cand-4', name: 'Sara Kim', email: 'sara.kim@example.com', vacancy: 'Lead Product Designer', vacancyId: 'vac-2', stage: 'Invited', score: null, evidence: '—', integrity: 'clear', date: '2026-09-23', phone: '+49 151 234567', notes: 'Portfolio verified. Assessment invitation dispatched.' },
-  { id: 'cand-5', name: 'Carlos Mendez', email: 'c.mendez@example.com', vacancy: 'Cloud DevOps & SRE', vacancyId: 'vac-3', stage: 'Decision', score: 91, evidence: '5/5', integrity: 'clear', date: '2026-09-18', phone: '+34 612 345678', notes: 'Passed all technical and competency bars. Final offer review in progress.' },
-  { id: 'cand-6', name: 'Priya Patel', email: 'priya.patel@example.com', vacancy: 'Data Platform Engineer', vacancyId: 'vac-4', stage: 'Eligible', score: null, evidence: '—', integrity: 'clear', date: '2026-09-24', phone: '+91 98765 43210', notes: 'Application verified against role prerequisites.' },
-  { id: 'cand-7', name: 'Alex Rivera', email: 'alex.rivera@example.com', vacancy: 'Senior Backend Engineer', vacancyId: 'vac-1', stage: 'Review', score: 82, evidence: '4/5', integrity: 'clear', date: '2026-09-25', phone: '+1 415 555 0199', notes: 'Completed full 5-stage evidence assessment.' },
-];
-
-const DEFAULT_INTEGRITY: IntegrityRecord[] = [
-  {
-    id: 'inc-1',
-    incidentId: 'INC-2026-001',
-    name: 'Aisha Rahman',
-    candidateId: 'cand-2',
-    vacancy: 'Senior Backend Engineer',
-    assessmentDate: '2026-09-21',
-    assessmentId: 'AG-01 v1.0',
-    signals: [
-      { type: 'Tab switching', count: 2, severity: 'medium', timestamps: ['09:14:23', '09:31:07'], context: 'Browser tab focus lost twice during coding section' },
-      { type: 'Copy/Paste attempt', count: 0, severity: 'none' },
-      { type: 'Face missing from frame', count: 1, severity: 'low', timestamps: ['09:22:15'], context: 'Camera feed blank for ~4 seconds (likely webcam adjustment)' },
-      { type: 'Multiple person detected', count: 0, severity: 'none' },
-    ],
-    reviewStatus: 'Unreviewed',
-  },
-  {
-    id: 'inc-2',
-    incidentId: 'INC-2026-002',
-    name: 'James Okonkwo',
-    candidateId: 'cand-3',
-    vacancy: 'Senior Backend Engineer',
-    assessmentDate: '2026-09-20',
-    assessmentId: 'AG-01 v1.0',
-    signals: [
-      { type: 'Tab switching', count: 0, severity: 'none' },
-      { type: 'Copy/Paste attempt', count: 0, severity: 'none' },
-      { type: 'Face missing from frame', count: 0, severity: 'none' },
-      { type: 'Multiple person detected', count: 0, severity: 'none' },
-    ],
-    reviewStatus: 'Reviewed',
-    reviewedBy: 'Dr. Sarah Connor',
-    reviewedAt: '2026-09-20 16:00',
-    reviewNote: 'Full proctoring audit complete — zero telemetry anomaly. Candidate is cleared.',
-  },
-  {
-    id: 'inc-3',
-    incidentId: 'INC-2026-003',
-    name: 'Mohamed Jabri',
-    candidateId: 'cand-1',
-    vacancy: 'Senior Backend Engineer',
-    assessmentDate: '2026-09-22',
-    assessmentId: 'AG-01 v1.0',
-    signals: [
-      { type: 'Tab switching', count: 1, severity: 'low', timestamps: ['10:05:44'], context: 'Single momentary tab switch (< 2 seconds)' },
-      { type: 'Copy/Paste attempt', count: 0, severity: 'none' },
-      { type: 'Face missing from frame', count: 0, severity: 'none' },
-      { type: 'Multiple person detected', count: 0, severity: 'none' },
-    ],
-    reviewStatus: 'Reviewed',
-    reviewedBy: 'Dr. Sarah Connor',
-    reviewedAt: '2026-09-22 11:30',
-    reviewNote: 'Signal reviewed and cleared. Benign notification dismiss.',
-  },
-];
-
-const DEFAULT_INTERVIEWS: InterviewRecord[] = [
-  {
-    id: 'int-1',
-    candidateName: 'James Okonkwo',
-    candidateId: 'cand-3',
-    vacancy: 'Senior Backend Engineer',
-    vacancyId: 'vac-1',
-    interviewer: 'Alex Mercer (Lead Architect)',
-    interviewerRole: 'Hiring Manager',
-    date: '2026-10-03',
-    time: '14:00 - 15:00 UTC',
-    type: 'Technical Interview',
-    status: 'Scheduled',
-    meetingLink: 'https://meet.genuai.tech/room-eng-902',
-    notes: 'Focus on distributed consensus, Raft protocol, and Kafka partition rebalancing.',
-  },
-  {
-    id: 'int-2',
-    candidateName: 'Carlos Mendez',
-    candidateId: 'cand-5',
-    vacancy: 'Cloud DevOps & SRE',
-    vacancyId: 'vac-3',
-    interviewer: 'Elena Rostova (VP Infrastructure)',
-    interviewerRole: 'Executive Reviewer',
-    date: '2026-10-02',
-    time: '11:00 - 12:00 UTC',
-    type: 'Final Executive',
-    status: 'Scheduled',
-    meetingLink: 'https://meet.genuai.tech/room-infra-404',
-    notes: 'Final leadership cultural fit & compensation alignment.',
-  },
-  {
-    id: 'int-3',
-    candidateName: 'Mohamed Jabri',
-    candidateId: 'cand-1',
-    vacancy: 'Senior Backend Engineer',
-    vacancyId: 'vac-1',
-    interviewer: 'David Chen (Staff Engineer)',
-    interviewerRole: 'Technical Interviewer',
-    date: '2026-09-28',
-    time: '15:30 - 16:30 UTC',
-    type: 'Technical Interview',
-    status: 'Completed',
-    score: 92,
-    meetingLink: 'https://meet.genuai.tech/room-eng-811',
-    notes: 'Exceptional understanding of concurrency, lock-free queues, and PostgreSQL indexing.',
-  },
-];
-
-// Helper to get from local storage or fallback
-function getStored<T>(key: string, defaultData: T): T {
-  if (typeof window === 'undefined') return defaultData;
-  try {
-    const item = localStorage.getItem(key);
-    if (!item) {
-      localStorage.setItem(key, JSON.stringify(defaultData));
-      return defaultData;
-    }
-    return JSON.parse(item);
-  } catch {
-    return defaultData;
-  }
-}
-
-function setStored<T>(key: string, data: T): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (err) {
-    console.error(`Failed saving to ${key}`, err);
-  }
-}
-
 export const DataService = {
   // ==================== VACANCIES ====================
   async getVacancies(): Promise<Vacancy[]> {
     try {
       const res = await api.get('/vacancies');
-      if (res.data?.vacancies && res.data.vacancies.length > 0) {
+      if (res.data?.vacancies) {
         const mapped = res.data.vacancies.map((v: any) => ({
           id: v.id,
           title: v.title,
-          dept: v.department_name || 'Engineering',
+          dept: v.department_name || 'General',
           openings: Number(v.vacancy_count) || 1,
           applications: Number(v.applicant_count) || 0,
           assessments: Math.round((Number(v.applicant_count) || 0) * 0.7),
           interviews: Math.round((Number(v.applicant_count) || 0) * 0.2),
           status: (v.status || 'published').toLowerCase(),
-          created: v.created_at ? v.created_at.split('T')[0] : '2026-09-20',
+          created: v.created_at ? v.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
           location: v.location || 'Remote',
           experience_level: v.experience_level || 'senior',
           employment_type: v.employment_type || 'full_time',
           description: v.job_description,
         }));
-        setStored('genuai_vacancies', mapped);
         return mapped;
       }
-    } catch {
-      // fallback
+    } catch (err) {
+      console.error('Failed to fetch vacancies from API', err);
     }
-    return getStored<Vacancy[]>('genuai_vacancies', DEFAULT_VACANCIES);
+    return [];
   },
 
   async getVacancyById(id: string): Promise<Vacancy | null> {
-    const list = await this.getVacancies();
-    return list.find(v => v.id === id || String(v.id) === String(id)) || list[0] || null;
+    try {
+      const res = await api.get(`/vacancies/${id}`);
+      if (res.data?.vacancy) {
+        const v = res.data.vacancy;
+        return {
+          id: v.id,
+          title: v.title,
+          dept: v.department_name || 'General',
+          openings: Number(v.vacancy_count) || 1,
+          applications: 0,
+          assessments: 0,
+          interviews: 0,
+          status: (v.status || 'published').toLowerCase() as Vacancy['status'],
+          created: v.created_at ? v.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+          location: v.location || 'Remote',
+          experience_level: v.experience_level || 'senior',
+          employment_type: v.employment_type || 'full_time',
+          description: v.job_description,
+        };
+      }
+    } catch (err) {
+      console.error('Failed to fetch vacancy by ID', err);
+    }
+    return null;
   },
 
   async createVacancy(data: Partial<Vacancy>): Promise<Vacancy> {
-    const newVac: Vacancy = {
-      id: 'vac-' + Math.random().toString(36).substring(2, 8),
-      title: data.title || 'Untitled Vacancy',
-      dept: data.dept || 'Engineering',
-      openings: Number(data.openings) || 1,
+    const res = await api.post('/vacancies', {
+      title: data.title,
+      departmentId: data.department_id,
+      experienceLevel: data.experience_level || 'senior',
+      employmentType: data.employment_type || 'full_time',
+      location: data.location || 'Remote',
+      vacancyCount: data.openings || 1,
+      jobDescription: data.description || '',
+    });
+
+    const v = res.data.vacancy;
+    return {
+      id: v.id,
+      title: v.title,
+      dept: v.department_name || data.dept || 'General',
+      openings: Number(v.vacancy_count) || 1,
       applications: 0,
       assessments: 0,
       interviews: 0,
-      status: (data.status as any) || 'published',
-      created: new Date().toISOString().split('T')[0],
-      location: data.location || 'Remote',
-      experience_level: data.experience_level || 'senior',
-      employment_type: data.employment_type || 'full_time',
-      description: data.description || '',
+      status: (v.status || 'published').toLowerCase() as Vacancy['status'],
+      created: v.created_at ? v.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+      location: v.location || 'Remote',
+      experience_level: v.experience_level,
+      employment_type: v.employment_type,
+      description: v.job_description,
     };
-
-    try {
-      await api.post('/vacancies', {
-        title: newVac.title,
-        departmentId: data.department_id || '00000000-0000-0000-0000-000000000001',
-        experienceLevel: newVac.experience_level,
-        employmentType: newVac.employment_type,
-        location: newVac.location,
-        vacancyCount: newVac.openings,
-        jobDescription: newVac.description,
-      });
-    } catch {
-      // saved locally
-    }
-
-    const current = getStored<Vacancy[]>('genuai_vacancies', DEFAULT_VACANCIES);
-    const updated = [newVac, ...current];
-    setStored('genuai_vacancies', updated);
-    return newVac;
   },
 
   async updateVacancyStatus(id: string, status: Vacancy['status']): Promise<void> {
-    try {
-      await api.patch(`/vacancies/${id}/status`, { status });
-    } catch {
-      // offline fallback
-    }
-    const current = getStored<Vacancy[]>('genuai_vacancies', DEFAULT_VACANCIES);
-    const updated = current.map(v => v.id === id ? { ...v, status } : v);
-    setStored('genuai_vacancies', updated);
+    await api.patch(`/vacancies/${id}/status`, { status });
   },
 
   // ==================== CANDIDATES ====================
   async getCandidates(vacancyId?: string): Promise<Candidate[]> {
     try {
-      const res = await api.get('/candidates', { params: { vacancyId } });
-      if (res.data?.candidates && res.data.candidates.length > 0) {
-        const mapped = res.data.candidates.map((c: any) => ({
-          id: c.id,
-          name: `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.name || 'Candidate',
+      const params: Record<string, string> = {};
+      if (vacancyId) params.vacancy = vacancyId;
+      const res = await api.get('/candidates', { params });
+      if (res.data?.candidates) {
+        return res.data.candidates.map((c: any) => ({
+          id: c.application_id || c.id,
+          name: `${c.first_name || ''} ${c.last_name || ''}`.trim() || 'Candidate',
           email: c.email,
-          vacancy: c.role_title || 'Software Developer',
-          vacancyId: c.role_id,
-          stage: c.stage || 'Applied',
-          score: c.score !== undefined ? c.score : null,
-          evidence: c.evidence_count ? `${c.evidence_count}/5` : '—',
-          integrity: c.integrity_status || 'clear',
-          date: c.applied_at ? c.applied_at.split('T')[0] : '2026-09-22',
+          vacancy: c.vacancy_title || c.role_title || 'Open Role',
+          vacancyId: c.vacancy_id || c.role_id,
+          stage: c.status || c.stage || 'Applied',
+          score: c.overall_score !== undefined && c.overall_score !== null ? Number(c.overall_score) : null,
+          evidence: c.supporting_evidence !== undefined
+            ? `${c.supporting_evidence}/${c.total_requirements || 5}`
+            : '—',
+          integrity: c.integrity_flags > 0 ? 'signals' : 'clear',
+          date: c.applied_at ? c.applied_at.split('T')[0] : new Date().toISOString().split('T')[0],
           phone: c.phone,
           notes: c.notes,
         }));
-        setStored('genuai_candidates', mapped);
-        return mapped;
       }
-    } catch {
-      // fallback
+    } catch (err) {
+      console.error('Failed to fetch candidates', err);
     }
-    const current = getStored<Candidate[]>('genuai_candidates', DEFAULT_CANDIDATES);
-    if (vacancyId) {
-      return current.filter(c => c.vacancyId === vacancyId || c.vacancy === vacancyId);
-    }
-    return current;
+    return [];
   },
 
   async updateCandidateStage(id: string, stage: Candidate['stage']): Promise<void> {
-    try {
-      await api.patch(`/candidates/${id}/stage`, { stage });
-    } catch {
-      // offline fallback
-    }
-    const current = getStored<Candidate[]>('genuai_candidates', DEFAULT_CANDIDATES);
-    const updated = current.map(c => c.id === id ? { ...c, stage } : c);
-    setStored('genuai_candidates', updated);
+    await api.patch(`/candidates/${id}/status`, { status: stage });
   },
 
   // ==================== INTEGRITY ====================
   async getIntegrityRecords(): Promise<IntegrityRecord[]> {
     try {
-      const res = await api.get('/integrity/signals');
-      if (res.data?.signals && res.data.signals.length > 0) {
-        return res.data.signals;
+      const res = await api.get('/integrity');
+      if (res.data?.signals) {
+        return res.data.signals.map((s: any) => ({
+          id: s.id,
+          incidentId: s.id,
+          name: `${s.first_name || ''} ${s.last_name || ''}`.trim() || 'Candidate',
+          candidateId: s.application_id,
+          vacancy: s.vacancy_title || 'Open Role',
+          assessmentDate: s.signal_time ? s.signal_time.split('T')[0] : '',
+          assessmentId: s.assessment_id || 'N/A',
+          signals: [{
+            type: s.signal_type || 'Unknown Signal',
+            count: 1,
+            severity: (s.severity || 'low').toLowerCase() as 'none' | 'low' | 'medium' | 'high',
+            context: s.context,
+          }],
+          reviewStatus: s.status === 'New' ? 'Unreviewed'
+            : s.status === 'Acknowledged' ? 'Reviewed'
+            : s.status === 'Dismissed' ? 'Dismissed'
+            : 'Unreviewed',
+          reviewedBy: s.reviewer_first ? `${s.reviewer_first} ${s.reviewer_last}` : undefined,
+          reviewedAt: s.reviewed_at,
+          reviewNote: s.review_note,
+        }));
       }
-    } catch {
-      // fallback
+    } catch (err) {
+      console.error('Failed to fetch integrity records', err);
     }
-    return getStored<IntegrityRecord[]>('genuai_integrity', DEFAULT_INTEGRITY);
+    return [];
   },
 
   async updateIntegrityStatus(id: string, reviewStatus: IntegrityRecord['reviewStatus'], note?: string): Promise<void> {
-    const current = getStored<IntegrityRecord[]>('genuai_integrity', DEFAULT_INTEGRITY);
-    const updated = current.map(r => r.id === id ? {
-      ...r,
-      reviewStatus,
-      reviewedBy: 'Authorized Reviewer',
-      reviewedAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
-      reviewNote: note || r.reviewNote || 'Review decision recorded.'
-    } : r);
-    setStored('genuai_integrity', updated);
+    const statusMap: Record<string, string> = {
+      'Reviewed': 'Acknowledged',
+      'Dismissed': 'Dismissed',
+      'Escalated': 'Under Review',
+      'Unreviewed': 'New',
+    };
+    await api.patch(`/integrity/${id}`, {
+      status: statusMap[reviewStatus] || reviewStatus,
+      reviewNote: note,
+    });
   },
 
   // ==================== INTERVIEWS ====================
   async getInterviews(): Promise<InterviewRecord[]> {
     try {
       const res = await api.get('/interviews');
-      if (res.data?.interviews && res.data.interviews.length > 0) {
-        return res.data.interviews;
+      if (res.data?.interviews) {
+        return res.data.interviews.map((i: any) => ({
+          id: i.id,
+          candidateName: `${i.candidate_first || ''} ${i.candidate_last || ''}`.trim() || 'Candidate',
+          candidateId: i.application_id,
+          vacancy: i.vacancy_title || 'Open Role',
+          vacancyId: i.role_id || '',
+          interviewer: i.interviewer_first
+            ? `${i.interviewer_first} ${i.interviewer_last}`
+            : 'Unassigned',
+          interviewerRole: i.interview_type || 'Technical Interviewer',
+          date: i.scheduled_at ? i.scheduled_at.split('T')[0] : '',
+          time: i.scheduled_at
+            ? new Date(i.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' UTC'
+            : '',
+          type: (i.interview_type as InterviewRecord['type']) || 'Technical Interview',
+          status: (i.status as InterviewRecord['status']) || 'Scheduled',
+          meetingLink: i.video_link,
+          score: i.overall_score !== null ? Number(i.overall_score) : undefined,
+          notes: i.notes,
+        }));
       }
-    } catch {
-      // fallback
+    } catch (err) {
+      console.error('Failed to fetch interviews', err);
     }
-    return getStored<InterviewRecord[]>('genuai_interviews', DEFAULT_INTERVIEWS);
+    return [];
   },
 
-  async scheduleInterview(data: Partial<InterviewRecord>): Promise<InterviewRecord> {
-    const newInt: InterviewRecord = {
-      id: 'int-' + Math.random().toString(36).substring(2, 8),
-      candidateName: data.candidateName || 'Candidate',
-      candidateId: data.candidateId || 'cand-1',
-      vacancy: data.vacancy || 'Senior Backend Engineer',
-      vacancyId: data.vacancyId || 'vac-1',
-      interviewer: data.interviewer || 'Hiring Lead',
-      interviewerRole: data.interviewerRole || 'Technical Reviewer',
-      date: data.date || new Date().toISOString().split('T')[0],
-      time: data.time || '14:00 - 15:00 UTC',
-      type: data.type || 'Technical Interview',
-      status: 'Scheduled',
-      meetingLink: data.meetingLink || 'https://meet.genuai.tech/room-' + Math.floor(100 + Math.random() * 900),
-      notes: data.notes || '',
-    };
-    const current = getStored<InterviewRecord[]>('genuai_interviews', DEFAULT_INTERVIEWS);
-    const updated = [newInt, ...current];
-    setStored('genuai_interviews', updated);
-    return newInt;
-  }
+  async scheduleInterview(data: Partial<InterviewRecord>): Promise<void> {
+    await api.post(`/candidates/${data.candidateId}/interviews`, {
+      scheduledAt: `${data.date}T${data.time?.split(' ')[0] || '14:00'}:00Z`,
+      durationMins: 60,
+      videoLink: data.meetingLink,
+      interviewType: data.type || 'Technical Interview',
+    });
+  },
 };

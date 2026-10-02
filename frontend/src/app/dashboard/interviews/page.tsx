@@ -19,9 +19,10 @@ export default function InterviewsPage() {
 
   // Form state
   const [formCandidate, setFormCandidate] = useState('');
+  const [formCandidateId, setFormCandidateId] = useState('');
   const [formVacancy, setFormVacancy] = useState('');
-  const [formInterviewer, setFormInterviewer] = useState('Alex Mercer (Lead Architect)');
-  const [formDate, setFormDate] = useState('2026-10-04');
+  const [formInterviewer, setFormInterviewer] = useState('');
+  const [formDate, setFormDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [formTime, setFormTime] = useState('14:00 - 15:00 UTC');
   const [formType, setFormType] = useState<InterviewRecord['type']>('Technical Interview');
   const [formNotes, setFormNotes] = useState('');
@@ -37,6 +38,7 @@ export default function InterviewsPage() {
     setVacancies(vData);
     if (cData.length > 0 && !formCandidate) {
       setFormCandidate(cData[0].name);
+      setFormCandidateId(cData[0].id);
       setFormVacancy(cData[0].vacancy);
     }
   };
@@ -47,23 +49,28 @@ export default function InterviewsPage() {
 
   const handleSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formCandidate) {
-      toast.error('Candidate is required');
+    if (!formCandidateId) {
+      toast.error('Please select a candidate');
       return;
     }
-    await DataService.scheduleInterview({
-      candidateName: formCandidate,
-      vacancy: formVacancy || 'Senior Backend Engineer',
-      interviewer: formInterviewer,
-      date: formDate,
-      time: formTime,
-      type: formType,
-      notes: formNotes,
-    });
-    toast.success('Interview scheduled with automated calendar invite');
-    setIsScheduleOpen(false);
-    setFormNotes('');
-    await loadData();
+    try {
+      await DataService.scheduleInterview({
+        candidateName: formCandidate,
+        candidateId: formCandidateId,
+        vacancy: formVacancy,
+        interviewer: formInterviewer,
+        date: formDate,
+        time: formTime,
+        type: formType,
+        notes: formNotes,
+      });
+      toast.success('Interview scheduled successfully');
+      setIsScheduleOpen(false);
+      setFormNotes('');
+      await loadData();
+    } catch {
+      toast.error('Failed to schedule interview');
+    }
   };
 
   const filtered = interviews.filter(i => {
@@ -217,16 +224,22 @@ export default function InterviewsPage() {
                 <div className="form-group">
                   <label className="form-label">Candidate *</label>
                   <select
-                    value={formCandidate}
+                    value={formCandidateId}
                     onChange={e => {
-                      setFormCandidate(e.target.value);
-                      const c = candidates.find(item => item.name === e.target.value);
-                      if (c) setFormVacancy(c.vacancy);
+                      const c = candidates.find(item => item.id === e.target.value);
+                      if (c) {
+                        setFormCandidateId(c.id);
+                        setFormCandidate(c.name);
+                        setFormVacancy(c.vacancy);
+                      }
                     }}
                     className="form-select"
                   >
+                    {candidates.length === 0 && (
+                      <option value="">No candidates available</option>
+                    )}
                     {candidates.map(c => (
-                      <option key={c.id} value={c.name}>{c.name} ({c.vacancy})</option>
+                      <option key={c.id} value={c.id}>{c.name} — {c.vacancy}</option>
                     ))}
                   </select>
                 </div>

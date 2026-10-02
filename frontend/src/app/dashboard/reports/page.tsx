@@ -10,31 +10,13 @@ import {
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 
-// ─── Mock Data (used when backend is offline) ─────────────────────────
-const MOCK_OVERVIEW = {
-  vacancies: { total_vacancies: 6, active: 3, draft: 2, under_review: 1, closed: 0 },
-  pipeline: { total_applications: 157, applied: 45, assessed: 31, interview: 8, selected: 12, rejected: 19, avg_score: 81.4 },
-  evidence: { total_evidence: 612, supporting: 498, limited: 72, gap: 42, coverage_pct: 81.4 },
-  integrity: { total_signals: 18, new_signals: 4, high_severity: 2 },
+// ─── Empty fallback overview data ─────────────────────────────────────
+const EMPTY_OVERVIEW = {
+  vacancies: { total_vacancies: 0, active: 0, draft: 0, under_review: 0, closed: 0 },
+  pipeline: { total_applications: 0, applied: 0, assessed: 0, interview: 0, selected: 0, rejected: 0, avg_score: null },
+  evidence: { total_evidence: 0, supporting: 0, limited: 0, gap: 0, coverage_pct: 0 },
+  integrity: { total_signals: 0, new_signals: 0, high_severity: 0 },
 };
-
-const MOCK_VACANCY_REPORTS = [
-  { id: 'v1', title: 'Senior Software Developer', dept: 'Engineering', status: 'ACTIVE', apps: 45, avg_score: 84.2, coverage: 91, integrity: 98 },
-  { id: 'v2', title: 'Product Designer', dept: 'Design', status: 'ACTIVE', apps: 28, avg_score: 78.1, coverage: 87, integrity: 100 },
-  { id: 'v3', title: 'Data Analyst', dept: 'Analytics', status: 'UNDER_REVIEW', apps: 19, avg_score: null, coverage: 0, integrity: 100 },
-  { id: 'v4', title: 'DevOps Engineer', dept: 'Infrastructure', status: 'ACTIVE', apps: 34, avg_score: 88.5, coverage: 93, integrity: 96 },
-  { id: 'v5', title: 'QA Engineer', dept: 'Engineering', status: 'ACTIVE', apps: 12, avg_score: 76.3, coverage: 84, integrity: 100 },
-];
-
-const MOCK_SCORE_DIST = [
-  { range: '90-100', count: 12 }, { range: '80-89', count: 31 }, { range: '70-79', count: 28 },
-  { range: '60-69', count: 11 }, { range: 'Below 60', count: 8 },
-];
-
-const MOCK_PIPELINE = [
-  { status: 'Applied', count: 45 }, { status: 'Eligible', count: 38 }, { status: 'Verified', count: 31 },
-  { status: 'Assessed', count: 28 }, { status: 'Interview', count: 8 }, { status: 'Selected', count: 12 },
-];
 
 // ─── Simple Bar Component ─────────────────────────────────────────────
 function Bar({ value, max, color }: { value: number; max: number; color: string }) {
@@ -66,7 +48,7 @@ function DonutRing({ pct, color, label }: { pct: number; color: string; label: s
 }
 
 export default function ReportsPage() {
-  const [overview, setOverview] = useState(MOCK_OVERVIEW);
+  const [overview, setOverview] = useState(EMPTY_OVERVIEW);
   const [activeTab, setActiveTab] = useState<'overview' | 'vacancy' | 'evidence' | 'integrity'>('overview');
   const [dateRange, setDateRange] = useState('30d');
   const [isLoading, setIsLoading] = useState(false);
@@ -74,14 +56,23 @@ export default function ReportsPage() {
   useEffect(() => {
     setIsLoading(true);
     api.get('/reports/overview')
-      .then(r => setOverview(r.data))
-      .catch(() => {}) // fallback to mock
+      .then(r => { if (r.data) setOverview(r.data); })
+      .catch(() => {}) // fallback to empty
       .finally(() => setIsLoading(false));
   }, []);
 
   const { vacancies: vs, pipeline: pl, evidence: ev, integrity: ig } = overview;
-  const maxPipelineCount = Math.max(...MOCK_PIPELINE.map(p => p.count));
-  const maxScoreCount = Math.max(...MOCK_SCORE_DIST.map(d => d.count));
+
+  // Build pipeline funnel from real data
+  const pipelineItems = [
+    { status: 'Applied', count: Number(pl.applied) || 0 },
+    { status: 'Assessed', count: Number(pl.assessed) || 0 },
+    { status: 'Interview', count: Number(pl.interview) || 0 },
+    { status: 'Selected', count: Number(pl.selected) || 0 },
+  ].filter(p => p.count > 0);
+  const maxPipelineCount = Math.max(...pipelineItems.map(p => p.count), 1);
+
+  const totalAssessed = Number(pl.assessed) || 0;
 
   return (
     <div className="page-content">
@@ -197,38 +188,45 @@ export default function ReportsPage() {
               <div className="card-title">Candidate Pipeline Funnel</div>
               <span className="badge badge-blue">All Vacancies</span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {MOCK_PIPELINE.map((p, i) => (
-                <div key={p.status} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 90, fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>{p.status}</div>
-                  <Bar value={p.count} max={maxPipelineCount} color={['#4059aa','#2563eb','#7c3aed','#059669','#d97706','#16a34a'][i]} />
-                  <div style={{ width: 32, fontSize: 13, fontWeight: 700, textAlign: 'right', color: 'var(--text-primary)' }}>{p.count}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)' }}>
-              Conversion rate: <strong style={{ color: 'var(--success)' }}>26.7%</strong> (Applied → Selected)
-            </div>
+            {pipelineItems.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)', fontSize: 13 }}>
+                No pipeline data yet. Applications will appear here once candidates apply.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {pipelineItems.map((p, i) => (
+                  <div key={p.status} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 90, fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>{p.status}</div>
+                    <Bar value={p.count} max={maxPipelineCount} color={['#4059aa','#2563eb','#7c3aed','#059669','#d97706','#16a34a'][i]} />
+                    <div style={{ width: 32, fontSize: 13, fontWeight: 700, textAlign: 'right', color: 'var(--text-primary)' }}>{p.count}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {Number(pl.total_applications) > 0 && Number(pl.selected) > 0 && (
+              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)' }}>
+                Conversion rate: <strong style={{ color: 'var(--success)' }}>
+                  {Math.round((Number(pl.selected) / Number(pl.total_applications)) * 100)}%
+                </strong> (Applied → Selected)
+              </div>
+            )}
           </div>
 
           {/* Score Distribution */}
           <div className="card" style={{ padding: 24 }}>
             <div className="card-header" style={{ marginBottom: 20 }}>
               <div className="card-title">Assessment Score Distribution</div>
-              <span className="badge badge-green">90 Completed</span>
+              <span className="badge badge-green">{totalAssessed > 0 ? `${totalAssessed} Completed` : 'No Data'}</span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {MOCK_SCORE_DIST.map((d, i) => (
-                <div key={d.range} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 72, fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{d.range}</div>
-                  <Bar value={d.count} max={maxScoreCount} color={['#059669','#16a34a','#d97706','#ea580c','#dc2626'][i]} />
-                  <div style={{ width: 28, fontSize: 13, fontWeight: 700, textAlign: 'right', color: 'var(--text-primary)' }}>{d.count}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)' }}>
-              Pass rate (&ge;70): <strong style={{ color: 'var(--success)' }}>78.9%</strong>
-            </div>
+            {totalAssessed === 0 ? (
+              <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)', fontSize: 13 }}>
+                No completed assessments yet.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0' }}>
+                <DonutRing pct={Number(ev.coverage_pct) || 0} color="#059669" label="Coverage" />
+              </div>
+            )}
           </div>
 
           {/* Evidence Quality Rings */}
@@ -287,63 +285,12 @@ export default function ReportsPage() {
 
       {/* ── VACANCY REPORTS TAB ── */}
       {activeTab === 'vacancy' && (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Vacancy</th>
-                <th>Department</th>
-                <th>Status</th>
-                <th>Applications</th>
-                <th>Avg Score</th>
-                <th>Evidence Coverage</th>
-                <th>Integrity</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {MOCK_VACANCY_REPORTS.map(v => (
-                <tr key={v.id}>
-                  <td>
-                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 13.5 }}>{v.title}</div>
-                  </td>
-                  <td className="td-muted font-medium">{v.dept}</td>
-                  <td>
-                    <span className={`badge ${v.status === 'ACTIVE' ? 'badge-published' : v.status === 'UNDER_REVIEW' ? 'badge-pending' : 'badge-gray'}`}>
-                      {v.status.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="td-mono font-semibold">{v.apps}</td>
-                  <td>
-                    {v.avg_score ? (
-                      <span style={{ fontWeight: 700, color: v.avg_score >= 80 ? 'var(--success)' : v.avg_score >= 70 ? 'var(--warning)' : 'var(--danger)' }}>
-                        {v.avg_score.toFixed(1)}%
-                      </span>
-                    ) : <span className="td-muted">—</span>}
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Bar value={v.coverage} max={100} color={v.coverage >= 85 ? '#059669' : v.coverage >= 70 ? '#d97706' : '#dc2626'} />
-                      <span style={{ fontSize: 12, fontWeight: 700, minWidth: 30 }}>{v.coverage}%</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span style={{ fontWeight: 700, color: v.integrity >= 98 ? 'var(--success)' : 'var(--warning)' }}>{v.integrity}%</span>
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div className="flex justify-end gap-2">
-                      <button className="btn btn-ghost btn-sm btn-icon" title="View Candidates">
-                        <Eye size={14} />
-                      </button>
-                      <button className="btn btn-gold btn-sm">
-                        <Download size={13} /> Export
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div style={{ textAlign: 'center', padding: '48px 0' }} className="card">
+          <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+            <Briefcase size={32} style={{ margin: '0 auto 12px', opacity: 0.3, display: 'block' }} />
+            Vacancy-level report generation requires selecting a specific vacancy.<br />
+            <Link href="/dashboard/vacancies" className="btn btn-secondary btn-sm" style={{ marginTop: 12 }}>Browse Vacancies →</Link>
+          </div>
         </div>
       )}
 
@@ -351,35 +298,33 @@ export default function ReportsPage() {
       {activeTab === 'evidence' && (
         <div className="card" style={{ padding: 24 }}>
           <div className="card-header" style={{ marginBottom: 20 }}>
-            <div className="card-title">Requirement Evidence Coverage</div>
-            <span className="badge badge-green">Across all vacancies</span>
+            <div className="card-title">Evidence Coverage Summary</div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {[
-              { name: 'Java Core & OOP', category: 'Technical', pct: 94, supporting: 42, limited: 2, gap: 1 },
-              { name: 'Data Structures & Algorithms', category: 'Technical', pct: 88, supporting: 39, limited: 4, gap: 2 },
-              { name: 'PostgreSQL & SQL Design', category: 'Technical', pct: 79, supporting: 35, limited: 5, gap: 5 },
-              { name: 'Verbal & Technical Communication', category: 'Communication', pct: 72, supporting: 32, limited: 8, gap: 5 },
-              { name: 'Analytical Thinking', category: 'Problem Solving', pct: 91, supporting: 41, limited: 2, gap: 2 },
-              { name: 'AWS Cloud Architecture', category: 'Infrastructure', pct: 61, supporting: 27, limited: 6, gap: 12 },
-            ].map(req => (
-              <div key={req.name} style={{ padding: '12px 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-container-lowest)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <div>
-                    <span style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text-primary)' }}>{req.name}</span>
-                    <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>{req.category}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 12, fontSize: 12, fontWeight: 600 }}>
-                    <span style={{ color: 'var(--success)' }}>✓ {req.supporting}</span>
-                    <span style={{ color: 'var(--warning)' }}>~ {req.limited}</span>
-                    <span style={{ color: 'var(--danger)' }}>✗ {req.gap}</span>
-                    <span style={{ color: req.pct >= 85 ? 'var(--success)' : req.pct >= 70 ? 'var(--warning)' : 'var(--danger)', fontWeight: 800, minWidth: 34 }}>{req.pct}%</span>
-                  </div>
+          {Number(ev.total_evidence) === 0 ? (
+            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)', fontSize: 13 }}>
+              No evidence records yet. Evidence is collected automatically as candidates complete assessments.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', flexWrap: 'wrap', gap: 24 }}>
+              <DonutRing pct={Number(ev.coverage_pct) || 0} color="#059669" label="Coverage" />
+              <DonutRing pct={Math.round((Number(ev.supporting) / (Number(ev.total_evidence) || 1)) * 100)} color="#2563eb" label="Supporting" />
+              <DonutRing pct={Math.round((1 - Number(ev.gap) / (Number(ev.total_evidence) || 1)) * 100)} color="#d4af37" label="No Gaps" />
+              <div style={{ display: 'flex', gap: 16, fontSize: 13 }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontWeight: 800, fontSize: 20, color: 'var(--success)' }}>{ev.supporting}</div>
+                  <div style={{ color: 'var(--text-muted)' }}>Supporting</div>
                 </div>
-                <Bar value={req.pct} max={100} color={req.pct >= 85 ? '#059669' : req.pct >= 70 ? '#d97706' : '#dc2626'} />
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontWeight: 800, fontSize: 20, color: 'var(--warning)' }}>{ev.limited}</div>
+                  <div style={{ color: 'var(--text-muted)' }}>Limited</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontWeight: 800, fontSize: 20, color: 'var(--danger)' }}>{ev.gap}</div>
+                  <div style={{ color: 'var(--text-muted)' }}>Gaps</div>
+                </div>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -427,63 +372,22 @@ export default function ReportsPage() {
         <div className="card" style={{ marginTop: 24 }}>
           <div className="card-header" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
             <div className="card-title">Generated Reports</div>
-            <button className="btn btn-gold btn-sm">
+            <button className="btn btn-gold btn-sm" onClick={() => toast.success('Report generation is connected to your vacancy data. Add candidates to generate reports.')}>
               <Download size={14} /> New Report
             </button>
           </div>
-          <div className="table-wrapper" style={{ margin: 0 }}>
-            <table>
-              <thead>
-                <tr>
-                  <th>Report</th>
-                  <th>Vacancy</th>
-                  <th>Candidates</th>
-                  <th>Evidence Avg</th>
-                  <th>Integrity</th>
-                  <th>Date</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { title: 'Q4 Software Developer Summary', vacancy: 'Software Developer', candidates: 18, evidence: '94%', integrity: '98%', date: '2026-10-01' },
-                  { title: 'DevOps Engineer Evidence Audit', vacancy: 'DevOps Engineer', candidates: 6, evidence: '88%', integrity: '95%', date: '2026-09-28' },
-                  { title: 'Data Analyst Assessment Digest', vacancy: 'Data Analyst', candidates: 12, evidence: '91%', integrity: '100%', date: '2026-09-25' },
-                ].map((r, i) => (
-                  <tr key={i}>
-                    <td>
-                      <div style={{ fontWeight: 700, fontSize: 13 }}>{r.title}</div>
-                      <span className="badge badge-green" style={{ fontSize: 10, marginTop: 2 }}>
-                        <CheckCircle2 size={10} /> Verified Audit
-                      </span>
-                    </td>
-                    <td className="font-medium">{r.vacancy}</td>
-                    <td className="td-mono font-semibold">{r.candidates}</td>
-                    <td className="font-semibold" style={{ color: 'var(--success)' }}>{r.evidence}</td>
-                    <td className="font-semibold">{r.integrity}</td>
-                    <td className="td-muted">{r.date}</td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => toast.success(`Shared ${r.title} link copied to clipboard`)}
-                          className="btn btn-secondary btn-sm btn-icon"
-                          title="Share Report"
-                        >
-                          <Share2 size={13} />
-                        </button>
-                        <button
-                          onClick={() => toast.success(`Downloading PDF report: ${r.title}`)}
-                          className="btn btn-gold btn-sm"
-                        >
-                          <Download size={13} /> PDF
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {Number(pl.total_applications) === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)', fontSize: 13 }}>
+              Reports are generated automatically from real candidate and assessment data.<br />
+              <span style={{ fontSize: 12, marginTop: 4, display: 'block' }}>No reports available yet — they will appear as candidates progress through the pipeline.</span>
+            </div>
+          ) : (
+            <div style={{ padding: '20px', color: 'var(--text-secondary)', fontSize: 13 }}>
+              <CheckCircle2 size={16} style={{ display: 'inline', marginRight: 6, color: 'var(--success)' }} />
+              {Number(pl.selected)} candidates selected from {Number(pl.total_applications)} total applications.
+              <Link href="/dashboard/candidates" className="btn btn-secondary btn-sm" style={{ marginLeft: 12 }}>View Pipeline →</Link>
+            </div>
+          )}
         </div>
       )}
     </div>

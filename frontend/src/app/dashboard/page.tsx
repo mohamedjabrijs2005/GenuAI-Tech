@@ -4,12 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  Briefcase, Users, ClipboardCheck, AlertTriangle, Calendar,
-  CheckCircle, ChevronRight, TrendingUp, ShieldAlert, Search,
-  Sparkles, FileCheck, ShieldCheck, Play, ArrowUpRight, Filter,
-  Terminal, Cpu, Clock, Check, Eye, MoreHorizontal,
-  Download, Plus, RefreshCw, X, Award, BarChart3, Building2,
-  FolderPlus, AlertCircle, Layers, ArrowRight
+  Briefcase, Users, ShieldCheck, Search,
+  Sparkles, FileCheck, Plus, RefreshCw, X, BarChart3, Building2, Eye
 } from 'lucide-react';
 import api from '@/lib/api';
 import { DataService, Vacancy } from '@/lib/dataService';
@@ -46,6 +42,7 @@ export default function DashboardPage() {
   const [formLocation, setFormLocation] = useState<string>('Remote / Hybrid');
   const [formVacancyCount, setFormVacancyCount] = useState<number>(1);
   const [formDesc, setFormDesc] = useState<string>('');
+  const [formDeptId, setFormDeptId] = useState<string>('');
 
   // Fetch real data dynamically
   const fetchData = async () => {
@@ -61,14 +58,7 @@ export default function DashboardPage() {
 
       if (deptsRes?.data?.departments && deptsRes.data.departments.length > 0) {
         setDepartments(deptsRes.data.departments);
-      } else {
-        const defaultDepts: Department[] = [
-          { id: 'dept-eng', name: 'Engineering', description: 'Distributed systems, backend services, and platform engineering' },
-          { id: 'dept-cloud', name: 'Infrastructure & SRE', description: 'Kubernetes, multi-region CI/CD, and site reliability' },
-          { id: 'dept-data', name: 'Data & AI', description: 'Real-time streaming pipelines, Kafka, and data platforms' },
-          { id: 'dept-prod', name: 'Product Design', description: 'Product design, design systems, and UX research' },
-        ];
-        setDepartments(defaultDepts);
+        setFormDeptId(deptsRes.data.departments[0]?.id || '');
       }
     } catch (err) {
       console.error('Failed to load dashboard data', err);
@@ -117,9 +107,11 @@ export default function DashboardPage() {
 
     setIsSubmitting(true);
     try {
+      const selectedDept = departments.find(d => d.id === formDeptId);
       await DataService.createVacancy({
         title: formTitle.trim(),
-        dept: formDept,
+        dept: selectedDept?.name || 'Engineering',
+        department_id: formDeptId || undefined,
         experience_level: formExpLevel,
         employment_type: formEmpType,
         location: formLocation.trim() || 'Remote',
@@ -273,7 +265,7 @@ export default function DashboardPage() {
             <div
               className="stitch-stat-progress-bar"
               style={{
-                width: '85%',
+                width: candidateCount > 0 ? `${Math.min(100, Math.round((candidateCount / Math.max(totalApplications, 1)) * 100))}%` : '0%',
                 background: '#059669',
               }}
             />
@@ -308,7 +300,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Card 4: Evidence Pipeline */}
+        {/* Card 4: Evidence & Integrity */}
         <div className="stitch-stat-card">
           <div className="stitch-stat-header">
             <span className="stitch-stat-title">Evidence & Integrity</span>
@@ -317,7 +309,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="stitch-stat-value">
-            100% Verified
+            {candidateCount > 0 ? `${candidateCount} Tracked` : 'No Data'}
           </div>
           <div className="stitch-stat-footer">
             <span>Multi-modal sandboxed</span>
@@ -329,7 +321,7 @@ export default function DashboardPage() {
             <div
               className="stitch-stat-progress-bar"
               style={{
-                width: '100%',
+                width: candidateCount > 0 ? '100%' : '0%',
                 background: '#d97706',
               }}
             />
@@ -711,12 +703,15 @@ export default function DashboardPage() {
                   <div className="form-group">
                     <label className="form-label">Department *</label>
                     <select
-                      value={formDept}
-                      onChange={(e) => setFormDept(e.target.value)}
+                      value={formDeptId}
+                      onChange={(e) => setFormDeptId(e.target.value)}
                       className="form-select"
                     >
+                      {departments.length === 0 && (
+                        <option value="">No departments available</option>
+                      )}
                       {departments.map((d) => (
-                        <option key={d.id} value={d.name}>{d.name}</option>
+                        <option key={d.id} value={d.id}>{d.name}</option>
                       ))}
                     </select>
                   </div>
