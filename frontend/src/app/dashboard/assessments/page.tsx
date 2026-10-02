@@ -1,143 +1,155 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import {
-  ClipboardList, CheckCircle2, AlertTriangle, Info, ChevronDown, ChevronUp,
-  Lock, Eye, Plus, BarChart2, Users, Calendar, Zap, Sparkles, X
+  ClipboardList, ChevronDown, ChevronUp,
+  Plus, X, BookOpen, Target, Shield, Clock
 } from 'lucide-react';
 import { DataService, Vacancy } from '@/lib/dataService';
 import toast from 'react-hot-toast';
 
-interface AssessmentGroup {
+interface EvaluationModule {
+  id: string;
+  name: string;
+  requirement: string;
+  questions: number;
+  avgScore: string;
+}
+
+interface Assessment {
   id: string;
   name: string;
   vacancy: string;
+  vacancyId: string;
   status: 'Active' | 'Draft';
   version: string;
-  type: string;
+  competencyArea: string;
+  assessmentType: string;
   duration: string;
-  questionCount: number;
   difficulty: string;
+  questionCount: number;
   integrity: string;
-  evaluationGroups: {
-    id: string;
-    name: string;
-    requirement: string;
-    questions: number;
-    avgScore: string;
-  }[];
+  modules: EvaluationModule[];
 }
+
+const ASSESSMENT_TYPES = [
+  'Technical Skills Test',
+  'Competency-Based Interview',
+  'Situational Judgement Test',
+  'Cognitive Ability Test',
+  'Personality & Values Assessment',
+  'Work Sample / Portfolio Review',
+  'Case Study',
+  'Role Play Simulation',
+];
+
+const COMPETENCY_AREAS = [
+  'Technical / Domain Knowledge',
+  'Problem Solving & Analytical Thinking',
+  'Communication & Interpersonal Skills',
+  'Leadership & Decision Making',
+  'Teamwork & Collaboration',
+  'Adaptability & Resilience',
+  'Customer Focus & Service Orientation',
+  'Innovation & Creativity',
+  'Planning & Organising',
+  'Integrity & Ethics',
+];
+
+const DIFFICULTY_LEVELS = ['Entry', 'Mid', 'Senior', 'Lead', 'Executive'];
 
 export default function AssessmentsPage() {
   const [vacancies, setVacancies] = useState<Vacancy[]>([]);
-  const [groups, setGroups] = useState<AssessmentGroup[]>([]);
-  const [expandedId, setExpandedId] = useState<string>('AG-01');
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [expandedId, setExpandedId] = useState<string>('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const [newVacancy, setNewVacancy] = useState('');
-  const [newDuration, setNewDuration] = useState('60 min');
+
+  const [formName, setFormName] = useState('');
+  const [formVacancyId, setFormVacancyId] = useState('');
+  const [formType, setFormType] = useState(ASSESSMENT_TYPES[0]);
+  const [formCompetency, setFormCompetency] = useState(COMPETENCY_AREAS[0]);
+  const [formDifficulty, setFormDifficulty] = useState('Senior');
+  const [formDuration, setFormDuration] = useState('60 min');
+  const [formRequirement, setFormRequirement] = useState('');
 
   useEffect(() => {
     async function load() {
       const vList = await DataService.getVacancies();
       setVacancies(vList);
-      const defaultGroups: AssessmentGroup[] = [
-        {
-          id: 'AG-01',
-          name: 'Distributed Systems & Concurrency Sandbox',
-          vacancy: vList[0]?.title || 'Senior Backend Engineer',
-          status: 'Active',
-          version: 'v1.0',
-          type: 'Live Sandbox & Algorithmic Unit Tests',
-          duration: '60 min',
-          questionCount: 3,
-          difficulty: 'Hard',
-          integrity: 'Full Proctoring & Memory Sandboxing',
-          evaluationGroups: [
-            { id: 'EG-01', name: 'Lock-Free Queue Implementation', requirement: 'Concurrency & Go', questions: 1, avgScore: '88%' },
-            { id: 'EG-02', name: 'PostgreSQL Index Plan Optimization', requirement: 'SQL & Database Architecture', questions: 2, avgScore: '92%' },
-          ],
-        },
-        {
-          id: 'AG-02',
-          name: 'System Design & Architectural Trade-offs',
-          vacancy: vList[0]?.title || 'Senior Backend Engineer',
-          status: 'Active',
-          version: 'v1.0',
-          type: 'Interactive Architecture Simulation',
-          duration: '45 min',
-          questionCount: 2,
-          difficulty: 'Medium → Hard',
-          integrity: 'Telemetry Monitoring',
-          evaluationGroups: [
-            { id: 'EG-03', name: 'Kafka Partitioning & Idempotency', requirement: 'Event Streaming', questions: 1, avgScore: '85%' },
-            { id: 'EG-04', name: 'Zero-Trust Authentication Audit', requirement: 'Security', questions: 1, avgScore: '81%' },
-          ],
-        },
-      ];
-      setGroups(defaultGroups);
+      if (vList.length > 0) setFormVacancyId(vList[0].id);
     }
     load();
   }, []);
 
-  const handleCreateBattery = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
+  const resetForm = () => {
+    setFormName('');
+    setFormType(ASSESSMENT_TYPES[0]);
+    setFormCompetency(COMPETENCY_AREAS[0]);
+    setFormDifficulty('Senior');
+    setFormDuration('60 min');
+    setFormRequirement('');
+    if (vacancies.length > 0) setFormVacancyId(vacancies[0].id);
+  };
 
-    const newGroup: AssessmentGroup = {
-      id: 'AG-' + Math.floor(10 + Math.random() * 90),
-      name: newTitle.trim(),
-      vacancy: newVacancy || vacancies[0]?.title || 'Senior Backend Engineer',
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formName.trim()) return;
+    const vacancy = vacancies.find(v => v.id === formVacancyId);
+    const newAssessment: Assessment = {
+      id: 'AS-' + Math.floor(10 + Math.random() * 90),
+      name: formName.trim(),
+      vacancy: vacancy?.title || 'Open Role',
+      vacancyId: formVacancyId,
       status: 'Active',
       version: 'v1.0',
-      type: 'Proctored Assessment Battery',
-      duration: newDuration,
+      competencyArea: formCompetency,
+      assessmentType: formType,
+      duration: formDuration,
+      difficulty: formDifficulty,
       questionCount: 5,
-      difficulty: 'Medium → Hard',
-      integrity: 'Full Proctoring',
-      evaluationGroups: [
-        { id: 'EG-new', name: 'Core Competency Benchmark', requirement: 'Technical Requirements', questions: 5, avgScore: 'Pending' },
+      integrity: 'Proctored & Monitored',
+      modules: [
+        {
+          id: 'M-01',
+          name: formRequirement.trim() || formCompetency,
+          requirement: formRequirement.trim() || formCompetency,
+          questions: 5,
+          avgScore: 'Pending',
+        },
       ],
     };
-
-    setGroups([newGroup, ...groups]);
-    toast.success('Assessment battery created and linked to role');
+    setAssessments([newAssessment, ...assessments]);
+    toast.success('Assessment created successfully');
     setIsCreateOpen(false);
-    setNewTitle('');
+    resetForm();
   };
 
   return (
     <div className="page-content">
-      {/* Header with single primary action */}
       <div className="page-header">
         <div className="breadcrumbs">
           <span>Assessments</span>
           <span className="breadcrumb-sep">/</span>
-          <span className="breadcrumb-current">Assessment Batteries</span>
+          <span className="breadcrumb-current">Assessment Setup</span>
         </div>
         <div className="page-header-row">
           <div>
-            <h1 className="page-title">
-              Assessment Battery Configuration
-            </h1>
-            <p className="page-subtitle">Configure sandboxed evaluations, proctoring security parameters, and calibrated scoring criteria.</p>
+            <h1 className="page-title">Assessment Setup</h1>
+            <p className="page-subtitle">Define requirement-based assessments linked to your vacancies and competency framework.</p>
           </div>
           <button onClick={() => setIsCreateOpen(true)} className="btn btn-gold">
-            <Plus size={16} />
-            Create Assessment Battery
+            <Plus size={16} /> Create Assessment
           </button>
         </div>
       </div>
 
-      {/* Overview stats */}
       <div className="stats-grid" style={{ marginBottom: 24 }}>
         {[
-          { label: 'Active Assessment Suites', value: groups.length, color: 'var(--brand-light)', cardClass: 'stat-card-gold' },
-          { label: 'Average Evaluation Score', value: '86.5%', color: 'var(--success)', cardClass: 'stat-card-success' },
-          { label: 'Proctored Telemetry Integrity', value: '100% Monitored', color: 'var(--warning)', cardClass: 'stat-card-warning' },
-          { label: 'Evidence Output Hashes', value: 'SHA-256 Hashed', color: 'var(--text-muted)', cardClass: 'stat-card-brand' },
-        ].map((s) => (
+          { label: 'Total Assessments', value: assessments.length, cardClass: 'stat-card-gold' },
+          { label: 'Active Assessments', value: assessments.filter(a => a.status === 'Active').length, cardClass: 'stat-card-success' },
+          { label: 'Linked Vacancies', value: new Set(assessments.map(a => a.vacancyId)).size, cardClass: 'stat-card-warning' },
+          { label: 'Assessment Types', value: new Set(assessments.map(a => a.assessmentType)).size || '—', cardClass: 'stat-card-brand' },
+        ].map(s => (
           <div key={s.label} className={`stat-card ${s.cardClass}`} style={{ padding: '16px 20px' }}>
             <div className="stat-label">{s.label}</div>
             <div className="stat-value" style={{ fontSize: 26 }}>{s.value}</div>
@@ -145,138 +157,151 @@ export default function AssessmentsPage() {
         ))}
       </div>
 
-      {/* Assessment Groups List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {groups.map((ag) => {
-          const isExpanded = expandedId === ag.id;
-          return (
-            <div key={ag.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
-              <div
-                onClick={() => setExpandedId(isExpanded ? '' : ag.id)}
-                style={{
-                  padding: '18px 22px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  cursor: 'pointer',
-                  background: isExpanded ? '#f8fafc' : 'var(--white)',
-                  borderBottom: isExpanded ? '1px solid var(--border)' : 'none',
-                }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="avatar avatar-sm" style={{ background: '#d5e3fc', color: '#00236f' }}>
-                    <ClipboardList size={16} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span style={{ fontWeight: 700, fontSize: 14.5, color: 'var(--text-primary)' }}>{ag.name}</span>
-                      <span className="badge badge-green" style={{ fontSize: 10 }}>{ag.status}</span>
-                      <span className="badge badge-gray" style={{ fontSize: 10 }}>{ag.version}</span>
+      {assessments.length === 0 ? (
+        <div className="empty-state">
+          <ClipboardList size={40} className="empty-state-icon" />
+          <div className="empty-state-title">No assessments yet</div>
+          <div className="empty-state-text">Create your first requirement-based assessment to get started.</div>
+          <button className="btn btn-gold" onClick={() => setIsCreateOpen(true)}>
+            <Plus size={16} /> Create Assessment
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {assessments.map(a => {
+            const isExpanded = expandedId === a.id;
+            return (
+              <div key={a.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div
+                  onClick={() => setExpandedId(isExpanded ? '' : a.id)}
+                  style={{ padding: '18px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: isExpanded ? '#f8fafc' : 'var(--white)', borderBottom: isExpanded ? '1px solid var(--border)' : 'none' }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="avatar avatar-sm" style={{ background: '#d5e3fc', color: '#00236f' }}>
+                      <ClipboardList size={16} />
                     </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                      Role: <strong>{ag.vacancy}</strong> • {ag.duration} • {ag.type}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <span className="badge badge-indigo" style={{ fontSize: 11 }}>
-                    {ag.integrity}
-                  </span>
-                  {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                </div>
-              </div>
-
-              {isExpanded && (
-                <div style={{ padding: '20px 22px' }}>
-                  <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)', marginBottom: 12 }}>
-                    Evaluation Modules &amp; Sub-Competencies ({ag.evaluationGroups.length}):
-                  </div>
-                  <div className="grid-2" style={{ gap: 12 }}>
-                    {ag.evaluationGroups.map((eg) => (
-                      <div key={eg.id} style={{ padding: '14px 16px', background: '#f8fafc', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
-                        <div className="flex items-center justify-between" style={{ marginBottom: 4 }}>
-                          <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>{eg.name}</span>
-                          <span className="badge badge-green">{eg.avgScore} Avg</span>
-                        </div>
-                        <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
-                          Requirement: {eg.requirement} • {eg.questions} Question(s)
-                        </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span style={{ fontWeight: 700, fontSize: 14.5, color: 'var(--text-primary)' }}>{a.name}</span>
+                        <span className="badge badge-green" style={{ fontSize: 10 }}>{a.status}</span>
+                        <span className="badge badge-gray" style={{ fontSize: 10 }}>{a.version}</span>
                       </div>
-                    ))}
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                        Role: <strong>{a.vacancy}</strong> • {a.duration} • {a.assessmentType}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="badge badge-indigo" style={{ fontSize: 11 }}>{a.difficulty}</span>
+                    {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                   </div>
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                {isExpanded && (
+                  <div style={{ padding: '20px 22px' }}>
+                    <div className="grid-2" style={{ gap: 16, marginBottom: 20 }}>
+                      {[
+                        { icon: <BookOpen size={14} />, label: 'Competency Area', value: a.competencyArea },
+                        { icon: <Target size={14} />, label: 'Assessment Type', value: a.assessmentType },
+                        { icon: <Clock size={14} />, label: 'Duration', value: a.duration },
+                        { icon: <Shield size={14} />, label: 'Integrity', value: a.integrity },
+                      ].map(item => (
+                        <div key={item.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 16px', background: '#f8fafc', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
+                          <span style={{ color: 'var(--text-muted)', marginTop: 1 }}>{item.icon}</span>
+                          <div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{item.label}</div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{item.value}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)', marginBottom: 12 }}>
+                      Evaluation Modules ({a.modules.length}):
+                    </div>
+                    <div className="grid-2" style={{ gap: 12 }}>
+                      {a.modules.map(m => (
+                        <div key={m.id} style={{ padding: '14px 16px', background: '#f8fafc', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
+                          <div className="flex items-center justify-between" style={{ marginBottom: 4 }}>
+                            <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>{m.name}</span>
+                            <span className="badge badge-green">{m.avgScore} Avg</span>
+                          </div>
+                          <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
+                            Requirement: {m.requirement} • {m.questions} Question(s)
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
-      {/* Create Assessment Modal */}
       {isCreateOpen && (
-        <div className="modal-overlay" onClick={() => setIsCreateOpen(false)}>
-          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 520 }}>
+        <div className="modal-overlay" onClick={() => { setIsCreateOpen(false); resetForm(); }}>
+          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 560 }}>
             <div className="modal-header">
               <div>
-                <div className="modal-title">Create Assessment Battery</div>
-                <div className="modal-subtitle">Define module parameters and competency linkage</div>
+                <div className="modal-title">Create Assessment</div>
+                <div className="modal-subtitle">Link to a vacancy and define competency requirements</div>
               </div>
-              <button onClick={() => setIsCreateOpen(false)} className="btn-icon">
+              <button onClick={() => { setIsCreateOpen(false); resetForm(); }} className="btn-icon">
                 <X size={18} />
               </button>
             </div>
-
-            <form onSubmit={handleCreateBattery} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+            <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
               <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div className="form-group">
-                  <label className="form-label">Battery Name *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Distributed Concurrency & Performance Sandbox"
-                    value={newTitle}
-                    onChange={e => setNewTitle(e.target.value)}
-                    className="form-input"
-                  />
+                  <label className="form-label">Assessment Name *</label>
+                  <input type="text" required placeholder="e.g. Senior Engineer Technical Assessment" value={formName} onChange={e => setFormName(e.target.value)} className="form-input" autoFocus />
                 </div>
-
+                <div className="form-group">
+                  <label className="form-label">Target Vacancy *</label>
+                  <select value={formVacancyId} onChange={e => setFormVacancyId(e.target.value)} className="form-select" required>
+                    {vacancies.length === 0 && <option value="">No vacancies available</option>}
+                    {vacancies.map(v => <option key={v.id} value={v.id}>{v.title}</option>)}
+                  </select>
+                </div>
                 <div className="grid-2" style={{ gap: 12 }}>
                   <div className="form-group">
-                    <label className="form-label">Target Vacancy</label>
-                    <select
-                      value={newVacancy}
-                      onChange={e => setNewVacancy(e.target.value)}
-                      className="form-select"
-                    >
-                      {vacancies.map(v => (
-                        <option key={v.id} value={v.title}>{v.title}</option>
-                      ))}
+                    <label className="form-label">Assessment Type *</label>
+                    <select value={formType} onChange={e => setFormType(e.target.value)} className="form-select">
+                      {ASSESSMENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                   </div>
-
                   <div className="form-group">
                     <label className="form-label">Duration</label>
-                    <select
-                      value={newDuration}
-                      onChange={e => setNewDuration(e.target.value)}
-                      className="form-select"
-                    >
-                      <option value="30 min">30 min</option>
-                      <option value="45 min">45 min</option>
-                      <option value="60 min">60 min</option>
-                      <option value="90 min">90 min</option>
+                    <select value={formDuration} onChange={e => setFormDuration(e.target.value)} className="form-select">
+                      {['30 min','45 min','60 min','90 min','120 min'].map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
                 </div>
+                <div className="grid-2" style={{ gap: 12 }}>
+                  <div className="form-group">
+                    <label className="form-label">Competency Area *</label>
+                    <select value={formCompetency} onChange={e => setFormCompetency(e.target.value)} className="form-select">
+                      {COMPETENCY_AREAS.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Difficulty Level</label>
+                    <select value={formDifficulty} onChange={e => setFormDifficulty(e.target.value)} className="form-select">
+                      {DIFFICULTY_LEVELS.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Specific Requirement / Skill</label>
+                  <input type="text" placeholder="e.g. PostgreSQL Query Optimisation, REST API Design..." value={formRequirement} onChange={e => setFormRequirement(e.target.value)} className="form-input" />
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
+                    The specific skill or job requirement this assessment covers
+                  </span>
+                </div>
               </div>
-
               <div className="modal-footer">
-                <button type="button" onClick={() => setIsCreateOpen(false)} className="btn btn-secondary">
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-gold">
-                  Create Battery
-                </button>
+                <button type="button" onClick={() => { setIsCreateOpen(false); resetForm(); }} className="btn btn-secondary">Cancel</button>
+                <button type="submit" className="btn btn-gold">Create Assessment</button>
               </div>
             </form>
           </div>
