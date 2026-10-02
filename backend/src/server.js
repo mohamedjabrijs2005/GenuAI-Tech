@@ -20,9 +20,9 @@ const app = express();
 // ============================================================
 // Security & Parsing
 // ============================================================
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: true,
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -61,8 +61,8 @@ app.use((err, req, res, next) => {
 // Start
 // ============================================================
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`🚀 GenuAI API v2.0 running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 GenuAI API v2.0 running on http://127.0.0.1:${PORT} and http://localhost:${PORT}`);
   console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`   Routes: auth, company, departments, roles, vacancies, candidates, assessments, integrity, interviews, reports`);
 });
