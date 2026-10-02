@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Briefcase, Target, ClipboardList,
   Users, Shield, Mic2, BrainCircuit, FileCheck, Settings,
-  Bell, FileText, HandshakeIcon, LogOut, ChevronRight, Sparkles,
+  Bell, FileText, HandshakeIcon, LogOut, ChevronRight, Sparkles, ScrollText,
 } from 'lucide-react';
 
 const NAV = [
@@ -51,16 +51,17 @@ const NAV = [
     items: [
       { label: 'Notifications', href: '/dashboard/notifications', icon: Bell },
       { label: 'Recruitment Agreement', href: '/dashboard/agreement', icon: HandshakeIcon },
+      { label: 'Audit Trail', href: '/dashboard/audit', icon: ScrollText },
       { label: 'Settings', href: '/dashboard/settings', icon: Settings },
     ],
   },
 ];
 
-const MOCK_USER = { firstName: 'Sarah', lastName: 'Connor', email: 'sarah@acme.example.com', role: 'Company Admin' };
-const MOCK_COMPANY = { name: 'Acme Technologies Ltd.', verified: true };
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user, company, logout } = useAuth();
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard';
@@ -68,7 +69,11 @@ export default function Sidebar() {
     return pathname === href || (pathname.startsWith(href + '/') && href !== '/dashboard');
   };
 
-  const initials = `${MOCK_USER.firstName[0]}${MOCK_USER.lastName[0]}`;
+  const displayName = user ? `${user.firstName} ${user.lastName}` : 'Authenticated User';
+  const displayEmail = user?.email || 'user@genuai.io';
+  const companyName = company?.name || 'Company Workspace';
+  const isVerified = company?.verificationStatus === 'VERIFIED';
+  const initials = user ? `${user.firstName?.[0] || 'U'}${user.lastName?.[0] || ''}` : 'U';
 
   return (
     <aside className="sidebar" role="navigation" aria-label="Main navigation">
@@ -87,15 +92,19 @@ export default function Sidebar() {
       <div className="sidebar-workspace" style={{ padding: '10px 18px' }}>
         <div className="flex items-center justify-between" style={{ marginBottom: 2 }}>
           <span className="sidebar-workspace-label" style={{ margin: 0 }}>WORKSPACE</span>
-          {MOCK_COMPANY.verified && (
+          {isVerified ? (
             <span className="gold-badge" style={{ fontSize: 9.5, padding: '1px 6px', flexShrink: 0 }}>
               <span className="badge-dot" style={{ background: '#d4af37', width: 5, height: 5 }} />
               Verified
             </span>
+          ) : (
+            <span className="badge badge-gray" style={{ fontSize: 9.5, padding: '1px 6px', flexShrink: 0 }}>
+              {company?.verificationStatus || 'Unverified'}
+            </span>
           )}
         </div>
         <div className="sidebar-workspace-name" style={{ fontSize: 13, fontWeight: 700 }}>
-          {MOCK_COMPANY.name}
+          {companyName}
         </div>
       </div>
 
@@ -127,13 +136,13 @@ export default function Sidebar() {
       {/* User Footer */}
       <div className="sidebar-footer">
         <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', padding: '0 8px 6px' }}>
-          {MOCK_USER.role}
+          {user?.role?.replace('_', ' ') || 'Company Admin'}
         </div>
-        <div className="sidebar-user" role="button" tabIndex={0} aria-label="User menu">
+        <div className="sidebar-user" role="button" tabIndex={0} aria-label="User menu" onClick={logout}>
           <div className="user-avatar">{initials}</div>
           <div style={{ flex: 1, overflow: 'hidden' }}>
-            <div className="user-name">{MOCK_USER.firstName} {MOCK_USER.lastName}</div>
-            <div className="user-email">{MOCK_USER.email}</div>
+            <div className="user-name">{displayName}</div>
+            <div className="user-email">{displayEmail}</div>
           </div>
           <LogOut size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
         </div>
