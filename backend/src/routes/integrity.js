@@ -89,4 +89,46 @@ router.patch('/:signalId', async (req, res) => {
   }
 });
 
+// POST /api/integrity  — Create/log a new integrity signal
+router.post('/', async (req, res) => {
+  try {
+    const companyId = req.companyMembership.company_id;
+    const { applicationId, assessmentResultId, signalType, severity = 'Low', details = {} } = req.body;
+
+    if (!applicationId || !signalType) {
+      return res.status(422).json({ error: 'applicationId and signalType are required' });
+    }
+
+    const validSeverities = ['Low', 'Medium', 'High', 'Critical'];
+    const safeSeverity = validSeverities.includes(severity) ? severity : 'Low';
+
+    const insertResult = await pool.query(
+      `INSERT INTO integrity_signals (
+         application_id, assessment_result_id, company_id, signal_type, severity, details, status
+       ) VALUES ($1, $2, $3, $4, $5, $6, 'New')
+       RETURNING *`,
+      [applicationId, assessmentResultId || null, companyId, signalType, safeSeverity, JSON.stringify(details)]
+    );
+
+    if (safeSeverity === 'High' || safeSeverity === 'Critical') {
+      await pool.query(
+        `INSERT INTO audit_logs (company_id, user_id, actor_name, entity_type, entity_id, action, new_state)
+         VALUES ($1, $2, $3, 'integrity_signal', $4, 'HIGH_SEVERITY_SIGNAL_LOGGED', $5)`,
+        [
+          companyId,
+          req.user.id,
+          `${req.user.first_name || ''} ${req.user.last_name || ''}`.trim() || 'System',
+          insertResult.rows[0].id,
+          JSON.stringify({ signalType, severity: safeSeverity })
+        ]
+      ).catch(() => {});
+    }
+
+    return res.status(201).json({ signal: insertResult.rows[0] });
+  } catch (err) {
+    console.error('Create integrity signal error:', err);
+    return res.status(500).json({ error: 'Failed to create integrity signal' });
+  }
+});
+
 module.exports = router;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   User, Briefcase, Shield, FileCheck, Mic2, AlertTriangle,
@@ -17,7 +17,7 @@ const DECISION_OPTIONS = [
   { value: 'Deferred', label: 'Defer Decision', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe' },
 ];
 
-export default function RecruiterReviewPage() {
+function RecruiterReviewContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const appId = searchParams.get('appId') || '';
@@ -277,5 +277,13 @@ export default function RecruiterReviewPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RecruiterReviewPage() {
+  return (
+    <Suspense fallback={<div className="page-content" style={{ padding: 48, textAlign: 'center', color: '#94a3b8' }}>Loading review portal...</div>}>
+      <RecruiterReviewContent />
+    </Suspense>
   );
 }

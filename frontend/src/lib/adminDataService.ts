@@ -1,5 +1,6 @@
 // GenuAI Technologies - Platform Governance & Trust Center
 // Enterprise Admin Data Service & Mock Store with Audit Recording & Realtime Event Dispatcher
+import api from './api';
 
 export type AdminRole = 
   | 'Super Admin' 
@@ -475,6 +476,36 @@ class AdminDataStore {
 
   constructor() {
     this.init();
+    if (typeof window !== 'undefined') {
+      this.syncWithBackend().catch(() => {});
+    }
+  }
+
+  public async syncWithBackend(): Promise<void> {
+    try {
+      const [compRes, vacRes, userRes, auditRes] = await Promise.allSettled([
+        api.get('/admin/companies'),
+        api.get('/admin/vacancies'),
+        api.get('/admin/users'),
+        api.get('/admin/audit'),
+      ]);
+
+      if (compRes.status === 'fulfilled' && compRes.value.data?.companies?.length) {
+        this.companies = compRes.value.data.companies;
+      }
+      if (vacRes.status === 'fulfilled' && vacRes.value.data?.vacancies?.length) {
+        this.vacancies = vacRes.value.data.vacancies;
+      }
+      if (userRes.status === 'fulfilled' && userRes.value.data?.users?.length) {
+        this.users = userRes.value.data.users;
+      }
+      if (auditRes.status === 'fulfilled' && auditRes.value.data?.logs?.length) {
+        this.auditLogs = auditRes.value.data.logs;
+      }
+      this.notify();
+    } catch {
+      // Graceful fallback to cached/initial data
+    }
   }
 
   private init() {
@@ -630,6 +661,7 @@ class AdminDataStore {
     });
 
     this.persist('companies', this.companies);
+    api.put(`/admin/companies/${companyId}/status`, { status: newStatus, adminName, adminRole, note }).catch(() => {});
 
     this.logAudit({
       actor: adminName,
@@ -679,6 +711,7 @@ class AdminDataStore {
     vac.governanceNotes = note || vac.governanceNotes;
 
     this.persist('vacancies', this.vacancies);
+    api.put(`/admin/vacancies/${vacancyId}/status`, { status: newStatus, adminName, adminRole, note }).catch(() => {});
 
     this.logAudit({
       actor: adminName,
@@ -725,6 +758,7 @@ class AdminDataStore {
     asm.reviewNotes = note;
 
     this.persist('assessments', this.assessments);
+    api.put(`/admin/assessments/${assessmentId}/status`, { status: newStatus, adminName, adminRole, note }).catch(() => {});
 
     this.logAudit({
       actor: adminName,
@@ -760,6 +794,7 @@ class AdminDataStore {
     user.governanceNotes = note || user.governanceNotes;
 
     this.persist('users', this.users);
+    api.put(`/admin/users/${userId}/status`, { status: newStatus, adminName, adminRole, note }).catch(() => {});
 
     this.logAudit({
       actor: adminName,

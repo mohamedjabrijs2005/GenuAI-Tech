@@ -420,7 +420,28 @@ router.put('/users/:id/status', (req, res) => {
 // ============================================================
 // 6. AUDIT LOGS
 // ============================================================
-router.get('/audit', (req, res) => {
+router.get('/audit', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, actor_name, 'Platform User' as role, action, entity_type, entity_id, created_at as timestamp, previous_state, new_state, ip_address
+       FROM audit_logs ORDER BY created_at DESC LIMIT 200`
+    );
+    if (result.rows.length > 0) {
+      const dbLogs = result.rows.map(r => ({
+        id: r.id,
+        actor: r.actor_name || 'System / Admin',
+        role: r.role || 'Super Admin',
+        action: r.action,
+        entity: r.entity_type,
+        entityId: r.entity_id || '',
+        timestamp: r.timestamp ? new Date(r.timestamp).toISOString().replace('T', ' ').substring(0, 19) : '',
+        previousState: r.previous_state,
+        newState: r.new_state,
+        ipAddress: r.ip_address || '127.0.0.1'
+      }));
+      return res.json({ logs: [...dbLogs, ...inMemoryAuditLogs] });
+    }
+  } catch (_) {}
   res.json({ logs: inMemoryAuditLogs });
 });
 

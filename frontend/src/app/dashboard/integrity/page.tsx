@@ -5,9 +5,9 @@ import Link from 'next/link';
 import {
   AlertTriangle, Shield, Eye, CheckCircle2, X,
   FileText, Clock, ChevronDown, ShieldAlert, MonitorOff,
-  Clipboard, UserX, RefreshCw
+  Clipboard, UserX, RefreshCw, Plus
 } from 'lucide-react';
-import { DataService, IntegrityRecord } from '@/lib/dataService';
+import { DataService, IntegrityRecord, Candidate } from '@/lib/dataService';
 import toast from 'react-hot-toast';
 
 const SEVERITY_COLOR: Record<string, string> = {
@@ -32,9 +32,25 @@ export default function IntegrityPage() {
   const [reviewAction, setReviewAction] = useState<IntegrityRecord['reviewStatus']>('Reviewed');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // New Signal Modal State
+  const [showLogModal, setShowLogModal] = useState(false);
+  const [candidatesList, setCandidatesList] = useState<Candidate[]>([]);
+  const [newCandidateId, setNewCandidateId] = useState('');
+  const [newSignalType, setNewSignalType] = useState('Tab Switch / Focus Lost');
+  const [newSeverity, setNewSeverity] = useState<'Low' | 'Medium' | 'High' | 'Critical'>('Medium');
+  const [newDetails, setNewDetails] = useState('');
+  const [isLoggingSignal, setIsLoggingSignal] = useState(false);
+
   const loadData = async () => {
-    const data = await DataService.getIntegrityRecords();
+    const [data, candData] = await Promise.all([
+      DataService.getIntegrityRecords(),
+      DataService.getCandidates().catch(() => []),
+    ]);
     setRecords(data);
+    setCandidatesList(candData || []);
+    if (candData?.length && !newCandidateId) {
+      setNewCandidateId(candData[0].id);
+    }
   };
 
   useEffect(() => {
@@ -67,6 +83,31 @@ export default function IntegrityPage() {
     }
   };
 
+  const handleCreateSignal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCandidateId) {
+      toast.error('Please select an application / candidate');
+      return;
+    }
+    setIsLoggingSignal(true);
+    try {
+      await DataService.createIntegritySignal({
+        applicationId: newCandidateId,
+        signalType: newSignalType,
+        severity: newSeverity,
+        details: { context: newDetails || 'Automated assessment telemetry trigger' },
+      });
+      toast.success('Integrity telemetry event logged successfully');
+      setShowLogModal(false);
+      setNewDetails('');
+      await loadData();
+    } catch {
+      toast.error('Failed to log integrity event');
+    } finally {
+      setIsLoggingSignal(false);
+    }
+  };
+
   return (
     <div className="page-content">
       {/* Header */}
@@ -83,10 +124,16 @@ export default function IntegrityPage() {
             </h1>
             <p className="page-subtitle">Multi-modal proctoring logs, environment telemetry, and human review sign-offs.</p>
           </div>
-          <button onClick={loadData} className="btn btn-secondary btn-sm">
-            <RefreshCw size={14} />
-            <span>Sync Telemetry</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowLogModal(true)} className="btn btn-gold btn-sm">
+              <Plus size={14} />
+              <span>Log Telemetry Signal</span>
+            </button>
+            <button onClick={loadData} className="btn btn-secondary btn-sm">
+              <RefreshCw size={14} />
+              <span>Sync Telemetry</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -257,6 +304,107 @@ export default function IntegrityPage() {
                 {isSubmitting ? 'Saving...' : 'Save Audit Decision'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Log Telemetry Signal Modal */}
+      {showLogModal && (
+        <div className="modal-backdrop" onClick={() => setShowLogModal(false)}>
+          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 560 }}>
+            <div className="modal-header">
+              <div>
+                <div className="modal-title">Log Assessment Telemetry Signal</div>
+                <div className="modal-subtitle">Inject real-time integrity event into candidate assessment stream</div>
+              </div>
+              <button onClick={() => setShowLogModal(false)} className="btn-icon">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateSignal}>
+              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div className="form-group">
+                  <label className="form-label">Target Candidate / Application *</label>
+                  <select
+                    className="form-select"
+                    value={newCandidateId}
+                    onChange={e => setNewCandidateId(e.target.value)}
+                    required
+                  >
+                    {candidatesList.length === 0 ? (
+                      <option value="">No applications found</option>
+                    ) : (
+                      candidatesList.map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} — {c.vacancy} ({c.stage})
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Signal Telemetry Type *</label>
+                  <select
+                    className="form-select"
+                    value={newSignalType}
+                    onChange={e => setNewSignalType(e.target.value)}
+                  >
+                    <option value="Tab Switch / Focus Lost">Tab Switch / Focus Lost</option>
+                    <option value="Copy / Paste Outside Buffer">Copy / Paste Outside Buffer</option>
+                    <option value="Multiple Persons Detected">Multiple Persons Detected</option>
+                    <option value="Camera Feed Obscured">Camera Feed Obscured</option>
+                    <option value="Secondary Audio Source Detected">Secondary Audio Source Detected</option>
+                    <option value="Velocity Anomaly (Unusual Completion Speed)">Velocity Anomaly (Unusual Completion Speed)</option>
+                    <option value="Code Plagiarism Heuristic Match">Code Plagiarism Heuristic Match</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Severity Level *</label>
+                  <select
+                    className="form-select"
+                    value={newSeverity}
+                    onChange={e => setNewSeverity(e.target.value as any)}
+                  >
+                    <option value="Low">Low — Informational anomaly</option>
+                    <option value="Medium">Medium — Suspicious activity flag</option>
+                    <option value="High">High — Substantial breach indicator</option>
+                    <option value="Critical">Critical — Immediate review required</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Context / Technical Telemetry Details</label>
+                  <textarea
+                    rows={3}
+                    className="form-input"
+                    value={newDetails}
+                    onChange={e => setNewDetails(e.target.value)}
+                    placeholder="e.g. Switched away to external browser for 42s during SQL query section..."
+                  />
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  onClick={() => setShowLogModal(false)}
+                  className="btn btn-secondary btn-sm"
+                  disabled={isLoggingSignal}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-gold btn-sm"
+                  disabled={isLoggingSignal}
+                >
+                  {isLoggingSignal ? 'Logging Signal...' : 'Emit Telemetry Signal'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

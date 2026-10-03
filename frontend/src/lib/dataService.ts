@@ -241,6 +241,17 @@ export const DataService = {
     });
   },
 
+  async createIntegritySignal(data: {
+    applicationId: string;
+    signalType: string;
+    severity?: 'Low' | 'Medium' | 'High' | 'Critical';
+    details?: any;
+    assessmentResultId?: string;
+  }): Promise<any> {
+    const res = await api.post('/integrity', data);
+    return res.data?.signal;
+  },
+
   // ==================== INTERVIEWS ====================
   async getInterviews(): Promise<InterviewRecord[]> {
     try {

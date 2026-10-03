@@ -88,4 +88,33 @@ function requireCompany(req, res, next) {
   next();
 }
 
-module.exports = { authenticate, requireCompany };
+/**
+ * Middleware: Role-based access control (RBAC).
+ * Supports both platform roles and company membership roles.
+ */
+function requireRole(...allowedRoles) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const userRole = req.user.role;
+    const memberRole = req.companyMembership?.member_role;
+    const isAllowed = allowedRoles.includes(userRole) || (memberRole && allowedRoles.includes(memberRole));
+    if (!isAllowed) {
+      return res.status(403).json({ error: `Forbidden: Requires one of [${allowedRoles.join(', ')}]` });
+    }
+    next();
+  };
+}
+
+/**
+ * Middleware: Platform governance super-admin check.
+ */
+function requireGenuAIAdmin(req, res, next) {
+  if (req.user?.role !== 'genuai_admin') {
+    return res.status(403).json({ error: 'Forbidden: Requires GenuAI Platform Admin privilege' });
+  }
+  next();
+}
+
+module.exports = { authenticate, requireCompany, requireRole, requireGenuAIAdmin };
