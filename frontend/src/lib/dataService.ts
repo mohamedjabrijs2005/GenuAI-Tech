@@ -282,3 +282,135 @@ export const DataService = {
     });
   },
 };
+
+// ==================== EVIDENCE ENGINE ====================
+
+export interface Requirement {
+  id: string;
+  name: string;
+  description?: string;
+  category: string;
+  req_type: 'Required' | 'Preferred';
+  priority: 'High' | 'Medium' | 'Low';
+  proficiency: string;
+  eval_method: string;
+  req_status: 'AI Suggestion' | 'Under Review' | 'Confirmed' | 'Archived';
+  suggestion_source?: string;
+  vacancy_version_id?: string;
+}
+
+export interface EvidenceRecord {
+  id: string;
+  requirement_id: string;
+  requirement_name?: string;
+  status: 'Pending' | 'Supporting' | 'Limited' | 'Gap' | 'Not Applicable';
+  source_type: string;
+  score?: number;
+  notes?: string;
+  eval_group_name?: string;
+  updated_at?: string;
+}
+
+export interface CoverageMatrix {
+  requirement: Requirement;
+  evidence: EvidenceRecord | null;
+  coverage_status: string;
+}
+
+export interface CoverageSnapshot {
+  total_requirements: number;
+  supporting_count: number;
+  pending_count: number;
+  limited_count: number;
+  gap_count: number;
+  na_count: number;
+  coverage_pct: number;
+  computed_at: string;
+}
+
+export interface VacancyVersion {
+  id: string;
+  role_id: string;
+  version_number: number;
+  status: string;
+  change_summary?: string;
+  published_at?: string;
+  created_at: string;
+  first_name?: string;
+  last_name?: string;
+  application_count?: number;
+}
+
+export const EvidenceService = {
+  async getCoverageMatrix(appId: string): Promise<{ matrix: CoverageMatrix[]; coverage: CoverageSnapshot | null; total: number }> {
+    try {
+      const res = await api.get(`/evidence/coverage/${appId}`);
+      return { matrix: res.data.matrix || [], coverage: res.data.coverage, total: res.data.total || 0 };
+    } catch { return { matrix: [], coverage: null, total: 0 }; }
+  },
+
+  async recomputeCoverage(appId: string): Promise<CoverageSnapshot | null> {
+    try {
+      const res = await api.post(`/evidence/coverage/${appId}/recompute`);
+      return res.data.coverage;
+    } catch { return null; }
+  },
+
+  async generateEvidence(appId: string): Promise<{ generated: number }> {
+    const res = await api.post(`/evidence/generate/${appId}`);
+    return res.data;
+  },
+
+  async updateEvidence(evidenceId: string, data: { status?: string; source_type?: string; notes?: string }): Promise<EvidenceRecord | null> {
+    try {
+      const res = await api.patch(`/evidence/${evidenceId}`, data);
+      return res.data.evidence;
+    } catch { return null; }
+  },
+
+  async getVacancyVersions(roleId: string): Promise<VacancyVersion[]> {
+    try {
+      const res = await api.get(`/evidence/versions/${roleId}`);
+      return res.data.versions || [];
+    } catch { return []; }
+  },
+
+  async createVacancyVersion(roleId: string, changeSummary?: string): Promise<VacancyVersion | null> {
+    try {
+      const res = await api.post('/evidence/versions', { roleId, changeSummary });
+      return res.data.version;
+    } catch { return null; }
+  },
+
+  async updateVersionStatus(versionId: string, status: string): Promise<VacancyVersion | null> {
+    try {
+      const res = await api.patch(`/evidence/versions/${versionId}/status`, { status });
+      return res.data.version;
+    } catch { return null; }
+  },
+
+  async saveRecruiterReview(appId: string, data: {
+    summary?: string; evidence_note?: string; gap_note?: string;
+    integrity_note?: string; interview_note?: string; overall_note?: string;
+  }): Promise<void> {
+    await api.post(`/evidence/review/${appId}`, data);
+  },
+
+  async getRecruiterReviews(appId: string): Promise<any[]> {
+    try {
+      const res = await api.get(`/evidence/review/${appId}`);
+      return res.data.reviews || [];
+    } catch { return []; }
+  },
+
+  async recordDecision(appId: string, data: { decision: string; rationale?: string; evidence_summary?: string }): Promise<void> {
+    await api.post(`/evidence/decision/${appId}`, data);
+  },
+
+  async getDecision(appId: string): Promise<any | null> {
+    try {
+      const res = await api.get(`/evidence/decision/${appId}`);
+      return res.data.decision;
+    } catch { return null; }
+  },
+};

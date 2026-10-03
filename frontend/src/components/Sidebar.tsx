@@ -16,46 +16,60 @@ const NAV = [
     ],
   },
   {
-    section: 'Company',
-    items: [
-      { label: 'Company Profile', href: '/dashboard/company-profile', icon: Building2 },
-    ],
-  },
-  {
     section: 'Recruitment',
     items: [
       { label: 'Vacancies', href: '/dashboard/vacancies', icon: Briefcase },
-      { label: 'Role Requirements', href: '/dashboard/requirements', icon: Target },
-      { label: 'Assessment Setup', href: '/dashboard/assessments', icon: ClipboardList },
+      { label: 'Candidates', href: '/dashboard/candidates', icon: Users },
+      { label: 'Interviews', href: '/dashboard/interviews', icon: Mic2 },
     ],
   },
   {
-    section: 'Candidates',
+    section: 'Assessment',
     items: [
-      { label: 'Candidates', href: '/dashboard/candidates', icon: Users },
-      { label: 'Evidence & Coverage', href: '/dashboard/evidence', icon: FileCheck },
-      { label: 'Interviews', href: '/dashboard/interviews', icon: Mic2 },
+      { label: 'Assessment Setup', href: '/dashboard/assessments', icon: ClipboardList },
+      { label: 'Requirements', href: '/dashboard/requirements', icon: Target },
+    ],
+  },
+  {
+    section: 'Evidence',
+    items: [
+      { label: 'Evidence', href: '/dashboard/evidence', icon: FileCheck },
+      { label: 'Coverage & Gaps', href: '/dashboard/evidence/coverage', icon: Shield },
+    ],
+  },
+  {
+    section: 'Trust',
+    items: [
       { label: 'Integrity Review', href: '/dashboard/integrity', icon: Shield },
     ],
   },
   {
     section: 'Intelligence',
     items: [
-      { label: 'Recruiter Intelligence', href: '/dashboard/intelligence', icon: BrainCircuit },
+      { label: 'Recruiter Review', href: '/dashboard/intelligence/review', icon: BrainCircuit },
+      { label: 'Recruiter Intelligence', href: '/dashboard/intelligence', icon: Sparkles },
       { label: 'Role Intelligence', href: '/dashboard/intelligence/role-intelligence', icon: Sparkles },
+    ],
+  },
+  {
+    section: 'Reports',
+    items: [
       { label: 'Reports', href: '/dashboard/reports', icon: FileText },
     ],
   },
   {
-    section: 'Platform',
+    section: 'Administration',
     items: [
-      { label: 'Notifications', href: '/dashboard/notifications', icon: Bell },
-      { label: 'Recruitment Agreement', href: '/dashboard/agreement', icon: HandshakeIcon },
+      { label: 'Company Profile', href: '/dashboard/company-profile', icon: Building2 },
+      { label: 'Departments', href: '/dashboard/departments', icon: Building2 },
+      { label: 'Agreements', href: '/dashboard/agreement', icon: HandshakeIcon },
       { label: 'Audit Trail', href: '/dashboard/audit', icon: ScrollText },
+      { label: 'Notifications', href: '/dashboard/notifications', icon: Bell },
       { label: 'Settings', href: '/dashboard/settings', icon: Settings },
     ],
   },
 ];
+
 
 import { useAuth } from '@/contexts/AuthContext';
 
