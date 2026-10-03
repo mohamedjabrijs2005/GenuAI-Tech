@@ -69,11 +69,11 @@ export default function Sidebar() {
     return pathname === href || (pathname.startsWith(href + '/') && href !== '/dashboard');
   };
 
-  const displayName = user ? `${user.firstName} ${user.lastName}` : 'Authenticated User';
-  const displayEmail = user?.email || 'user@genuai.io';
-  const companyName = company?.name || 'Company Workspace';
+  const displayName = user ? `${user.firstName} ${user.lastName}`.trim() : 'User';
+  const displayEmail = user?.email || '';
+  const companyName = company?.name || 'Workspace';
   const isVerified = company?.verificationStatus === 'VERIFIED';
-  const initials = user ? `${user.firstName?.[0] || 'U'}${user.lastName?.[0] || ''}` : 'U';
+  const initials = user ? `${user.firstName?.[0] || 'U'}${user.lastName?.[0] || ''}`.toUpperCase() : 'U';
 
   return (
     <aside className="sidebar" role="navigation" aria-label="Main navigation">

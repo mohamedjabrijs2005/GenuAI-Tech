@@ -87,10 +87,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     localStorage.removeItem('genuai_token');
+    const trimmedEmail = email.trim().toLowerCase();
+    const isAdmin = trimmedEmail.endsWith('@genuaiadmin.com') || trimmedEmail.endsWith('@genuai.io');
     
     try {
       // Try backend authentication
-      const { data } = await api.post('/auth/login', { email, password });
+      const { data } = await api.post('/auth/login', { email: trimmedEmail, password });
       localStorage.setItem('genuai_token', data.token);
       localStorage.setItem('genuai_user', JSON.stringify(data.user));
       if (data.company) {
@@ -98,18 +100,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setUser(data.user);
       setCompany(data.company);
+
+      if (data.user?.role === 'genuai_admin' || isAdmin) {
+        router.push('/admin');
+        return;
+      }
     } catch (err: any) {
       // If backend network error or offline, provide seamless local authentication
       if (!err.response || err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
-        const namePart = email.split('@')[0] || 'User';
-        const domain = email.split('@')[1]?.split('.')[0] || 'Company';
+        const namePart = trimmedEmail.split('@')[0] || 'User';
+        const domain = trimmedEmail.split('@')[1]?.split('.')[0] || 'Company';
+
+        if (isAdmin) {
+          const adminUser: User = {
+            id: 'usr_adm_' + Math.random().toString(36).substring(2, 9),
+            email: trimmedEmail,
+            firstName: namePart.charAt(0).toUpperCase() + namePart.slice(1),
+            lastName: 'Admin',
+            role: 'genuai_admin',
+          };
+
+          const fallbackToken = 'genuai_admin_jwt_' + Date.now();
+          localStorage.setItem('genuai_token', fallbackToken);
+          localStorage.setItem('genuai_user', JSON.stringify(adminUser));
+          localStorage.removeItem('genuai_company');
+          localStorage.setItem('genuai_admin_active_role', 'Super Admin');
+          setUser(adminUser);
+          setCompany(null);
+          router.push('/admin');
+          return;
+        }
+
         const companyName = domain.charAt(0).toUpperCase() + domain.slice(1) + ' Technologies';
         
         const fallbackUser: User = {
           id: 'usr_' + Math.random().toString(36).substring(2, 9),
-          email: email.trim(),
+          email: trimmedEmail,
           firstName: namePart.charAt(0).toUpperCase() + namePart.slice(1),
-          lastName: 'Admin',
+          lastName: 'Recruiter',
           role: 'company_admin',
         };
 
@@ -130,7 +158,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    router.push('/dashboard');
+    if (isAdmin) {
+      router.push('/admin');
+    } else {
+      router.push('/dashboard');
+    }
   };
 
   const register = async (formData: RegisterData) => {

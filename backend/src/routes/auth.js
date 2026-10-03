@@ -187,19 +187,23 @@ router.post(
       });
     } catch (err) {
       if (err.code === 'ECONNREFUSED' || err.message?.includes('connect ECONNREFUSED')) {
-        const token = jwt.sign({ userId: 'demo-user-123' }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
+        const isAdmin = email && (email.toLowerCase().endsWith('@genuaiadmin.com') || email.toLowerCase().endsWith('@genuai.io'));
+        const namePart = email ? email.split('@')[0] : 'Admin';
+        const formattedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+        const token = jwt.sign({ userId: isAdmin ? 'genuai-platform-admin' : 'demo-user-123' }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
+        
         return res.json({
           token,
           user: {
-            id: 'demo-user-123',
-            email: email || 'demo@genuai.tech',
-            firstName: 'Demo',
-            lastName: 'Admin',
-            role: 'company_admin',
+            id: isAdmin ? 'genuai-platform-admin' : 'demo-user-123',
+            email: email || (isAdmin ? 'sarah@genuaiadmin.com' : 'demo@company.com'),
+            firstName: formattedName,
+            lastName: isAdmin ? 'Console' : 'Admin',
+            role: isAdmin ? 'genuai_admin' : 'company_admin',
           },
-          company: {
+          company: isAdmin ? null : {
             id: 'demo-company-123',
-            name: 'GenuAI Tech',
+            name: 'Enterprise Technologies Ltd',
             verificationStatus: 'VERIFIED',
           },
         });

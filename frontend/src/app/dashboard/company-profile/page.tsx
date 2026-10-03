@@ -7,30 +7,33 @@ import api from '@/lib/api';
 import toast from 'react-hot-toast';
 
 export default function CompanyProfilePage() {
-  const { company } = useAuth();
+  const { company, user } = useAuth();
   const [editing, setEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const [form, setForm] = useState({
-    name: 'GenuAI Technologies Ltd.',
-    industry: 'Enterprise AI & Recruitment Infrastructure',
-    description: 'GenuAI provides vacancy-centric recruitment intelligence connecting verifiable candidate competencies with zero disqualification bias.',
-    website: 'https://genuai.tech',
-    location: 'London, United Kingdom',
-    size: '50-200 employees',
-    officialEmail: 'contact@genuai.tech',
-    phone: '+44 20 7946 0912',
-    hiringContactName: 'Alex Mercer',
-    hiringContactEmail: 'recruiting@genuai.tech',
-    verificationStatus: 'VERIFIED' as 'VERIFIED' | 'UNDER_REVIEW' | 'UNVERIFIED',
+    name: '',
+    industry: '',
+    description: '',
+    website: '',
+    location: '',
+    size: '',
+    officialEmail: '',
+    phone: '',
+    hiringContactName: '',
+    hiringContactEmail: '',
+    verificationStatus: 'UNVERIFIED' as 'VERIFIED' | 'UNDER_REVIEW' | 'UNVERIFIED',
   });
 
   useEffect(() => {
-    if (company?.name) {
+    if (company) {
       setForm(prev => ({
         ...prev,
-        name: company.name,
-        verificationStatus: (company.verificationStatus as any) || 'VERIFIED',
+        name: company.name || '',
+        officialEmail: user?.email || prev.officialEmail,
+        hiringContactName: user ? `${user.firstName} ${user.lastName}`.trim() : prev.hiringContactName,
+        hiringContactEmail: user?.email || prev.hiringContactEmail,
+        verificationStatus: (company.verificationStatus as any) || 'UNVERIFIED',
       }));
     }
 
@@ -40,22 +43,22 @@ export default function CompanyProfilePage() {
         if (res.data?.company) {
           const c = res.data.company;
           setForm({
-            name: c.name || 'GenuAI Technologies',
-            industry: c.industry || 'Enterprise Software',
+            name: c.name || company?.name || '',
+            industry: c.industry || '',
             description: c.description || '',
-            website: c.website || 'https://genuai.tech',
-            location: c.location || 'London, UK',
-            size: c.size || '50-200 employees',
-            officialEmail: c.official_email || 'contact@genuai.tech',
-            phone: c.hiring_contact_phone || '+44 20 7946 0912',
-            hiringContactName: c.hiring_contact_name || 'Alex Mercer',
-            hiringContactEmail: c.hiring_contact_email || 'recruiting@genuai.tech',
-            verificationStatus: c.verification_status || 'VERIFIED',
+            website: c.website || '',
+            location: c.location || '',
+            size: c.size || '',
+            officialEmail: c.official_email || user?.email || '',
+            phone: c.hiring_contact_phone || '',
+            hiringContactName: c.hiring_contact_name || (user ? `${user.firstName} ${user.lastName}`.trim() : ''),
+            hiringContactEmail: c.hiring_contact_email || user?.email || '',
+            verificationStatus: c.verification_status || 'UNVERIFIED',
           });
         }
       })
       .catch(() => {});
-  }, [company]);
+  }, [company, user]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

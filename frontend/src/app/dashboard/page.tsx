@@ -36,10 +36,10 @@ export default function DashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [formTitle, setFormTitle] = useState<string>('');
-  const [formDept, setFormDept] = useState<string>('Engineering');
+  const [formDept, setFormDept] = useState<string>('');
   const [formExpLevel, setFormExpLevel] = useState<string>('senior');
   const [formEmpType, setFormEmpType] = useState<string>('full_time');
-  const [formLocation, setFormLocation] = useState<string>('Remote / Hybrid');
+  const [formLocation, setFormLocation] = useState<string>('');
   const [formVacancyCount, setFormVacancyCount] = useState<number>(1);
   const [formDesc, setFormDesc] = useState<string>('');
   const [formDeptId, setFormDeptId] = useState<string>('');

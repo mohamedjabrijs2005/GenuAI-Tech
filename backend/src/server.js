@@ -14,6 +14,7 @@ const assessmentRoutes = require('./routes/assessments');
 const integrityRoutes = require('./routes/integrity');
 const interviewRoutes = require('./routes/interviews');
 const reportRoutes = require('./routes/reports');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use(express.json({ limit: '10mb' }));
 // Routes
 // ============================================================
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/company', companyRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/roles', roleRoutes);
