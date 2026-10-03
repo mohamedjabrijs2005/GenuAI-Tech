@@ -1,7 +1,5 @@
 const jwt = require('jsonwebtoken');
 const pool = require('../database/pool');
-const { authenticate, requireGenuAIAdmin } = require('../middleware/auth');
-router.use(authenticate, requireGenuAIAdmin);
 
 /**
  * Middleware: Verify JWT and attach user + company to request.
