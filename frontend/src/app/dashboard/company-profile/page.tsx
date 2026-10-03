@@ -1,93 +1,64 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Building2, Globe, MapPin, Users, Mail, Phone, Edit2, CheckCircle, Clock, XCircle, Sparkles, ShieldCheck, Save } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import api from '@/lib/api';
+import { useState } from 'react';
+import { Building2, Globe, MapPin, Users, Mail, Phone, Edit2, CheckCircle, Clock, XCircle, Sparkles, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const MOCK = {
+  name: 'Acme Technologies Ltd.',
+  logo: 'AT',
+  industry: 'Enterprise Software & Artificial Intelligence',
+  description: 'Acme Technologies builds enterprise software solutions for mid-market companies. We specialize in cloud infrastructure, data platforms, and AI-driven products.',
+  website: 'https://acme.example.com',
+  location: 'London, United Kingdom',
+  size: '50-200 employees',
+  email: 'hr@acme.example.com',
+  phone: '+44 20 1234 5678',
+  recruiter: 'Sarah Connor',
+  verificationStatus: 'VERIFIED' as const,
+};
+
+const VERIFICATION_CONFIG = {
+  VERIFIED: {
+    color: '#10b981',
+    bg: '#ecfdf5',
+    border: '#a7f3d0',
+    icon: ShieldCheck,
+    label: 'Verified Entity',
+    desc: 'Your company is fully verified by GenuAI Technologies. All vacancies can be published immediately.',
+  },
+  UNDER_REVIEW: {
+    color: '#f59e0b',
+    bg: '#fffbeb',
+    border: '#fde68a',
+    icon: Clock,
+    label: 'Under Review',
+    desc: 'Your verification is being reviewed by GenuAI Technologies Compliance.',
+  },
+  UNVERIFIED: {
+    color: '#64748b',
+    bg: '#f1f5f9',
+    border: '#e2e8f0',
+    icon: XCircle,
+    label: 'Unverified',
+    desc: 'Submit your company details to begin verification with GenuAI Technologies.',
+  },
+};
+
 export default function CompanyProfilePage() {
-  const { company, user } = useAuth();
   const [editing, setEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [form, setForm] = useState(MOCK);
+  const vc = VERIFICATION_CONFIG[form.verificationStatus];
+  const VIcon = vc.icon;
 
-  const [form, setForm] = useState({
-    name: '',
-    industry: '',
-    description: '',
-    website: '',
-    location: '',
-    size: '',
-    officialEmail: '',
-    phone: '',
-    hiringContactName: '',
-    hiringContactEmail: '',
-    verificationStatus: 'UNVERIFIED' as 'VERIFIED' | 'UNDER_REVIEW' | 'UNVERIFIED',
-  });
-
-  useEffect(() => {
-    if (company) {
-      setForm(prev => ({
-        ...prev,
-        name: company.name || '',
-        officialEmail: user?.email || prev.officialEmail,
-        hiringContactName: user ? `${user.firstName} ${user.lastName}`.trim() : prev.hiringContactName,
-        hiringContactEmail: user?.email || prev.hiringContactEmail,
-        verificationStatus: (company.verificationStatus as any) || 'UNVERIFIED',
-      }));
-    }
-
-    // Try fetching live profile from backend
-    api.get('/company/profile')
-      .then(res => {
-        if (res.data?.company) {
-          const c = res.data.company;
-          setForm({
-            name: c.name || company?.name || '',
-            industry: c.industry || '',
-            description: c.description || '',
-            website: c.website || '',
-            location: c.location || '',
-            size: c.size || '',
-            officialEmail: c.official_email || user?.email || '',
-            phone: c.hiring_contact_phone || '',
-            hiringContactName: c.hiring_contact_name || (user ? `${user.firstName} ${user.lastName}`.trim() : ''),
-            hiringContactEmail: c.hiring_contact_email || user?.email || '',
-            verificationStatus: c.verification_status || 'UNVERIFIED',
-          });
-        }
-      })
-      .catch(() => {});
-  }, [company, user]);
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    try {
-      await api.patch('/company/profile', {
-        industry: form.industry,
-        description: form.description,
-        website: form.website,
-        location: form.location,
-        size: form.size,
-        officialEmail: form.officialEmail,
-        hiringContactName: form.hiringContactName,
-        hiringContactEmail: form.hiringContactEmail,
-        hiringContactPhone: form.phone,
-      }).catch(() => null);
-
-      setEditing(false);
-      toast.success('Company Profile updated successfully');
-    } catch {
-      toast.error('Failed to update profile');
-    } finally {
-      setIsSaving(false);
-    }
+  const handleSave = () => {
+    setEditing(false);
+    toast.success('Company Profile updated successfully!');
   };
 
   return (
     <div className="page-content">
-      {/* Page Header with Single Clear Action */}
+      {/* Page Header */}
       <div className="page-header">
         <div className="breadcrumbs">
           <span>Company</span>
@@ -97,164 +68,160 @@ export default function CompanyProfilePage() {
         <div className="page-header-row">
           <div>
             <h1 className="page-title">
-              Corporate Workspace Profile
+              Company Profile
             </h1>
-            <p className="page-subtitle">Manage corporate identity, verified credentials, and recruitment contact points.</p>
+            <p className="page-subtitle">Manage corporate identity, verified credentials, and recruiter contacts.</p>
           </div>
-          <button
-            className={`btn ${editing ? 'btn-secondary' : 'btn-gold'}`}
-            onClick={() => setEditing(!editing)}
-          >
+          <button className={`btn ${editing ? 'btn-secondary' : 'btn-gold'}`} onClick={() => setEditing(!editing)}>
             <Edit2 size={15} />
             {editing ? 'Cancel' : 'Edit Profile'}
           </button>
         </div>
       </div>
 
-      {/* Verification Trust Banner */}
+      {/* Google Stitch Elevated Verification Banner */}
       <div
-        className="card"
+        className="verification-block"
         style={{
-          borderLeft: '4px solid var(--success)',
-          marginBottom: 24,
-          padding: '18px 22px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 16,
+          borderLeft: `4px solid ${vc.color}`,
+          background: '#ffffff',
+          borderColor: 'var(--border)',
         }}
       >
-        <div className="flex items-center gap-3">
-          <div className="avatar avatar-md" style={{ background: '#dcfce7', color: '#059669' }}>
-            <ShieldCheck size={22} />
-          </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
-              Verified Enterprise Workspace
-            </div>
-            <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 2 }}>
-              Your organization is verified for cryptographic competency assessments and uninhibited candidate evaluations.
-            </div>
-          </div>
+        <div
+          className="verification-icon"
+          style={{
+            background: `${vc.color}15`,
+            color: vc.color,
+            border: `1px solid ${vc.color}33`,
+          }}
+        >
+          <VIcon size={22} />
         </div>
-        <span className="badge badge-green">VERIFIED</span>
+        <div style={{ flex: 1 }}>
+          <div className="verification-label">GenuAI Technologies Verification Status</div>
+          <div className="verification-status flex items-center gap-2" style={{ color: vc.color }}>
+            <span>{vc.label}</span>
+            <span className="gold-badge" style={{ fontSize: 10 }}>Official Certified</span>
+          </div>
+          <div className="verification-desc">{vc.desc}</div>
+        </div>
       </div>
 
-      {/* Profile Form / Display Grid */}
-      <form onSubmit={handleSave} className="grid-3" style={{ gap: 24, alignItems: 'flex-start' }}>
-        {/* Left: Organization Overview */}
-        <div className="card" style={{ padding: 24, gridColumn: 'span 2' }}>
-          <div className="card-title" style={{ marginBottom: 16 }}>Organization Details</div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div className="form-group">
-              <label className="form-label">Company Name</label>
-              <input
-                type="text"
-                disabled={!editing}
-                value={form.name}
-                onChange={e => setForm({ ...form, name: e.target.value })}
-                className="form-input"
-              />
+      {/* Grid Layout */}
+      <div className="grid-2" style={{ gap: 24, alignItems: 'flex-start' }}>
+        {/* Left Column — Identity */}
+        <div>
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">Corporate Identity</div>
+              <Building2 size={16} style={{ color: 'var(--text-muted)' }} />
             </div>
 
-            <div className="grid-2" style={{ gap: 14 }}>
-              <div className="form-group">
-                <label className="form-label">Industry &amp; Domain</label>
-                <input
-                  type="text"
-                  disabled={!editing}
-                  value={form.industry}
-                  onChange={e => setForm({ ...form, industry: e.target.value })}
-                  className="form-input"
-                />
+            {/* Logo & Gold Name */}
+            <div className="flex items-center gap-4" style={{ marginBottom: 24 }}>
+              <div className="gold-logo-box" style={{ width: 56, height: 56, borderRadius: 14, fontSize: 20 }}>
+                {form.logo}
               </div>
-
-              <div className="form-group">
-                <label className="form-label">Company Size</label>
-                <input
-                  type="text"
-                  disabled={!editing}
-                  value={form.size}
-                  onChange={e => setForm({ ...form, size: e.target.value })}
-                  className="form-input"
-                />
+              <div>
+                <div className="gold-company-title" style={{ fontSize: 20 }}>{form.name}</div>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2, fontWeight: 500 }}>{form.industry}</div>
               </div>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Corporate Bio &amp; Mission</label>
-              <textarea
-                rows={4}
-                disabled={!editing}
-                value={form.description}
-                onChange={e => setForm({ ...form, description: e.target.value })}
-                className="form-input"
-              />
-            </div>
-
-            {editing && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
-                <button type="submit" className="btn btn-gold" disabled={isSaving}>
-                  <Save size={15} />
-                  <span>{isSaving ? 'Saving...' : 'Save Profile Changes'}</span>
-                </button>
-              </div>
+            {editing ? (
+              <>
+                <div className="form-group">
+                  <label className="form-label">Company Name <span className="required">*</span></label>
+                  <input className="form-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Industry Domain</label>
+                  <input className="form-input" value={form.industry} onChange={e => setForm(f => ({ ...f, industry: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Company Overview</label>
+                  <textarea className="form-textarea" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+                </div>
+              </>
+            ) : (
+              <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+                {form.description}
+              </p>
             )}
           </div>
         </div>
 
-        {/* Right: Contact & Verification Meta */}
-        <div className="card" style={{ padding: 20, gridColumn: 'span 1' }}>
-          <div className="card-title" style={{ fontSize: 14, marginBottom: 14 }}>Recruitment Contact Points</div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, fontSize: 12.5 }}>
-            <div className="form-group">
-              <label className="form-label">Location / HQ</label>
-              <input
-                type="text"
-                disabled={!editing}
-                value={form.location}
-                onChange={e => setForm({ ...form, location: e.target.value })}
-                className="form-input"
-              />
+        {/* Right Column — Details */}
+        <div>
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">Verification & Contact Info</div>
             </div>
-
-            <div className="form-group">
-              <label className="form-label">Website</label>
-              <input
-                type="text"
-                disabled={!editing}
-                value={form.website}
-                onChange={e => setForm({ ...form, website: e.target.value })}
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Hiring Lead Name</label>
-              <input
-                type="text"
-                disabled={!editing}
-                value={form.hiringContactName}
-                onChange={e => setForm({ ...form, hiringContactName: e.target.value })}
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Official Recruiting Email</label>
-              <input
-                type="email"
-                disabled={!editing}
-                value={form.hiringContactEmail}
-                onChange={e => setForm({ ...form, hiringContactEmail: e.target.value })}
-                className="form-input"
-              />
-            </div>
+            {editing ? (
+              <>
+                <div className="form-group">
+                  <label className="form-label">Official Website</label>
+                  <input className="form-input" value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">HQ Location</label>
+                  <input className="form-input" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Company Size</label>
+                  <select className="form-select" value={form.size} onChange={e => setForm(f => ({ ...f, size: e.target.value }))}>
+                    {['1-10', '11-50', '50-200', '200-1000', '1000+'].map(s => <option key={s}>{s} employees</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Contact Email</label>
+                  <input className="form-input" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Lead Recruiter</label>
+                  <input className="form-input" value={form.recruiter} onChange={e => setForm(f => ({ ...f, recruiter: e.target.value }))} />
+                </div>
+                <button className="btn btn-gold w-full mt-2" onClick={handleSave}>
+                  Save Profile Changes
+                </button>
+              </>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {[
+                  { icon: Globe, label: 'Website', value: form.website },
+                  { icon: MapPin, label: 'Location', value: form.location },
+                  { icon: Users, label: 'Company Size', value: form.size },
+                  { icon: Mail, label: 'Email', value: form.email },
+                  { icon: Phone, label: 'Phone', value: form.phone },
+                  { icon: Users, label: 'Lead Recruiter', value: form.recruiter },
+                ].map((d) => {
+                  const Icon = d.icon;
+                  return (
+                    <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <div style={{
+                        width: 34, height: 34, borderRadius: 10,
+                        background: '#f8fafc', border: '1px solid var(--border)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                      }}>
+                        <Icon size={15} style={{ color: 'var(--text-muted)' }} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                          {d.label}
+                        </div>
+                        <div style={{ fontSize: 13.5, color: 'var(--text-primary)', fontWeight: 600 }}>
+                          {d.value}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
-      </form>
+      </div>
     </div>
   );
 }

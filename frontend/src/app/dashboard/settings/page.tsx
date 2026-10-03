@@ -3,10 +3,9 @@
 import { useState } from 'react';
 import {
   Bell, Lock, User, Building2, ChevronRight, Shield,
-  ShieldCheck, Plus, CheckCircle2,
+  Users, Key, ShieldCheck, Plus, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useAuth } from '@/contexts/AuthContext';
 
 const TABS = ['Account', 'Team & RBAC', 'Notifications', 'Privacy & Data'];
 
@@ -19,24 +18,31 @@ const NOTIFICATIONS = [
   { label: 'Vacancy status change', desc: 'When admin verifies or rejects a vacancy', enabled: true },
 ];
 
-const OTHER_TEAM_MEMBERS = [
+const TEAM_MEMBERS = [
+  {
+    name: 'Sarah Connor',
+    email: 'sarah@acme.example.com',
+    role: 'Company Admin',
+    assignedVacancies: 'All Vacancies (Full Company Access)',
+    status: 'Active',
+  },
   {
     name: 'David Park',
-    email: 'david.park@company.example',
+    email: 'david.park@acme.example.com',
     role: 'Recruiter',
     assignedVacancies: 'Software Developer, Senior DevOps',
     status: 'Active',
   },
   {
     name: 'David Kim',
-    email: 'david.kim@company.example',
+    email: 'david.kim@acme.example.com',
     role: 'Interviewer',
     assignedVacancies: 'Software Developer (Round 1 & 2)',
     status: 'Active',
   },
   {
     name: 'Lisa Chen',
-    email: 'lisa.chen@company.example',
+    email: 'lisa.chen@acme.example.com',
     role: 'Interviewer',
     assignedVacancies: 'Product Designer',
     status: 'Active',
@@ -44,24 +50,8 @@ const OTHER_TEAM_MEMBERS = [
 ];
 
 export default function SettingsPage() {
-  const { user, company } = useAuth();
   const [tab, setTab] = useState('Account');
   const [notifs, setNotifs] = useState(NOTIFICATIONS);
-
-  const fullName = user ? `${user.firstName} ${user.lastName}`.trim() : '';
-  const userEmail = user?.email ?? '';
-  const companyName = company?.name ?? '';
-
-  const teamMembers = [
-    ...(user ? [{
-      name: fullName || 'You',
-      email: userEmail,
-      role: 'Company Admin',
-      assignedVacancies: 'All Vacancies (Full Company Access)',
-      status: 'Active',
-    }] : []),
-    ...OTHER_TEAM_MEMBERS,
-  ];
 
   const toggle = (i: number) => {
     setNotifs(prev => prev.map((n, idx) => idx === i ? { ...n, enabled: !n.enabled } : n));
@@ -105,23 +95,22 @@ export default function SettingsPage() {
             </div>
             <div className="form-group">
               <label className="form-label">Company Name</label>
-              <input className="form-input" defaultValue={companyName} placeholder="Your company name" />
+              <input className="form-input" defaultValue="Acme Technologies Ltd." />
             </div>
             <div className="form-group">
               <label className="form-label">Industry</label>
-              <input className="form-input" defaultValue="" placeholder="e.g. Enterprise Software & AI" />
+              <input className="form-input" defaultValue="Enterprise Software & AI" />
             </div>
             <div className="form-group">
               <label className="form-label">Website</label>
-              <input className="form-input" defaultValue="" placeholder="https://yourcompany.com" />
+              <input className="form-input" defaultValue="https://acme.example.com" />
             </div>
             <div className="form-group">
               <label className="form-label">Company Size</label>
-              <select className="form-select" defaultValue="">
-                <option value="">Select size...</option>
+              <select className="form-select" defaultValue="50-200">
                 <option>1-10</option>
                 <option>11-50</option>
-                <option>50-200 employees</option>
+                <option value="50-200">50-200 employees</option>
                 <option>200-1000</option>
                 <option>1000+</option>
               </select>
@@ -139,11 +128,11 @@ export default function SettingsPage() {
               </div>
               <div className="form-group">
                 <label className="form-label">Full Name</label>
-                <input className="form-input" defaultValue={fullName} placeholder="Your full name" />
+                <input className="form-input" defaultValue="Sarah Connor" />
               </div>
               <div className="form-group">
                 <label className="form-label">Work Email</label>
-                <input className="form-input" defaultValue={userEmail} type="email" placeholder="your@email.com" />
+                <input className="form-input" defaultValue="sarah@acme.example.com" type="email" />
               </div>
               <button className="btn btn-secondary w-full" onClick={() => toast.success('Profile updated')}>
                 Update Profile
@@ -173,13 +162,13 @@ export default function SettingsPage() {
 
       {tab === 'Team & RBAC' && (
         <div className="space-y-6">
+          {/* Tenant Isolation Banner */}
           <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 'var(--r-lg)', padding: '14px 18px' }}>
             <div className="flex items-start gap-3 text-xs text-emerald-900">
               <ShieldCheck size={16} className="flex-shrink-0 mt-0.5 text-emerald-600" />
               <div className="leading-relaxed">
-                <strong>Organization Tenant Isolation Enforced:</strong>{' '}
-                {companyName || 'Your company'} is assigned an isolated workspace.
-                Company data, candidate evaluations, and assessment banks are fully separated between tenants.
+                <strong>Organization Tenant Isolation Enforced:</strong> Acme Technologies Ltd. is assigned isolated workspace <code>tenant_acme_8912</code>.
+                Company A data, candidate evaluations, and assessment banks can never reach or be accessed by Company B.
               </div>
             </div>
           </div>
@@ -209,7 +198,7 @@ export default function SettingsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {teamMembers.map((m) => (
+                  {TEAM_MEMBERS.map((m) => (
                     <tr key={m.email}>
                       <td>
                         <div className="flex items-center gap-2.5">

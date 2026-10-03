@@ -1,267 +1,172 @@
 'use client';
+import { useState } from 'react';
+import { Plus, Target, Trash2, Edit2 } from 'lucide-react';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Plus, Target, Trash2, Edit2, CheckCircle2, ShieldCheck, X } from 'lucide-react';
-import { DataService, Vacancy } from '@/lib/dataService';
-import toast from 'react-hot-toast';
+const ROLES = [
+  {
+    id: 1, vacancy: 'Software Developer', required: [
+      { skill: 'Java', priority: 'high' },
+      { skill: 'Data Structures & Algorithms', priority: 'high' },
+      { skill: 'SQL', priority: 'medium' },
+      { skill: 'Problem Solving', priority: 'high' },
+      { skill: 'Communication', priority: 'medium' },
+    ],
+    preferred: [
+      { skill: 'AWS', priority: 'medium' },
+      { skill: 'Docker', priority: 'low' },
+      { skill: 'Kubernetes', priority: 'low' },
+    ],
+    experience: '2+ years', education: "Bachelor's in CS or related", workMode: 'Hybrid', openings: 3,
+  },
+  {
+    id: 2, vacancy: 'Product Designer', required: [
+      { skill: 'Figma', priority: 'high' },
+      { skill: 'UX Research', priority: 'high' },
+      { skill: 'Prototyping', priority: 'medium' },
+    ],
+    preferred: [
+      { skill: 'Motion Design', priority: 'low' },
+    ],
+    experience: '3+ years', education: "Bachelor's in Design", workMode: 'Remote', openings: 2,
+  },
+];
 
-interface RequirementItem {
-  id: string;
-  skill: string;
-  category: string;
-  priority: 'high' | 'medium' | 'low';
-  type: 'required' | 'preferred';
-}
+const PRIORITY_CLASS: Record<string, string> = {
+  high: 'priority-high',
+  medium: 'priority-medium',
+  low: 'priority-low',
+};
 
 export default function RequirementsPage() {
-  const [vacancies, setVacancies] = useState<Vacancy[]>([]);
-  const [selectedVacId, setSelectedVacId] = useState<string>('');
-  const [requirementsMap, setRequirementsMap] = useState<Record<string, RequirementItem[]>>({});
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newSkill, setNewSkill] = useState('');
-  const [newCategory, setNewCategory] = useState('Technical');
-  const [newPriority, setNewPriority] = useState<'high' | 'medium' | 'low'>('high');
-  const [newType, setNewType] = useState<'required' | 'preferred'>('required');
-
-  useEffect(() => {
-    async function load() {
-      const vList = await DataService.getVacancies();
-      setVacancies(vList);
-      if (vList.length > 0) {
-        setSelectedVacId(vList[0].id);
-        const initialMap: Record<string, RequirementItem[]> = {};
-        vList.forEach(v => {
-          initialMap[v.id] = [
-            { id: '1', skill: 'Core Distributed Architecture & Concurrency', category: 'Technical', priority: 'high', type: 'required' },
-            { id: '2', skill: 'PostgreSQL Query Optimization & Indexing', category: 'Technical', priority: 'high', type: 'required' },
-            { id: '3', skill: 'Kafka Streaming & Event Driven Design', category: 'Architecture', priority: 'medium', type: 'required' },
-            { id: '4', skill: 'Docker & Kubernetes Microservice Deployment', category: 'Infrastructure', priority: 'low', type: 'preferred' },
-            { id: '5', skill: 'Technical Communication & Rubric Defense', category: 'Soft Skills', priority: 'medium', type: 'required' },
-          ];
-        });
-        setRequirementsMap(initialMap);
-      }
-    }
-    load();
-  }, []);
-
-  const selectedVacancy = vacancies.find(v => v.id === selectedVacId) || vacancies[0];
-  const currentReqs = selectedVacId ? (requirementsMap[selectedVacId] || []) : [];
-
-  const handleAddRequirement = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newSkill.trim()) return;
-
-    const newItem: RequirementItem = {
-      id: 'req-' + Math.random().toString(36).substring(2, 7),
-      skill: newSkill.trim(),
-      category: newCategory,
-      priority: newPriority,
-      type: newType,
-    };
-
-    setRequirementsMap(prev => ({
-      ...prev,
-      [selectedVacId]: [...(prev[selectedVacId] || []), newItem],
-    }));
-
-    toast.success('Requirement added to role blueprint');
-    setIsAddModalOpen(false);
-    setNewSkill('');
-  };
-
-  const handleDeleteReq = (id: string) => {
-    setRequirementsMap(prev => ({
-      ...prev,
-      [selectedVacId]: (prev[selectedVacId] || []).filter(r => r.id !== id),
-    }));
-    toast.success('Requirement removed');
-  };
+  const [selected, setSelected] = useState(ROLES[0]);
 
   return (
     <div className="page-content">
-      {/* Header with single primary action */}
       <div className="page-header">
-        <div className="breadcrumbs">
-          <span>Recruitment</span>
-          <span className="breadcrumb-sep">/</span>
-          <span className="breadcrumb-current">Role Requirements</span>
-        </div>
         <div className="page-header-row">
           <div>
-            <h1 className="page-title">
-              Role Requirements &amp; Competency Specs
-            </h1>
-            <p className="page-subtitle">Define what each role requires — this drives the GenuAI automated assessment &amp; evidence hashing matrix.</p>
+            <h1 className="page-title">Role Requirements</h1>
+            <p className="page-subtitle">Define what each vacancy requires — this drives assessment and evidence mapping</p>
           </div>
-          <button onClick={() => setIsAddModalOpen(true)} className="btn btn-gold">
-            <Plus size={16} />
-            Add Requirement
-          </button>
+          <button className="btn btn-gold"><Plus size={15} />Add Requirement</button>
         </div>
       </div>
 
-      <div className="grid-3" style={{ gap: 24, alignItems: 'flex-start' }}>
-        {/* Left Column: Vacancy List */}
-        <div style={{ gridColumn: 'span 1' }}>
-          <div className="section-title">Active Vacancies ({vacancies.length})</div>
+      <div className="grid-2" style={{ gap: 24, alignItems: 'flex-start' }}>
+        {/* Role selector */}
+        <div>
+          <div className="section-title">Vacancies</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {vacancies.map((v) => (
+            {ROLES.map((r) => (
               <button
-                key={v.id}
-                onClick={() => setSelectedVacId(v.id)}
-                className="card"
+                key={r.id}
+                onClick={() => setSelected(r)}
+                className={`card card-accent ${selected.id === r.id ? '' : ''}`}
                 style={{
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  padding: '14px 16px',
-                  borderLeft: `3px solid ${selectedVacId === v.id ? '#00236f' : 'var(--border)'}`,
-                  background: selectedVacId === v.id ? '#eff6ff' : 'var(--white)',
-                  transition: 'all 0.15s ease',
+                  textAlign: 'left', cursor: 'pointer', padding: '14px 18px',
+                  borderLeft: `3px solid ${selected.id === r.id ? '#d4af37' : 'var(--border)'}`,
+                  background: selected.id === r.id ? '#fefce8' : 'var(--white)',
+                  transition: 'all var(--t)',
                 }}
+                aria-pressed={selected.id === r.id}
+                aria-label={`Select ${r.vacancy}`}
               >
-                <div style={{ fontWeight: 700, color: selectedVacId === v.id ? '#00236f' : 'var(--text-primary)', marginBottom: 3, fontSize: 13.5 }}>
-                  {v.title}
-                </div>
-                <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
-                  {v.dept} • {v.openings} opening(s) • {(requirementsMap[v.id] || []).length} criteria
+                <div style={{ fontWeight: 700, color: selected.id === r.id ? '#a16207' : 'var(--text-primary)', marginBottom: 4 }}>{r.vacancy}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                  {r.required.length} required · {r.preferred.length} preferred · {r.openings} openings
                 </div>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Right Column: Requirements Blueprint */}
-        {selectedVacancy && (
-          <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div className="card" style={{ padding: 20 }}>
-              <div className="card-header" style={{ marginBottom: 14 }}>
-                <div>
-                  <div className="card-title" style={{ fontSize: 16 }}>{selectedVacancy.title}</div>
-                  <div className="card-subtitle">{selectedVacancy.dept} • {selectedVacancy.location || 'Remote'} • {selectedVacancy.openings} Open Position(s)</div>
-                </div>
-                <Link href={`/dashboard/vacancies/${selectedVacancy.id}`} className="btn btn-secondary btn-sm">
-                  View Vacancy Details →
-                </Link>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {currentReqs.map(r => (
-                  <div
-                    key={r.id}
-                    style={{
-                      padding: '12px 16px',
-                      background: '#f8fafc',
-                      borderRadius: 'var(--r-md)',
-                      border: '1px solid var(--border)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 12,
-                    }}
-                  >
-                    <div style={{ flex: 1 }}>
-                      <div className="flex items-center gap-2">
-                        <span style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text-primary)' }}>{r.skill}</span>
-                        <span className={`badge ${r.type === 'required' ? 'badge-blue' : 'badge-gray'}`} style={{ fontSize: 10 }}>
-                          {r.type}
-                        </span>
-                        <span className={`badge ${r.priority === 'high' ? 'badge-red' : r.priority === 'medium' ? 'badge-yellow' : 'badge-gray'}`} style={{ fontSize: 10 }}>
-                          {r.priority} priority
-                        </span>
-                      </div>
-                      <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>
-                        Category: {r.category} • Assessed via automated sandbox
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => handleDeleteReq(r.id)}
-                      className="btn btn-ghost btn-sm btn-icon text-muted"
-                      title="Remove requirement"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Add Requirement Modal */}
-      {isAddModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsAddModalOpen(false)}>
-          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 520 }}>
-            <div className="modal-header">
+        {/* Requirements detail */}
+        <div>
+          <div className="card">
+            <div className="card-header">
               <div>
-                <div className="modal-title">Add Competency Requirement</div>
-                <div className="modal-subtitle">Attach verifiable criteria to {selectedVacancy?.title}</div>
+                <div className="card-title">{selected.vacancy}</div>
+                <div className="card-subtitle">{selected.experience} · {selected.workMode} · {selected.openings} openings</div>
               </div>
-              <button onClick={() => setIsAddModalOpen(false)} className="btn-icon" aria-label="Close modal">
-                <X size={18} />
-              </button>
+              <button className="btn btn-secondary btn-sm"><Edit2 size={13} />Edit</button>
             </div>
 
-            <form onSubmit={handleAddRequirement} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div className="form-group">
-                  <label className="form-label">Skill or Competency Benchmark *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Distributed Consensus & Raft Protocol"
-                    value={newSkill}
-                    onChange={e => setNewSkill(e.target.value)}
-                    className="form-input"
-                  />
+            {/* Job details */}
+            <div style={{ display: 'flex', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
+              {[
+                { label: 'Experience', value: selected.experience },
+                { label: 'Education', value: selected.education },
+                { label: 'Work Mode', value: selected.workMode },
+                { label: 'Openings', value: String(selected.openings) },
+              ].map((d) => (
+                <div key={d.label} style={{ background: 'var(--surface-2)', borderRadius: 'var(--r-md)', padding: '8px 14px', minWidth: 120 }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 2 }}>{d.label}</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text-primary)' }}>{d.value}</div>
                 </div>
+              ))}
+            </div>
 
-                <div className="grid-2" style={{ gap: 12 }}>
-                  <div className="form-group">
-                    <label className="form-label">Category</label>
-                    <select
-                      value={newCategory}
-                      onChange={e => setNewCategory(e.target.value)}
-                      className="form-select"
-                    >
-                      <option value="Technical">Technical</option>
-                      <option value="Architecture">Architecture</option>
-                      <option value="Infrastructure">Infrastructure</option>
-                      <option value="Security">Security</option>
-                      <option value="Soft Skills">Soft Skills</option>
-                    </select>
-                  </div>
+            {/* Required */}
+            <div className="section-title" style={{ marginTop: 0 }}>Required Skills</div>
+            <div className="table-wrapper" style={{ marginBottom: 20 }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Requirement</th>
+                    <th>Type</th>
+                    <th>Priority</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selected.required.map((r) => (
+                    <tr key={r.skill}>
+                      <td style={{ fontWeight: 500 }}>{r.skill}</td>
+                      <td><span className="badge badge-indigo">Required</span></td>
+                      <td><span className={PRIORITY_CLASS[r.priority]}>{r.priority.charAt(0).toUpperCase() + r.priority.slice(1)}</span></td>
+                      <td>
+                        <button className="btn btn-ghost btn-sm btn-icon" aria-label={`Remove ${r.skill}`}><Trash2 size={13} /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Priority</label>
-                    <select
-                      value={newPriority}
-                      onChange={e => setNewPriority(e.target.value as any)}
-                      className="form-select"
-                    >
-                      <option value="high">High Priority</option>
-                      <option value="medium">Medium Priority</option>
-                      <option value="low">Low Priority</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
+            {/* Preferred */}
+            <div className="section-title">Preferred Skills</div>
+            <div className="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Requirement</th>
+                    <th>Type</th>
+                    <th>Priority</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selected.preferred.map((p) => (
+                    <tr key={p.skill}>
+                      <td style={{ fontWeight: 500 }}>{p.skill}</td>
+                      <td><span className="badge badge-gray">Preferred</span></td>
+                      <td><span className={PRIORITY_CLASS[p.priority]}>{p.priority.charAt(0).toUpperCase() + p.priority.slice(1)}</span></td>
+                      <td>
+                        <button className="btn btn-ghost btn-sm btn-icon" aria-label={`Remove ${p.skill}`}><Trash2 size={13} /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-              <div className="modal-footer">
-                <button type="button" onClick={() => setIsAddModalOpen(false)} className="btn btn-secondary">
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-gold">
-                  Add Criterion
-                </button>
-              </div>
-            </form>
+            <div style={{ marginTop: 20, display: 'flex', gap: 10 }}>
+              <button className="btn btn-secondary btn-sm"><Plus size={13} />Add Required</button>
+              <button className="btn btn-secondary btn-sm"><Plus size={13} />Add Preferred</button>
+            </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

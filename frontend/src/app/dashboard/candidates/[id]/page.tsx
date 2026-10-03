@@ -584,7 +584,7 @@ export default function CandidateDetailPage() {
                   Identified Evidence Gap: AWS Cloud Infrastructure
                 </h2>
                 <p className="card-subtitle text-amber-800">
-                  Definition: &quot;Evidence Gap&quot; means insufficient structured evaluation evidence exists. It does NOT mean the candidate lacks the skill.
+                  Definition: "Evidence Gap" means insufficient structured evaluation evidence exists. It does NOT mean the candidate lacks the skill.
                 </p>
               </div>
               <span className="badge badge-yellow font-bold">1 Evidence Gap</span>
