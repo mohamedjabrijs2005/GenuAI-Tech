@@ -195,7 +195,7 @@ export function EvidenceAuditModal({ isOpen, onClose, record }: EvidenceAuditMod
               }}
             >
               <div style={{ color: '#94a3b8', marginBottom: '8px' }}>
-                // Decrypted Evidence Payload [Vault Ref: {record.storageRef}]
+                {`// Decrypted Evidence Payload [Vault Ref: ${record.storageRef}]`}
               </div>
               <div>{`{`}</div>
               <div style={{ paddingLeft: '16px' }}>

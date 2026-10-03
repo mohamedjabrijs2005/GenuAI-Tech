@@ -232,7 +232,7 @@ export default function AuditTrailPage() {
         <div className="flex items-center gap-3" style={{ fontSize: 13, color: '#0369a1' }}>
           <Shield size={16} />
           <span>
-            <strong>Compliance Note:</strong> This audit trail is immutable and stored for 5 years in line with GDPR Article 30 (Records of Processing) and your company's data retention policy.
+            <strong>Compliance Note:</strong> This audit trail is immutable and stored for 5 years in line with GDPR Article 30 (Records of Processing) and your company&apos;s data retention policy.
             Audit logs cannot be deleted or modified. Contact your GenuAI Admin for export requests.
           </span>
         </div>

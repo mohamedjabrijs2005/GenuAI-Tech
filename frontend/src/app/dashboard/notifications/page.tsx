@@ -130,7 +130,7 @@ export default function NotificationsPage() {
           <div className="empty-state">
             <div className="empty-icon"><Bell size={22} /></div>
             <div className="empty-title">No {filter === 'unread' ? 'unread ' : ''}notifications</div>
-            <div className="empty-desc">You're all caught up! Check back later for updates.</div>
+            <div className="empty-desc">You&apos;re all caught up! Check back later for updates.</div>
           </div>
         </div>
       )}

@@ -229,7 +229,7 @@ export default function EvidencePage() {
             </div>
 
             <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              GenuAI connects each requirement for <strong>{currentCandidate.vacancy}</strong> with structured evidence logs. Review evidence sources below to inform your hiring team's decision.
+              GenuAI connects each requirement for <strong>{currentCandidate.vacancy}</strong> with structured evidence logs. Review evidence sources below to inform your hiring team&apos;s decision.
             </div>
           </div>
 

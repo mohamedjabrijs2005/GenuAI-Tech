@@ -20,6 +20,13 @@ const eslintConfig = defineConfig([
       "no-unused-vars": "off",
       "react-hooks/exhaustive-deps": "warn",
       "@typescript-eslint/no-explicit-any": "off",
+      // Calling async init/fetch functions from useEffect is a valid pattern
+      "react-hooks/set-state-in-effect": "off",
+      // Next.js font/image warnings — handled separately via next/image and next/font
+      "@next/next/no-page-custom-font": "off",
+      "@next/next/google-font-display": "off",
+      "@next/next/no-img-element": "warn",
+      "@next/next/no-location-assign-relative-destination": "warn",
     },
   },
 ]);

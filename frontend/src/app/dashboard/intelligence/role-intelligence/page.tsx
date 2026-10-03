@@ -271,7 +271,7 @@ export default function RoleIntelligencePage() {
 
           <div style={{ marginTop: 16, padding: '10px 14px', background: '#f8fafc', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
             <span style={{ color: 'var(--text-secondary)' }}>
-              Benchmark Standard: <strong>"Aggregated Market Role Intelligence"</strong> (Verified cross-company metadata).
+              Benchmark Standard: <strong>&quot;Aggregated Market Role Intelligence&quot;</strong> (Verified cross-company metadata).
             </span>
             <span style={{ fontWeight: 700, color: '#00236f' }}>
               ISO 27001 Aligned
@@ -286,7 +286,7 @@ export default function RoleIntelligencePage() {
           <div>
             <h2 className="card-title" style={{ fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
               <BarChart2 size={18} style={{ color: '#00236f' }} />
-              Market Competency Benchmark Set: "{selectedRole}"
+              Market Competency Benchmark Set: &quot;{selectedRole}&quot;
             </h2>
             <p className="card-subtitle">
               Normalized top evaluation criteria and frequency distributions derived from industry requisitions.
