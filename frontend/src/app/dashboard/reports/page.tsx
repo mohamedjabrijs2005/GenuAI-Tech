@@ -263,10 +263,10 @@ export default function ReportsPage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[
-                { label: 'Total Signals', value: ig.total_signals, color: 'var(--text-primary)', icon: <ShieldCheck size={16} /> },
-                { label: 'New / Unreviewed', value: ig.new_signals, color: 'var(--warning)', icon: <AlertTriangle size={16} style={{ color: 'var(--warning)' }} /> },
-                { label: 'High / Critical', value: ig.high_severity, color: 'var(--danger)', icon: <AlertTriangle size={16} style={{ color: 'var(--danger)' }} /> },
-                { label: 'Resolved', value: Number(ig.total_signals) - Number(ig.new_signals) - Number(ig.high_severity), color: 'var(--success)', icon: <CheckCircle2 size={16} style={{ color: 'var(--success)' }} /> },
+                { label: 'Total Signals', value: Number(ig.total_signals) || 0, color: 'var(--text-primary)', icon: <ShieldCheck size={16} /> },
+                { label: 'New / Unreviewed', value: Number(ig.new_signals) || 0, color: 'var(--warning)', icon: <AlertTriangle size={16} style={{ color: 'var(--warning)' }} /> },
+                { label: 'High / Critical', value: Number(ig.high_severity) || 0, color: 'var(--danger)', icon: <AlertTriangle size={16} style={{ color: 'var(--danger)' }} /> },
+                { label: 'Resolved', value: Math.max(0, (Number(ig.total_signals) || 0) - (Number(ig.new_signals) || 0) - (Number(ig.high_severity) || 0)), color: 'var(--success)', icon: <CheckCircle2 size={16} style={{ color: 'var(--success)' }} /> },
               ].map(item => (
                 <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 8, background: 'var(--surface-container-low)', border: '1px solid var(--border)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>

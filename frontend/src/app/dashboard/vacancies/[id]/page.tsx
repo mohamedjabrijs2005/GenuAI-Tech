@@ -8,7 +8,7 @@ import {
   ChevronRight, Edit3, CheckCircle2, AlertTriangle, Calendar,
   ClipboardList, Shield, Download, Play, Pause, RefreshCw, Building2, Sparkles, Check
 } from 'lucide-react';
-import { DataService, Vacancy, Candidate } from '@/lib/dataService';
+import { DataService, Vacancy, Candidate, EvidenceService, VacancyVersion } from '@/lib/dataService';
 import toast from 'react-hot-toast';
 
 const STATUS_COLOR: Record<string, string> = {
@@ -38,19 +38,38 @@ export default function VacancyDetailPage() {
 
   const [vacancy, setVacancy] = useState<Vacancy | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'requirements' | 'assessments' | 'applications'>('overview');
+  const [versions, setVersions] = useState<VacancyVersion[]>([]);
+  const [activeTab, setActiveTab] = useState<'overview' | 'requirements' | 'assessments' | 'applications' | 'versions'>('overview');
   const [isLoading, setIsLoading] = useState(true);
+  const [creatingVersion, setCreatingVersion] = useState(false);
 
   useEffect(() => {
     async function load() {
-      const v = await DataService.getVacancyById(id);
-      const c = await DataService.getCandidates(v?.title);
+      const [v, c, vv] = await Promise.all([
+        DataService.getVacancyById(id),
+        DataService.getCandidates(),
+        EvidenceService.getVacancyVersions(id),
+      ]);
       setVacancy(v);
-      setCandidates(c);
+      setCandidates(c.filter(x => x.vacancyId === id));
+      setVersions(vv);
       setIsLoading(false);
     }
     load();
   }, [id]);
+
+  const handleCreateVersion = async () => {
+    setCreatingVersion(true);
+    const v = await EvidenceService.createVacancyVersion(id, 'Requirements or assessment configuration changed');
+    if (v) { setVersions(prev => [v, ...prev]); toast.success(`Version ${v.version_number} created`); }
+    else toast.error('Failed to create version');
+    setCreatingVersion(false);
+  };
+
+  const handleVersionStatus = async (versionId: string, status: string) => {
+    const v = await EvidenceService.updateVersionStatus(versionId, status);
+    if (v) setVersions(prev => prev.map(x => x.id === versionId ? { ...x, status } : x));
+  };
 
   const handleToggleStatus = async () => {
     if (!vacancy) return;
@@ -129,6 +148,7 @@ export default function VacancyDetailPage() {
             { id: 'requirements', label: 'Requirements Matrix', icon: Target },
             { id: 'assessments', label: 'Assessment Configuration', icon: ClipboardList },
             { id: 'applications', label: `Applicants (${candidates.length})`, icon: Users },
+            { id: 'versions', label: `Versions (${versions.length})`, icon: CheckCircle2 },
           ].map(t => {
             const Icon = t.icon;
             return (
@@ -281,6 +301,65 @@ export default function VacancyDetailPage() {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+      {/* Tab: Versions */}
+      {activeTab === 'versions' && (
+        <div className="card" style={{ padding: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div>
+              <div className="card-title">Vacancy Versions</div>
+              <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '4px 0 0' }}>
+                When requirements or assessment config changes after recruitment starts, create a new version.
+                Candidates are always linked to the version they applied under.
+              </p>
+            </div>
+            <button onClick={handleCreateVersion} disabled={creatingVersion}
+              className="btn btn-gold btn-sm" style={{ gap: 6 }}>
+              <RefreshCw size={13} className={creatingVersion ? 'animate-spin' : ''} />
+              New Version
+            </button>
+          </div>
+          {versions.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-title">No versions yet</div>
+              <div className="empty-text">Create a version to lock this vacancy configuration for official recruitment.</div>
+              <button onClick={handleCreateVersion} className="btn btn-gold btn-sm" style={{ marginTop: 12 }}>Create Version 1</button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {versions.map(v => {
+                const statusColor: Record<string, string> = {
+                  Active: '#059669', Draft: '#64748b', Verified: '#6366f1',
+                  Paused: '#d97706', Closed: '#ba1a1a', Superseded: '#94a3b8',
+                };
+                const c = statusColor[v.status] || '#64748b';
+                return (
+                  <div key={v.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-container-low)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 8, background: `${c}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: c }}>v{v.version_number}</div>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>Version {v.version_number}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                          {v.change_summary || 'Initial version'} · Created {new Date(v.created_at).toLocaleDateString()}
+                          {v.application_count ? ` · ${v.application_count} application(s)` : ''}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: `${c}18`, color: c }}>{v.status}</span>
+                      {v.status === 'Draft' && (
+                        <button onClick={() => handleVersionStatus(v.id, 'Active')} className="btn btn-sm btn-secondary" style={{ fontSize: 12 }}>Activate</button>
+                      )}
+                      {v.status === 'Active' && (
+                        <button onClick={() => handleVersionStatus(v.id, 'Paused')} className="btn btn-sm btn-secondary" style={{ fontSize: 12 }}>Pause</button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
