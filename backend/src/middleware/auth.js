@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
 const pool = require('../database/pool');
+const { authenticate, requireGenuAIAdmin } = require('../middleware/auth');
+router.use(authenticate, requireGenuAIAdmin);
 
 /**
  * Middleware: Verify JWT and attach user + company to request.
@@ -41,22 +43,8 @@ async function authenticate(req, res, next) {
         companyMembership = memberResult.rowCount > 0 ? memberResult.rows[0] : null;
       }
     } catch (dbErr) {
-      if (dbErr.code === 'ECONNREFUSED' || dbErr.message?.includes('connect ECONNREFUSED')) {
-        user = {
-          id: payload.userId || 'demo-user-123',
-          email: 'demo@genuai.tech',
-          first_name: 'Demo',
-          last_name: 'Admin',
-          role: 'company_admin',
-        };
-        companyMembership = {
-          company_id: 'demo-company-123',
-          member_role: 'admin',
-          verification_status: 'VERIFIED',
-        };
-      } else {
-        throw dbErr;
-      }
+      console.error('Auth DB lookup failed:', dbErr.message);
+      return res.status(503).json({ error: 'Authentication service unavailable. Try again shortly.' });
     }
 
     if (!user) {
@@ -64,11 +52,7 @@ async function authenticate(req, res, next) {
     }
 
     req.user = user;
-    req.companyMembership = companyMembership || {
-      company_id: 'demo-company-123',
-      member_role: 'admin',
-      verification_status: 'VERIFIED',
-    };
+    req.companyMembership = companyMembership;
 
     next();
   } catch (err) {
