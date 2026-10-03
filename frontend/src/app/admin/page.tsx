@@ -501,6 +501,15 @@ export default function AdminOverviewPage() {
                   </div>
                 </div>
               ))}
+
+              {/* Empty state when queue is clear */}
+              {pendingCompanies.length === 0 && pendingVacancies.length === 0 && pendingAssessments.length === 0 && openIncidents.length === 0 && openDisputes.length === 0 && (
+                <div style={{ padding: '32px 20px', textAlign: 'center' }}>
+                  <CheckCircle2 size={32} style={{ color: '#059669', margin: '0 auto 10px' }} />
+                  <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)', marginBottom: 4 }}>All Clear</div>
+                  <div style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>No pending governance actions. All items are up to date.</div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -605,7 +614,7 @@ export default function AdminOverviewPage() {
               </div>
               <div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>IP Address</div>
-                <div style={{ fontFamily: 'monospace' }}>{selectedAuditLog.ipAddress || '195.12.44.18'}</div>
+                <div style={{ fontFamily: 'monospace' }}>{selectedAuditLog.ipAddress || '—'}</div>
               </div>
             </div>
 

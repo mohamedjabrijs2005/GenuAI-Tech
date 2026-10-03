@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import {
@@ -137,9 +137,7 @@ export default function AssessmentsPage() {
             <h1 className="page-title">Assessment Setup</h1>
             <p className="page-subtitle">Define requirement-based assessments linked to your vacancies and competency framework.</p>
           </div>
-          <button onClick={() => setIsCreateOpen(true)} className="btn btn-gold">
-            <Plus size={16} /> Create Assessment
-          </button>
+
         </div>
       </div>
 

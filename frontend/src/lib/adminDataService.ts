@@ -614,7 +614,7 @@ class AdminDataStore {
       ...record,
       id: `aud-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      ipAddress: '195.12.44.18',
+      ipAddress: record.ipAddress,
     };
     this.auditLogs = [newRecord, ...this.auditLogs];
     this.persist('audit_logs', this.auditLogs);

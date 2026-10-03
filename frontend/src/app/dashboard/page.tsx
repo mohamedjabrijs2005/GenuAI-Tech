@@ -139,82 +139,156 @@ export default function DashboardPage() {
 
   return (
     <div className="page-content" style={{ background: 'var(--surface)', minHeight: '100vh', padding: '24px 32px 48px' }}>
-      {/* ================= TOP RECRUITMENT INTELLIGENCE HERO STRIP ================= */}
-      <div className="stitch-hero">
-        <div className="stitch-hero-top">
-          {/* Brand & Workspace Info */}
-          <div className="stitch-hero-brand">
-            <div>
-              <div className="stitch-hero-title-row">
-                <span className="stitch-brand-tag">GenuAI Technologies</span>
-                <span style={{ color: '#cbd5e1', fontSize: 13 }}>•</span>
-                <h1 className="stitch-hero-heading">
-                  Recruitment Intelligence & Evidence Dashboard
-                </h1>
-                <span className="stitch-workspace-badge">
-                  {company?.name || 'Enterprise Workspace'}
-                </span>
-              </div>
-              <p className="stitch-hero-desc">
-                Verifiable Competency Assessment • Automated Match Scorecards • Zero Disqualification Bias
-              </p>
+      {/* ================= TOP RECRUITMENT INTELLIGENCE HERO BANNER ================= */}
+      <div style={{
+        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f2027 100%)',
+        borderRadius: '16px',
+        overflow: 'hidden',
+        position: 'relative',
+        padding: '28px 32px',
+        marginBottom: 0,
+        border: '1px solid rgba(212,175,55,0.2)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+      }}>
+        {/* Decorative background circles */}
+        <div style={{ position: 'absolute', top: -60, right: 60, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -40, right: 200, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(5,150,105,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, position: 'relative', zIndex: 1 }}>
+          {/* Left: Brand & Info */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <span style={{
+                fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase',
+                padding: '3px 10px', borderRadius: '99px',
+                background: 'rgba(212,175,55,0.18)', color: '#d4af37',
+                border: '1px solid rgba(212,175,55,0.35)',
+              }}>
+                GenuAI Technologies
+              </span>
+              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 14 }}>•</span>
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+                padding: '3px 10px', borderRadius: '99px',
+                background: 'rgba(5,150,105,0.15)', color: '#34d399',
+                border: '1px solid rgba(5,150,105,0.3)',
+              }}>
+                {company?.name || 'Enterprise Workspace'}
+              </span>
+            </div>
+
+            <h1 style={{
+              fontSize: 22, fontWeight: 900, color: '#f8fafc',
+              letterSpacing: '-0.5px', margin: '0 0 6px',
+              lineHeight: 1.2,
+            }}>
+              Recruitment Intelligence
+              <span style={{ color: '#d4af37' }}> & </span>
+              Evidence Dashboard
+            </h1>
+
+            <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.5)', margin: '0 0 18px', lineHeight: 1.5 }}>
+              Verifiable Competency Assessment&nbsp;•&nbsp;Automated Match Scorecards&nbsp;•&nbsp;Zero Disqualification Bias
+            </p>
+
+            {/* Action buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                onClick={handleRefresh}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
+                  background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+                  color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: 600,
+                  transition: 'all 0.2s',
+                }}
+                title="Sync Data"
+              >
+                <RefreshCw size={12} className={isRefreshing ? 'animate-spin' : ''} />
+                {isRefreshing ? 'Syncing...' : 'Sync'}
+              </button>
+
+              <Link
+                href="/dashboard/vacancies/builder"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '7px 14px', borderRadius: 8, textDecoration: 'none',
+                  background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)',
+                  color: '#d4af37', fontSize: 12, fontWeight: 600,
+                }}
+              >
+                <Sparkles size={12} />
+                AI Vacancy Builder
+              </Link>
+
+              <button
+                onClick={() => setIsModalOpen(true)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '7px 16px', borderRadius: 8, cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #d4af37, #b8860b)',
+                  border: 'none', color: '#fff', fontSize: 12, fontWeight: 700,
+                  boxShadow: '0 2px 8px rgba(212,175,55,0.35)',
+                }}
+              >
+                <Plus size={14} />
+                Create Vacancy
+              </button>
             </div>
           </div>
 
-          {/* Singular, Clear Action Bar */}
-          <div className="stitch-hero-actions">
-            <button
-              onClick={handleRefresh}
-              className="btn btn-secondary btn-sm"
-              title="Sync Data"
-            >
-              <RefreshCw size={13} className={isRefreshing ? 'animate-spin' : ''} style={{ color: '#854d0e' }} />
-              <span>{isRefreshing ? 'Syncing...' : 'Sync'}</span>
-            </button>
+          {/* Right: SVG Intelligence Visual */}
+          <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12 }}>
+            {/* Decorative Intelligence Node Graph */}
+            <svg width="220" height="130" viewBox="0 0 220 130" fill="none" style={{ opacity: 0.85 }}>
+              {/* Connecting lines */}
+              <line x1="110" y1="65" x2="50" y2="30" stroke="rgba(212,175,55,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
+              <line x1="110" y1="65" x2="170" y2="30" stroke="rgba(212,175,55,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
+              <line x1="110" y1="65" x2="30" y2="100" stroke="rgba(5,150,105,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
+              <line x1="110" y1="65" x2="190" y2="100" stroke="rgba(5,150,105,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
+              <line x1="110" y1="65" x2="110" y2="10" stroke="rgba(99,102,241,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
+              {/* Center Node */}
+              <circle cx="110" cy="65" r="18" fill="rgba(212,175,55,0.15)" stroke="#d4af37" strokeWidth="2" />
+              <circle cx="110" cy="65" r="10" fill="rgba(212,175,55,0.3)" />
+              <text x="110" y="69" textAnchor="middle" fill="#d4af37" fontSize="9" fontWeight="700">AI</text>
+              {/* Satellite Nodes */}
+              <circle cx="50" cy="30" r="12" fill="rgba(99,102,241,0.15)" stroke="#818cf8" strokeWidth="1.5" />
+              <text x="50" y="34" textAnchor="middle" fill="#818cf8" fontSize="7" fontWeight="600">TARGET</text>
+              <circle cx="170" cy="30" r="12" fill="rgba(5,150,105,0.15)" stroke="#34d399" strokeWidth="1.5" />
+              <text x="170" y="34" textAnchor="middle" fill="#34d399" fontSize="7" fontWeight="600">PROVE</text>
+              <circle cx="30" cy="100" r="12" fill="rgba(212,175,55,0.1)" stroke="#d4af37" strokeWidth="1.5" />
+              <text x="30" y="104" textAnchor="middle" fill="#d4af37" fontSize="7" fontWeight="600">LEARN</text>
+              <circle cx="190" cy="100" r="12" fill="rgba(239,68,68,0.1)" stroke="#f87171" strokeWidth="1.5" />
+              <text x="190" y="104" textAnchor="middle" fill="#f87171" fontSize="7" fontWeight="600">ASSESS</text>
+              <circle cx="110" cy="10" r="10" fill="rgba(99,102,241,0.15)" stroke="#818cf8" strokeWidth="1.5" />
+              <text x="110" y="13.5" textAnchor="middle" fill="#818cf8" fontSize="6.5" fontWeight="600">EVIDENCE</text>
+              {/* Pulse ring */}
+              <circle cx="110" cy="65" r="26" stroke="rgba(212,175,55,0.2)" strokeWidth="1" fill="none" />
+              <circle cx="110" cy="65" r="34" stroke="rgba(212,175,55,0.08)" strokeWidth="1" fill="none" />
+            </svg>
 
-            <Link
-              href="/dashboard/vacancies/builder"
-              className="btn btn-secondary btn-sm"
-            >
-              <Sparkles size={13} style={{ color: '#b8860b' }} />
-              <span>AI Vacancy Builder</span>
-            </Link>
-
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="btn btn-gold btn-sm"
-            >
-              <Plus size={15} />
-              <span>Create Vacancy</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Bottom Trust & Telemetry Strip */}
-        <div className="stitch-hero-bottom">
-          <div className="stitch-hero-status-group">
-            <span className="stitch-status-item">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Telemetry: <strong style={{ color: 'var(--text-primary)' }}>Active</strong></span>
-            </span>
-            <span style={{ color: '#e2e8f0' }}>|</span>
-            <span className="stitch-status-item">
-              <ShieldCheck size={14} style={{ color: '#059669' }} />
-              <span>Verification Status: <strong style={{ color: 'var(--text-primary)' }}>{company?.verificationStatus || 'VERIFIED'}</strong></span>
-            </span>
-            <span style={{ color: '#e2e8f0' }}>|</span>
-            <span className="stitch-status-item">
-              <Building2 size={14} style={{ color: '#b8860b' }} />
-              <span>Departments: <strong style={{ color: 'var(--text-primary)' }}>{departments.length} Units</strong></span>
-            </span>
-          </div>
-          <div>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-              Company ID: {company?.id ? company.id.substring(0, 8) : 'GENUAI-LIVE'}
-            </span>
+            {/* Bottom status strip */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34d399', display: 'inline-block', boxShadow: '0 0 6px #34d399' }} />
+                Telemetry: <strong style={{ color: '#34d399' }}>Active</strong>
+                <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
+                <ShieldCheck size={11} style={{ color: '#34d399' }} />
+                <strong style={{ color: '#34d399' }}>{company?.verificationStatus || 'VERIFIED'}</strong>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
+                <Building2 size={11} style={{ color: '#d4af37' }} />
+                <span>{departments.length} Dept{departments.length !== 1 ? 's' : ''}</span>
+                <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
+                <span style={{ fontFamily: 'monospace', fontSize: 10 }}>
+                  ID: {company?.id ? company.id.substring(0, 8).toUpperCase() : 'GENUAI'}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
 
       {/* ================= 4 METRIC STATS CARDS ================= */}
       <div className="stitch-stats-grid">

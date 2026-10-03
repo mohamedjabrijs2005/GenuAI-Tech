@@ -271,7 +271,7 @@ export default function AuditLogsPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Origin IP Address</div>
-                  <div style={{ fontFamily: 'monospace' }}>{selectedLog.ipAddress || '195.12.44.18'}</div>
+                  <div style={{ fontFamily: 'monospace' }}>{selectedLog.ipAddress || '—'}</div>
                 </div>
               </div>
             </div>
