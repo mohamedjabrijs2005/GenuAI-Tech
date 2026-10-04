@@ -156,13 +156,29 @@ export default function AssessmentsPage() {
       </div>
 
       {assessments.length === 0 ? (
-        <div className="empty-state">
-          <ClipboardList size={40} className="empty-state-icon" />
-          <div className="empty-state-title">No assessments yet</div>
-          <div className="empty-state-text">Create your first requirement-based assessment to get started.</div>
-          <button className="btn btn-gold" onClick={() => setIsCreateOpen(true)}>
-            <Plus size={16} /> Create Assessment
-          </button>
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          padding: '60px 24px', textAlign: 'center', gap: 12,
+        }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 14, background: '#f1f5f9',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#94a3b8', marginBottom: 4,
+          }}>
+            <ClipboardList size={28} />
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>No Assessments Configured</div>
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)', maxWidth: 380, lineHeight: 1.5 }}>
+            Assessments are linked to vacancy requirements. Define your role requirements first, then configure assessment groups from the Requirements section.
+          </div>
+          <a href="/dashboard/requirements" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '8px 16px', borderRadius: 8, marginTop: 4,
+            background: '#f8fafc', border: '1px solid var(--border)',
+            color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, textDecoration: 'none',
+          }}>
+            Go to Requirements →
+          </a>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

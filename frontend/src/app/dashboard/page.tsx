@@ -143,10 +143,9 @@ export default function DashboardPage() {
       <div style={{
         background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f2027 100%)',
         borderRadius: '16px',
-        overflow: 'hidden',
         position: 'relative',
         padding: '28px 32px',
-        marginBottom: 0,
+        marginBottom: '24px',
         border: '1px solid rgba(212,175,55,0.2)',
         boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
       }}>
@@ -240,31 +239,31 @@ export default function DashboardPage() {
           {/* Right: SVG Intelligence Visual */}
           <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12 }}>
             {/* Decorative Intelligence Node Graph */}
-            <svg width="220" height="130" viewBox="0 0 220 130" fill="none" style={{ opacity: 0.85 }}>
+            <svg width="200" height="140" viewBox="0 0 200 140" fill="none" style={{ opacity: 0.85, overflow: 'visible' }}>
               {/* Connecting lines */}
-              <line x1="110" y1="65" x2="50" y2="30" stroke="rgba(212,175,55,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
-              <line x1="110" y1="65" x2="170" y2="30" stroke="rgba(212,175,55,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
-              <line x1="110" y1="65" x2="30" y2="100" stroke="rgba(5,150,105,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
-              <line x1="110" y1="65" x2="190" y2="100" stroke="rgba(5,150,105,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
-              <line x1="110" y1="65" x2="110" y2="10" stroke="rgba(99,102,241,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
+              <line x1="100" y1="75" x2="45" y2="38" stroke="rgba(212,175,55,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
+              <line x1="100" y1="75" x2="155" y2="38" stroke="rgba(212,175,55,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
+              <line x1="100" y1="75" x2="28" y2="112" stroke="rgba(5,150,105,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
+              <line x1="100" y1="75" x2="172" y2="112" stroke="rgba(5,150,105,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
+              <line x1="100" y1="75" x2="100" y2="22" stroke="rgba(99,102,241,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
               {/* Center Node */}
-              <circle cx="110" cy="65" r="18" fill="rgba(212,175,55,0.15)" stroke="#d4af37" strokeWidth="2" />
-              <circle cx="110" cy="65" r="10" fill="rgba(212,175,55,0.3)" />
-              <text x="110" y="69" textAnchor="middle" fill="#d4af37" fontSize="9" fontWeight="700">AI</text>
-              {/* Satellite Nodes */}
-              <circle cx="50" cy="30" r="12" fill="rgba(99,102,241,0.15)" stroke="#818cf8" strokeWidth="1.5" />
-              <text x="50" y="34" textAnchor="middle" fill="#818cf8" fontSize="7" fontWeight="600">TARGET</text>
-              <circle cx="170" cy="30" r="12" fill="rgba(5,150,105,0.15)" stroke="#34d399" strokeWidth="1.5" />
-              <text x="170" y="34" textAnchor="middle" fill="#34d399" fontSize="7" fontWeight="600">PROVE</text>
-              <circle cx="30" cy="100" r="12" fill="rgba(212,175,55,0.1)" stroke="#d4af37" strokeWidth="1.5" />
-              <text x="30" y="104" textAnchor="middle" fill="#d4af37" fontSize="7" fontWeight="600">LEARN</text>
-              <circle cx="190" cy="100" r="12" fill="rgba(239,68,68,0.1)" stroke="#f87171" strokeWidth="1.5" />
-              <text x="190" y="104" textAnchor="middle" fill="#f87171" fontSize="7" fontWeight="600">ASSESS</text>
-              <circle cx="110" cy="10" r="10" fill="rgba(99,102,241,0.15)" stroke="#818cf8" strokeWidth="1.5" />
-              <text x="110" y="13.5" textAnchor="middle" fill="#818cf8" fontSize="6.5" fontWeight="600">EVIDENCE</text>
-              {/* Pulse ring */}
-              <circle cx="110" cy="65" r="26" stroke="rgba(212,175,55,0.2)" strokeWidth="1" fill="none" />
-              <circle cx="110" cy="65" r="34" stroke="rgba(212,175,55,0.08)" strokeWidth="1" fill="none" />
+              <circle cx="100" cy="75" r="18" fill="rgba(212,175,55,0.15)" stroke="#d4af37" strokeWidth="2" />
+              <circle cx="100" cy="75" r="10" fill="rgba(212,175,55,0.3)" />
+              <text x="100" y="79" textAnchor="middle" fill="#d4af37" fontSize="9" fontWeight="700">AI</text>
+              {/* Satellite Nodes - moved inward to avoid clipping */}
+              <circle cx="45" cy="38" r="14" fill="rgba(99,102,241,0.15)" stroke="#818cf8" strokeWidth="1.5" />
+              <text x="45" y="42" textAnchor="middle" fill="#818cf8" fontSize="7" fontWeight="600">TARGET</text>
+              <circle cx="155" cy="38" r="14" fill="rgba(5,150,105,0.15)" stroke="#34d399" strokeWidth="1.5" />
+              <text x="155" y="42" textAnchor="middle" fill="#34d399" fontSize="7" fontWeight="600">PROVE</text>
+              <circle cx="28" cy="112" r="14" fill="rgba(212,175,55,0.1)" stroke="#d4af37" strokeWidth="1.5" />
+              <text x="28" y="116" textAnchor="middle" fill="#d4af37" fontSize="7" fontWeight="600">LEARN</text>
+              <circle cx="172" cy="112" r="14" fill="rgba(239,68,68,0.1)" stroke="#f87171" strokeWidth="1.5" />
+              <text x="172" y="116" textAnchor="middle" fill="#f87171" fontSize="7" fontWeight="600">ASSESS</text>
+              <circle cx="100" cy="22" r="13" fill="rgba(99,102,241,0.15)" stroke="#818cf8" strokeWidth="1.5" />
+              <text x="100" y="26" textAnchor="middle" fill="#818cf8" fontSize="7" fontWeight="600">EVIDENCE</text>
+              {/* Pulse rings */}
+              <circle cx="100" cy="75" r="26" stroke="rgba(212,175,55,0.2)" strokeWidth="1" fill="none" />
+              <circle cx="100" cy="75" r="36" stroke="rgba(212,175,55,0.08)" strokeWidth="1" fill="none" />
             </svg>
 
             {/* Bottom status strip */}
