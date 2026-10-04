@@ -31,15 +31,8 @@ router.post(
     try {
       client = await pool.connect();
     } catch (connErr) {
-      if (connErr.code === 'ECONNREFUSED' || connErr.message?.includes('connect ECONNREFUSED')) {
-        const token = jwt.sign({ userId: 'demo-user-123' }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
-        return res.status(201).json({
-          token,
-          user: { id: 'demo-user-123', email, firstName, lastName, role: 'company_admin' },
-          company: { id: 'demo-company-123', name: companyName, verificationStatus: 'VERIFIED' }
-        });
-      }
-      return res.status(500).json({ error: 'Registration failed' });
+      console.error('DB connection failed:', connErr.message);
+      return res.status(503).json({ error: 'Database unavailable. Check your connection and try again.' });
     }
     try {
       await client.query('BEGIN');
@@ -105,14 +98,6 @@ router.post(
       });
     } catch (err) {
       try { await client.query('ROLLBACK'); } catch (_) {}
-      if (err.code === 'ECONNREFUSED' || err.message?.includes('connect ECONNREFUSED')) {
-        const token = jwt.sign({ userId: 'demo-user-123' }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
-        return res.status(201).json({
-          token,
-          user: { id: 'demo-user-123', email, firstName, lastName, role: 'company_admin' },
-          company: { id: 'demo-company-123', name: companyName, verificationStatus: 'VERIFIED' }
-        });
-      }
       console.error('Register error:', err);
       return res.status(500).json({ error: 'Registration failed' });
     } finally {
@@ -186,28 +171,6 @@ router.post(
         } : null,
       });
     } catch (err) {
-      if (err.code === 'ECONNREFUSED' || err.message?.includes('connect ECONNREFUSED')) {
-        const isAdmin = email && (email.toLowerCase().endsWith('@genuaiadmin.com') || email.toLowerCase().endsWith('@genuai.io'));
-        const namePart = email ? email.split('@')[0] : 'Admin';
-        const formattedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-        const token = jwt.sign({ userId: isAdmin ? 'genuai-platform-admin' : 'demo-user-123' }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
-        
-        return res.json({
-          token,
-          user: {
-            id: isAdmin ? 'genuai-platform-admin' : 'demo-user-123',
-            email: email || (isAdmin ? 'sarah@genuaiadmin.com' : 'demo@company.com'),
-            firstName: formattedName,
-            lastName: isAdmin ? 'Console' : 'Admin',
-            role: isAdmin ? 'genuai_admin' : 'company_admin',
-          },
-          company: isAdmin ? null : {
-            id: 'demo-company-123',
-            name: 'Enterprise Technologies Ltd',
-            verificationStatus: 'VERIFIED',
-          },
-        });
-      }
       console.error('Login error:', err);
       return res.status(500).json({ error: 'Login failed' });
     }
@@ -220,7 +183,7 @@ router.post(
 const { authenticate } = require('../middleware/auth');
 router.get('/me', authenticate, async (req, res) => {
   try {
-    let memberResult = { rowCount: 0, rows: [] };
+    let memberResult;
     try {
       memberResult = await pool.query(
         `SELECT cm.company_id, cm.member_role, c.name as company_name, c.verification_status
@@ -231,26 +194,23 @@ router.get('/me', authenticate, async (req, res) => {
         [req.user.id]
       );
     } catch (dbErr) {
-      // Ignore DB error in /me if offline
+      console.error('Company lookup failed:', dbErr.message);
+      return res.status(503).json({ error: 'Database unavailable.' });
     }
 
     return res.json({
       user: {
         id: req.user.id,
-        email: req.user.email || req.user.first_name + '@genuai.tech',
-        firstName: req.user.firstName || req.user.first_name || 'Demo',
-        lastName: req.user.lastName || req.user.last_name || 'Admin',
-        role: req.user.role || 'company_admin',
+        email: req.user.email,
+        firstName: req.user.first_name,
+        lastName: req.user.last_name,
+        role: req.user.role,
       },
       company: memberResult.rowCount > 0 ? {
         id: memberResult.rows[0].company_id,
         name: memberResult.rows[0].company_name,
         verificationStatus: memberResult.rows[0].verification_status,
-      } : {
-        id: 'demo-company-123',
-        name: 'GenuAI Tech',
-        verificationStatus: 'VERIFIED',
-      },
+      } : null,
     });
   } catch (err) {
     console.error('Me error:', err);
