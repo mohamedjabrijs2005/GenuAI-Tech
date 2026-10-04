@@ -31,7 +31,12 @@ router.post(
     try {
       client = await pool.connect();
     } catch (connErr) {
+<<<<<<< HEAD
       console.error('DB connection failed. Full error:', JSON.stringify(connErr, Object.getOwnPropertyNames(connErr))); console.error('DATABASE_URL set?', !!process.env.DATABASE_URL);
+=======
+      console.error('DB connection failed. Full error:', JSON.stringify(connErr, Object.getOwnPropertyNames(connErr)));
+      console.error('DATABASE_URL set?', !!process.env.DATABASE_URL);
+>>>>>>> 84caca2accc9043a3a9f4df80068e3b4158161e8
       return res.status(503).json({ error: 'Database unavailable. Check your connection and try again.' });
     }
     try {
@@ -219,3 +224,4 @@ router.get('/me', authenticate, async (req, res) => {
 });
 
 module.exports = router;
+
