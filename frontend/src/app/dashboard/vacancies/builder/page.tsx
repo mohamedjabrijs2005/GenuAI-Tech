@@ -54,29 +54,22 @@ export default function VacancyBuilderPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  // STEP 1 State
+  // STEP 1 State - Clean blank initial state
   const [basicInfo, setBasicInfo] = useState({
-    title: 'Senior Software Developer',
-    dept: 'Engineering',
-    location: 'Chennai, India / Remote',
+    title: '',
+    dept: '',
+    location: '',
     workMode: 'Hybrid',
     employmentType: 'Full-time',
-    openings: 2,
-    experienceLevel: '3 - 5 Years',
-    salaryRange: '₹14,000,000 - ₹20,000,000 P.A.',
-    deadline: '2026-10-30',
-    description: 'We are seeking an experienced Software Developer to architect scalable backend services and contribute to core engineering workflows.',
+    openings: 1,
+    experienceLevel: '',
+    salaryRange: '',
+    deadline: '',
+    description: '',
   });
 
-  // STEP 2 & 3 State: Role Requirements
-  const [requirements, setRequirements] = useState<Requirement[]>([
-    { id: 'REQ-01', name: 'Java Core & OOP', category: 'Technical', type: 'Required', priority: 'High', proficiency: 'Advanced', method: 'Official Technical Assessment', group: 'TECHNICAL' },
-    { id: 'REQ-02', name: 'Data Structures & Algorithms', category: 'Technical', type: 'Required', priority: 'High', proficiency: 'Advanced', method: 'Official Technical Assessment', group: 'TECHNICAL' },
-    { id: 'REQ-03', name: 'PostgreSQL & SQL Design', category: 'Technical', type: 'Required', priority: 'Medium', proficiency: 'Intermediate', method: 'Official Technical Assessment', group: 'TECHNICAL' },
-    { id: 'REQ-04', name: 'Analytical Thinking & Debugging', category: 'Problem Solving', type: 'Required', priority: 'High', proficiency: 'Advanced', method: 'Official Technical Assessment', group: 'PROBLEM SOLVING' },
-    { id: 'REQ-05', name: 'Verbal & Technical Communication', category: 'Communication', type: 'Required', priority: 'Medium', proficiency: 'Intermediate', method: 'Structured Interview', group: 'COMMUNICATION' },
-    { id: 'REQ-06', name: 'AWS Cloud Architecture', category: 'Infrastructure', type: 'Preferred', priority: 'Low', proficiency: 'Intermediate', method: 'Credential', group: 'DOMAIN' },
-  ]);
+  // STEP 2 & 3 State: Role Requirements (Starts empty)
+  const [requirements, setRequirements] = useState<Requirement[]>([]);
 
   const [newReq, setNewReq] = useState<{
     name: string;
@@ -96,41 +89,11 @@ export default function VacancyBuilderPage() {
     group: 'TECHNICAL',
   });
 
-  // STEP 5 State: Assessment Groups (One assessment covers multiple requirements)
-  const [assessmentGroups, setAssessmentGroups] = useState<AssessmentGroup[]>([
-    {
-      id: 'AG-01',
-      name: 'Core Engineering Technical Assessment',
-      type: 'Technical MCQ + Coding',
-      duration: 60,
-      questionCount: 25,
-      requirementsCovered: ['REQ-01', 'REQ-02', 'REQ-03'],
-    },
-    {
-      id: 'AG-02',
-      name: 'Systemic Problem Solving Evaluation',
-      type: 'Scenario Based',
-      duration: 30,
-      questionCount: 10,
-      requirementsCovered: ['REQ-04'],
-    },
-    {
-      id: 'AG-03',
-      name: 'Structured Technical Interview',
-      type: 'Live Interview Evaluation',
-      duration: 45,
-      questionCount: 5,
-      requirementsCovered: ['REQ-05'],
-    }
-  ]);
+  // STEP 5 State: Assessment Groups (Starts empty)
+  const [assessmentGroups, setAssessmentGroups] = useState<AssessmentGroup[]>([]);
 
-  // STEP 6 State: Evaluation Groups inside Assessments
-  const [evalGroups, setEvalGroups] = useState<EvaluationGroup[]>([
-    { id: 'EG-01', assessmentGroupId: 'AG-01', name: 'OOP Principles & Polymorphism', description: 'Classes, Inheritance, Interface abstraction', mappedRequirementId: 'REQ-01' },
-    { id: 'EG-02', assessmentGroupId: 'AG-01', name: 'Collections & Memory Management', description: 'Lists, Sets, HashMaps, Garbage Collection', mappedRequirementId: 'REQ-01' },
-    { id: 'EG-03', assessmentGroupId: 'AG-01', name: 'Tree & Graph Traversal (DSA)', description: 'Binary Search Trees, Graph DFS/BFS', mappedRequirementId: 'REQ-02' },
-    { id: 'EG-04', assessmentGroupId: 'AG-01', name: 'Relational Indexing & Joins', description: 'Inner/Outer joins, Indexes, Query Plans', mappedRequirementId: 'REQ-03' },
-  ]);
+  // STEP 6 State: Evaluation Groups inside Assessments (Starts empty)
+  const [evalGroups, setEvalGroups] = useState<EvaluationGroup[]>([]);
 
   // STEP 8 State: Agreement Center
   const [agreements, setAgreements] = useState({

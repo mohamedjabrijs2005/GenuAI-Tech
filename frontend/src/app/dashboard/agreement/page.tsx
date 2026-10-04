@@ -5,6 +5,7 @@ import {
   ShieldCheck, CheckCircle2, Download, Lock, CheckSquare, Square,
   Sparkles, Calendar, User, Building2, FileText, Info,
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const AGREEMENT_CLAUSES = [
   {
@@ -39,13 +40,17 @@ const AGREEMENT_CLAUSES = [
   },
 ];
 
-const AUDIT_LOG = [
-  { date: '2026-09-01', event: 'Agreement signed and activated', by: 'Sarah Connor (Admin)' },
-  { date: '2026-09-01', event: 'Cross-Company Role Intelligence clause accepted', by: 'Sarah Connor (Admin)' },
-  { date: '2026-08-28', event: 'Agreement document sent for review', by: 'GenuAI Platform' },
-];
-
 export default function AgreementPage() {
+  const { user, company } = useAuth();
+  const signedByName = user ? `${user.firstName} ${user.lastName}`.trim() : 'Company Admin';
+  const companyName = company?.name || 'Workspace';
+
+  const AUDIT_LOG = [
+    { date: '2026-09-01', event: 'Agreement signed and activated', by: `${signedByName} (Admin)` },
+    { date: '2026-09-01', event: 'Cross-Company Role Intelligence clause accepted', by: `${signedByName} (Admin)` },
+    { date: '2026-08-28', event: 'Agreement document sent for review', by: 'GenuAI Platform' },
+  ];
+
   const [checkedState, setCheckedState] = useState<Record<string, boolean>>({
     'clause-1': true,
     'clause-2': true,
@@ -91,14 +96,14 @@ export default function AgreementPage() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
           gap: 16,
           marginBottom: 28,
         }}
       >
         {[
-          { icon: User, label: 'Signed By', value: 'Sarah Connor', sub: 'Company Admin' },
-          { icon: Building2, label: 'Company', value: 'Acme Technologies Ltd.', sub: 'Verified Entity' },
+          { icon: User, label: 'Signed By', value: signedByName, sub: 'Company Admin' },
+          { icon: Building2, label: 'Company', value: companyName, sub: 'Verified Entity' },
           { icon: Calendar, label: 'Signed On', value: '1 Sep 2026', sub: 'Active & Authorized' },
         ].map((m) => {
           const Icon = m.icon;
@@ -256,7 +261,7 @@ export default function AgreementPage() {
                 Agreement Status: {allAgreed ? 'Active & Fully Authorized' : 'Partial Permissions Selected'}
               </div>
               <div style={{ fontSize: 11.5, color: '#94a3b8', marginTop: 2 }}>
-                Executed by Sarah Connor (Company Admin) for Acme Technologies Ltd.
+                Executed by {signedByName} (Company Admin) for {companyName}.
               </div>
             </div>
           </div>
