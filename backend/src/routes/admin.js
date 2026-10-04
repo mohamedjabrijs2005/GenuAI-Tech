@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../database/pool');
+const { authenticate, requireGenuAIAdmin } = require('../middleware/auth');
+router.use(authenticate, requireGenuAIAdmin);
 
 // In-memory data store with live state synchronization for platform governance
 let inMemoryCompanies = [
