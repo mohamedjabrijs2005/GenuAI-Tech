@@ -1,160 +1,168 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import Link from 'next/link';
 import {
-  ClipboardList, ChevronDown, ChevronUp,
-  Plus, X, BookOpen, Target, Shield, Clock
+  ClipboardList, CheckCircle2, AlertTriangle, Info, ChevronDown, ChevronUp,
+  Lock, Eye, Plus, BarChart2, Users, Calendar, Zap
 } from 'lucide-react';
-import { DataService, Vacancy } from '@/lib/dataService';
-import toast from 'react-hot-toast';
 
-interface EvaluationModule {
-  id: string;
-  name: string;
-  requirement: string;
-  questions: number;
-  avgScore: string;
-}
-
-interface Assessment {
-  id: string;
-  name: string;
-  vacancy: string;
-  vacancyId: string;
-  status: 'Active' | 'Draft';
-  version: string;
-  competencyArea: string;
-  assessmentType: string;
-  duration: string;
-  difficulty: string;
-  questionCount: number;
-  integrity: string;
-  modules: EvaluationModule[];
-}
-
-const ASSESSMENT_TYPES = [
-  'Technical Skills Test',
-  'Competency-Based Interview',
-  'Situational Judgement Test',
-  'Cognitive Ability Test',
-  'Personality & Values Assessment',
-  'Work Sample / Portfolio Review',
-  'Case Study',
-  'Role Play Simulation',
+// Assessment Groups linked to role requirements
+const ASSESSMENT_GROUPS = [
+  {
+    id: 'AG-01',
+    name: 'Technical Core Assessment',
+    vacancy: 'Software Developer',
+    status: 'Active',
+    version: 'v1.0',
+    type: 'Official Technical Assessment',
+    duration: '90 min',
+    questionCount: 42,
+    difficulty: 'Mixed (Medium → Hard)',
+    attempts: 1,
+    integrity: 'Full Proctoring',
+    window: '2026-09-10 → 2026-09-25',
+    candidatesInvited: 18,
+    candidatesCompleted: 15,
+    evaluationGroups: [
+      {
+        id: 'EG-01-A',
+        name: 'Java OOP & Collections',
+        requirement: 'Java (Core & OOP)',
+        reqId: 'REQ-01',
+        criteria: ['Classes & Interfaces', 'Inheritance & Polymorphism', 'Exception Handling', 'Collections Framework'],
+        questions: 14,
+        avgScore: '82%',
+      },
+      {
+        id: 'EG-01-B',
+        name: 'Data Structures & Algorithm Solving',
+        requirement: 'DSA',
+        reqId: 'REQ-02',
+        criteria: ['Array Traversal', 'Tree Algorithms', 'Sorting & Searching', 'Time Complexity Analysis'],
+        questions: 16,
+        avgScore: '76%',
+      },
+      {
+        id: 'EG-01-C',
+        name: 'SQL & Relational Queries',
+        requirement: 'SQL & Database Design',
+        reqId: 'REQ-03',
+        criteria: ['Complex JOINs', 'Aggregations & Grouping', 'Subqueries', 'Schema Interpretation'],
+        questions: 12,
+        avgScore: '88%',
+      },
+    ],
+  },
+  {
+    id: 'AG-02',
+    name: 'Problem Solving Assessment',
+    vacancy: 'Software Developer',
+    status: 'Active',
+    version: 'v1.0',
+    type: 'Case Study & Scenario',
+    duration: '45 min',
+    questionCount: 8,
+    difficulty: 'Medium',
+    attempts: 1,
+    integrity: 'Standard Monitoring',
+    window: '2026-09-10 → 2026-09-25',
+    candidatesInvited: 18,
+    candidatesCompleted: 15,
+    evaluationGroups: [
+      {
+        id: 'EG-02-A',
+        name: 'Analytical & Edge Case Handling',
+        requirement: 'Problem Solving & Analytical Thinking',
+        reqId: 'REQ-04',
+        criteria: ['Ambiguity Resolution', 'Edge Case Identification', 'Structured Thinking', 'Scenario Decomposition'],
+        questions: 8,
+        avgScore: '84%',
+      },
+    ],
+  },
+  {
+    id: 'AG-03',
+    name: 'Structured Communication Interview',
+    vacancy: 'Software Developer',
+    status: 'Active',
+    version: 'v1.0',
+    type: 'Structured Interview',
+    duration: '30 min',
+    questionCount: 6,
+    difficulty: 'Qualitative Evaluation',
+    attempts: 1,
+    integrity: 'Recruiter Evaluated',
+    window: 'Scheduled',
+    candidatesInvited: 15,
+    candidatesCompleted: 10,
+    evaluationGroups: [
+      {
+        id: 'EG-03-A',
+        name: 'Technical Communication Rubric',
+        requirement: 'Technical Communication',
+        reqId: 'REQ-05',
+        criteria: ['Explanation Clarity', 'Logical Structure', 'Technical Vocabulary', 'Response Quality'],
+        questions: 6,
+        avgScore: '4.5 / 5.0',
+      },
+    ],
+  },
 ];
 
-const COMPETENCY_AREAS = [
-  'Technical / Domain Knowledge',
-  'Problem Solving & Analytical Thinking',
-  'Communication & Interpersonal Skills',
-  'Leadership & Decision Making',
-  'Teamwork & Collaboration',
-  'Adaptability & Resilience',
-  'Customer Focus & Service Orientation',
-  'Innovation & Creativity',
-  'Planning & Organising',
-  'Integrity & Ethics',
-];
-
-const DIFFICULTY_LEVELS = ['Entry', 'Mid', 'Senior', 'Lead', 'Executive'];
+const STATUS_BADGE: Record<string, string> = {
+  Active: 'badge-green',
+  Draft: 'badge-gray',
+  Locked: 'badge-yellow',
+  Closed: 'badge-red',
+};
 
 export default function AssessmentsPage() {
-  const [vacancies, setVacancies] = useState<Vacancy[]>([]);
-  const [assessments, setAssessments] = useState<Assessment[]>([]);
-  const [expandedId, setExpandedId] = useState<string>('');
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [expanded, setExpanded] = useState<string[]>(['AG-01']);
 
-  const [formName, setFormName] = useState('');
-  const [formVacancyId, setFormVacancyId] = useState('');
-  const [formType, setFormType] = useState(ASSESSMENT_TYPES[0]);
-  const [formCompetency, setFormCompetency] = useState(COMPETENCY_AREAS[0]);
-  const [formDifficulty, setFormDifficulty] = useState('Senior');
-  const [formDuration, setFormDuration] = useState('60 min');
-  const [formRequirement, setFormRequirement] = useState('');
+  const toggle = (id: string) =>
+    setExpanded(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
-  useEffect(() => {
-    async function load() {
-      const vList = await DataService.getVacancies();
-      setVacancies(vList);
-      if (vList.length > 0) setFormVacancyId(vList[0].id);
-    }
-    load();
-  }, []);
-
-  const resetForm = () => {
-    setFormName('');
-    setFormType(ASSESSMENT_TYPES[0]);
-    setFormCompetency(COMPETENCY_AREAS[0]);
-    setFormDifficulty('Senior');
-    setFormDuration('60 min');
-    setFormRequirement('');
-    if (vacancies.length > 0) setFormVacancyId(vacancies[0].id);
-  };
-
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formName.trim()) return;
-    const vacancy = vacancies.find(v => v.id === formVacancyId);
-    const newAssessment: Assessment = {
-      id: 'AS-' + Math.floor(10 + Math.random() * 90),
-      name: formName.trim(),
-      vacancy: vacancy?.title || 'Open Role',
-      vacancyId: formVacancyId,
-      status: 'Active',
-      version: 'v1.0',
-      competencyArea: formCompetency,
-      assessmentType: formType,
-      duration: formDuration,
-      difficulty: formDifficulty,
-      questionCount: 5,
-      integrity: 'Proctored & Monitored',
-      modules: [
-        {
-          id: 'M-01',
-          name: formRequirement.trim() || formCompetency,
-          requirement: formRequirement.trim() || formCompetency,
-          questions: 5,
-          avgScore: 'Pending',
-        },
-      ],
-    };
-    setAssessments([newAssessment, ...assessments]);
-    toast.success('Assessment created successfully');
-    setIsCreateOpen(false);
-    resetForm();
-  };
+  const totalInvited = ASSESSMENT_GROUPS.reduce((a, g) => a + g.candidatesInvited, 0);
+  const totalCompleted = ASSESSMENT_GROUPS.reduce((a, g) => a + g.candidatesCompleted, 0);
+  const completionRate = Math.round((totalCompleted / totalInvited) * 100);
 
   return (
     <div className="page-content">
+      {/* Page Header */}
       <div className="page-header">
         <div className="breadcrumbs">
-          <span>Assessments</span>
+          <span>Recruitment</span>
           <span className="breadcrumb-sep">/</span>
-          <span className="breadcrumb-current">Assessment Setup</span>
+          <span className="breadcrumb-current">Assessment Setup & Results</span>
         </div>
         <div className="page-header-row">
           <div>
-            <h1 className="page-title">Assessment Setup</h1>
-            <p className="page-subtitle">Define requirement-based assessments linked to your vacancies and competency framework.</p>
+            <h1 className="page-title">Assessment Groups & Evaluation Results</h1>
+            <p className="page-subtitle">
+              Requirement-mapped official assessment configuration and live results by evaluation group.
+            </p>
           </div>
-
+          <div className="flex gap-2">
+            <Link href="/dashboard/vacancies/builder" className="btn btn-secondary btn-sm">
+              <Plus size={14} /> Configure Assessment
+            </Link>
+          </div>
         </div>
       </div>
 
-      <div className="stats-grid" style={{ marginBottom: 24 }}>
-        {[
-          { label: 'Total Assessments', value: assessments.length, cardClass: 'stat-card-gold' },
-          { label: 'Active Assessments', value: assessments.filter(a => a.status === 'Active').length, cardClass: 'stat-card-success' },
-          { label: 'Linked Vacancies', value: new Set(assessments.map(a => a.vacancyId)).size, cardClass: 'stat-card-warning' },
-          { label: 'Assessment Types', value: new Set(assessments.map(a => a.assessmentType)).size || '—', cardClass: 'stat-card-brand' },
-        ].map(s => (
-          <div key={s.label} className={`stat-card ${s.cardClass}`} style={{ padding: '16px 20px' }}>
-            <div className="stat-label">{s.label}</div>
-            <div className="stat-value" style={{ fontSize: 26 }}>{s.value}</div>
-          </div>
-        ))}
+      {/* Principle Banner */}
+      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 'var(--r-lg)', padding: '12px 18px', marginBottom: 20 }}>
+        <div className="flex items-center gap-2 text-xs text-blue-900">
+          <Info size={15} className="flex-shrink-0 text-blue-700" />
+          <span>
+            <strong>Assessment is requirement-mapped.</strong> Every evaluation group maps directly to one or more role requirements.
+            A single assessment can cover multiple requirements — assessment count ≠ requirement count.
+          </span>
+        </div>
       </div>
 
+<<<<<<< HEAD
       {assessments.length === 0 ? (
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -179,148 +187,220 @@ export default function AssessmentsPage() {
           }}>
             Go to Requirements →
           </a>
+=======
+      {/* KPI Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="card p-4">
+          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Assessment Groups</div>
+          <div className="text-2xl font-extrabold text-slate-900">{ASSESSMENT_GROUPS.length}</div>
+          <div className="text-xs text-slate-500 mt-1">For Software Developer</div>
+>>>>>>> 9d843ea348e10e7bed616ff359598612e2447c04
         </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {assessments.map(a => {
-            const isExpanded = expandedId === a.id;
-            return (
-              <div key={a.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                <div
-                  onClick={() => setExpandedId(isExpanded ? '' : a.id)}
-                  style={{ padding: '18px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: isExpanded ? '#f8fafc' : 'var(--white)', borderBottom: isExpanded ? '1px solid var(--border)' : 'none' }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="avatar avatar-sm" style={{ background: '#d5e3fc', color: '#00236f' }}>
-                      <ClipboardList size={16} />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span style={{ fontWeight: 700, fontSize: 14.5, color: 'var(--text-primary)' }}>{a.name}</span>
-                        <span className="badge badge-green" style={{ fontSize: 10 }}>{a.status}</span>
-                        <span className="badge badge-gray" style={{ fontSize: 10 }}>{a.version}</span>
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                        Role: <strong>{a.vacancy}</strong> • {a.duration} • {a.assessmentType}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="badge badge-indigo" style={{ fontSize: 11 }}>{a.difficulty}</span>
-                    {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                  </div>
-                </div>
-                {isExpanded && (
-                  <div style={{ padding: '20px 22px' }}>
-                    <div className="grid-2" style={{ gap: 16, marginBottom: 20 }}>
-                      {[
-                        { icon: <BookOpen size={14} />, label: 'Competency Area', value: a.competencyArea },
-                        { icon: <Target size={14} />, label: 'Assessment Type', value: a.assessmentType },
-                        { icon: <Clock size={14} />, label: 'Duration', value: a.duration },
-                        { icon: <Shield size={14} />, label: 'Integrity', value: a.integrity },
-                      ].map(item => (
-                        <div key={item.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 16px', background: '#f8fafc', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
-                          <span style={{ color: 'var(--text-muted)', marginTop: 1 }}>{item.icon}</span>
-                          <div>
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{item.label}</div>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{item.value}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)', marginBottom: 12 }}>
-                      Evaluation Modules ({a.modules.length}):
-                    </div>
-                    <div className="grid-2" style={{ gap: 12 }}>
-                      {a.modules.map(m => (
-                        <div key={m.id} style={{ padding: '14px 16px', background: '#f8fafc', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
-                          <div className="flex items-center justify-between" style={{ marginBottom: 4 }}>
-                            <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>{m.name}</span>
-                            <span className="badge badge-green">{m.avgScore} Avg</span>
-                          </div>
-                          <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
-                            Requirement: {m.requirement} • {m.questions} Question(s)
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        <div className="card p-4">
+          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Candidates Invited</div>
+          <div className="text-2xl font-extrabold text-slate-900">{totalInvited}</div>
+          <div className="text-xs text-slate-500 mt-1">Official Assessment</div>
         </div>
-      )}
-
-      {isCreateOpen && (
-        <div className="modal-overlay" onClick={() => { setIsCreateOpen(false); resetForm(); }}>
-          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 560 }}>
-            <div className="modal-header">
-              <div>
-                <div className="modal-title">Create Assessment</div>
-                <div className="modal-subtitle">Link to a vacancy and define competency requirements</div>
-              </div>
-              <button onClick={() => { setIsCreateOpen(false); resetForm(); }} className="btn-icon">
-                <X size={18} />
-              </button>
-            </div>
-            <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div className="form-group">
-                  <label className="form-label">Assessment Name *</label>
-                  <input type="text" required placeholder="e.g. Senior Engineer Technical Assessment" value={formName} onChange={e => setFormName(e.target.value)} className="form-input" autoFocus />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Target Vacancy *</label>
-                  <select value={formVacancyId} onChange={e => setFormVacancyId(e.target.value)} className="form-select" required>
-                    {vacancies.length === 0 && <option value="">No vacancies available</option>}
-                    {vacancies.map(v => <option key={v.id} value={v.id}>{v.title}</option>)}
-                  </select>
-                </div>
-                <div className="grid-2" style={{ gap: 12 }}>
-                  <div className="form-group">
-                    <label className="form-label">Assessment Type *</label>
-                    <select value={formType} onChange={e => setFormType(e.target.value)} className="form-select">
-                      {ASSESSMENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Duration</label>
-                    <select value={formDuration} onChange={e => setFormDuration(e.target.value)} className="form-select">
-                      {['30 min','45 min','60 min','90 min','120 min'].map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div className="grid-2" style={{ gap: 12 }}>
-                  <div className="form-group">
-                    <label className="form-label">Competency Area *</label>
-                    <select value={formCompetency} onChange={e => setFormCompetency(e.target.value)} className="form-select">
-                      {COMPETENCY_AREAS.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Difficulty Level</label>
-                    <select value={formDifficulty} onChange={e => setFormDifficulty(e.target.value)} className="form-select">
-                      {DIFFICULTY_LEVELS.map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Specific Requirement / Skill</label>
-                  <input type="text" placeholder="e.g. PostgreSQL Query Optimisation, REST API Design..." value={formRequirement} onChange={e => setFormRequirement(e.target.value)} className="form-input" />
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                    The specific skill or job requirement this assessment covers
-                  </span>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" onClick={() => { setIsCreateOpen(false); resetForm(); }} className="btn btn-secondary">Cancel</button>
-                <button type="submit" className="btn btn-gold">Create Assessment</button>
-              </div>
-            </form>
+        <div className="card p-4">
+          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Completed</div>
+          <div className="text-2xl font-extrabold text-amber-900">{totalCompleted}</div>
+          <div className="text-xs text-emerald-700 font-semibold mt-1">{completionRate}% Completion Rate</div>
+        </div>
+        <div className="card p-4">
+          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Assessment Lock</div>
+          <div className="text-sm font-extrabold text-slate-900 flex items-center gap-1.5 mt-1">
+            <Lock size={14} className="text-amber-700" /> Locked (Active)
           </div>
+          <div className="text-xs text-slate-500 mt-1">No edits after candidate start</div>
         </div>
-      )}
+      </div>
+
+      {/* Assessment Groups */}
+      <div className="space-y-4">
+        {ASSESSMENT_GROUPS.map((ag) => {
+          const isOpen = expanded.includes(ag.id);
+          return (
+            <div key={ag.id} className="card" style={{ padding: 0 }}>
+              {/* Group Header */}
+              <div
+                className="cursor-pointer select-none"
+                style={{ padding: '18px 24px' }}
+                onClick={() => toggle(ag.id)}
+                role="button"
+                aria-expanded={isOpen}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div style={{
+                      width: 38, height: 38, borderRadius: 10,
+                      background: '#fefce8', border: '1px solid rgba(212,175,55,0.4)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#a16207', flexShrink: 0
+                    }}>
+                      <BarChart2 size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-extrabold text-slate-900 text-sm">{ag.name}</span>
+                        <span className="badge badge-gray text-[10px] font-bold">{ag.id}</span>
+                        <span className={`badge ${STATUS_BADGE[ag.status]} text-[10px] font-bold`}>{ag.status}</span>
+                        <span className="badge badge-gray text-[10px]">{ag.version}</span>
+                      </div>
+                      <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-3 flex-wrap">
+                        <span>{ag.type}</span>
+                        <span className="opacity-40">·</span>
+                        <span>{ag.duration}</span>
+                        <span className="opacity-40">·</span>
+                        <span>{ag.questionCount} Questions</span>
+                        <span className="opacity-40">·</span>
+                        <span>{ag.evaluationGroups.length} Evaluation Groups</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="text-right hidden md:block">
+                      <div className="text-xs text-slate-500">Completion</div>
+                      <div className="text-sm font-extrabold text-amber-900">
+                        {ag.candidatesCompleted}/{ag.candidatesInvited}
+                      </div>
+                    </div>
+                    {isOpen ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+                  </div>
+                </div>
+              </div>
+
+              {/* Expanded Content */}
+              {isOpen && (
+                <div style={{ borderTop: '1px solid var(--border)', padding: '0 24px 24px' }}>
+
+                  {/* Config meta row */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 my-4">
+                    {[
+                      { label: 'Duration', value: ag.duration },
+                      { label: 'Attempts', value: `${ag.attempts} (locked after start)` },
+                      { label: 'Integrity', value: ag.integrity },
+                      { label: 'Window', value: ag.window },
+                    ].map(m => (
+                      <div key={m.label} className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{m.label}</div>
+                        <div className="text-xs font-bold text-slate-900 mt-0.5">{m.value}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Evaluation Groups */}
+                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5 mt-4">
+                    Evaluation Groups ({ag.evaluationGroups.length})
+                  </div>
+                  <div className="space-y-3">
+                    {ag.evaluationGroups.map((eg) => (
+                      <div key={eg.id} className="p-4 bg-white border border-slate-200 rounded-xl">
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-slate-900 text-sm">{eg.name}</span>
+                              <span className="badge badge-gray text-[10px]">{eg.id}</span>
+                            </div>
+                            <div className="text-xs text-slate-500 mt-0.5">
+                              Maps to: <span className="font-bold text-amber-900">{eg.requirement}</span>
+                              <span className="opacity-40 mx-1.5">·</span>
+                              <span className="font-mono text-slate-500">{eg.reqId}</span>
+                            </div>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-xs text-slate-500">{eg.questions} Questions</div>
+                            <div className="text-sm font-extrabold text-amber-900 mt-0.5">Avg: {eg.avgScore}</div>
+                          </div>
+                        </div>
+
+                        {/* Evaluation Criteria */}
+                        <div className="flex flex-wrap gap-1.5">
+                          {eg.criteria.map(c => (
+                            <span key={c} className="text-[11px] px-2.5 py-0.5 bg-slate-100 border border-slate-200 rounded-full text-slate-700 font-medium">
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Footer actions */}
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                      <Lock size={12} />
+                      Assessment locked — no edits after candidate assessment started
+                    </div>
+                    <div className="flex gap-2">
+                      <Link href="/dashboard/candidates" className="btn btn-secondary btn-sm">
+                        <Users size={14} /> View Candidates
+                      </Link>
+                      <button className="btn btn-gold btn-sm">
+                        <Eye size={14} /> View Results
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Candidate-Level Result Summary Table */}
+      <div className="card mt-6">
+        <div className="card-header">
+          <div>
+            <h2 className="card-title flex items-center gap-2">
+              <BarChart2 size={16} className="text-amber-600" />
+              Candidate Assessment Results by Requirement
+            </h2>
+            <p className="card-subtitle">Per-requirement scores — not an overall hire score. Human review required.</p>
+          </div>
+          <span className="badge badge-yellow font-bold text-xs">Human Decision Required</span>
+        </div>
+        <div className="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Candidate</th>
+                <th>Java (OOP)</th>
+                <th>DSA</th>
+                <th>SQL</th>
+                <th>Problem Solving</th>
+                <th>Communication</th>
+                <th>Evidence Coverage</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { name: 'Alex Rivera',    java: '82%', dsa: '76%', sql: '88%', ps: '84%', comm: '4.5/5', cov: '5/6' },
+                { name: 'James Okonkwo', java: '91%', dsa: '88%', sql: '94%', ps: '90%', comm: '4.8/5', cov: '6/6' },
+                { name: 'Aisha Rahman',  java: '71%', dsa: '68%', sql: '75%', ps: '72%', comm: '3.9/5', cov: '5/6' },
+                { name: 'Mohamed Jabri', java: '86%', dsa: '82%', sql: '79%', ps: '88%', comm: '4.2/5', cov: '5/6' },
+              ].map((row) => (
+                <tr key={row.name}>
+                  <td className="font-bold text-slate-900">{row.name}</td>
+                  <td className="td-mono font-bold text-amber-900">{row.java}</td>
+                  <td className="td-mono font-bold text-amber-900">{row.dsa}</td>
+                  <td className="td-mono font-bold text-amber-900">{row.sql}</td>
+                  <td className="td-mono font-bold text-amber-900">{row.ps}</td>
+                  <td className="td-mono font-bold text-amber-900">{row.comm}</td>
+                  <td>
+                    <span className={`badge font-bold ${row.cov === '6/6' ? 'badge-green' : 'badge-yellow'}`}>
+                      {row.cov === '6/6' ? <><CheckCircle2 size={12} /> Full</> : <><AlertTriangle size={12} /> {row.cov}</>}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="mt-4 text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-200">
+          <strong>Important:</strong> These are requirement-level performance records, not global ranking scores. GenuAI does not produce "best candidate" rankings or AI hire/reject decisions. All values represent official assessment performance evidence for human recruiter review.
+        </div>
+      </div>
     </div>
   );
 }

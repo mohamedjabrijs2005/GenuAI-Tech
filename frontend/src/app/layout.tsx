@@ -6,6 +6,10 @@ import { AuthProvider } from '@/contexts/AuthContext';
 export const metadata: Metadata = {
   title: 'GenuAI Technologies — Company Dashboard',
   description: 'GenuAI Technologies — Structured recruitment intelligence platform',
+  openGraph: {
+    title: 'GenuAI Technologies — Company Dashboard',
+    description: 'GenuAI Technologies — Structured recruitment intelligence platform',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

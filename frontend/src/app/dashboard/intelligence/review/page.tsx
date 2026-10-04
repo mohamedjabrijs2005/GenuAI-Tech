@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   User, Briefcase, Shield, FileCheck, Mic2, AlertTriangle,
@@ -108,7 +109,7 @@ function RecruiterReviewContent() {
 
   if (!appId) return (
     <div style={{ padding: 32, textAlign: 'center', color: '#94a3b8' }}>
-      No application selected. Go to <a href="/dashboard/candidates" style={{ color: 'var(--brand)' }}>Candidates</a> and open a candidate.
+      No application selected. Go to <Link href="/dashboard/candidates" style={{ color: 'var(--brand)' }}>Candidates</Link> and open a candidate.
     </div>
   );
 
@@ -170,7 +171,7 @@ function RecruiterReviewContent() {
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '20px 24px', marginBottom: 16 }}>
             <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1e293b', marginBottom: 16 }}>Recruiter Review Notes</h2>
             <p style={{ fontSize: 12.5, color: '#94a3b8', marginBottom: 16 }}>
-              AI may summarise evidence but must NOT output "Best Candidate", "Hire", or a suitability score. The final decision is yours.
+              AI may summarise evidence but must NOT output &quot;Best Candidate&quot;, &quot;Hire&quot;, or a suitability score. The final decision is yours.
             </p>
             {[
               { label: 'Candidate Summary', value: summary, set: setSummary, ph: 'Brief summary of this candidate…' },

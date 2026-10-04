@@ -1,10 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Briefcase, Users, ClipboardCheck, Calendar, MoreHorizontal, Eye, Sparkles, Copy, Pause, Play, Trash2, X } from 'lucide-react';
-import { DataService, Vacancy } from '@/lib/dataService';
-import toast from 'react-hot-toast';
+import { Plus, Search, Briefcase, Users, ClipboardCheck, Calendar, MoreHorizontal, Eye, Sparkles } from 'lucide-react';
+
+const VACANCIES = [
+  { id: 1, title: 'Software Developer', dept: 'Engineering', openings: 3, applications: 45, assessments: 31, interviews: 8, status: 'published', created: '2026-09-10' },
+  { id: 2, title: 'Product Designer', dept: 'Design', openings: 2, applications: 28, assessments: 12, interviews: 3, status: 'published', created: '2026-09-14' },
+  { id: 3, title: 'Data Analyst', dept: 'Analytics', openings: 1, applications: 19, assessments: 0, interviews: 0, status: 'pending', created: '2026-09-18' },
+  { id: 4, title: 'DevOps Engineer', dept: 'Infrastructure', openings: 2, applications: 34, assessments: 21, interviews: 7, status: 'paused', created: '2026-09-05' },
+  { id: 5, title: 'Sales Manager', dept: 'Sales', openings: 1, applications: 0, assessments: 0, interviews: 0, status: 'draft', created: '2026-09-24' },
+  { id: 6, title: 'QA Engineer', dept: 'Engineering', openings: 1, applications: 12, assessments: 5, interviews: 2, status: 'published', created: '2026-09-20' },
+];
 
 const STATUS_BADGE: Record<string, string> = {
   draft: 'badge-draft',
@@ -14,7 +21,6 @@ const STATUS_BADGE: Record<string, string> = {
   paused: 'badge-paused',
   closed: 'badge-closed',
 };
-
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Draft',
   pending: 'Pending Verification',
@@ -25,49 +31,10 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default function VacanciesPage() {
-  const [vacancies, setVacancies] = useState<Vacancy[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
 
-  const loadVacancies = async () => {
-    try {
-      const data = await DataService.getVacancies();
-      setVacancies(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadVacancies();
-  }, []);
-
-  const handleTogglePause = async (v: Vacancy) => {
-    const nextStatus = v.status === 'paused' ? 'published' : 'paused';
-    await DataService.updateVacancyStatus(v.id, nextStatus);
-    toast.success(`Vacancy is now ${nextStatus}`);
-    await loadVacancies();
-  };
-
-  const handleDuplicate = async (v: Vacancy) => {
-    await DataService.createVacancy({
-      title: `${v.title} (Copy)`,
-      dept: v.dept,
-      openings: v.openings,
-      location: v.location,
-      experience_level: v.experience_level,
-      employment_type: v.employment_type,
-      description: v.description,
-      status: 'draft',
-    });
-    toast.success('Vacancy duplicated as draft');
-    await loadVacancies();
-  };
-
-  const filtered = vacancies.filter((v) => {
+  const filtered = VACANCIES.filter((v) => {
     const matchSearch = v.title.toLowerCase().includes(search.toLowerCase()) || v.dept.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === 'all' || v.status === filter;
     return matchSearch && matchFilter;
@@ -75,7 +42,7 @@ export default function VacanciesPage() {
 
   return (
     <div className="page-content">
-      {/* Page Header with Single Primary CTA */}
+      {/* Page Header */}
       <div className="page-header">
         <div className="breadcrumbs">
           <span>Recruitment</span>
@@ -96,13 +63,13 @@ export default function VacanciesPage() {
         </div>
       </div>
 
-      {/* Stats row dynamically calculated */}
+      {/* Stats row */}
       <div className="stats-grid" style={{ marginBottom: 24 }}>
         {[
-          { label: 'Total Roles', value: vacancies.length, color: 'var(--text-primary)', cardClass: 'stat-card-gold' },
-          { label: 'Published & Active', value: vacancies.filter(v => v.status === 'published' || v.status === 'verified').length, color: 'var(--success)', cardClass: 'stat-card-success' },
-          { label: 'Pending / Draft', value: vacancies.filter(v => v.status === 'pending' || v.status === 'draft').length, color: 'var(--warning)', cardClass: 'stat-card-warning' },
-          { label: 'Total Openings', value: vacancies.reduce((a, v) => a + (v.openings || 1), 0), color: 'var(--text-muted)', cardClass: 'stat-card-brand' },
+          { label: 'Total Roles', value: VACANCIES.length, color: 'var(--text-primary)', cardClass: 'stat-card-gold' },
+          { label: 'Published & Active', value: VACANCIES.filter(v => v.status === 'published').length, color: 'var(--success)', cardClass: 'stat-card-success' },
+          { label: 'Pending Verification', value: VACANCIES.filter(v => v.status === 'pending').length, color: 'var(--warning)', cardClass: 'stat-card-warning' },
+          { label: 'Draft Roles', value: VACANCIES.filter(v => v.status === 'draft').length, color: 'var(--text-muted)', cardClass: 'stat-card-brand' },
         ].map((s) => (
           <div key={s.label} className={`stat-card ${s.cardClass}`} style={{ padding: '16px 20px' }}>
             <div className="stat-label">{s.label}</div>
@@ -130,7 +97,7 @@ export default function VacanciesPage() {
               className={`btn btn-sm ${filter === s ? 'btn-gold' : 'btn-secondary'}`}
               style={{ textTransform: 'capitalize' }}
             >
-              {s === 'all' ? 'All Roles' : STATUS_LABEL[s] || s}
+              {s === 'all' ? 'All Roles' : STATUS_LABEL[s]}
             </button>
           ))}
         </div>
@@ -167,12 +134,7 @@ export default function VacanciesPage() {
             {filtered.map((v) => (
               <tr key={v.id}>
                 <td>
-                  <Link href={`/dashboard/vacancies/${v.id}`} style={{ fontWeight: 700, color: 'var(--brand-light)', fontSize: 14, textDecoration: 'none' }}>
-                    {v.title}
-                  </Link>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-                    {v.location || 'Remote'}
-                  </div>
+                  <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }}>{v.title}</div>
                 </td>
                 <td className="td-muted font-medium">{v.dept}</td>
                 <td className="td-muted td-mono font-semibold">{v.openings}</td>
@@ -188,24 +150,12 @@ export default function VacanciesPage() {
                   {v.created}
                 </td>
                 <td style={{ textAlign: 'right' }}>
-                  <div className="flex justify-end gap-1.5">
-                    <Link href={`/dashboard/vacancies/${v.id}`} className="btn btn-secondary btn-sm" title="View Vacancy Details">
-                      <Eye size={14} />
-                      <span>Details</span>
-                    </Link>
-                    <button
-                      onClick={() => handleTogglePause(v)}
-                      className="btn btn-ghost btn-sm btn-icon"
-                      title={v.status === 'paused' ? 'Resume Vacancy' : 'Pause Vacancy'}
-                    >
-                      {v.status === 'paused' ? <Play size={14} /> : <Pause size={14} />}
+                  <div className="flex justify-end gap-2">
+                    <button className="btn btn-ghost btn-sm btn-icon" title="View Vacancy Details" aria-label={`View ${v.title}`}>
+                      <Eye size={15} />
                     </button>
-                    <button
-                      onClick={() => handleDuplicate(v)}
-                      className="btn btn-ghost btn-sm btn-icon"
-                      title="Duplicate"
-                    >
-                      <Copy size={14} />
+                    <button className="btn btn-ghost btn-sm btn-icon" title="More Actions" aria-label="More options">
+                      <MoreHorizontal size={15} />
                     </button>
                   </div>
                 </td>

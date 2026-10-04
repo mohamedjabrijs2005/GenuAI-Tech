@@ -1,14 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   BrainCircuit, Sparkles, Building2, ShieldCheck, Layers, Target, CheckCircle2,
-  HelpCircle, ArrowRight, Lock, AlertCircle, Info, RefreshCw, BarChart2,
-  Check, ChevronRight, FileText, Award, Download
+  HelpCircle, ArrowRight, Lock, AlertCircle, Info, RefreshCw, BarChart2
 } from 'lucide-react';
-import { DataService, Vacancy } from '@/lib/dataService';
-import toast from 'react-hot-toast';
 
 interface AssessmentArea {
   id: string;
@@ -19,118 +16,110 @@ interface AssessmentArea {
   description: string;
 }
 
-const MARKET_BENCHMARKS: Record<string, {
+const ROLE_DATA: Record<string, {
   commonAreas: AssessmentArea[];
   companySpecific: { skill: string; type: string }[];
   aggregatedSample: { skill: string; frequency: string }[];
 }> = {
-  'Senior Backend Engineer': {
+  'Software Developer': {
     commonAreas: [
-      { id: 'AREA-01', name: 'Distributed Systems & Concurrency', category: 'Technical', frequency: '98%', priority: 'High', description: 'Goroutines, lock-free queues, race condition debugging, memory allocation optimization' },
-      { id: 'AREA-02', name: 'Data Structures & Algorithms', category: 'Technical', frequency: '95%', priority: 'High', description: 'Trees, Graph traversal, Sorting & Searching, amortized time/space complexity analysis' },
-      { id: 'AREA-03', name: 'PostgreSQL & Relational Query Optimization', category: 'Technical', frequency: '92%', priority: 'High', description: 'Partial indexing, EXPLAIN ANALYZE execution plan evaluation, schema normalization' },
-      { id: 'AREA-04', name: 'Kafka & Event-Driven Architecture', category: 'Architecture', frequency: '89%', priority: 'High', description: 'Consumer group partition rebalancing, idempotency guarantees, dead letter queues' },
-      { id: 'AREA-05', name: 'Zero-Trust Security & mTLS', category: 'Security', frequency: '84%', priority: 'Medium', description: 'JWT signature verification, cryptographic token rotation, OWASP API standards' },
-      { id: 'AREA-06', name: 'Technical Rubric Communication', category: 'Communication', frequency: '78%', priority: 'Medium', description: 'Architectural trade-off defense, clear technical documentation, cross-functional alignment' },
+      { id: 'AREA-01', name: 'Core Programming', category: 'Technical', frequency: '98%', priority: 'High', description: 'Core language proficiency (Java, Python, C++ syntax, OOP, Memory allocation)' },
+      { id: 'AREA-02', name: 'Data Structures & Algorithms', category: 'Technical', frequency: '95%', priority: 'High', description: 'Trees, Graphs, Sorting, Time & Space Complexity Analysis' },
+      { id: 'AREA-03', name: 'SQL & Database Architecture', category: 'Technical', frequency: '92%', priority: 'Medium', description: 'Complex Joins, Indexing, Query Optimization & Schema Design' },
+      { id: 'AREA-04', name: 'Systemic Problem Solving', category: 'Problem Solving', frequency: '89%', priority: 'High', description: 'Algorithmic debugging, edge-case analysis, logic reasoning' },
+      { id: 'AREA-05', name: 'CS Fundamentals', category: 'Technical', frequency: '84%', priority: 'Medium', description: 'Operating System concepts, Networking basics, Concurrency' },
+      { id: 'AREA-06', name: 'Technical Aptitude', category: 'Aptitude', frequency: '78%', priority: 'Medium', description: 'Quantitative reasoning, spatial logic, analytical puzzle solving' },
+      { id: 'AREA-07', name: 'Technical Communication', category: 'Communication', frequency: '72%', priority: 'Medium', description: 'Explanation clarity, architectural rationale, team communication' },
     ],
     companySpecific: [
-      { skill: 'Distributed Concurrency Benchmarks', type: 'Required' },
-      { skill: 'PostgreSQL Index Plan Optimization', type: 'Required' },
-      { skill: 'Kafka Partitioning & Idempotency', type: 'Required' },
-      { skill: 'Docker & Kubernetes Deployment', type: 'Preferred' },
+      { skill: 'Advanced Java Spring Boot & Microservices', type: 'Required' },
+      { skill: 'PostgreSQL & Complex SQL Design', type: 'Required' },
+      { skill: 'AWS Cloud Infrastructure', type: 'Preferred' },
     ],
     aggregatedSample: [
-      { skill: 'Distributed Systems & Concurrency', frequency: '98% Industry Adoption' },
-      { skill: 'Data Structures & Algorithms', frequency: '95% Industry Adoption' },
-      { skill: 'Relational Database Optimization', frequency: '92% Industry Adoption' },
+      { skill: 'Core Programming (Java / Python / C++)', frequency: '98% Frequency' },
+      { skill: 'Data Structures & Algorithms', frequency: '95% Frequency' },
+      { skill: 'Relational SQL Databases', frequency: '92% Frequency' },
     ],
   },
-  'Lead Product Designer': {
+  'Product Designer': {
     commonAreas: [
-      { id: 'AREA-01', name: 'Design System Architecture & Tokens', category: 'Design', frequency: '97%', priority: 'High', description: 'Figma multi-tier component libraries, semantic design tokens, responsive auto-layout' },
-      { id: 'AREA-02', name: 'User Experience & Information Architecture', category: 'UX', frequency: '94%', priority: 'High', description: 'Complex B2B SaaS workflows, cognitive load reduction, task flow optimization' },
-      { id: 'AREA-03', name: 'Interactive Micro-Prototyping', category: 'Design', frequency: '91%', priority: 'Medium', description: 'Stateful interactive prototypes, developer specification handoff, motion curves' },
-      { id: 'AREA-04', name: 'UX Research & Usability Testing', category: 'Research', frequency: '88%', priority: 'High', description: 'Qualitative user interviews, usability heuristic audits, journey mapping' },
-      { id: 'AREA-05', name: 'Cross-Functional Stakeholder Defense', category: 'Communication', frequency: '82%', priority: 'Medium', description: 'Defending design trade-offs to engineering and executive leadership' },
+      { id: 'AREA-01', name: 'UI & Visual Design Systems', category: 'Design', frequency: '97%', priority: 'High', description: 'Figma mastery, design tokens, component architecture, responsive grid layout' },
+      { id: 'AREA-02', name: 'User Experience & Wireframing', category: 'UX', frequency: '94%', priority: 'High', description: 'User flows, information architecture, low/high-fidelity wireframes' },
+      { id: 'AREA-03', name: 'Interactive Prototyping', category: 'Design', frequency: '91%', priority: 'Medium', description: 'Micro-interactions, clickable prototypes, developer handoff specs' },
+      { id: 'AREA-04', name: 'UX Research & Usability Testing', category: 'Research', frequency: '88%', priority: 'High', description: 'User interviews, usability heuristics, customer journey mapping' },
+      { id: 'AREA-05', name: 'Design System Governance', category: 'Design', frequency: '82%', priority: 'Medium', description: 'Component lifecycle, design tokens, multi-platform consistency' },
+      { id: 'AREA-06', name: 'Design Communication', category: 'Communication', frequency: '79%', priority: 'Medium', description: 'Presenting design rationale to product managers and engineers' },
     ],
     companySpecific: [
-      { skill: 'Enterprise Design Systems in Figma', type: 'Required' },
-      { skill: 'B2B SaaS Dashboard UX', type: 'Required' },
-      { skill: 'Interactive Micro-Interactions', type: 'Preferred' },
+      { skill: 'Figma Design System Mastery', type: 'Required' },
+      { skill: 'B2B SaaS Dashboard UI Design', type: 'Required' },
+      { skill: 'Framer / Motion Micro-Interactions', type: 'Preferred' },
     ],
     aggregatedSample: [
-      { skill: 'Design Systems & Component Architecture', frequency: '97% Industry Adoption' },
-      { skill: 'User Journey Architecture', frequency: '94% Industry Adoption' },
-      { skill: 'Usability Evaluation & Research', frequency: '88% Industry Adoption' },
+      { skill: 'UI & Design Systems (Figma)', frequency: '97% Frequency' },
+      { skill: 'User Experience & Wireframing', frequency: '94% Frequency' },
+      { skill: 'Interactive Prototyping', frequency: '91% Frequency' },
     ],
   },
-  'Cloud DevOps & SRE': {
+  'Data Analyst': {
     commonAreas: [
-      { id: 'AREA-01', name: 'Kubernetes Cluster Administration', category: 'Infrastructure', frequency: '98%', priority: 'High', description: 'StatefulSets, Ingress controllers, Helm charts, node affinity, multi-tenant isolation' },
-      { id: 'AREA-02', name: 'CI/CD Pipelines & GitOps Automation', category: 'Automation', frequency: '96%', priority: 'High', description: 'GitHub Actions, ArgoCD, canary deployments, zero-downtime rolling updates' },
-      { id: 'AREA-03', name: 'Infrastructure as Code (Terraform)', category: 'Cloud', frequency: '93%', priority: 'High', description: 'Declarative cloud provisioning, module lifecycle, state locking, drift detection' },
-      { id: 'AREA-04', name: 'Observability & Incident Telemetry', category: 'Operations', frequency: '90%', priority: 'Medium', description: 'Prometheus, Grafana, OpenTelemetry tracing, SLO/SLI error budgeting' },
-      { id: 'AREA-05', name: 'Cloud Security & IAM Hardening', category: 'Security', frequency: '87%', priority: 'Medium', description: 'Least privilege IAM, KMS encryption, container vulnerability scanning' },
+      { id: 'AREA-01', name: 'Advanced SQL & Data Querying', category: 'Data', frequency: '99%', priority: 'High', description: 'Window functions, CTEs, complex aggregations, query optimization' },
+      { id: 'AREA-02', name: 'Python for Data Analysis', category: 'Programming', frequency: '93%', priority: 'High', description: 'Pandas, NumPy, data cleaning, automated pipeline scripting' },
+      { id: 'AREA-03', name: 'BI & Dashboard Visualization', category: 'Visualization', frequency: '91%', priority: 'Medium', description: 'PowerBI / Tableau, metric definitions, KPI reporting dashboards' },
+      { id: 'AREA-04', name: 'Statistical Analysis & Modeling', category: 'Math', frequency: '86%', priority: 'Medium', description: 'Probability, hypothesis testing, regression analysis' },
+      { id: 'AREA-05', name: 'Business Acumen & Storytelling', category: 'Communication', frequency: '80%', priority: 'Medium', description: 'Translating data insights into executive business decisions' },
     ],
     companySpecific: [
-      { skill: 'Kubernetes & Helm Deployment', type: 'Required' },
-      { skill: 'Terraform Multi-Region IaC', type: 'Required' },
-      { skill: 'Prometheus & Grafana Alerting', type: 'Preferred' },
+      { skill: 'PostgreSQL & Window Functions', type: 'Required' },
+      { skill: 'Python / Pandas Data Analysis', type: 'Required' },
+      { skill: 'Tableau Executive Reporting', type: 'Preferred' },
     ],
     aggregatedSample: [
-      { skill: 'Kubernetes Cluster Operations', frequency: '98% Industry Adoption' },
-      { skill: 'GitOps CI/CD Automation', frequency: '96% Industry Adoption' },
-      { skill: 'Infrastructure as Code (IaC)', frequency: '93% Industry Adoption' },
+      { skill: 'Advanced SQL Querying', frequency: '99% Frequency' },
+      { skill: 'Python Data Analysis', frequency: '93% Frequency' },
+      { skill: 'BI Dashboard Visualization', frequency: '91% Frequency' },
+    ],
+  },
+  'DevOps Engineer': {
+    commonAreas: [
+      { id: 'AREA-01', name: 'CI/CD Pipelines & Automation', category: 'DevOps', frequency: '98%', priority: 'High', description: 'GitHub Actions, GitLab CI, automated test/build/deploy pipelines' },
+      { id: 'AREA-02', name: 'Docker & Containerization', category: 'Infrastructure', frequency: '96%', priority: 'High', description: 'Dockerfile optimization, multi-stage builds, container security' },
+      { id: 'AREA-03', name: 'Kubernetes Orchestration', category: 'Infrastructure', frequency: '93%', priority: 'High', description: 'Deployments, Services, Ingress, Helm charts, cluster operations' },
+      { id: 'AREA-04', name: 'Infrastructure as Code (IaC)', category: 'Cloud', frequency: '90%', priority: 'Medium', description: 'Terraform, CloudFormation, declarative cloud provisioning' },
+      { id: 'AREA-05', name: 'Cloud Platform Architecture', category: 'Cloud', frequency: '87%', priority: 'Medium', description: 'AWS / GCP / Azure compute, networking, IAM security policies' },
+      { id: 'AREA-06', name: 'Monitoring & Observability', category: 'Operations', frequency: '82%', priority: 'Medium', description: 'Prometheus, Grafana, ELK Stack, log aggregation' },
+    ],
+    companySpecific: [
+      { skill: 'Docker & Kubernetes Cluster Admin', type: 'Required' },
+      { skill: 'Terraform IaC for AWS', type: 'Required' },
+      { skill: 'Prometheus & Grafana Observability', type: 'Preferred' },
+    ],
+    aggregatedSample: [
+      { skill: 'CI/CD Pipelines & Automation', frequency: '98% Frequency' },
+      { skill: 'Docker Containerization', frequency: '96% Frequency' },
+      { skill: 'Kubernetes Orchestration', frequency: '93% Frequency' },
     ],
   },
 };
 
-const PARTICIPATING_TENANTS = [
-  { name: 'Enterprise Fintech Partner', role: 'Backend Systems', verified: true },
-  { name: 'Cloud Infrastructure Corp', role: 'SRE & DevOps', verified: true },
-  { name: 'Global SaaS Platform', role: 'Product & Design', verified: true },
-  { name: 'Your Organization', role: 'Active Tenant', isCurrent: true, verified: true },
+const PARTICIPATING_DEMO_COMPANIES = [
+  { name: 'Zoho Corporation', role: 'Software Developer', metadataShared: true },
+  { name: 'Accenture Technology', role: 'Software Engineer', metadataShared: true },
+  { name: 'Cognifyz Technologies', role: 'Software Developer', metadataShared: true },
+  { name: 'ABC Technologies (Your Company)', role: 'Senior Software Developer', metadataShared: true },
 ];
 
 export default function RoleIntelligencePage() {
-  const [vacancies, setVacancies] = useState<Vacancy[]>([]);
-  const [selectedRole, setSelectedRole] = useState<string>('Senior Backend Engineer');
-  const [isSyncing, setIsSyncing] = useState<boolean>(false);
-
-  useEffect(() => {
-    async function load() {
-      const vList = await DataService.getVacancies();
-      setVacancies(vList);
-      if (vList.length > 0) {
-        // match or default
-        const match = vList.find(v => MARKET_BENCHMARKS[v.title]);
-        if (match) setSelectedRole(match.title);
-        else setSelectedRole(vList[0].title);
-      }
-    }
-    load();
-  }, []);
-
-  const roleInfo = MARKET_BENCHMARKS[selectedRole] || MARKET_BENCHMARKS['Senior Backend Engineer'];
-
-  const handleSyncIntelligence = () => {
-    setIsSyncing(true);
-    setTimeout(() => {
-      setIsSyncing(false);
-      toast.success('Cross-company requirement intelligence synchronized');
-    }, 600);
-  };
-
-  const handleApplyToRole = () => {
-    toast.success(`Market benchmarks mapped to ${selectedRole} requisition`);
-  };
+  const [selectedRole, setSelectedRole] = useState('Software Developer');
+  const roleInfo = ROLE_DATA[selectedRole] || ROLE_DATA['Software Developer'];
 
   return (
-    <div className="page-content" style={{ maxWidth: 1320 }}>
-      {/* Page Header with Single Primary CTA */}
+    <div className="page-content" style={{ maxWidth: 1300 }}>
+      {/* Page Header */}
       <div className="page-header" style={{ marginBottom: 20 }}>
         <div className="breadcrumbs">
-          <Link href="/dashboard/intelligence">Recruiter Intelligence</Link>
+          <Link href="/dashboard/intelligence" className="hover:text-primary">Intelligence</Link>
           <span className="breadcrumb-sep">/</span>
           <span className="breadcrumb-current">Cross-Company Role Intelligence</span>
         </div>
@@ -140,85 +129,57 @@ export default function RoleIntelligencePage() {
               Cross-Company Role Intelligence Engine
             </h1>
             <p className="page-subtitle">
-              Normalized market requirement benchmarks synthesized across anonymized enterprise hiring metadata.
+              Normalized requirement intelligence synthesized from participating company metadata.
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleSyncIntelligence}
-              className="btn btn-secondary btn-sm"
-              disabled={isSyncing}
-            >
-              <RefreshCw size={13} className={isSyncing ? 'animate-spin' : ''} />
-              <span>{isSyncing ? 'Syncing...' : 'Sync Market Telemetry'}</span>
-            </button>
-            <button
-              onClick={handleApplyToRole}
-              className="btn btn-gold btn-sm"
-            >
-              <Sparkles size={14} />
-              <span>Apply Benchmarks</span>
-            </button>
+            <span className="badge badge-gold flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold">
+              <ShieldCheck size={14} />
+              Row-Level Tenant Isolation Active
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Row-Level Security Notice Banner */}
-      <div
-        style={{
-          background: '#fffbeb',
-          border: '1px solid #fde68a',
-          borderRadius: 'var(--r-lg)',
-          padding: '14px 18px',
-          marginBottom: 24,
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 12,
-        }}
-      >
-        <ShieldCheck size={18} style={{ color: '#b45309', flexShrink: 0, marginTop: 2 }} />
-        <div style={{ fontSize: 12.5, color: '#78350f', lineHeight: 1.5 }}>
-          <strong>Privacy Boundary &amp; Row-Level Security Guarantee:</strong> Role Intelligence is synthesized exclusively from public competency taxonomies and non-confidential requirement metadata. Confidential candidate dossiers, proprietary question banks, and internal hiring notes are <strong>strictly isolated</strong> via PostgreSQL Row-Level Security.
+      {/* Strategic Notice Header */}
+      <div className="p-4 bg-amber-50/80 border border-amber-300/90 rounded-xl mb-6 flex items-start gap-3">
+        <Info size={18} className="text-amber-800 flex-shrink-0 mt-0.5" />
+        <div className="text-xs text-amber-950 leading-relaxed">
+          <strong>Privacy Boundary Notice:</strong> Role Intelligence is derived <em>strictly</em> from non-confidential requirement metadata (skill names, priorities, required/preferred tags, assessment categories) authorized under <strong>Permission B</strong>. Proprietary company question banks, confidential test contents, and individual candidate evaluation results are <strong>NEVER</strong> accessed, copied, or shared across companies.
         </div>
       </div>
 
-      {/* Top 2-Column Overview Cards (Perfect Grid Alignment) */}
-      <div className="grid-3" style={{ gap: 24, marginBottom: 24, alignItems: 'stretch' }}>
-        {/* Left Column: Target Role Selector & Metadata Sources (1 col) */}
-        <div className="card" style={{ padding: 22, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+      {/* Target Role Selector & Normalization Pipeline Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6">
+        {/* Left Card: Target Role Category & Metadata Sources (4 cols on desktop) */}
+        <div className="card lg:col-span-4 flex flex-col justify-between" style={{ padding: '20px 24px' }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-              Active Vacancy Requisition
+            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+              Target Role Category
             </div>
             <select
-              className="form-select"
-              style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 16 }}
+              className="form-select font-bold text-slate-900 w-full mb-3"
               value={selectedRole}
               onChange={e => setSelectedRole(e.target.value)}
             >
-              {vacancies.length > 0 ? (
-                vacancies.map(v => (
-                  <option key={v.id} value={v.title}>{v.title} ({v.dept})</option>
-                ))
-              ) : (
-                Object.keys(MARKET_BENCHMARKS).map(r => (
-                  <option key={r} value={r}>{r}</option>
-                ))
-              )}
+              <option>Software Developer</option>
+              <option>Product Designer</option>
+              <option>Data Analyst</option>
+              <option>DevOps Engineer</option>
             </select>
 
-            <div style={{ paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: 8 }}>
-                Anonymized Metadata Contributors
+            <div className="pt-2.5 border-t border-slate-200">
+              <div className="text-[11px] font-bold text-slate-600 uppercase mb-2">
+                Participating Metadata Sources
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {PARTICIPATING_TENANTS.map(t => (
-                  <div key={t.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12 }}>
-                    <span style={{ fontWeight: t.isCurrent ? 700 : 500, color: t.isCurrent ? '#00236f' : 'var(--text-secondary)' }}>
-                      {t.name}
+              <div className="space-y-1.5">
+                {PARTICIPATING_DEMO_COMPANIES.map(c => (
+                  <div key={c.name} className="flex items-center justify-between text-xs py-0.5">
+                    <span className={`font-semibold whitespace-nowrap overflow-hidden text-ellipsis ${c.name.includes('Your Company') ? 'text-amber-800 font-bold' : 'text-slate-700'}`}>
+                      {c.name}
                     </span>
-                    <span className={`badge ${t.isCurrent ? 'badge-blue' : 'badge-green'}`} style={{ fontSize: 10, padding: '2px 8px' }}>
-                      {t.isCurrent ? 'Active Workspace' : 'Synthesized'}
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full flex-shrink-0 ml-2">
+                      Shared
                     </span>
                   </div>
                 ))}
@@ -226,183 +187,163 @@ export default function RoleIntelligencePage() {
             </div>
           </div>
 
-          <div style={{ marginTop: 16, padding: '10px 12px', background: '#f8fafc', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', fontSize: 11.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span className="td-muted">Tenant Isolation:</span>
-            <span className="font-bold text-emerald-600 flex items-center gap-1">
-              <CheckCircle2 size={12} /> 100% Enforced
+          <div className="mt-4 text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200 flex items-center justify-between">
+            <span className="text-[11px] text-slate-600 font-medium">Data Privacy:</span>
+            <span className="text-emerald-700 font-bold text-[11px] flex items-center gap-1.5">
+              <span className="badge-dot-live" style={{ background: '#10b981' }} /> 4 Active Tenants Shared
             </span>
           </div>
         </div>
 
-        {/* Right Column: Normalization Pipeline & Frequency Synthesis (2 cols) */}
-        <div className="card" style={{ padding: 22, gridColumn: 'span 2', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        {/* Right Card: Normalization Pipeline (8 cols on desktop) */}
+        <div className="card lg:col-span-8 flex flex-col justify-between" style={{ padding: '20px 24px' }}>
           <div>
-            <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Competency Normalization Pipeline
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginTop: 2 }}>
-                  Realtime Requirement Semantic Mapping
-                </div>
-              </div>
-              <span className="badge badge-gray" style={{ fontSize: 10 }}>Continuous Telemetry</span>
+            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center justify-between">
+              <span>Role Requirement Normalization Pipeline</span>
+              <span className="badge badge-gray text-[10px]">Realtime Aggregation</span>
             </div>
 
-            <div className="grid-4" style={{ gap: 10, textAlign: 'center' }}>
-              <div style={{ padding: '12px 10px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 'var(--r-md)' }}>
-                <div style={{ fontWeight: 700, fontSize: 12.5, color: 'var(--text-primary)', marginBottom: 2 }}>1. Ingestion</div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Role Specs</div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center text-xs">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                <div className="font-bold text-slate-900 mb-1">1. Metadata</div>
+                <div className="text-[11px] text-slate-500">4 Companies</div>
               </div>
-              <div style={{ padding: '12px 10px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 'var(--r-md)' }}>
-                <div style={{ fontWeight: 700, fontSize: 12.5, color: 'var(--text-primary)', marginBottom: 2 }}>2. Synonyms</div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Semantic Map</div>
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                <div className="font-bold text-slate-900 mb-1">2. Normalize</div>
+                <div className="text-[11px] text-slate-500">Synonym Mapping</div>
               </div>
-              <div style={{ padding: '12px 10px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 'var(--r-md)' }}>
-                <div style={{ fontWeight: 700, fontSize: 12.5, color: 'var(--text-primary)', marginBottom: 2 }}>3. Weights</div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Frequency Bar</div>
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                <div className="font-bold text-slate-900 mb-1">3. Frequency</div>
+                <div className="text-[11px] text-slate-500">Weight Analysis</div>
               </div>
-              <div style={{ padding: '12px 10px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 'var(--r-md)', color: '#00236f' }}>
-                <div style={{ fontWeight: 700, fontSize: 12.5, marginBottom: 2 }}>4. Blueprint</div>
-                <div style={{ fontSize: 11, fontWeight: 600 }}>{roleInfo.commonAreas.length} Core Areas</div>
+              <div className="p-3 bg-amber-50 border border-amber-300 rounded-lg text-amber-900 font-bold">
+                <div className="mb-1">4. Core Set</div>
+                <div className="text-[11px] text-amber-700 font-semibold">{roleInfo.commonAreas.length} Common Areas</div>
               </div>
             </div>
           </div>
 
-          <div style={{ marginTop: 16, padding: '10px 14px', background: '#f8fafc', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-            <span style={{ color: 'var(--text-secondary)' }}>
-              Benchmark Standard: <strong>&quot;Aggregated Market Role Intelligence&quot;</strong> (Verified cross-company metadata).
+          <div className="mt-4 text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-wrap items-center justify-between gap-2">
+            <span className="leading-normal">
+              Labeling Standard: <strong>"Aggregated role intelligence"</strong> (Derived from participating company requirement metadata).
             </span>
-            <span style={{ fontWeight: 700, color: '#00236f' }}>
-              ISO 27001 Aligned
+            <span className="text-amber-800 font-bold flex items-center gap-1 text-xs whitespace-nowrap">
+              <RefreshCw size={12} className="animate-spin" /> Sync Active
             </span>
           </div>
         </div>
       </div>
 
-      {/* Core Normalized Assessment Areas Grid */}
-      <div className="card" style={{ marginBottom: 24, padding: 22 }}>
-        <div className="card-header" style={{ marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+      {/* Main Content: Top Assessment Areas Set */}
+      <div className="card mb-6">
+        <div className="card-header">
           <div>
-            <h2 className="card-title" style={{ fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <BarChart2 size={18} style={{ color: '#00236f' }} />
-              Market Competency Benchmark Set: &quot;{selectedRole}&quot;
+            <h2 className="card-title flex items-center gap-2">
+              <BarChart2 size={18} className="text-amber-600" />
+              Core Assessment Coverage Set for "{selectedRole}"
             </h2>
             <p className="card-subtitle">
-              Normalized top evaluation criteria and frequency distributions derived from industry requisitions.
+              The normalized top assessment areas supported by cross-company metadata frequency analysis.
             </p>
           </div>
+          <span className="badge badge-gold font-bold">
+            {roleInfo.commonAreas.length} Core Assessment Areas Identified
+          </span>
         </div>
 
-        <div className="grid-2" style={{ gap: 16 }}>
-          {roleInfo.commonAreas.map(area => (
-            <div
-              key={area.id}
-              style={{
-                padding: '16px 18px',
-                background: '#f8fafc',
-                borderRadius: 'var(--r-md)',
-                border: '1px solid var(--border)',
-                borderLeft: area.priority === 'High' ? '4px solid #00236f' : '4px solid #d4af37',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                gap: 10,
-              }}
-            >
-              <div>
-                <div className="flex items-center justify-between" style={{ marginBottom: 6 }}>
-                  <div className="flex items-center gap-2">
-                    <span className="td-mono font-bold text-slate-500" style={{ fontSize: 11 }}>{area.id}</span>
-                    <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>{area.name}</span>
-                  </div>
-                  <span className={`badge ${area.priority === 'High' ? 'badge-blue' : 'badge-gold'}`} style={{ fontSize: 10 }}>
-                    {area.priority} Priority
-                  </span>
-                </div>
-                <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
-                  {area.description}
-                </p>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid var(--border)', fontSize: 11.5 }}>
-                <span className="badge badge-gray">{area.category}</span>
-                <span style={{ fontWeight: 700, color: 'var(--brand)' }}>
-                  {area.frequency} Market Adoption
-                </span>
-              </div>
-            </div>
-          ))}
+        <div className="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Area Code</th>
+                <th>Assessment Area</th>
+                <th>Category</th>
+                <th>Cross-Company Frequency</th>
+                <th>Typical Priority</th>
+                <th>Area Scope & Assessment Focus</th>
+                <th>Your Company Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {roleInfo.commonAreas.map(area => (
+                <tr key={area.id}>
+                  <td className="td-mono font-bold text-amber-800">{area.id}</td>
+                  <td className="font-bold text-slate-900">{area.name}</td>
+                  <td><span className="badge badge-gray">{area.category}</span></td>
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 bg-slate-200 h-2 rounded-full overflow-hidden">
+                        <div className="bg-amber-600 h-full" style={{ width: area.frequency }} />
+                      </div>
+                      <span className="td-mono font-bold text-xs">{area.frequency}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`badge ${area.priority === 'High' ? 'badge-yellow' : 'badge-gray'}`}>
+                      {area.priority}
+                    </span>
+                  </td>
+                  <td className="td-muted text-xs font-medium" style={{ whiteSpace: 'normal', maxWidth: 320 }}>
+                    {area.description}
+                  </td>
+                  <td>
+                    <span className="badge badge-green flex items-center gap-1 text-xs font-semibold">
+                      <CheckCircle2 size={12} /> Configured in Vacancy
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* Comparison: Market Standard vs. Current Vacancy Specs */}
-      <div className="grid-2" style={{ gap: 24 }}>
-        {/* Left Card: Market Standards */}
-        <div className="card" style={{ padding: 20 }}>
-          <div className="card-header" style={{ marginBottom: 12, paddingBottom: 10 }}>
+      {/* Specific Company vs Generic Role Comparison */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="card border-amber-200 bg-amber-50/20">
+          <div className="card-header">
             <div>
-              <div className="card-title" style={{ fontSize: 14 }}>Aggregated Market Requirements</div>
-              <div className="card-subtitle">Synthesized competency standards</div>
+              <h3 className="card-title text-amber-900 flex items-center gap-2">
+                <Building2 size={16} />
+                ABC Technologies (Your Company Specifics)
+              </h3>
+              <p className="card-subtitle">Company-specific verified vacancy requirements.</p>
             </div>
+            <span className="badge badge-gold">Private & Specific</span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {roleInfo.aggregatedSample.map((s, idx) => (
-              <div
-                key={idx}
-                style={{
-                  padding: '10px 14px',
-                  background: '#f8fafc',
-                  borderRadius: 'var(--r-md)',
-                  border: '1px solid var(--border)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  fontSize: 12.5,
-                }}
-              >
-                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{s.skill}</span>
-                <span className="td-mono font-bold text-emerald-600" style={{ fontSize: 11.5 }}>{s.frequency}</span>
-              </div>
+          <ul className="space-y-2 text-xs">
+            {roleInfo.companySpecific.map((item, i) => (
+              <li key={i} className="p-2.5 bg-white border border-slate-200 rounded-lg flex items-center justify-between font-bold text-slate-800">
+                <span>{item.skill}</span>
+                <span className={`badge ${item.type === 'Required' ? 'badge-red' : 'badge-blue'}`}>
+                  {item.type}
+                </span>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
 
-        {/* Right Card: Your Organization Requirements */}
-        <div className="card" style={{ padding: 20 }}>
-          <div className="card-header" style={{ marginBottom: 12, paddingBottom: 10 }}>
+        <div className="card border-blue-200 bg-blue-50/20">
+          <div className="card-header">
             <div>
-              <div className="card-title" style={{ fontSize: 14 }}>Your Role Configuration</div>
-              <div className="card-subtitle">Active requirements in your requisition</div>
+              <h3 className="card-title text-blue-900 flex items-center gap-2">
+                <BrainCircuit size={16} />
+                Aggregated Role Intelligence (Cross-Company)
+              </h3>
+              <p className="card-subtitle">Generic baseline expectations across participating companies.</p>
             </div>
-            <Link href="/dashboard/requirements" className="btn btn-secondary btn-sm" style={{ fontSize: 11 }}>
-              Configure →
-            </Link>
+            <span className="badge badge-blue">Aggregated Metadata</span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {roleInfo.companySpecific.map((c, idx) => (
-              <div
-                key={idx}
-                style={{
-                  padding: '10px 14px',
-                  background: '#ffffff',
-                  borderRadius: 'var(--r-md)',
-                  border: '1px solid var(--border)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  fontSize: 12.5,
-                }}
-              >
-                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{c.skill}</span>
-                <span className={`badge ${c.type === 'Required' ? 'badge-blue' : 'badge-gray'}`} style={{ fontSize: 10 }}>
-                  {c.type}
-                </span>
-              </div>
+          <ul className="space-y-2 text-xs">
+            {roleInfo.aggregatedSample.map((item, i) => (
+              <li key={i} className="p-2.5 bg-white border border-slate-200 rounded-lg flex items-center justify-between font-medium text-slate-700">
+                <span>{item.skill}</span>
+                <span className="td-mono font-bold text-slate-900">{item.frequency}</span>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </div>
     </div>

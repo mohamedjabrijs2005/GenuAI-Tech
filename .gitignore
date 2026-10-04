@@ -35,7 +35,3 @@ Thumbs.db
 
 # Testing
 coverage/
-
-# Submodules / Duplicate clones
-GenuAI-Tech/
-
