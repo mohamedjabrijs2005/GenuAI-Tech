@@ -162,7 +162,6 @@ export default function AssessmentsPage() {
         </div>
       </div>
 
-<<<<<<< HEAD
       {assessments.length === 0 ? (
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -187,14 +186,6 @@ export default function AssessmentsPage() {
           }}>
             Go to Requirements →
           </a>
-=======
-      {/* KPI Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="card p-4">
-          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Assessment Groups</div>
-          <div className="text-2xl font-extrabold text-slate-900">{ASSESSMENT_GROUPS.length}</div>
-          <div className="text-xs text-slate-500 mt-1">For Software Developer</div>
->>>>>>> 9d843ea348e10e7bed616ff359598612e2447c04
         </div>
         <div className="card p-4">
           <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Candidates Invited</div>

@@ -72,7 +72,6 @@ const statusBadge: Record<string, string> = {
 
 export default function DashboardPage() {
   return (
-<<<<<<< HEAD
     <div className="page-content" style={{ background: 'var(--surface)', minHeight: '100vh', padding: '24px 32px 48px' }}>
       {/* ================= TOP RECRUITMENT INTELLIGENCE HERO BANNER ================= */}
       <div style={{
@@ -380,12 +379,6 @@ export default function DashboardPage() {
       <div className="stitch-panel">
         {/* ================= TAB 1: OVERVIEW ================= */}
         {selectedTab === 'overview' && (
-=======
-    <div className="page-content">
-      {/* Header */}
-      <div className="page-header">
-        <div className="page-header-row">
->>>>>>> 9d843ea348e10e7bed616ff359598612e2447c04
           <div>
             <h1 className="page-title">
               Dashboard Overview
