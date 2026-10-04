@@ -31,7 +31,7 @@ router.post(
     try {
       client = await pool.connect();
     } catch (connErr) {
-      console.error('DB connection failed:', connErr.message);
+      console.error('DB connection failed. Full error:', JSON.stringify(connErr, Object.getOwnPropertyNames(connErr))); console.error('DATABASE_URL set?', !!process.env.DATABASE_URL);
       return res.status(503).json({ error: 'Database unavailable. Check your connection and try again.' });
     }
     try {
@@ -97,11 +97,11 @@ router.post(
         },
       });
     } catch (err) {
-      try { await client.query('ROLLBACK'); } catch (_) {}
+      try { await client.query('ROLLBACK'); } catch (_) { }
       console.error('Register error:', err);
       return res.status(500).json({ error: 'Registration failed' });
     } finally {
-      try { client.release(); } catch (_) {}
+      try { client.release(); } catch (_) { }
     }
   }
 );
