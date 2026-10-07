@@ -10,7 +10,10 @@ export interface Vacancy {
   applications: number;
   assessments: number;
   interviews: number;
-  status: 'published' | 'pending' | 'draft' | 'paused' | 'closed' | 'verified';
+  status: 'published' | 'pending' | 'draft' | 'paused' | 'closed' | 'verified' | string;
+  raw_status?: string;
+  requirement_count?: number;
+  review_note?: string;
   created: string;
   location?: string;
   experience_level?: string;
@@ -83,9 +86,12 @@ export const DataService = {
           dept: v.department_name || 'General',
           openings: Number(v.vacancy_count) || 1,
           applications: Number(v.applicant_count) || 0,
-          assessments: Math.round((Number(v.applicant_count) || 0) * 0.7),
-          interviews: Math.round((Number(v.applicant_count) || 0) * 0.2),
+          assessments: 0,
+          interviews: 0,
           status: (v.status || 'published').toLowerCase(),
+          raw_status: v.status || 'PUBLISHED',
+          requirement_count: Number(v.requirement_count) || 0,
+          review_note: v.review_note || '',
           created: v.created_at ? v.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
           location: v.location || 'Remote',
           experience_level: v.experience_level || 'senior',
@@ -96,6 +102,18 @@ export const DataService = {
       }
     } catch (err) {
       console.error('Failed to fetch vacancies from API', err);
+    }
+    return [];
+  },
+
+  async getActivity(): Promise<any[]> {
+    try {
+      const res = await api.get('/company/activity');
+      if (res.data?.activities) {
+        return res.data.activities;
+      }
+    } catch (err) {
+      console.error('Failed to fetch company activity', err);
     }
     return [];
   },
@@ -156,8 +174,39 @@ export const DataService = {
     };
   },
 
-  async updateVacancyStatus(id: string, status: Vacancy['status']): Promise<void> {
-    await api.patch(`/vacancies/${id}/status`, { status });
+  async updateVacancyStatus(id: string, status: string): Promise<void> {
+    const norm = status.toLowerCase();
+    if (norm === 'submitted' || norm === 'pending_admin_review' || norm === 'pending') {
+      await api.post(`/vacancies/${id}/submit`);
+    } else if (norm === 'published' || norm === 'active') {
+      await api.post(`/vacancies/${id}/publish`);
+    } else if (norm === 'paused') {
+      await api.post(`/vacancies/${id}/pause`);
+    } else if (norm === 'closed') {
+      await api.post(`/vacancies/${id}/close`);
+    } else {
+      await api.put(`/vacancies/${id}`, { status });
+    }
+  },
+
+  async submitVacancy(id: string): Promise<any> {
+    const res = await api.post(`/vacancies/${id}/submit`);
+    return res.data;
+  },
+
+  async publishVacancy(id: string): Promise<any> {
+    const res = await api.post(`/vacancies/${id}/publish`);
+    return res.data;
+  },
+
+  async pauseVacancy(id: string): Promise<any> {
+    const res = await api.post(`/vacancies/${id}/pause`);
+    return res.data;
+  },
+
+  async closeVacancy(id: string): Promise<any> {
+    const res = await api.post(`/vacancies/${id}/close`);
+    return res.data;
   },
 
   // ==================== CANDIDATES ====================

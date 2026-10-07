@@ -59,10 +59,10 @@ export default function VacancyGovernancePage() {
 
     if (!match) return false;
 
-    if (activeTab === 'PENDING') return v.status === 'Pending Review';
-    if (activeTab === 'CORRECTION') return v.status === 'Needs Correction';
-    if (activeTab === 'VERIFIED') return v.status === 'Verified';
-    if (activeTab === 'REJECTED') return v.status === 'Rejected' || v.status === 'Suspended';
+    if (activeTab === 'PENDING') return ['Pending Review', 'PENDING_ADMIN_REVIEW', 'UNDER_REVIEW'].includes(v.status);
+    if (activeTab === 'CORRECTION') return ['Needs Correction', 'CHANGES_REQUESTED'].includes(v.status);
+    if (activeTab === 'VERIFIED') return ['Verified', 'APPROVED', 'PUBLISHED'].includes(v.status);
+    if (activeTab === 'REJECTED') return ['Rejected', 'Suspended', 'REJECTED', 'CLOSED', 'ARCHIVED'].includes(v.status);
     return true;
   });
 
@@ -71,18 +71,23 @@ export default function VacancyGovernancePage() {
     setDialogAction(status);
   };
 
-  const handleConfirmAction = (note: string) => {
+  const handleConfirmAction = async (note: string) => {
     if (!targetVacancy || !dialogAction) return;
-    adminDataService.updateVacancyStatus(
-      targetVacancy.id,
-      dialogAction,
-      adminUser.name,
-      adminUser.role,
-      note
-    );
-    toast.success(`Vacancy ${targetVacancy.roleTitle} set to ${dialogAction}`);
-    setDialogAction(null);
-    setTargetVacancy(null);
+    try {
+      await adminDataService.updateVacancyStatus(
+        targetVacancy.id,
+        dialogAction,
+        adminUser.name,
+        adminUser.role,
+        note
+      );
+      toast.success(`Vacancy ${targetVacancy.roleTitle} set to ${dialogAction}`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || err.message || 'Failed to update status');
+    } finally {
+      setDialogAction(null);
+      setTargetVacancy(null);
+    }
   };
 
   const columns: Column<AdminVacancy>[] = [

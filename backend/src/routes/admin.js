@@ -2,449 +2,728 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../database/pool');
 const { authenticate, requireGenuAIAdmin } = require('../middleware/auth');
+
+// Protect all admin endpoints
 router.use(authenticate, requireGenuAIAdmin);
 
-// In-memory data store with live state synchronization for platform governance
-let inMemoryCompanies = [
-  {
-    id: 'cmp-001',
-    name: 'Apex Neural Systems Ltd',
-    domain: 'apexneural.com',
-    workEmail: 'governance@apexneural.com',
-    industry: 'Artificial Intelligence & Robotics',
-    employeeCount: '250-500',
-    registrationNumber: 'UK-REG-9481023',
-    country: 'United Kingdom',
-    website: 'https://apexneural.com',
-    verificationStatus: 'Pending',
-    submittedDate: '2026-10-02 11:20',
-    reviewState: 'In Queue',
-    assignedAdmin: 'Elena Rostova',
-    trustScore: 82,
-    activeVacanciesCount: 4,
-    totalAssessmentsCount: 12,
-    documents: [
-      { name: 'Certificate of Incorporation.pdf', type: 'incorporation', url: '#', verified: false },
-      { name: 'Tax Compliance Certificate.pdf', type: 'tax', url: '#', verified: false },
-      { name: 'Domain Ownership Verification.pdf', type: 'domain', url: '#', verified: true },
-    ],
-    history: [
-      { date: '2026-10-02 11:20', admin: 'System', action: 'Company Submitted', note: 'Initial verification package uploaded.' },
-    ],
-  },
-  {
-    id: 'cmp-002',
-    name: 'Nexus FinTech Global',
-    domain: 'nexusfintech.io',
-    workEmail: 'compliance@nexusfintech.io',
-    industry: 'Financial Technology & Payments',
-    employeeCount: '500-1000',
-    registrationNumber: 'US-DEL-5819024',
-    country: 'United States',
-    website: 'https://nexusfintech.io',
-    verificationStatus: 'Under Review',
-    submittedDate: '2026-10-01 16:45',
-    reviewState: 'Assigned',
-    assignedAdmin: 'Marcus Vance',
-    trustScore: 94,
-    activeVacanciesCount: 8,
-    totalAssessmentsCount: 30,
-    documents: [
-      { name: 'SEC Compliance Filing.pdf', type: 'regulatory', url: '#', verified: true },
-      { name: 'Delaware Corporate Certificate.pdf', type: 'incorporation', url: '#', verified: true },
-      { name: 'Authorized Officer Proof.pdf', type: 'identity', url: '#', verified: false },
-    ],
-    history: [
-      { date: '2026-10-01 16:45', admin: 'System', action: 'Submitted', note: 'Company verification request received.' },
-      { date: '2026-10-02 09:15', admin: 'Marcus Vance', action: 'Under Review', note: 'Commenced verification of officer authorization.' },
-    ],
-  },
-  {
-    id: 'cmp-003',
-    name: 'CloudScale Infrastructure Inc',
-    domain: 'cloudscale.net',
-    workEmail: 'ops@cloudscale.net',
-    industry: 'Cloud Computing & DevOps',
-    employeeCount: '100-250',
-    registrationNumber: 'DE-HRB-774910',
-    country: 'Germany',
-    website: 'https://cloudscale.net',
-    verificationStatus: 'Verified',
-    submittedDate: '2026-09-24 14:10',
-    reviewState: 'Completed',
-    assignedAdmin: 'Marcus Vance',
-    trustScore: 99,
-    activeVacanciesCount: 6,
-    totalAssessmentsCount: 18,
-    documents: [
-      { name: 'Handelsregister Auszug.pdf', type: 'incorporation', url: '#', verified: true },
-      { name: 'Umsatzsteuer-ID Certificate.pdf', type: 'tax', url: '#', verified: true },
-    ],
-    history: [
-      { date: '2026-09-24 14:10', admin: 'System', action: 'Submitted', note: 'Initial verification submitted.' },
-      { date: '2026-09-25 10:00', admin: 'Marcus Vance', action: 'Verified', note: 'All corporate registry and DNS records confirmed.' },
-    ],
-  },
-];
-
-let inMemoryVacancies = [
-  {
-    id: 'vac-101',
-    companyId: 'cmp-001',
-    companyName: 'Apex Neural Systems Ltd',
-    roleTitle: 'Principal Distributed Systems Architect',
-    version: 'v2.1',
-    department: 'Core Engineering',
-    experienceLevel: 'Staff / Principal',
-    employmentType: 'Full-Time',
-    status: 'Pending Review',
-    submittedDate: '2026-10-02 14:30',
-    assignedAdmin: 'Marcus Vance',
-    completenessScore: 95,
-    agreementStatus: 'Signed & Valid',
-    requirements: [
-      { title: 'Distributed Consensus (Raft/Paxos)', type: 'Required', priority: 'Critical', category: 'Architecture' },
-      { title: 'Golang / Rust Concurrency Patterns', type: 'Required', priority: 'Critical', category: 'Technical' },
-      { title: 'High-Throughput gRPC & Protobuf', type: 'Required', priority: 'High', category: 'Tools' },
-    ],
-    assessmentMapping: [
-      { assessmentId: 'asm-301', assessmentName: 'Distributed Systems & Concurrency Benchmark', weight: 60, evaluationGroup: 'Architecture & Scalability' },
-    ],
-    evaluationStructure: [
-      { groupName: 'Architecture & Scalability', weightPercent: 60, benchmarkScore: 85 },
-      { groupName: 'System Communication & Synthesis', weightPercent: 40, benchmarkScore: 80 },
-    ],
-    governanceNotes: 'Requirement mapping adheres to platform taxonomy v4.2. Ready for governance sign-off.',
-  },
-];
-
-let inMemoryAssessments = [
-  {
-    id: 'asm-301',
-    title: 'Distributed Systems & Concurrency Benchmark',
-    companyId: 'cmp-001',
-    companyName: 'Apex Neural Systems Ltd',
-    vacancyId: 'vac-101',
-    vacancyRole: 'Principal Distributed Systems Architect',
-    version: 'v2.0',
-    assessmentType: 'Coding',
-    evaluationGroups: ['Concurrency Control', 'Failure Domain Handling', 'Memory Safety'],
-    questionCount: 4,
-    timeLimitMinutes: 90,
-    passingThreshold: 80,
-    integrityConfig: {
-      tabSwitchMonitoring: true,
-      copyPasteRestriction: true,
-      webcamProctoring: true,
-      multiplePersonDetection: true,
-      audioSurveillance: false,
-      environmentSnapshot: true,
-    },
-    requirementMapping: [
-      { requirement: 'Distributed Consensus (Raft/Paxos)', questionIds: ['q-1', 'q-2'] },
-    ],
-    status: 'Pending Review',
-    submittedDate: '2026-10-02 15:00',
-  },
-];
-
-let inMemoryUsers = [
-  {
-    id: 'usr-adm-01',
-    name: 'Sarah Chen',
-    email: 'sarah.chen@genuai.io',
-    userType: 'GenuAI Admin',
-    organization: 'GenuAI Technologies Ltd',
-    accountStatus: 'Active',
-    mfaEnabled: true,
-    lastLogin: '2026-10-03 13:45',
-    createdDate: '2025-01-10',
-    ipLocation: 'London, UK (195.12.44.18)',
-    failedLoginAttempts: 0,
-  },
-  {
-    id: 'usr-adm-02',
-    name: 'Elena Rostova',
-    email: 'elena.rostova@genuai.io',
-    userType: 'GenuAI Admin',
-    organization: 'GenuAI Technologies Ltd',
-    accountStatus: 'Active',
-    mfaEnabled: true,
-    lastLogin: '2026-10-03 12:20',
-    createdDate: '2025-02-15',
-    ipLocation: 'Berlin, DE (88.198.42.9)',
-    failedLoginAttempts: 0,
-  },
-  {
-    id: 'usr-cmp-01',
-    name: 'David Vance',
-    email: 'david@apexneural.com',
-    userType: 'Company User',
-    organization: 'Apex Neural Systems Ltd',
-    accountStatus: 'Active',
-    mfaEnabled: true,
-    lastLogin: '2026-10-03 10:10',
-    createdDate: '2026-08-01',
-    ipLocation: 'San Francisco, US (104.28.19.4)',
-    failedLoginAttempts: 0,
-  },
-];
-
-let inMemoryAuditLogs = [
-  {
-    id: 'aud-001',
-    actor: 'Sarah Chen',
-    role: 'Super Admin',
-    action: 'DISPUTE_INVESTIGATED',
-    entity: 'DisputeCase',
-    entityId: 'dsp-501',
-    timestamp: '2026-10-02 20:00:15',
-    previousState: 'Unreviewed',
-    newState: 'Investigating',
-    metadata: { reason: 'Reviewed OS popup timeline and audio stream.' },
-    ipAddress: '195.12.44.18',
-  },
-];
-
-const appendAudit = (actor, role, action, entity, entityId, previousState, newState, metadata) => {
-  const record = {
-    id: `aud-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-    actor: actor || 'Platform Admin',
-    role: role || 'Super Admin',
-    action,
-    entity,
-    entityId,
-    timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-    previousState,
-    newState,
-    metadata,
-    ipAddress: '195.12.44.18',
-  };
-  inMemoryAuditLogs.unshift(record);
-  return record;
-};
-
 // ============================================================
-// 1. OVERVIEW
+// 1. GET /api/admin/overview
+// Real PostgreSQL platform statistics & activity queue
 // ============================================================
-router.get('/overview', (req, res) => {
-  const pendingCompanies = inMemoryCompanies.filter((c) => c.verificationStatus === 'Pending' || c.verificationStatus === 'Under Review');
-  const pendingVacancies = inMemoryVacancies.filter((v) => v.status === 'Pending Review');
-  const pendingAssessments = inMemoryAssessments.filter((a) => a.status === 'Pending Review' || a.status === 'Flagged');
+router.get('/overview', async (req, res) => {
+  try {
+    const [
+      companyCountsRes,
+      vacancyCountsRes,
+      userCountRes,
+      pendingCompaniesRes,
+      pendingVacanciesRes,
+      recentAuditRes,
+    ] = await Promise.all([
+      pool.query(`
+        SELECT
+          COUNT(*)::int AS total_companies,
+          COUNT(*) FILTER (WHERE verification_status IN ('PENDING_VERIFICATION', 'UNDER_REVIEW'))::int AS pending_verifications,
+          COUNT(*) FILTER (WHERE verification_status = 'APPROVED')::int AS approved_companies,
+          COUNT(*) FILTER (WHERE verification_status = 'REJECTED')::int AS rejected_companies,
+          COUNT(*) FILTER (WHERE verification_status = 'SUSPENDED')::int AS suspended_companies
+        FROM companies
+      `),
+      pool.query(`
+        SELECT
+          COUNT(*)::int AS total_vacancies,
+          COUNT(*) FILTER (WHERE status = 'PENDING_ADMIN_REVIEW')::int AS pending_reviews,
+          COUNT(*) FILTER (WHERE status = 'APPROVED')::int AS approved_vacancies,
+          COUNT(*) FILTER (WHERE status = 'PUBLISHED')::int AS published_vacancies,
+          COUNT(*) FILTER (WHERE status = 'CHANGES_REQUESTED')::int AS changes_requested_vacancies,
+          COUNT(*) FILTER (WHERE status = 'REJECTED')::int AS rejected_vacancies
+        FROM company_roles
+      `),
+      pool.query('SELECT COUNT(*)::int AS total_users FROM users'),
+      pool.query(`
+        SELECT id, name, official_email, website, industry, location, verification_status, created_at
+        FROM companies
+        WHERE verification_status IN ('PENDING_VERIFICATION', 'UNDER_REVIEW', 'ADDITIONAL_INFORMATION_REQUIRED')
+        ORDER BY created_at ASC
+        LIMIT 10
+      `),
+      pool.query(`
+        SELECT cr.id, cr.title, cr.status, cr.created_at, cr.submitted_at,
+               c.id AS company_id, c.name AS company_name,
+               d.name AS department_name
+        FROM company_roles cr
+        JOIN companies c ON c.id = cr.company_id
+        LEFT JOIN departments d ON d.id = cr.department_id
+        WHERE cr.status = 'PENDING_ADMIN_REVIEW'
+        ORDER BY COALESCE(cr.submitted_at, cr.created_at) ASC
+        LIMIT 10
+      `),
+      pool.query(`
+        SELECT al.id, al.action, al.entity_type, al.entity_id, al.old_status, al.new_status,
+               al.reason, al.metadata, al.created_at, al.actor_role,
+               u.email AS actor_email,
+               COALESCE(al.actor_name, CONCAT(u.first_name, ' ', u.last_name), 'System') AS actor_name,
+               c.name AS company_name
+        FROM audit_logs al
+        LEFT JOIN users u ON u.id = al.actor_user_id OR u.id = al.user_id
+        LEFT JOIN companies c ON c.id = al.company_id
+        ORDER BY al.created_at DESC
+        LIMIT 15
+      `),
+    ]);
 
-  res.json({
-    metrics: {
-      totalCompanies: inMemoryCompanies.length,
-      pendingCompanyVerifications: pendingCompanies.length,
-      activeVacancies: inMemoryVacancies.length,
-      vacanciesPendingReview: pendingVacancies.length,
-      assessmentsPendingReview: pendingAssessments.length,
-      platformUsers: inMemoryUsers.length,
-      openIntegrityIncidents: 1,
-      openDisputes: 1,
-    },
-    actionQueue: {
-      pendingCompanies,
-      pendingVacancies,
-      pendingAssessments,
-    },
-    recentActivity: inMemoryAuditLogs.slice(0, 10),
-  });
+    const compStats = companyCountsRes.rows[0] || {};
+    const vacStats = vacancyCountsRes.rows[0] || {};
+    const totalUsers = userCountRes.rows[0]?.total_users || 0;
+
+    return res.json({
+      metrics: {
+        totalCompanies: compStats.total_companies || 0,
+        pendingCompanyVerifications: compStats.pending_verifications || 0,
+        approvedCompanies: compStats.approved_companies || 0,
+        rejectedCompanies: compStats.rejected_companies || 0,
+        suspendedCompanies: compStats.suspended_companies || 0,
+        activeVacancies: vacStats.published_vacancies || 0,
+        vacanciesPendingReview: vacStats.pending_reviews || 0,
+        approvedVacancies: vacStats.approved_vacancies || 0,
+        publishedVacancies: vacStats.published_vacancies || 0,
+        vacanciesChangesRequested: vacStats.changes_requested_vacancies || 0,
+        rejectedVacancies: vacStats.rejected_vacancies || 0,
+        platformUsers: totalUsers,
+      },
+      actionQueue: {
+        pendingCompanies: pendingCompaniesRes.rows.map((c) => ({
+          id: c.id,
+          name: c.name,
+          workEmail: c.official_email,
+          website: c.website,
+          industry: c.industry,
+          country: c.location,
+          verificationStatus: c.verification_status,
+          submittedDate: c.created_at ? c.created_at.toISOString().split('T')[0] : '',
+        })),
+        pendingVacancies: pendingVacanciesRes.rows.map((v) => ({
+          id: v.id,
+          companyId: v.company_id,
+          companyName: v.company_name,
+          roleTitle: v.title,
+          department: v.department_name,
+          status: v.status,
+          submittedDate: (v.submitted_at || v.created_at)?.toISOString().split('T')[0] || '',
+        })),
+      },
+      recentActivity: recentAuditRes.rows.map((a) => ({
+        id: a.id,
+        actor: a.actor_name,
+        role: a.actor_role || 'Admin',
+        action: a.action,
+        entity: a.entity_type,
+        entityId: a.entity_id,
+        companyName: a.company_name,
+        timestamp: a.created_at ? a.created_at.toISOString().replace('T', ' ').substring(0, 19) : '',
+        previousState: a.old_status,
+        newState: a.new_status,
+        reason: a.reason,
+        metadata: a.metadata,
+      })),
+    });
+  } catch (err) {
+    console.error('Admin overview error:', err);
+    return res.status(500).json({ error: 'Failed to load admin overview metrics' });
+  }
 });
 
 // ============================================================
-// 2. COMPANIES
+// 2. GET /api/admin/companies
+// List all companies from PostgreSQL with stats & filters
 // ============================================================
 router.get('/companies', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM companies ORDER BY created_at DESC');
-    if (result.rows.length > 0) {
-      // Merge with in-memory metadata if available
-      const mapped = result.rows.map((r) => ({
-        id: r.id,
-        name: r.name,
-        domain: r.website ? r.website.replace(/^https?:\/\//, '') : 'company.io',
-        workEmail: r.official_email || 'contact@company.io',
-        industry: r.industry || 'Technology',
-        employeeCount: r.size || '50-100',
-        registrationNumber: 'REG-' + r.id.substring(0, 8).toUpperCase(),
-        country: r.location || 'Global',
-        website: r.website || 'https://genuai.io',
-        verificationStatus: r.verification_status === 'VERIFIED' ? 'Verified' : r.verification_status === 'UNDER_REVIEW' ? 'Under Review' : 'Pending',
-        submittedDate: r.created_at ? r.created_at.toISOString().split('T')[0] : '2026-10-01',
-        reviewState: r.verification_status === 'VERIFIED' ? 'Completed' : 'In Queue',
-        assignedAdmin: 'Elena Rostova',
-        trustScore: r.verification_status === 'VERIFIED' ? 98 : 75,
-        activeVacanciesCount: 2,
-        totalAssessmentsCount: 5,
-        documents: [],
-        history: [],
-      }));
-      return res.json({ companies: mapped });
+    const { status, search } = req.query;
+    let query = `
+      SELECT c.*,
+             COUNT(DISTINCT cr.id) AS active_vacancies_count,
+             COUNT(DISTINCT cm.user_id) AS member_count,
+             u.email AS reviewer_email,
+             CONCAT(u.first_name, ' ', u.last_name) AS reviewer_name
+      FROM companies c
+      LEFT JOIN company_roles cr ON cr.company_id = c.id AND cr.status = 'PUBLISHED'
+      LEFT JOIN company_members cm ON cm.company_id = c.id
+      LEFT JOIN users u ON u.id = c.verification_reviewed_by
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (status && status !== 'ALL') {
+      params.push(status.toUpperCase());
+      query += ` AND c.verification_status = $${params.length}`;
     }
-  } catch (_) {}
-  res.json({ companies: inMemoryCompanies });
-});
 
-router.put('/companies/:id/status', async (req, res) => {
-  const { id } = req.params;
-  const { status, adminName, adminRole, note } = req.body;
+    if (search) {
+      params.push(`%${search}%`);
+      query += ` AND (c.name ILIKE $${params.length} OR c.official_email ILIKE $${params.length} OR c.industry ILIKE $${params.length})`;
+    }
 
-  const comp = inMemoryCompanies.find((c) => c.id === id);
-  if (comp) {
-    const prev = comp.verificationStatus;
-    comp.verificationStatus = status;
-    comp.history.unshift({
-      date: new Date().toISOString().replace('T', ' ').substring(0, 16),
-      admin: adminName || 'Admin',
-      action: `Status changed to ${status}`,
-      note: note || '',
-    });
-    appendAudit(adminName, adminRole, `COMPANY_${status.toUpperCase().replace(/\s+/g, '_')}`, 'Company', id, prev, status, { note });
-    return res.json({ success: true, company: comp });
+    query += ` GROUP BY c.id, u.id ORDER BY c.created_at DESC`;
+
+    const result = await pool.query(query, params);
+
+    const companies = result.rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      domain: r.website ? r.website.replace(/^https?:\/\//, '').replace(/\/.*$/, '') : 'company.io',
+      workEmail: r.official_email || 'contact@company.io',
+      industry: r.industry || 'Technology',
+      employeeCount: r.size || '50-250',
+      registrationNumber: 'REG-' + r.id.substring(0, 8).toUpperCase(),
+      country: r.location || 'Global',
+      website: r.website || '',
+      description: r.description || '',
+      verificationStatus: r.verification_status,
+      submittedDate: r.created_at ? r.created_at.toISOString().split('T')[0] : '',
+      reviewState: r.verification_status === 'APPROVED' ? 'Completed' : r.verification_status === 'UNDER_REVIEW' ? 'Under Review' : 'In Queue',
+      assignedAdmin: r.reviewer_name || 'Unassigned',
+      reviewNote: r.verification_review_note || '',
+      activeVacanciesCount: Number(r.active_vacancies_count) || 0,
+      totalAssessmentsCount: 0,
+      documents: [],
+      history: [],
+    }));
+
+    return res.json({ companies });
+  } catch (err) {
+    console.error('Admin list companies error:', err);
+    return res.status(500).json({ error: 'Failed to fetch companies' });
   }
-
-  res.json({ success: true, status });
 });
 
 // ============================================================
-// 3. VACANCIES
+// 3. GET /api/admin/companies/:id
+// Get single company full details, members, departments, vacancies, audit history
+// ============================================================
+router.get('/companies/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const compRes = await pool.query('SELECT * FROM companies WHERE id = $1', [id]);
+    if (compRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Company not found' });
+    }
+    const company = compRes.rows[0];
+
+    const [membersRes, deptsRes, vacsRes, auditRes] = await Promise.all([
+      pool.query(`
+        SELECT u.id, u.email, u.first_name, u.last_name, u.role, cm.member_role, cm.created_at
+        FROM company_members cm
+        JOIN users u ON u.id = cm.user_id
+        WHERE cm.company_id = $1
+      `, [id]),
+      pool.query('SELECT * FROM departments WHERE company_id = $1 ORDER BY name ASC', [id]),
+      pool.query('SELECT * FROM company_roles WHERE company_id = $1 ORDER BY created_at DESC', [id]),
+      pool.query(`
+        SELECT al.*, u.email AS actor_email, CONCAT(u.first_name, ' ', u.last_name) AS actor_name
+        FROM audit_logs al
+        LEFT JOIN users u ON u.id = al.actor_user_id
+        WHERE al.company_id = $1 OR (al.entity_type = 'Company' AND al.entity_id = $2)
+        ORDER BY al.created_at DESC
+        LIMIT 50
+      `, [id, id]),
+    ]);
+
+    return res.json({
+      company,
+      members: membersRes.rows,
+      departments: deptsRes.rows,
+      vacancies: vacsRes.rows,
+      auditHistory: auditRes.rows,
+    });
+  } catch (err) {
+    console.error('Admin get company error:', err);
+    return res.status(500).json({ error: 'Failed to fetch company details' });
+  }
+});
+
+// ============================================================
+// 4. PUT / PATCH /api/admin/companies/:id/status
+// Transactional company verification decision with audit logging
+// ============================================================
+const handleCompanyStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status, note, reason } = req.body;
+
+  const validStatuses = [
+    'PENDING_VERIFICATION',
+    'UNDER_REVIEW',
+    'ADDITIONAL_INFORMATION_REQUIRED',
+    'APPROVED',
+    'REJECTED',
+    'SUSPENDED',
+    'ARCHIVED',
+  ];
+
+  // Map legacy frontend status terms
+  let normalizedStatus = (status || '').toUpperCase().replace(/\s+/g, '_');
+  if (normalizedStatus === 'VERIFIED') normalizedStatus = 'APPROVED';
+  if (normalizedStatus === 'NEEDS_CORRECTION') normalizedStatus = 'ADDITIONAL_INFORMATION_REQUIRED';
+  if (normalizedStatus === 'PENDING') normalizedStatus = 'PENDING_VERIFICATION';
+
+  if (!validStatuses.includes(normalizedStatus)) {
+    return res.status(400).json({
+      error: `Invalid company verification status '${status}'. Must be one of: ${validStatuses.join(', ')}`,
+    });
+  }
+
+  let client;
+  try {
+    client = await pool.connect();
+  } catch (connErr) {
+    return res.status(503).json({ error: 'Database unavailable' });
+  }
+
+  try {
+    await client.query('BEGIN');
+
+    // Lock and get current status
+    const existingRes = await client.query('SELECT * FROM companies WHERE id = $1 FOR UPDATE', [id]);
+    if (existingRes.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Company not found' });
+    }
+
+    const company = existingRes.rows[0];
+    const prevStatus = company.verification_status;
+    const finalNote = note || reason || `Status changed to ${normalizedStatus}`;
+
+    const isSuspended = normalizedStatus === 'SUSPENDED';
+
+    // Update company in PostgreSQL
+    const updateRes = await client.query(
+      `UPDATE companies SET
+         verification_status = $1,
+         verification_reviewed_by = $2,
+         verification_reviewed_at = NOW(),
+         verification_review_note = $3,
+         suspended_at = CASE WHEN $4::boolean THEN NOW() ELSE (CASE WHEN $5 = 'SUSPENDED' THEN NULL ELSE suspended_at END) END,
+         suspension_reason = CASE WHEN $4::boolean THEN $3 ELSE (CASE WHEN $5 = 'SUSPENDED' THEN NULL ELSE suspension_reason END) END,
+         updated_at = NOW()
+       WHERE id = $6
+       RETURNING *`,
+      [normalizedStatus, req.user.id, finalNote, isSuspended, prevStatus, id]
+    );
+
+    const updatedCompany = updateRes.rows[0];
+
+    // Insert immutable audit log in PostgreSQL
+    await client.query(
+      `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, reason, metadata, ip_address)
+       VALUES ($1, $2, $3, $4, 'Company', $5, $6, $7, $8, $9, $10)`,
+      [
+        id,
+        req.user.id,
+        req.user.role || 'SUPER_ADMIN',
+        `COMPANY_${normalizedStatus}`,
+        id,
+        prevStatus,
+        normalizedStatus,
+        finalNote,
+        JSON.stringify({ companyName: updatedCompany.name, officialEmail: updatedCompany.official_email }),
+        req.ip || null,
+      ]
+    );
+
+    await client.query('COMMIT');
+
+    return res.json({
+      success: true,
+      company: {
+        id: updatedCompany.id,
+        name: updatedCompany.name,
+        verificationStatus: updatedCompany.verification_status,
+        reviewNote: updatedCompany.verification_review_note,
+        updatedAt: updatedCompany.updated_at,
+      },
+      message: `Company status successfully updated to ${normalizedStatus}`,
+    });
+  } catch (err) {
+    try { await client.query('ROLLBACK'); } catch (_) {}
+    console.error('Update company status error:', err);
+    return res.status(500).json({ error: 'Failed to update company verification status' });
+  } finally {
+    try { client.release(); } catch (_) {}
+  }
+};
+router.put('/companies/:id/status', handleCompanyStatus);
+router.patch('/companies/:id/status', handleCompanyStatus);
+
+// ============================================================
+// 5. GET /api/admin/vacancies
+// List vacancies for moderation queue from PostgreSQL
 // ============================================================
 router.get('/vacancies', async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT cr.*, c.name as company_name, d.name as department_name 
-       FROM company_roles cr 
-       JOIN companies c ON c.id = cr.company_id 
-       JOIN departments d ON d.id = cr.department_id 
-       ORDER BY cr.created_at DESC`
-    );
-    if (result.rows.length > 0) {
-      const mapped = result.rows.map((r) => ({
-        id: r.id,
-        companyId: r.company_id,
-        companyName: r.company_name,
-        roleTitle: r.title,
-        version: `v${r.version}.0`,
-        department: r.department_name,
-        experienceLevel: r.experience_level,
-        employmentType: r.employment_type,
-        status: r.status === 'VERIFIED' ? 'Verified' : 'Pending Review',
-        submittedDate: r.created_at ? r.created_at.toISOString().split('T')[0] : '2026-10-01',
-        assignedAdmin: 'Marcus Vance',
-        completenessScore: 90,
-        agreementStatus: 'Signed & Valid',
-        requirements: [],
-        assessmentMapping: [],
-        evaluationStructure: [],
-      }));
-      return res.json({ vacancies: mapped });
+    const { status, search } = req.query;
+    let query = `
+      SELECT cr.*,
+             c.name AS company_name, c.official_email AS company_email, c.verification_status AS company_verification_status,
+             d.name AS department_name,
+             COUNT(DISTINCT r.id) AS requirements_count,
+             COUNT(DISTINCT a.id) AS applicant_count,
+             u.email AS reviewer_email,
+             CONCAT(u.first_name, ' ', u.last_name) AS reviewer_name
+      FROM company_roles cr
+      JOIN companies c ON c.id = cr.company_id
+      LEFT JOIN departments d ON d.id = cr.department_id
+      LEFT JOIN requirements r ON r.role_id = cr.id
+      LEFT JOIN applications a ON a.role_id = cr.id
+      LEFT JOIN users u ON u.id = cr.reviewed_by
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (status && status !== 'ALL') {
+      let normalizedStatus = status.toUpperCase().replace(/\s+/g, '_');
+      if (normalizedStatus === 'PENDING' || normalizedStatus === 'PENDING_REVIEW') normalizedStatus = 'PENDING_ADMIN_REVIEW';
+      if (normalizedStatus === 'VERIFIED') normalizedStatus = 'APPROVED';
+      if (normalizedStatus === 'ACTIVE') normalizedStatus = 'PUBLISHED';
+      params.push(normalizedStatus);
+      query += ` AND cr.status = $${params.length}`;
     }
-  } catch (_) {}
-  res.json({ vacancies: inMemoryVacancies });
-});
 
-router.put('/vacancies/:id/status', (req, res) => {
-  const { id } = req.params;
-  const { status, adminName, adminRole, note } = req.body;
-  const vac = inMemoryVacancies.find((v) => v.id === id);
-  if (vac) {
-    const prev = vac.status;
-    vac.status = status;
-    vac.governanceNotes = note || vac.governanceNotes;
-    appendAudit(adminName, adminRole, `VACANCY_${status.toUpperCase().replace(/\s+/g, '_')}`, 'Vacancy', id, prev, status, { note });
-    return res.json({ success: true, vacancy: vac });
+    if (search) {
+      params.push(`%${search}%`);
+      query += ` AND (cr.title ILIKE $${params.length} OR c.name ILIKE $${params.length})`;
+    }
+
+    query += ` GROUP BY cr.id, c.id, d.id, u.id ORDER BY COALESCE(cr.submitted_at, cr.created_at) DESC`;
+
+    const result = await pool.query(query, params);
+
+    const vacancies = result.rows.map((v) => ({
+      id: v.id,
+      companyId: v.company_id,
+      companyName: v.company_name,
+      companyVerificationStatus: v.company_verification_status,
+      roleTitle: v.title,
+      version: `v${v.version || 1}.0`,
+      department: v.department_name || 'General',
+      experienceLevel: v.experience_level,
+      employmentType: v.employment_type,
+      location: v.location,
+      workMode: v.work_mode,
+      status: v.status,
+      submittedDate: (v.submitted_at || v.created_at)?.toISOString().split('T')[0] || '',
+      assignedAdmin: v.reviewer_name || 'Unassigned',
+      reviewNote: v.review_note || '',
+      requirementsCount: Number(v.requirements_count) || 0,
+      applicantCount: Number(v.applicant_count) || 0,
+      requirements: [],
+      assessmentMapping: [],
+      evaluationStructure: [],
+    }));
+
+    return res.json({ vacancies });
+  } catch (err) {
+    console.error('Admin list vacancies error:', err);
+    return res.status(500).json({ error: 'Failed to fetch vacancies' });
   }
-  res.json({ success: true, status });
 });
 
 // ============================================================
-// 4. ASSESSMENTS
+// 6. GET /api/admin/vacancies/:id
+// Get single vacancy with full requirements, company details, audit logs
 // ============================================================
-router.get('/assessments', (req, res) => {
-  res.json({ assessments: inMemoryAssessments });
-});
-
-router.put('/assessments/:id/status', (req, res) => {
-  const { id } = req.params;
-  const { status, adminName, adminRole, note } = req.body;
-  const asm = inMemoryAssessments.find((a) => a.id === id);
-  if (asm) {
-    const prev = asm.status;
-    asm.status = status;
-    asm.reviewedBy = adminName;
-    asm.reviewNotes = note;
-    appendAudit(adminName, adminRole, `ASSESSMENT_${status.toUpperCase().replace(/\s+/g, '_')}`, 'Assessment', id, prev, status, { note });
-    return res.json({ success: true, assessment: asm });
-  }
-  res.json({ success: true, status });
-});
-
-// ============================================================
-// 5. PLATFORM USERS
-// ============================================================
-router.get('/users', async (req, res) => {
+router.get('/vacancies/:id', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, email, first_name, last_name, role, created_at FROM users ORDER BY created_at DESC');
-    if (result.rows.length > 0) {
-      const mapped = result.rows.map((u) => ({
-        id: u.id,
-        name: `${u.first_name} ${u.last_name}`,
-        email: u.email,
-        userType: u.role === 'genuai_admin' ? 'GenuAI Admin' : 'Company User',
-        organization: u.role === 'genuai_admin' ? 'GenuAI Technologies Ltd' : 'Corporate Member',
-        accountStatus: 'Active',
-        mfaEnabled: true,
-        lastLogin: '2026-10-03 12:00',
-        createdDate: u.created_at ? u.created_at.toISOString().split('T')[0] : '2026-01-01',
-        ipLocation: 'United Kingdom',
-        failedLoginAttempts: 0,
-      }));
-      return res.json({ users: mapped });
-    }
-  } catch (_) {}
-  res.json({ users: inMemoryUsers });
-});
+    const { id } = req.params;
 
-router.put('/users/:id/status', (req, res) => {
-  const { id } = req.params;
-  const { status, adminName, adminRole, note } = req.body;
-  const u = inMemoryUsers.find((user) => user.id === id);
-  if (u) {
-    const prev = u.accountStatus;
-    u.accountStatus = status;
-    appendAudit(adminName, adminRole, `USER_${status.toUpperCase().replace(/\s+/g, '_')}`, 'User', id, prev, status, { note });
-    return res.json({ success: true, user: u });
+    const vacRes = await pool.query(`
+      SELECT cr.*,
+             c.name AS company_name, c.official_email AS company_email, c.verification_status AS company_verification_status, c.website AS company_website,
+             d.name AS department_name,
+             u.email AS reviewer_email, CONCAT(u.first_name, ' ', u.last_name) AS reviewer_name
+      FROM company_roles cr
+      JOIN companies c ON c.id = cr.company_id
+      LEFT JOIN departments d ON d.id = cr.department_id
+      LEFT JOIN users u ON u.id = cr.reviewed_by
+      WHERE cr.id = $1
+    `, [id]);
+
+    if (vacRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Vacancy not found' });
+    }
+
+    const vacancy = vacRes.rows[0];
+
+    const [reqsRes, versionsRes, auditRes] = await Promise.all([
+      pool.query('SELECT * FROM requirements WHERE role_id = $1 ORDER BY created_at ASC', [id]),
+      pool.query('SELECT * FROM vacancy_versions WHERE role_id = $1 ORDER BY version_number DESC', [id]),
+      pool.query(`
+        SELECT al.*, u.email AS actor_email, CONCAT(u.first_name, ' ', u.last_name) AS actor_name
+        FROM audit_logs al
+        LEFT JOIN users u ON u.id = al.actor_user_id
+        WHERE al.entity_id = $1 AND al.entity_type IN ('Vacancy', 'vacancy')
+        ORDER BY al.created_at DESC
+      `, [id]),
+    ]);
+
+    return res.json({
+      vacancy: {
+        id: vacancy.id,
+        companyId: vacancy.company_id,
+        companyName: vacancy.company_name,
+        companyEmail: vacancy.company_email,
+        companyVerificationStatus: vacancy.company_verification_status,
+        roleTitle: vacancy.title,
+        jobDescription: vacancy.job_description,
+        department: vacancy.department_name,
+        experienceLevel: vacancy.experience_level,
+        employmentType: vacancy.employment_type,
+        location: vacancy.location,
+        workMode: vacancy.work_mode,
+        salaryRange: vacancy.salary_range,
+        vacancyCount: vacancy.vacancy_count,
+        status: vacancy.status,
+        version: vacancy.version,
+        submittedAt: vacancy.submitted_at,
+        reviewedAt: vacancy.reviewed_at,
+        reviewNote: vacancy.review_note,
+        approvedAt: vacancy.approved_at,
+        publishedAt: vacancy.published_at,
+        assignedAdmin: vacancy.reviewer_name,
+      },
+      requirements: reqsRes.rows,
+      versions: versionsRes.rows,
+      auditHistory: auditRes.rows,
+    });
+  } catch (err) {
+    console.error('Admin get vacancy details error:', err);
+    return res.status(500).json({ error: 'Failed to fetch vacancy details' });
   }
-  res.json({ success: true, status });
 });
 
 // ============================================================
-// 6. AUDIT LOGS
+// 7. PUT / PATCH /api/admin/vacancies/:id/status
+// Transactional vacancy moderation decision (Approve, Reject, Request Changes, Pause)
+// ============================================================
+const handleVacancyStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status, note, reason } = req.body;
+
+  const validStatuses = [
+    'DRAFT',
+    'PENDING_ADMIN_REVIEW',
+    'CHANGES_REQUESTED',
+    'APPROVED',
+    'PUBLISHED',
+    'PAUSED',
+    'CLOSED',
+    'ARCHIVED',
+    'REJECTED',
+  ];
+
+  let normalizedStatus = (status || '').toUpperCase().replace(/\s+/g, '_');
+  if (normalizedStatus === 'VERIFIED') normalizedStatus = 'APPROVED';
+  if (normalizedStatus === 'NEEDS_CORRECTION') normalizedStatus = 'CHANGES_REQUESTED';
+  if (normalizedStatus === 'PENDING' || normalizedStatus === 'PENDING_REVIEW') normalizedStatus = 'PENDING_ADMIN_REVIEW';
+
+  if (!validStatuses.includes(normalizedStatus)) {
+    return res.status(400).json({
+      error: `Invalid vacancy status '${status}'. Must be one of: ${validStatuses.join(', ')}`,
+    });
+  }
+
+  let client;
+  try {
+    client = await pool.connect();
+  } catch (connErr) {
+    return res.status(503).json({ error: 'Database unavailable' });
+  }
+
+  try {
+    await client.query('BEGIN');
+
+    // Lock and get vacancy joined with company
+    const vacRes = await client.query(`
+      SELECT cr.*, c.verification_status AS company_verification_status, c.name AS company_name
+      FROM company_roles cr
+      JOIN companies c ON c.id = cr.company_id
+      WHERE cr.id = $1
+      FOR UPDATE OF cr
+    `, [id]);
+
+    if (vacRes.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Vacancy not found' });
+    }
+
+    const vacancy = vacRes.rows[0];
+
+    // Rule: Cannot approve or publish a vacancy belonging to an unverified or suspended company
+    if (['APPROVED', 'PUBLISHED'].includes(normalizedStatus)) {
+      if (vacancy.company_verification_status !== 'APPROVED') {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          error: `Cannot approve or publish vacancy for company in '${vacancy.company_verification_status}' status. Company must be APPROVED first.`,
+        });
+      }
+    }
+
+    const prevStatus = vacancy.status;
+    const finalNote = note || reason || `Vacancy status changed to ${normalizedStatus}`;
+
+    // Update vacancy row
+    const updateRes = await client.query(`
+      UPDATE company_roles SET
+        status = $1::varchar,
+        reviewed_by = $2::uuid,
+        reviewed_at = NOW(),
+        review_note = $3::text,
+        approved_at = CASE WHEN $1::varchar = 'APPROVED' THEN NOW() ELSE approved_at END,
+        published_at = CASE WHEN $1::varchar = 'PUBLISHED' THEN COALESCE(published_at, NOW()) ELSE published_at END,
+        closed_at = CASE WHEN $1::varchar = 'CLOSED' THEN NOW() ELSE closed_at END,
+        updated_at = NOW()
+      WHERE id = $4::uuid
+      RETURNING *
+    `, [normalizedStatus, req.user.id, finalNote, id]);
+
+    const updatedVacancy = updateRes.rows[0];
+
+    // Insert immutable audit log row
+    await client.query(`
+      INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, reason, metadata, ip_address)
+      VALUES ($1, $2, $3, $4, 'Vacancy', $5, $6, $7, $8, $9, $10)
+    `, [
+      vacancy.company_id,
+      req.user.id,
+      req.user.role || 'SUPER_ADMIN',
+      `VACANCY_${normalizedStatus}`,
+      id,
+      prevStatus,
+      normalizedStatus,
+      finalNote,
+      JSON.stringify({ roleTitle: updatedVacancy.title, companyName: vacancy.company_name }),
+      req.ip || null,
+    ]);
+
+    await client.query('COMMIT');
+
+    return res.json({
+      success: true,
+      vacancy: {
+        id: updatedVacancy.id,
+        title: updatedVacancy.title,
+        status: updatedVacancy.status,
+        reviewedAt: updatedVacancy.reviewed_at,
+        reviewNote: updatedVacancy.review_note,
+        approvedAt: updatedVacancy.approved_at,
+        publishedAt: updatedVacancy.published_at,
+      },
+      message: `Vacancy status successfully updated to ${normalizedStatus}`,
+    });
+  } catch (err) {
+    try { await client.query('ROLLBACK'); } catch (_) {}
+    console.error('Update vacancy status error:', err);
+    return res.status(500).json({ error: 'Failed to update vacancy status' });
+  } finally {
+    try { client.release(); } catch (_) {}
+  }
+};
+router.put('/vacancies/:id/status', handleVacancyStatus);
+router.patch('/vacancies/:id/status', handleVacancyStatus);
+
+// ============================================================
+// 8. GET /api/admin/audit
+// Query real PostgreSQL audit logs with filtering & pagination
 // ============================================================
 router.get('/audit', async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT id, actor_name, 'Platform User' as role, action, entity_type, entity_id, created_at as timestamp, previous_state, new_state, ip_address
-       FROM audit_logs ORDER BY created_at DESC LIMIT 200`
-    );
-    if (result.rows.length > 0) {
-      const dbLogs = result.rows.map(r => ({
-        id: r.id,
-        actor: r.actor_name || 'System / Admin',
-        role: r.role || 'Super Admin',
-        action: r.action,
-        entity: r.entity_type,
-        entityId: r.entity_id || '',
-        timestamp: r.timestamp ? new Date(r.timestamp).toISOString().replace('T', ' ').substring(0, 19) : '',
-        previousState: r.previous_state,
-        newState: r.new_state,
-        ipAddress: r.ip_address || '127.0.0.1'
-      }));
-      return res.json({ logs: [...dbLogs, ...inMemoryAuditLogs] });
+    const { companyId, entityType, limit = 100 } = req.query;
+    let query = `
+      SELECT al.*,
+             u.email AS actor_email,
+             COALESCE(al.actor_name, CONCAT(u.first_name, ' ', u.last_name), 'System') AS actor_name,
+             c.name AS company_name
+      FROM audit_logs al
+      LEFT JOIN users u ON u.id = al.actor_user_id OR u.id = al.user_id
+      LEFT JOIN companies c ON c.id = al.company_id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (companyId) {
+      params.push(companyId);
+      query += ` AND al.company_id = $${params.length}`;
     }
-  } catch (_) {}
-  res.json({ logs: inMemoryAuditLogs });
+
+    if (entityType) {
+      params.push(entityType);
+      query += ` AND al.entity_type ILIKE $${params.length}`;
+    }
+
+    params.push(Number(limit) || 100);
+    query += ` ORDER BY al.created_at DESC LIMIT $${params.length}`;
+
+    const result = await pool.query(query, params);
+
+    const logs = result.rows.map((r) => ({
+      id: r.id,
+      actor: r.actor_name,
+      actorEmail: r.actor_email,
+      role: r.actor_role || 'Super Admin',
+      action: r.action,
+      entity: r.entity_type,
+      entityId: r.entity_id,
+      companyId: r.company_id,
+      companyName: r.company_name,
+      timestamp: r.created_at ? r.created_at.toISOString().replace('T', ' ').substring(0, 19) : '',
+      previousState: r.old_status,
+      newState: r.new_status,
+      reason: r.reason,
+      metadata: r.metadata,
+      ipAddress: r.ip_address,
+    }));
+
+    return res.json({ logs });
+  } catch (err) {
+    console.error('Admin get audit logs error:', err);
+    return res.status(500).json({ error: 'Failed to fetch audit logs' });
+  }
+});
+
+// ============================================================
+// 9. GET /api/admin/users
+// Query real users & company memberships
+// ============================================================
+router.get('/users', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.created_at,
+             cm.member_role,
+             c.id AS company_id, c.name AS company_name, c.verification_status
+      FROM users u
+      LEFT JOIN company_members cm ON cm.user_id = u.id
+      LEFT JOIN companies c ON c.id = cm.company_id
+      ORDER BY u.created_at DESC
+    `);
+
+    const users = result.rows.map((u) => ({
+      id: u.id,
+      name: `${u.first_name} ${u.last_name}`.trim(),
+      email: u.email,
+      userType: u.role === 'genuai_admin' || u.role === 'SUPER_ADMIN' ? 'GenuAI Admin' : 'Company User',
+      organization: u.company_name || 'GenuAI Platform',
+      companyId: u.company_id,
+      companyStatus: u.verification_status,
+      accountStatus: 'Active',
+      mfaEnabled: true,
+      createdDate: u.created_at ? u.created_at.toISOString().split('T')[0] : '',
+      lastLogin: u.created_at ? u.created_at.toISOString().split('T')[0] : '',
+    }));
+
+    return res.json({ users });
+  } catch (err) {
+    console.error('Admin get users error:', err);
+    return res.status(500).json({ error: 'Failed to fetch platform users' });
+  }
 });
 
 module.exports = router;

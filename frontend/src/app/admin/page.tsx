@@ -62,12 +62,12 @@ export default function AdminOverviewPage() {
   }, []);
 
   // Metrics computation
-  const pendingCompanies = companies.filter((c) => c.verificationStatus === 'Pending' || c.verificationStatus === 'Under Review');
-  const pendingVacancies = vacancies.filter((v) => v.status === 'Pending Review');
-  const pendingAssessments = assessments.filter((a) => a.status === 'Pending Review' || a.status === 'Flagged');
-  const openIncidents = incidents.filter((i) => i.status === 'Open' || i.status === 'Under Investigation');
-  const openDisputes = disputes.filter((d) => d.status === 'Open' || d.status === 'Investigating');
-  const activeSecurityEvents = securityEvents.filter((s) => s.status === 'Active' || s.status === 'Investigating');
+  const pendingCompanies = companies.filter((c) => ['Pending', 'Under Review', 'PENDING_VERIFICATION', 'UNDER_REVIEW', 'ADDITIONAL_INFORMATION_REQUIRED'].includes(c.verificationStatus));
+  const pendingVacancies = vacancies.filter((v) => ['Pending Review', 'PENDING_ADMIN_REVIEW', 'UNDER_REVIEW'].includes(v.status));
+  const pendingAssessments = assessments.filter((a) => ['Pending Review', 'PENDING_ADMIN_REVIEW', 'Flagged'].includes(a.status));
+  const openIncidents = incidents.filter((i) => ['Open', 'Under Investigation'].includes(i.status));
+  const openDisputes = disputes.filter((d) => ['Open', 'Investigating'].includes(d.status));
+  const activeSecurityEvents = securityEvents.filter((s) => ['Active', 'Investigating'].includes(s.status));
 
   // Chart telemetry data
   const throughputData = [
@@ -100,11 +100,11 @@ export default function AdminOverviewPage() {
                 border: '1px solid rgba(212, 175, 55, 0.4)',
               }}
             >
-              Enterprise Governance Root
+              Operational Control Center
             </span>
           </div>
           <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
-            Monitor platform verification, trust, governance and system health.
+            Monitor tenant verifications, vacancy reviews, audit trails, and system operations.
           </p>
         </div>
 

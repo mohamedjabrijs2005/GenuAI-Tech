@@ -630,61 +630,27 @@ class AdminDataStore {
     return this.companies.find((c) => c.id === id);
   }
 
-  public updateCompanyStatus(
+  public async updateCompanyStatus(
     companyId: string,
     newStatus: VerificationStatus,
     adminName: string,
     adminRole: string,
     note: string
   ) {
-    const company = this.companies.find((c) => c.id === companyId);
-    if (!company) return null;
-
-    const prevStatus = company.verificationStatus;
-    company.verificationStatus = newStatus;
-    if (newStatus === 'Verified') {
-      company.reviewState = 'Completed';
-      company.trustScore = Math.max(company.trustScore, 95);
-    } else if (newStatus === 'Rejected' || newStatus === 'Suspended') {
-      company.reviewState = 'Completed';
-    } else if (newStatus === 'Needs Correction') {
-      company.reviewState = 'Awaiting Documents';
-    } else if (newStatus === 'Under Review') {
-      company.reviewState = 'Assigned';
+    try {
+      await api.put(`/admin/companies/${companyId}/status`, {
+        status: newStatus,
+        adminName,
+        adminRole,
+        note,
+        reason: note,
+      });
+      await this.syncWithBackend();
+      return this.getCompanyById(companyId);
+    } catch (err) {
+      console.error('Failed to update company status:', err);
+      throw err;
     }
-
-    company.history.unshift({
-      date: new Date().toISOString().replace('T', ' ').substring(0, 16),
-      admin: adminName,
-      action: `Status changed to ${newStatus}`,
-      note: note || `Verification status updated to ${newStatus}`,
-    });
-
-    this.persist('companies', this.companies);
-    api.put(`/admin/companies/${companyId}/status`, { status: newStatus, adminName, adminRole, note }).catch(() => {});
-
-    this.logAudit({
-      actor: adminName,
-      role: adminRole,
-      action: `COMPANY_${newStatus.toUpperCase().replace(/\s+/g, '_')}`,
-      entity: 'Company',
-      entityId: company.id,
-      previousState: prevStatus,
-      newState: newStatus,
-      metadata: { companyName: company.name, domain: company.domain, note },
-    });
-
-    // Create Notification
-    this.addNotification({
-      type: 'company_verification',
-      title: `Company ${company.name} -------- ${newStatus}`,
-      message: `${adminName} set verification status to ${newStatus}. Note: ${note || 'None'}`,
-      severity: newStatus === 'Verified' ? 'success' : newStatus === 'Needs Correction' ? 'warning' : 'danger',
-      link: '/admin/verification/companies',
-      entityId: company.id,
-    });
-
-    return company;
   }
 
   // ==================== VACANCIES ====================
@@ -696,44 +662,27 @@ class AdminDataStore {
     return this.vacancies.find((v) => v.id === id);
   }
 
-  public updateVacancyStatus(
+  public async updateVacancyStatus(
     vacancyId: string,
     newStatus: VacancyGovStatus,
     adminName: string,
     adminRole: string,
     note: string
   ) {
-    const vac = this.vacancies.find((v) => v.id === vacancyId);
-    if (!vac) return null;
-
-    const prevStatus = vac.status;
-    vac.status = newStatus;
-    vac.governanceNotes = note || vac.governanceNotes;
-
-    this.persist('vacancies', this.vacancies);
-    api.put(`/admin/vacancies/${vacancyId}/status`, { status: newStatus, adminName, adminRole, note }).catch(() => {});
-
-    this.logAudit({
-      actor: adminName,
-      role: adminRole,
-      action: `VACANCY_${newStatus.toUpperCase().replace(/\s+/g, '_')}`,
-      entity: 'Vacancy',
-      entityId: vac.id,
-      previousState: prevStatus,
-      newState: newStatus,
-      metadata: { roleTitle: vac.roleTitle, companyName: vac.companyName, note },
-    });
-
-    this.addNotification({
-      type: 'vacancy_submitted',
-      title: `Vacancy ${vac.roleTitle} -------- ${newStatus}`,
-      message: `${adminName} marked governance review as ${newStatus}.`,
-      severity: newStatus === 'Verified' ? 'success' : 'warning',
-      link: '/admin/verification/vacancies',
-      entityId: vac.id,
-    });
-
-    return vac;
+    try {
+      await api.put(`/admin/vacancies/${vacancyId}/status`, {
+        status: newStatus,
+        adminName,
+        adminRole,
+        note,
+        reason: note,
+      });
+      await this.syncWithBackend();
+      return this.getVacancyById(vacancyId);
+    } catch (err) {
+      console.error('Failed to update vacancy status:', err);
+      throw err;
+    }
   }
 
   // ==================== ASSESSMENTS ====================

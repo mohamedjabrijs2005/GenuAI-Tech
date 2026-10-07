@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import {
@@ -146,7 +146,7 @@ export default function AssessmentsPage() {
           { label: 'Total Assessments', value: assessments.length, cardClass: 'stat-card-gold' },
           { label: 'Active Assessments', value: assessments.filter(a => a.status === 'Active').length, cardClass: 'stat-card-success' },
           { label: 'Linked Vacancies', value: new Set(assessments.map(a => a.vacancyId)).size, cardClass: 'stat-card-warning' },
-          { label: 'Assessment Types', value: new Set(assessments.map(a => a.assessmentType)).size || 'ΓÇö', cardClass: 'stat-card-brand' },
+          { label: 'Assessment Types', value: new Set(assessments.map(a => a.assessmentType)).size || '-', cardClass: 'stat-card-brand' },
         ].map(s => (
           <div key={s.label} className={`stat-card ${s.cardClass}`} style={{ padding: '16px 20px' }}>
             <div className="stat-label">{s.label}</div>
@@ -177,7 +177,7 @@ export default function AssessmentsPage() {
             background: '#f8fafc', border: '1px solid var(--border)',
             color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, textDecoration: 'none',
           }}>
-            Go to Requirements ΓåÆ
+            Go to Requirements &rarr;
           </a>
         </div>
       ) : (
@@ -201,7 +201,7 @@ export default function AssessmentsPage() {
                         <span className="badge badge-gray" style={{ fontSize: 10 }}>{a.version}</span>
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                        Role: <strong>{a.vacancy}</strong> ΓÇó {a.duration} ΓÇó {a.assessmentType}
+                        Role: <strong>{a.vacancy}</strong> &middot; {a.duration} &middot; {a.assessmentType}
                       </div>
                     </div>
                   </div>
@@ -239,7 +239,7 @@ export default function AssessmentsPage() {
                             <span className="badge badge-green">{m.avgScore} Avg</span>
                           </div>
                           <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
-                            Requirement: {m.requirement} ΓÇó {m.questions} Question(s)
+                            Requirement: {m.requirement} &middot; {m.questions} Question(s)
                           </div>
                         </div>
                       ))}

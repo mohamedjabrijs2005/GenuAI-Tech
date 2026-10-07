@@ -8,7 +8,19 @@ import {
   Bell, FileText, HandshakeIcon, LogOut, ChevronRight, Sparkles, ScrollText,
 } from 'lucide-react';
 
-const NAV = [
+interface NavItem {
+  label: string;
+  href: string;
+  icon: any;
+  comingSoon?: boolean;
+}
+
+interface NavSection {
+  section: string;
+  items: NavItem[];
+}
+
+const NAV: NavSection[] = [
   {
     section: '',
     items: [
@@ -20,55 +32,29 @@ const NAV = [
     items: [
       { label: 'Vacancies', href: '/dashboard/vacancies', icon: Briefcase },
       { label: 'Candidates', href: '/dashboard/candidates', icon: Users },
-      { label: 'Interviews', href: '/dashboard/interviews', icon: Mic2 },
     ],
   },
   {
-    section: 'Assessment',
+    section: 'Organization',
     items: [
-      { label: 'Assessment Setup', href: '/dashboard/assessments', icon: ClipboardList },
-      { label: 'Requirements', href: '/dashboard/requirements', icon: Target },
-    ],
-  },
-  {
-    section: 'Evidence',
-    items: [
-      { label: 'Evidence', href: '/dashboard/evidence', icon: FileCheck },
-      { label: 'Coverage & Gaps', href: '/dashboard/evidence/coverage', icon: Shield },
-    ],
-  },
-  {
-    section: 'Trust',
-    items: [
-      { label: 'Integrity Review', href: '/dashboard/integrity', icon: Shield },
-    ],
-  },
-  {
-    section: 'Intelligence',
-    items: [
-      { label: 'Recruiter Review', href: '/dashboard/intelligence/review', icon: BrainCircuit },
-      { label: 'Recruiter Intelligence', href: '/dashboard/intelligence', icon: Sparkles },
-      { label: 'Role Intelligence', href: '/dashboard/intelligence/role-intelligence', icon: Sparkles },
-    ],
-  },
-  {
-    section: 'Reports',
-    items: [
-      { label: 'Reports', href: '/dashboard/reports', icon: FileText },
-    ],
-  },
-  {
-    section: 'Administration',
-    items: [
-      { label: 'Company Profile', href: '/dashboard/company-profile', icon: Building2 },
       { label: 'Departments', href: '/dashboard/departments', icon: Building2 },
-      { label: 'Agreements', href: '/dashboard/agreement', icon: HandshakeIcon },
-      { label: 'Audit Trail', href: '/dashboard/audit', icon: ScrollText },
-      { label: 'Notifications', href: '/dashboard/notifications', icon: Bell },
+      { label: 'Company Profile', href: '/dashboard/company-profile', icon: Building2 },
       { label: 'Settings', href: '/dashboard/settings', icon: Settings },
     ],
   },
+  {
+    section: 'Candidate Intelligence (Preview)',
+    items: [
+      { label: 'Evidence Review', href: '/dashboard/evidence', icon: FileCheck, comingSoon: true },
+      { label: 'Coverage & Gaps', href: '/dashboard/evidence/coverage', icon: Shield, comingSoon: true },
+      { label: 'Assessment Setup', href: '/dashboard/assessments', icon: ClipboardList, comingSoon: true },
+      { label: 'Integrity Signals', href: '/dashboard/integrity', icon: Shield, comingSoon: true },
+      { label: 'Interviews', href: '/dashboard/interviews', icon: Mic2, comingSoon: true },
+      { label: 'Reports', href: '/dashboard/reports', icon: FileText, comingSoon: true },
+    ],
+  },
 ];
+
 
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -133,10 +119,26 @@ export default function Sidebar() {
                   href={item.href}
                   className={`sidebar-nav-item${active ? ' active' : ''}`}
                   aria-current={active ? 'page' : undefined}
+                  style={item.comingSoon ? { opacity: 0.7 } : undefined}
                 >
                   <Icon size={16} style={{ color: active ? '#a16207' : undefined }} />
                   <span>{item.label}</span>
-                  {active && <ChevronRight size={13} style={{ marginLeft: 'auto', color: '#a16207' }} />}
+                  {item.comingSoon && (
+                    <span style={{
+                      marginLeft: 'auto',
+                      fontSize: '9px',
+                      fontWeight: 700,
+                      padding: '1px 5px',
+                      borderRadius: '4px',
+                      background: 'rgba(148, 163, 184, 0.15)',
+                      color: 'var(--text-muted)',
+                      letterSpacing: '0.03em',
+                      textTransform: 'uppercase',
+                    }}>
+                      Soon
+                    </span>
+                  )}
+                  {active && !item.comingSoon && <ChevronRight size={13} style={{ marginLeft: 'auto', color: '#a16207' }} />}
                 </Link>
               );
             })}

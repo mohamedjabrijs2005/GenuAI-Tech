@@ -1,11 +1,12 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  Briefcase, Users, ShieldCheck, Search,
-  Sparkles, FileCheck, Plus, RefreshCw, X, BarChart3, Building2, Eye
+  Briefcase, Users, FileCheck, Calendar, Plus, RefreshCw,
+  Search, X, ExternalLink, CheckCircle2, AlertCircle, Building2,
+  Clock, ArrowRight, ShieldCheck, ChevronRight
 } from 'lucide-react';
 import api from '@/lib/api';
 import { DataService, Vacancy } from '@/lib/dataService';
@@ -19,6 +20,19 @@ interface Department {
   role_count?: number;
 }
 
+interface ActivityItem {
+  id: string;
+  action: string;
+  entity_type: string;
+  entity_id: string;
+  actor_name?: string;
+  actor_role?: string;
+  old_status?: string;
+  new_status?: string;
+  reason?: string;
+  created_at: string;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { user, company } = useAuth();
@@ -26,9 +40,12 @@ export default function DashboardPage() {
   const [vacancies, setVacancies] = useState<Vacancy[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [candidateCount, setCandidateCount] = useState<number>(0);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [selectedTab, setSelectedTab] = useState<'overview' | 'requisitions' | 'departments'>('overview');
+  const [lastSyncTime, setLastSyncTime] = useState<string>('just now');
+
+  // Filters for Vacancy Table
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [deptFilter, setDeptFilter] = useState<string>('ALL');
 
@@ -36,30 +53,34 @@ export default function DashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [formTitle, setFormTitle] = useState<string>('');
-  const [formDept, setFormDept] = useState<string>('');
+  const [formDeptId, setFormDeptId] = useState<string>('');
   const [formExpLevel, setFormExpLevel] = useState<string>('senior');
   const [formEmpType, setFormEmpType] = useState<string>('full_time');
   const [formLocation, setFormLocation] = useState<string>('');
   const [formVacancyCount, setFormVacancyCount] = useState<number>(1);
   const [formDesc, setFormDesc] = useState<string>('');
-  const [formDeptId, setFormDeptId] = useState<string>('');
 
-  // Fetch real data dynamically
+  // Fetch real data dynamically from PostgreSQL
   const fetchData = async () => {
     try {
-      const [vList, cList, deptsRes] = await Promise.all([
+      const [vList, cList, deptsRes, actList] = await Promise.all([
         DataService.getVacancies(),
         DataService.getCandidates(),
         api.get('/departments').catch(() => null),
+        DataService.getActivity().catch(() => []),
       ]);
 
       setVacancies(vList);
       setCandidateCount(cList.length);
+      setActivities(actList || []);
 
       if (deptsRes?.data?.departments && deptsRes.data.departments.length > 0) {
         setDepartments(deptsRes.data.departments);
-        setFormDeptId(deptsRes.data.departments[0]?.id || '');
+        if (!formDeptId) {
+          setFormDeptId(deptsRes.data.departments[0]?.id || '');
+        }
       }
+      setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     } catch (err) {
       console.error('Failed to load dashboard data', err);
     } finally {
@@ -75,10 +96,28 @@ export default function DashboardPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await fetchData();
-    toast.success('Dashboard metrics synchronized');
+    toast.success('Workspace synchronized with database');
   };
 
-  // Filtered Roles
+  // Dynamic Greeting based on current local time
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }, []);
+
+  const userName = user?.firstName || 'Recruiter';
+  const companyName = company?.name || 'Company Workspace';
+  const companyStatus = company?.verificationStatus || 'PENDING_VERIFICATION';
+
+  // Real operational counts computed from real database records
+  const publishedCount = vacancies.filter(v => v.raw_status === 'PUBLISHED' || v.status === 'published').length;
+  const pendingReviewCount = vacancies.filter(v => v.raw_status === 'PENDING_ADMIN_REVIEW' || v.status === 'pending').length;
+  const changesRequestedCount = vacancies.filter(v => v.raw_status === 'CHANGES_REQUESTED' || v.status === 'changes_requested').length;
+  const draftCount = vacancies.filter(v => v.raw_status === 'DRAFT' || v.status === 'draft').length;
+
+  // Filtered Vacancies for the table
   const filteredVacancies = useMemo(() => {
     return vacancies.filter((v) => {
       const matchesDept = deptFilter === 'ALL' || v.dept === deptFilter;
@@ -90,18 +129,38 @@ export default function DashboardPage() {
     });
   }, [vacancies, deptFilter, searchQuery]);
 
-  // Real Stats Computed Dynamically
-  const totalRoles = vacancies.length;
-  const activeRoles = vacancies.filter((v) => v.status === 'published' || v.status === 'verified').length;
-  const draftRoles = vacancies.filter((v) => v.status === 'draft' || v.status === 'pending').length;
-  const totalOpenings = vacancies.reduce((acc, v) => acc + (Number(v.openings) || 1), 0);
-  const totalApplications = vacancies.reduce((acc, v) => acc + (Number(v.applications) || 0), 0);
+  // Action required items
+  const actionItems = useMemo(() => {
+    const items: { id: string; title: string; desc: string; link: string; type: 'warning' | 'info' }[] = [];
 
-  // Handle Real Vacancy Creation
+    if (changesRequestedCount > 0) {
+      items.push({
+        id: 'changes_req',
+        title: `${changesRequestedCount} vacancy requisition requires changes`,
+        desc: 'Administrative review requested updates to requirements or role specifications before approval.',
+        link: '/dashboard/vacancies',
+        type: 'warning',
+      });
+    }
+
+    if (draftCount > 0) {
+      items.push({
+        id: 'drafts',
+        title: `${draftCount} draft vacancy ready for submission`,
+        desc: 'Review requirements and submit to platform verification for publication.',
+        link: '/dashboard/vacancies',
+        type: 'info',
+      });
+    }
+
+    return items;
+  }, [changesRequestedCount, draftCount]);
+
+  // Handle Vacancy Creation
   const handleCreateRole = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formTitle.trim()) {
-      toast.error('Role title is required');
+      toast.error('Position title is required');
       return;
     }
 
@@ -117,10 +176,9 @@ export default function DashboardPage() {
         location: formLocation.trim() || 'Remote',
         openings: formVacancyCount,
         description: formDesc.trim(),
-        status: 'published',
       });
 
-      toast.success('Vacancy published to recruitment pipeline');
+      toast.success('Vacancy requisition created');
       setIsModalOpen(false);
 
       // Reset form
@@ -128,7 +186,7 @@ export default function DashboardPage() {
       setFormDesc('');
       setFormVacancyCount(1);
 
-      // Refresh list
+      // Refresh real data
       await fetchData();
     } catch (err: any) {
       toast.error('Failed to create vacancy');
@@ -137,621 +195,540 @@ export default function DashboardPage() {
     }
   };
 
+  // Helper for Status Badge styling
+  const renderStatusBadge = (statusStr: string, rawStatus?: string) => {
+    const norm = (rawStatus || statusStr || '').toUpperCase();
+    if (norm === 'PUBLISHED') {
+      return <span className="badge badge-green">Published</span>;
+    }
+    if (norm === 'APPROVED') {
+      return <span className="badge badge-green">Approved</span>;
+    }
+    if (norm === 'PENDING_ADMIN_REVIEW' || norm === 'PENDING') {
+      return <span className="badge badge-yellow">Pending Review</span>;
+    }
+    if (norm === 'CHANGES_REQUESTED') {
+      return <span className="badge badge-yellow">Changes Requested</span>;
+    }
+    if (norm === 'DRAFT') {
+      return <span className="badge badge-gray">Draft</span>;
+    }
+    if (norm === 'CLOSED') {
+      return <span className="badge badge-gray">Closed</span>;
+    }
+    return <span className="badge badge-gray">{statusStr}</span>;
+  };
+
+  // Helper for Company Verification Badge
+  const renderCompanyStatusBadge = () => {
+    const s = companyStatus.toUpperCase();
+    if (s === 'APPROVED' || s === 'VERIFIED') {
+      return (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+          padding: '3px 10px', borderRadius: '999px', fontSize: 12, fontWeight: 700,
+          background: 'rgba(5, 150, 105, 0.1)', color: '#059669', border: '1px solid rgba(5, 150, 105, 0.25)',
+        }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669' }} />
+          Approved
+        </span>
+      );
+    }
+    if (s === 'PENDING_VERIFICATION' || s === 'UNDER_REVIEW') {
+      return (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+          padding: '3px 10px', borderRadius: '999px', fontSize: 12, fontWeight: 700,
+          background: 'rgba(217, 119, 6, 0.1)', color: '#d97706', border: '1px solid rgba(217, 119, 6, 0.25)',
+        }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#d97706' }} />
+          Pending Verification
+        </span>
+      );
+    }
+    return (
+      <span className="badge badge-gray" style={{ fontSize: 12 }}>
+        {companyStatus.replace('_', ' ')}
+      </span>
+    );
+  };
+
   return (
     <div className="page-content" style={{ background: 'var(--surface)', minHeight: '100vh', padding: '24px 32px 48px' }}>
-      {/* ================= TOP RECRUITMENT INTELLIGENCE HERO BANNER ================= */}
+      
+      {/* ================= 1. RECRUITER WORKSPACE HEADER ================= */}
       <div style={{
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f2027 100%)',
-        borderRadius: '16px',
-        position: 'relative',
-        padding: '28px 32px',
+        background: '#ffffff',
+        borderRadius: '12px',
+        padding: '24px 28px',
         marginBottom: '24px',
-        border: '1px solid rgba(212,175,55,0.2)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+        border: '1px solid var(--border)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 16,
       }}>
-        {/* Decorative background circles */}
-        <div style={{ position: 'absolute', top: -60, right: 60, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: -40, right: 200, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(5,150,105,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        {/* Left: Operational Greeting & Workspace Details */}
+        <div>
+          <h1 style={{
+            fontSize: 24, fontWeight: 800, color: 'var(--text-primary)',
+            letterSpacing: '-0.4px', margin: '0 0 6px',
+          }}>
+            {greeting}, {userName}
+          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, color: 'var(--text-secondary)' }}>
+            <span>Company workspace: <strong style={{ color: 'var(--text-primary)' }}>{companyName}</strong></span>
+          </div>
+        </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, position: 'relative', zIndex: 1 }}>
-          {/* Left: Brand & Info */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+        {/* Right: Operational Status Strip (No running clock, truthful synchronization) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--text-secondary)' }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+            <span style={{ fontWeight: 600, color: '#059669' }}>Connected</span>
+            <span style={{ color: 'var(--border)' }}>&middot;</span>
+            <span>Last synchronized: {lastSyncTime}</span>
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer', padding: 4,
+                color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center',
+              }}
+              title="Synchronize data"
+            >
+              <RefreshCw size={13} className={isRefreshing ? 'animate-spin' : ''} />
+            </button>
+          </div>
+
+          <div style={{ borderLeft: '1px solid var(--border)', paddingLeft: 14 }}>
+            {renderCompanyStatusBadge()}
+          </div>
+        </div>
+      </div>
+
+      {/* ================= 2. ACTION REQUIRED SECTION ================= */}
+      <div style={{
+        background: '#ffffff',
+        borderRadius: '12px',
+        border: '1px solid var(--border)',
+        padding: '20px 24px',
+        marginBottom: '24px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>Action Required</span>
+            {actionItems.length > 0 && (
               <span style={{
-                fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase',
-                padding: '3px 10px', borderRadius: '99px',
-                background: 'rgba(212,175,55,0.18)', color: '#d4af37',
-                border: '1px solid rgba(212,175,55,0.35)',
+                fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: '99px',
+                background: '#fef3c7', color: '#b45309',
               }}>
-                GenuAI Technologies
+                {actionItems.length}
               </span>
-              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 14 }}>ΓÇó</span>
-              <span style={{
-                fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
-                padding: '3px 10px', borderRadius: '99px',
-                background: 'rgba(5,150,105,0.15)', color: '#34d399',
-                border: '1px solid rgba(5,150,105,0.3)',
-              }}>
-                {company?.name || 'Enterprise Workspace'}
-              </span>
-            </div>
-
-            <h1 style={{
-              fontSize: 22, fontWeight: 900, color: '#f8fafc',
-              letterSpacing: '-0.5px', margin: '0 0 6px',
-              lineHeight: 1.2,
-            }}>
-              Recruitment Intelligence
-              <span style={{ color: '#d4af37' }}> & </span>
-              Evidence Dashboard
-            </h1>
-
-            <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.5)', margin: '0 0 18px', lineHeight: 1.5 }}>
-              Verifiable Competency Assessment&nbsp;ΓÇó&nbsp;Automated Match Scorecards&nbsp;ΓÇó&nbsp;Zero Disqualification Bias
-            </p>
-
-            {/* Action buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <button
-                onClick={handleRefresh}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
-                  background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
-                  color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: 600,
-                  transition: 'all 0.2s',
-                }}
-                title="Sync Data"
-              >
-                <RefreshCw size={12} className={isRefreshing ? 'animate-spin' : ''} />
-                {isRefreshing ? 'Syncing...' : 'Sync'}
-              </button>
-
-              <Link
-                href="/dashboard/vacancies/builder"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  padding: '7px 14px', borderRadius: 8, textDecoration: 'none',
-                  background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)',
-                  color: '#d4af37', fontSize: 12, fontWeight: 600,
-                }}
-              >
-                <Sparkles size={12} />
-                AI Vacancy Builder
-              </Link>
-
-              <button
-                onClick={() => setIsModalOpen(true)}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  padding: '7px 16px', borderRadius: 8, cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #d4af37, #b8860b)',
-                  border: 'none', color: '#fff', fontSize: 12, fontWeight: 700,
-                  boxShadow: '0 2px 8px rgba(212,175,55,0.35)',
-                }}
-              >
-                <Plus size={14} />
-                Create Vacancy
-              </button>
-            </div>
-          </div>
-
-          {/* Right: SVG Intelligence Visual */}
-          <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12 }}>
-            {/* Decorative Intelligence Node Graph */}
-            <svg width="200" height="140" viewBox="0 0 200 140" fill="none" style={{ opacity: 0.85, overflow: 'visible' }}>
-              {/* Connecting lines */}
-              <line x1="100" y1="75" x2="45" y2="38" stroke="rgba(212,175,55,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
-              <line x1="100" y1="75" x2="155" y2="38" stroke="rgba(212,175,55,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
-              <line x1="100" y1="75" x2="28" y2="112" stroke="rgba(5,150,105,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
-              <line x1="100" y1="75" x2="172" y2="112" stroke="rgba(5,150,105,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
-              <line x1="100" y1="75" x2="100" y2="22" stroke="rgba(99,102,241,0.4)" strokeWidth="1.5" strokeDasharray="4 2" />
-              {/* Center Node */}
-              <circle cx="100" cy="75" r="18" fill="rgba(212,175,55,0.15)" stroke="#d4af37" strokeWidth="2" />
-              <circle cx="100" cy="75" r="10" fill="rgba(212,175,55,0.3)" />
-              <text x="100" y="79" textAnchor="middle" fill="#d4af37" fontSize="9" fontWeight="700">AI</text>
-              {/* Satellite Nodes - moved inward to avoid clipping */}
-              <circle cx="45" cy="38" r="14" fill="rgba(99,102,241,0.15)" stroke="#818cf8" strokeWidth="1.5" />
-              <text x="45" y="42" textAnchor="middle" fill="#818cf8" fontSize="7" fontWeight="600">TARGET</text>
-              <circle cx="155" cy="38" r="14" fill="rgba(5,150,105,0.15)" stroke="#34d399" strokeWidth="1.5" />
-              <text x="155" y="42" textAnchor="middle" fill="#34d399" fontSize="7" fontWeight="600">PROVE</text>
-              <circle cx="28" cy="112" r="14" fill="rgba(212,175,55,0.1)" stroke="#d4af37" strokeWidth="1.5" />
-              <text x="28" y="116" textAnchor="middle" fill="#d4af37" fontSize="7" fontWeight="600">LEARN</text>
-              <circle cx="172" cy="112" r="14" fill="rgba(239,68,68,0.1)" stroke="#f87171" strokeWidth="1.5" />
-              <text x="172" y="116" textAnchor="middle" fill="#f87171" fontSize="7" fontWeight="600">ASSESS</text>
-              <circle cx="100" cy="22" r="13" fill="rgba(99,102,241,0.15)" stroke="#818cf8" strokeWidth="1.5" />
-              <text x="100" y="26" textAnchor="middle" fill="#818cf8" fontSize="7" fontWeight="600">EVIDENCE</text>
-              {/* Pulse rings */}
-              <circle cx="100" cy="75" r="26" stroke="rgba(212,175,55,0.2)" strokeWidth="1" fill="none" />
-              <circle cx="100" cy="75" r="36" stroke="rgba(212,175,55,0.08)" strokeWidth="1" fill="none" />
-            </svg>
-
-            {/* Bottom status strip */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34d399', display: 'inline-block', boxShadow: '0 0 6px #34d399' }} />
-                Telemetry: <strong style={{ color: '#34d399' }}>Active</strong>
-                <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
-                <ShieldCheck size={11} style={{ color: '#34d399' }} />
-                <strong style={{ color: '#34d399' }}>{company?.verificationStatus || 'VERIFIED'}</strong>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
-                <Building2 size={11} style={{ color: '#d4af37' }} />
-                <span>{departments.length} Dept{departments.length !== 1 ? 's' : ''}</span>
-                <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
-                <span style={{ fontFamily: 'monospace', fontSize: 10 }}>
-                  ID: {company?.id ? company.id.substring(0, 8).toUpperCase() : 'GENUAI'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-
-      {/* ================= 4 METRIC STATS CARDS ================= */}
-      <div className="stitch-stats-grid">
-        {/* Card 1: Total Vacancies */}
-        <div className="stitch-stat-card">
-          <div className="stitch-stat-header">
-            <span className="stitch-stat-title">Total Vacancies</span>
-            <div className="stitch-stat-icon" style={{ background: '#fef3c7', color: '#854d0e' }}>
-              <Briefcase size={17} />
-            </div>
-          </div>
-          <div className="stitch-stat-value">
-            {totalRoles} <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)' }}>{totalRoles === 1 ? 'Role' : 'Roles'}</span>
-          </div>
-          <div className="stitch-stat-footer">
-            <span>{totalOpenings} open position(s)</span>
-            <span style={{ fontWeight: 700, color: '#854d0e' }}>{activeRoles} Published</span>
-          </div>
-          <div className="stitch-stat-progress-bg">
-            <div
-              className="stitch-stat-progress-bar"
-              style={{
-                width: totalRoles > 0 ? `${Math.round((activeRoles / totalRoles) * 100)}%` : '0%',
-                background: 'linear-gradient(90deg, #b8860b, #d4af37)',
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Card 2: Candidate Pipeline */}
-        <div className="stitch-stat-card">
-          <div className="stitch-stat-header">
-            <span className="stitch-stat-title">Candidates in Pipeline</span>
-            <div className="stitch-stat-icon" style={{ background: '#dcfce7', color: '#059669' }}>
-              <Users size={17} />
-            </div>
-          </div>
-          <div className="stitch-stat-value">
-            {candidateCount} <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)' }}>Active</span>
-          </div>
-          <div className="stitch-stat-footer">
-            <span>{totalApplications} total applications</span>
-            <Link href="/dashboard/candidates" style={{ fontWeight: 700, color: '#059669' }}>
-              Pipeline ΓåÆ
-            </Link>
-          </div>
-          <div className="stitch-stat-progress-bg">
-            <div
-              className="stitch-stat-progress-bar"
-              style={{
-                width: candidateCount > 0 ? `${Math.min(100, Math.round((candidateCount / Math.max(totalApplications, 1)) * 100))}%` : '0%',
-                background: '#059669',
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Card 3: Departments */}
-        <div className="stitch-stat-card">
-          <div className="stitch-stat-header">
-            <span className="stitch-stat-title">Departments</span>
-            <div className="stitch-stat-icon" style={{ background: '#fef3c7', color: '#854d0e' }}>
-              <Building2 size={17} />
-            </div>
-          </div>
-          <div className="stitch-stat-value">
-            {departments.length}
-          </div>
-          <div className="stitch-stat-footer">
-            <span>Organizational units</span>
-            <Link href="/dashboard/departments" style={{ fontWeight: 700, color: '#b8860b' }}>
-              Manage ΓåÆ
-            </Link>
-          </div>
-          <div className="stitch-stat-progress-bg">
-            <div
-              className="stitch-stat-progress-bar"
-              style={{
-                width: departments.length > 0 ? '100%' : '0%',
-                background: 'linear-gradient(90deg, #b8860b, #d4af37)',
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Card 4: Evidence & Integrity */}
-        <div className="stitch-stat-card">
-          <div className="stitch-stat-header">
-            <span className="stitch-stat-title">Evidence & Integrity</span>
-            <div className="stitch-stat-icon" style={{ background: '#fef3c7', color: '#d97706' }}>
-              <ShieldCheck size={17} />
-            </div>
-          </div>
-          <div className="stitch-stat-value">
-            {candidateCount > 0 ? `${candidateCount} Tracked` : 'No Data'}
-          </div>
-          <div className="stitch-stat-footer">
-            <span>Multi-modal sandboxed</span>
-            <Link href="/dashboard/integrity" style={{ fontWeight: 700, color: '#d97706' }}>
-              Signals ΓåÆ
-            </Link>
-          </div>
-          <div className="stitch-stat-progress-bg">
-            <div
-              className="stitch-stat-progress-bar"
-              style={{
-                width: candidateCount > 0 ? '100%' : '0%',
-                background: '#d97706',
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* ================= TABS NAVIGATION ================= */}
-      <div className="stitch-tabs-container">
-        <div className="stitch-tabs-list">
-          <button
-            onClick={() => setSelectedTab('overview')}
-            className={`stitch-tab-btn ${selectedTab === 'overview' ? 'active' : ''}`}
-          >
-            <BarChart3 size={15} />
-            <span>Overview & Insights</span>
-          </button>
-
-          <button
-            onClick={() => setSelectedTab('requisitions')}
-            className={`stitch-tab-btn ${selectedTab === 'requisitions' ? 'active' : ''}`}
-          >
-            <Briefcase size={15} />
-            <span>Vacancies List</span>
-            <span className="stitch-tab-badge">
-              {filteredVacancies.length}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setSelectedTab('departments')}
-            className={`stitch-tab-btn ${selectedTab === 'departments' ? 'active' : ''}`}
-          >
-            <Building2 size={15} />
-            <span>Departments</span>
-            <span className="stitch-tab-badge">
-              {departments.length}
-            </span>
-          </button>
-        </div>
-
-        <div style={{ fontSize: 11.5, color: 'var(--text-muted)', fontWeight: 600, paddingBottom: 6 }}>
-          Live Synchronized State
-        </div>
-      </div>
-
-      {/* ================= TAB CONTENT PANEL ================= */}
-      <div className="stitch-panel">
-        {/* ================= TAB 1: OVERVIEW ================= */}
-        {selectedTab === 'overview' && (
-          <div>
-            {vacancies.length === 0 ? (
-              <div className="stitch-empty-container">
-                <div className="stitch-empty-icon-box">
-                  <Briefcase size={26} />
-                </div>
-                <h3 className="stitch-empty-title">No Vacancies Created Yet</h3>
-                <p className="stitch-empty-desc">
-                  Start your recruitment intelligence pipeline by publishing your first job vacancy. GenuAI will map verified competency benchmarks automatically.
-                </p>
-                <div className="stitch-empty-actions">
-                  <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="btn btn-gold btn-sm text-white"
-                  >
-                    <Plus size={15} />
-                    <span>Create First Vacancy</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="grid-2" style={{ gap: 24, alignItems: 'flex-start' }}>
-                {/* Left: Active Vacancies Summary */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div className="flex items-center justify-between" style={{ paddingBottom: 10, borderBottom: '1px solid var(--border)' }}>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>
-                        Recent Vacancy Requisitions ({vacancies.length})
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                        Live status of your published and draft vacancies
-                      </div>
-                    </div>
-                    <Link href="/dashboard/vacancies" className="btn btn-secondary btn-sm" style={{ fontSize: 11.5 }}>
-                      Manage All
-                    </Link>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {vacancies.slice(0, 5).map((vac) => (
-                      <div
-                        key={vac.id}
-                        style={{
-                          padding: '14px 16px',
-                          background: '#ffffff',
-                          border: '1px solid var(--border)',
-                          borderRadius: 'var(--r-md)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: 14,
-                        }}
-                      >
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div className="flex items-center gap-2">
-                            <Link href={`/dashboard/vacancies/${vac.id}`} style={{ fontWeight: 700, fontSize: 13.5, color: '#b8860b', textDecoration: 'none' }}>
-                              {vac.title}
-                            </Link>
-                            <span
-                              className={`badge ${
-                                vac.status === 'published' || vac.status === 'verified'
-                                  ? 'badge-green'
-                                  : vac.status === 'draft' || vac.status === 'pending'
-                                  ? 'badge-yellow'
-                                  : 'badge-gray'
-                              }`}
-                              style={{ fontSize: 10 }}
-                            >
-                              {vac.status}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3 }}>
-                            {vac.dept} ΓÇó {vac.location || 'Remote'} ΓÇó {vac.openings} opening(s) ΓÇó {vac.applications} applicant(s)
-                          </div>
-                        </div>
-
-                        <Link
-                          href={`/dashboard/vacancies/${vac.id}`}
-                          className="btn btn-secondary btn-sm"
-                          style={{ fontSize: 11.5, flexShrink: 0 }}
-                        >
-                          Details ΓåÆ
-                        </Link>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Right: Department & Framework info */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  {/* Department Summary Card */}
-                  <div className="card" style={{ padding: 20 }}>
-                    <div className="card-header" style={{ marginBottom: 12, paddingBottom: 10 }}>
-                      <div>
-                        <div className="card-title" style={{ fontSize: 13.5 }}>Department Coverage</div>
-                        <div className="card-subtitle">Organizational division matrix</div>
-                      </div>
-                      <Link href="/dashboard/departments" style={{ fontSize: 12, fontWeight: 700, color: '#b8860b' }}>
-                        Manage
-                      </Link>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {departments.map((d) => {
-                        const count = vacancies.filter(v => v.dept.toLowerCase() === d.name.toLowerCase() || v.dept.includes(d.name)).length;
-                        return (
-                          <div
-                            key={d.id}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '6px 0',
-                              borderBottom: '1px solid var(--border)',
-                              fontSize: 12.5,
-                            }}
-                          >
-                            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{d.name}</span>
-                            <span style={{ color: 'var(--text-muted)', fontSize: 11.5 }}>{count} role(s)</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Verification & Trust Notice */}
-                  <div
-                    style={{
-                      padding: '18px 20px',
-                      borderRadius: 'var(--r-lg)',
-                      background: 'linear-gradient(135deg, #fffdf5 0%, #fef3c7 100%)',
-                      border: '1px solid rgba(212, 175, 55, 0.4)',
-                    }}
-                  >
-                    <div className="flex items-center gap-2" style={{ fontWeight: 700, color: '#854d0e', fontSize: 13, marginBottom: 4 }}>
-                      <ShieldCheck size={16} />
-                      <span>Verifiable Evidence Guarantee</span>
-                    </div>
-                    <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-                      GenuAI provides rigorous candidate competency evaluation backed by SHA-256 evidence hashing and zero disqualification bias.
-                    </p>
-                  </div>
-                </div>
-              </div>
             )}
           </div>
-        )}
+        </div>
 
-        {/* ================= TAB 2: VACANCIES LIST ================= */}
-        {selectedTab === 'requisitions' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {/* Clean Filter Toolbar (No duplicate Create buttons) */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 260 }}>
-                <div className="search-box" style={{ flex: 1, maxWidth: 320 }}>
-                  <Search size={14} style={{ color: 'var(--text-muted)' }} />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search vacancy title, location..."
-                  />
-                  {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} style={{ color: 'var(--text-muted)' }}>
-                      <X size={13} />
-                    </button>
-                  )}
-                </div>
-
-                <select
-                  value={deptFilter}
-                  onChange={(e) => setDeptFilter(e.target.value)}
-                  className="form-select"
-                  style={{ width: 180, padding: '7px 28px 7px 12px', fontSize: 12.5 }}
-                >
-                  <option value="ALL">All Departments</option>
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.name}>{d.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                Showing <strong>{filteredVacancies.length}</strong> of <strong>{vacancies.length}</strong> roles
-              </div>
-            </div>
-
-            {/* Table */}
-            <div className="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Position Title</th>
-                    <th>Department</th>
-                    <th>Openings</th>
-                    <th>Applicants</th>
-                    <th>Status</th>
-                    <th>Created</th>
-                    <th style={{ textAlign: 'right' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredVacancies.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} style={{ textAlign: 'center', padding: '32px 16px' }}>
-                        <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>No vacancies match the criteria.</div>
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredVacancies.map((v) => (
-                      <tr key={v.id}>
-                        <td>
-                          <Link
-                            href={`/dashboard/vacancies/${v.id}`}
-                            style={{ fontWeight: 700, color: 'var(--brand)', textDecoration: 'none' }}
-                          >
-                            {v.title}
-                          </Link>
-                          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-                            {v.location} ΓÇó {v.employment_type?.replace('_', ' ')}
-                          </div>
-                        </td>
-                        <td>
-                          <span className="badge badge-gray">{v.dept}</span>
-                        </td>
-                        <td className="td-mono font-semibold">{v.openings}</td>
-                        <td className="td-mono font-semibold">{v.applications}</td>
-                        <td>
-                          <span
-                            className={`badge ${
-                              v.status === 'published' || v.status === 'verified'
-                                ? 'badge-green'
-                                : v.status === 'draft' || v.status === 'pending'
-                                ? 'badge-yellow'
-                                : 'badge-gray'
-                            }`}
-                          >
-                            {v.status}
-                          </span>
-                        </td>
-                        <td className="td-muted td-mono" style={{ whiteSpace: 'nowrap' }}>
-                          {v.created}
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <Link href={`/dashboard/vacancies/${v.id}`} className="btn btn-secondary btn-sm" style={{ fontSize: 11.5 }}>
-                            <Eye size={13} />
-                            <span>View</span>
-                          </Link>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+        {actionItems.length === 0 ? (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '12px 16px', background: '#f8fafc', borderRadius: '8px',
+            border: '1px solid #e2e8f0',
+          }}>
+            <CheckCircle2 size={16} style={{ color: '#10b981', flexShrink: 0 }} />
+            <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+              <strong style={{ color: 'var(--text-primary)' }}>No action required right now.</strong> All active vacancies are compliant with platform review criteria and applicant queues are up to date.
             </div>
           </div>
-        )}
-
-        {/* ================= TAB 3: DEPARTMENTS ================= */}
-        {selectedTab === 'departments' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div className="flex items-center justify-between">
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>
-                  Registered Company Departments
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  Manage departmental permissions, vacancy budgets, and interviewer allocations
-                </div>
-              </div>
-              <Link href="/dashboard/departments" className="btn btn-secondary btn-sm">
-                Open Department Hub ΓåÆ
-              </Link>
-            </div>
-
-            <div className="grid-3" style={{ gap: 16 }}>
-              {departments.map((dept) => {
-                const count = vacancies.filter(v => v.dept.toLowerCase() === dept.name.toLowerCase() || v.dept.includes(dept.name)).length;
-                return (
-                  <div key={dept.id} className="card" style={{ padding: 18 }}>
-                    <div className="flex items-center gap-2" style={{ marginBottom: 8 }}>
-                      <Building2 size={16} style={{ color: '#b8860b' }} />
-                      <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>{dept.name}</div>
-                    </div>
-                    <p style={{ fontSize: 12, color: 'var(--text-muted)', minHeight: 36, lineHeight: 1.4, margin: '0 0 12px 0' }}>
-                      {dept.description || 'Core organizational department.'}
-                    </p>
-                    <div className="flex items-center justify-between" style={{ paddingTop: 10, borderTop: '1px solid var(--border)', fontSize: 11.5 }}>
-                      <span className="td-muted font-medium">{count} Active Vacancies</span>
-                      <Link href="/dashboard/departments" style={{ color: '#b8860b', fontWeight: 600 }}>Configure ΓåÆ</Link>
-                    </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {actionItems.map(item => (
+              <div
+                key={item.id}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                  padding: '12px 16px',
+                  background: item.type === 'warning' ? '#fffbeb' : '#f0f9ff',
+                  borderRadius: '8px',
+                  border: `1px solid ${item.type === 'warning' ? '#fde68a' : '#bae6fd'}`,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <AlertCircle size={16} style={{ color: item.type === 'warning' ? '#d97706' : '#0284c7', flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{item.title}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{item.desc}</div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+                <Link
+                  href={item.link}
+                  className="btn btn-secondary btn-sm"
+                  style={{ fontSize: 12, whiteSpace: 'nowrap' }}
+                >
+                  Review Details &rarr;
+                </Link>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* ================= CREATE VACANCY MODAL ================= */}
+      {/* ================= 3. OPERATIONAL SUMMARY CARDS (FIRST ROW) ================= */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: 16,
+        marginBottom: '24px',
+      }}>
+        {/* Card 1: Published Vacancies (Explicit, unambiguous metric) */}
+        <Link
+          href="/dashboard/vacancies"
+          style={{ textDecoration: 'none', color: 'inherit' }}
+        >
+          <div className="card" style={{
+            padding: '20px 22px', transition: 'transform 0.15s, box-shadow 0.15s', cursor: 'pointer',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Published Vacancies</span>
+              <div style={{ padding: 6, borderRadius: 8, background: '#fef3c7', color: '#b45309' }}>
+                <Briefcase size={16} />
+              </div>
+            </div>
+            <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1, marginBottom: 8 }}>
+              {publishedCount}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              {pendingReviewCount} in review &middot; {draftCount} draft
+            </div>
+          </div>
+        </Link>
+
+        {/* Card 2: Candidates to Review (Real count from database) */}
+        <Link
+          href="/dashboard/candidates"
+          style={{ textDecoration: 'none', color: 'inherit' }}
+        >
+          <div className="card" style={{
+            padding: '20px 22px', transition: 'transform 0.15s, box-shadow 0.15s', cursor: 'pointer',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Candidates to Review</span>
+              <div style={{ padding: 6, borderRadius: 8, background: '#dcfce7', color: '#059669' }}>
+                <Users size={16} />
+              </div>
+            </div>
+            <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1, marginBottom: 8 }}>
+              {candidateCount}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              {candidateCount === 0 ? 'No candidates currently waiting' : `${candidateCount} active candidate(s)`}
+            </div>
+          </div>
+        </Link>
+
+        {/* Card 3: Evidence to Review (Honest Candidate-Phase Preview) */}
+        <Link
+          href="/dashboard/evidence"
+          style={{ textDecoration: 'none', color: 'inherit' }}
+        >
+          <div className="card" style={{
+            padding: '20px 22px', transition: 'transform 0.15s, box-shadow 0.15s', cursor: 'pointer',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Evidence to Review</span>
+              <div style={{ padding: 6, borderRadius: 8, background: '#f1f5f9', color: '#475569' }}>
+                <FileCheck size={16} />
+              </div>
+            </div>
+            <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-muted)', lineHeight: 1.1, marginBottom: 8 }}>
+              &mdash;
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              Awaits candidate phase
+            </div>
+          </div>
+        </Link>
+
+        {/* Card 4: Upcoming Interviews (Honest Candidate-Phase Preview) */}
+        <Link
+          href="/dashboard/interviews"
+          style={{ textDecoration: 'none', color: 'inherit' }}
+        >
+          <div className="card" style={{
+            padding: '20px 22px', transition: 'transform 0.15s, box-shadow 0.15s', cursor: 'pointer',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Interviews</span>
+              <div style={{ padding: 6, borderRadius: 8, background: '#f1f5f9', color: '#475569' }}>
+                <Calendar size={16} />
+              </div>
+            </div>
+            <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-muted)', lineHeight: 1.1, marginBottom: 8 }}>
+              &mdash;
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              Interview scheduler preview
+            </div>
+          </div>
+        </Link>
+      </div>
+
+      {/* ================= 4. MAIN OPERATIONAL TABLE: YOUR VACANCIES ================= */}
+      <div style={{
+        background: '#ffffff',
+        borderRadius: '12px',
+        border: '1px solid var(--border)',
+        padding: '24px',
+        marginBottom: '24px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+      }}>
+        {/* Table Header & Controls */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexWrap: 'wrap', gap: 14, marginBottom: 18,
+        }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>
+              Your Vacancies
+            </div>
+            <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 2 }}>
+              Manage requisitions, review requirement linkage, and monitor applicant pipelines.
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {/* Search */}
+            <div className="search-box" style={{ width: 220 }}>
+              <Search size={14} style={{ color: 'var(--text-muted)' }} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search vacancy..."
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} style={{ color: 'var(--text-muted)' }}>
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+
+            {/* Department Filter */}
+            <select
+              value={deptFilter}
+              onChange={(e) => setDeptFilter(e.target.value)}
+              className="form-select"
+              style={{ width: 170, padding: '7px 28px 7px 12px', fontSize: 12.5 }}
+            >
+              <option value="ALL">All Departments</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.name}>{d.name}</option>
+              ))}
+            </select>
+
+            {/* Primary Action Button (Controlled Gold) */}
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="btn btn-gold btn-sm"
+              style={{ gap: 6 }}
+            >
+              <Plus size={14} />
+              <span>Create Vacancy</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Vacancy Table */}
+        <div className="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Vacancy</th>
+                <th>Department</th>
+                <th>Status</th>
+                <th style={{ textAlign: 'right' }}>Requirements</th>
+                <th style={{ textAlign: 'right' }}>Candidates</th>
+                <th>Created</th>
+                <th style={{ textAlign: 'right' }}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredVacancies.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px 16px' }}>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
+                      {vacancies.length === 0 ? 'No vacancies created yet' : 'No matching vacancies found'}
+                    </div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 12.5, marginBottom: 16 }}>
+                      {vacancies.length === 0
+                        ? 'Define job vacancy specifications and connect required competencies to begin recruiting.'
+                        : 'Try adjusting your search criteria or department filter.'}
+                    </div>
+                    {vacancies.length === 0 && (
+                      <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="btn btn-gold btn-sm"
+                        style={{ margin: '0 auto' }}
+                      >
+                        <Plus size={14} />
+                        <span>Create First Vacancy</span>
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ) : (
+                filteredVacancies.map((v) => (
+                  <tr key={v.id}>
+                    <td>
+                      <Link
+                        href={`/dashboard/vacancies/${v.id}`}
+                        style={{ fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'none' }}
+                      >
+                        {v.title}
+                      </Link>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                        {v.location || 'Remote'} &middot; {v.employment_type ? v.employment_type.replace('_', ' ') : 'Full Time'} &middot; {v.openings} opening{v.openings !== 1 ? 's' : ''}
+                      </div>
+                    </td>
+                    <td>
+                      <span className="badge badge-gray">{v.dept}</span>
+                    </td>
+                    <td>
+                      {renderStatusBadge(v.status, v.raw_status)}
+                    </td>
+                    <td className="td-mono font-semibold" style={{ textAlign: 'right' }}>
+                      {v.requirement_count ?? 0}
+                    </td>
+                    <td className="td-mono font-semibold" style={{ textAlign: 'right' }}>
+                      {v.applications ?? 0}
+                    </td>
+                    <td className="td-muted td-mono" style={{ whiteSpace: 'nowrap', fontSize: 12 }}>
+                      {v.created}
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <Link
+                        href={`/dashboard/vacancies/${v.id}`}
+                        className="btn btn-secondary btn-sm"
+                        style={{ fontSize: 12 }}
+                      >
+                        {v.status === 'draft' ? 'Continue' : 'View'}
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ================= 5. TWO-COLUMN OPERATIONAL BASE: ACTIVITY & TRACEABILITY ================= */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
+        
+        {/* Left: Recent Activity from Real Audit Logs */}
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '12px',
+          border: '1px solid var(--border)',
+          padding: '22px 24px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>
+              Recent Activity
+            </div>
+            <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
+              Workspace audit trail
+            </span>
+          </div>
+
+          {activities.length === 0 ? (
+            <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+              No recent activity recorded yet.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {activities.slice(0, 5).map((act) => (
+                <div
+                  key={act.id}
+                  style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 12,
+                    paddingBottom: 10, borderBottom: '1px solid var(--border)', fontSize: 12.5,
+                  }}
+                >
+                  <div style={{
+                    width: 8, height: 8, borderRadius: '50%', background: '#b8860b',
+                    marginTop: 5, flexShrink: 0,
+                  }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {act.action.replace(/_/g, ' ')}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>
+                      By {act.actor_name || 'System'} &middot; {new Date(act.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                  {act.new_status && (
+                    <span className="badge badge-gray" style={{ fontSize: 10 }}>
+                      {act.new_status}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Right: Truthful Evidence Traceability Information */}
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '12px',
+          border: '1px solid var(--border)',
+          padding: '22px 24px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <ShieldCheck size={18} style={{ color: '#059669' }} />
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>
+                Evidence Traceability
+              </div>
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.55, margin: '0 0 12px 0' }}>
+              GenuAI organizes candidate evidence against vacancy requirements and preserves review history for recruiter evaluation.
+            </p>
+            <div style={{
+              background: '#f8fafc', borderRadius: '8px', padding: '12px 14px', border: '1px solid var(--border)',
+              fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5,
+            }}>
+              <strong style={{ color: 'var(--text-primary)' }}>Requirement-linked review:</strong> Review assessment results, projects, experience, and submitted evidence against each vacancy requirement. Final hiring decisions always remain with the human recruiter.
+            </div>
+          </div>
+
+          <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Active departments: {departments.length}</span>
+            <Link href="/dashboard/departments" style={{ fontSize: 12, fontWeight: 600, color: '#b8860b', textDecoration: 'none' }}>
+              Manage Departments &rarr;
+            </Link>
+          </div>
+        </div>
+
+      </div>
+
+      {/* ================= 6. CREATE VACANCY MODAL ================= */}
       {isModalOpen && (
         <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 540 }}>
             <div className="modal-header">
               <div>
                 <div className="modal-title">Create New Vacancy</div>
-                <div className="modal-subtitle">Define role details to publish to the recruitment pipeline</div>
+                <div className="modal-subtitle">Define role details to initialize vacancy specification</div>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="btn-icon" aria-label="Close modal">
                 <X size={18} />
@@ -765,7 +742,7 @@ export default function DashboardPage() {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Senior Distributed Systems Engineer"
+                    placeholder="e.g. Backend Developer"
                     value={formTitle}
                     onChange={(e) => setFormTitle(e.target.value)}
                     className="form-input"
@@ -781,7 +758,7 @@ export default function DashboardPage() {
                       className="form-select"
                     >
                       {departments.length === 0 && (
-                        <option value="">No departments available</option>
+                        <option value="">No departments configured</option>
                       )}
                       {departments.map((d) => (
                         <option key={d.id} value={d.id}>{d.name}</option>
@@ -837,7 +814,7 @@ export default function DashboardPage() {
                   <label className="form-label">Location</label>
                   <input
                     type="text"
-                    placeholder="e.g. London, UK (Remote)"
+                    placeholder="e.g. Remote or London, UK"
                     value={formLocation}
                     onChange={(e) => setFormLocation(e.target.value)}
                     className="form-input"
@@ -848,7 +825,7 @@ export default function DashboardPage() {
                   <label className="form-label">Role Overview & Description</label>
                   <textarea
                     rows={3}
-                    placeholder="Summarize core responsibilities, key deliverables, and technical domain..."
+                    placeholder="Summarize core responsibilities, deliverables, and domain scope..."
                     value={formDesc}
                     onChange={(e) => setFormDesc(e.target.value)}
                     className="form-input"
@@ -870,13 +847,14 @@ export default function DashboardPage() {
                   className="btn btn-gold"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Publishing...' : 'Publish Vacancy'}
+                  {isSubmitting ? 'Creating...' : 'Create Vacancy'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
     </div>
   );
 }

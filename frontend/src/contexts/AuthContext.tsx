@@ -34,6 +34,11 @@ interface RegisterData {
   email: string;
   password: string;
   companyName: string;
+  website?: string;
+  industry?: string;
+  description?: string;
+  location?: string;
+  phone?: string;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -52,28 +57,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Try backend endpoint first
-      try {
-        const { data } = await api.get('/auth/me');
+      const { data } = await api.get('/auth/me');
+      if (data?.user) {
         setUser(data.user);
-        setCompany(data.company);
+        setCompany(data.company || null);
         localStorage.setItem('genuai_user', JSON.stringify(data.user));
         if (data.company) {
           localStorage.setItem('genuai_company', JSON.stringify(data.company));
+        } else {
+          localStorage.removeItem('genuai_company');
         }
-      } catch (err: any) {
-        // If backend is unreachable or local token, restore from stored session
-        const storedUser = localStorage.getItem('genuai_user');
-        const storedCompany = localStorage.getItem('genuai_company');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
-        }
-        if (storedCompany) {
-          setCompany(JSON.parse(storedCompany));
-        }
+      } else {
+        localStorage.removeItem('genuai_token');
+        setUser(null);
+        setCompany(null);
       }
     } catch {
       localStorage.removeItem('genuai_token');
+      localStorage.removeItem('genuai_user');
+      localStorage.removeItem('genuai_company');
       setUser(null);
       setCompany(null);
     } finally {
@@ -86,77 +88,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    localStorage.removeItem('genuai_token');
     const trimmedEmail = email.trim().toLowerCase();
-    const isAdmin = trimmedEmail.endsWith('@genuaiadmin.com') || trimmedEmail.endsWith('@genuai.io');
     
-    try {
-      // Try backend authentication
-      const { data } = await api.post('/auth/login', { email: trimmedEmail, password });
-      localStorage.setItem('genuai_token', data.token);
-      localStorage.setItem('genuai_user', JSON.stringify(data.user));
-      if (data.company) {
-        localStorage.setItem('genuai_company', JSON.stringify(data.company));
-      }
-      setUser(data.user);
-      setCompany(data.company);
-
-      if (data.user?.role === 'genuai_admin' || isAdmin) {
-        router.push('/admin');
-        return;
-      }
-    } catch (err: any) {
-      // If backend network error or offline, provide seamless local authentication
-      if (!err.response || err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
-        const namePart = trimmedEmail.split('@')[0] || 'User';
-        const domain = trimmedEmail.split('@')[1]?.split('.')[0] || 'Company';
-
-        if (isAdmin) {
-          const adminUser: User = {
-            id: 'usr_adm_' + Math.random().toString(36).substring(2, 9),
-            email: trimmedEmail,
-            firstName: namePart.charAt(0).toUpperCase() + namePart.slice(1),
-            lastName: 'Admin',
-            role: 'genuai_admin',
-          };
-
-          const fallbackToken = 'genuai_admin_jwt_' + Date.now();
-          localStorage.setItem('genuai_token', fallbackToken);
-          localStorage.setItem('genuai_user', JSON.stringify(adminUser));
-          localStorage.removeItem('genuai_company');
-          localStorage.setItem('genuai_admin_active_role', 'Super Admin');
-          setUser(adminUser);
-          setCompany(null);
-          router.push('/admin');
-          return;
-        }
-
-        const companyName = domain.charAt(0).toUpperCase() + domain.slice(1) + ' Technologies';
-        
-        const fallbackUser: User = {
-          id: 'usr_' + Math.random().toString(36).substring(2, 9),
-          email: trimmedEmail,
-          firstName: namePart.charAt(0).toUpperCase() + namePart.slice(1),
-          lastName: 'Recruiter',
-          role: 'company_admin',
-        };
-
-        const fallbackCompany: Company = {
-          id: 'cmp_' + Math.random().toString(36).substring(2, 9),
-          name: companyName,
-          verificationStatus: 'VERIFIED',
-        };
-
-        const fallbackToken = 'genuai_jwt_local_' + Date.now();
-        localStorage.setItem('genuai_token', fallbackToken);
-        localStorage.setItem('genuai_user', JSON.stringify(fallbackUser));
-        localStorage.setItem('genuai_company', JSON.stringify(fallbackCompany));
-        setUser(fallbackUser);
-        setCompany(fallbackCompany);
-      } else {
-        throw err;
-      }
+    // Call backend endpoint directly — no fake token bypass
+    const { data } = await api.post('/auth/login', { email: trimmedEmail, password });
+    
+    if (!data?.token) {
+      throw new Error('Authentication failed: No token received');
     }
+
+    localStorage.setItem('genuai_token', data.token);
+    localStorage.setItem('genuai_user', JSON.stringify(data.user));
+    if (data.company) {
+      localStorage.setItem('genuai_company', JSON.stringify(data.company));
+    } else {
+      localStorage.removeItem('genuai_company');
+    }
+
+    setUser(data.user);
+    setCompany(data.company || null);
+
+    const role = (data.user?.role || '').toUpperCase();
+    const isAdmin = ['SUPER_ADMIN', 'VERIFICATION_ADMIN', 'SUPPORT_ADMIN', 'GENUAI_ADMIN'].includes(role);
 
     if (isAdmin) {
       router.push('/admin');
@@ -166,43 +119,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const register = async (formData: RegisterData) => {
-    localStorage.removeItem('genuai_token');
-
-    try {
-      const { data } = await api.post('/auth/register', formData);
-      localStorage.setItem('genuai_token', data.token);
-      localStorage.setItem('genuai_user', JSON.stringify(data.user));
-      if (data.company) {
-        localStorage.setItem('genuai_company', JSON.stringify(data.company));
-      }
-      setUser(data.user);
-      setCompany(data.company);
-    } catch (err: any) {
-      if (!err.response || err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
-        const fallbackUser: User = {
-          id: 'usr_' + Math.random().toString(36).substring(2, 9),
-          email: formData.email.trim(),
-          firstName: formData.firstName.trim(),
-          lastName: formData.lastName.trim(),
-          role: 'company_admin',
-        };
-
-        const fallbackCompany: Company = {
-          id: 'cmp_' + Math.random().toString(36).substring(2, 9),
-          name: formData.companyName.trim() || 'My Company',
-          verificationStatus: 'VERIFIED',
-        };
-
-        const fallbackToken = 'genuai_jwt_local_' + Date.now();
-        localStorage.setItem('genuai_token', fallbackToken);
-        localStorage.setItem('genuai_user', JSON.stringify(fallbackUser));
-        localStorage.setItem('genuai_company', JSON.stringify(fallbackCompany));
-        setUser(fallbackUser);
-        setCompany(fallbackCompany);
-      } else {
-        throw err;
-      }
+    const { data } = await api.post('/auth/register', formData);
+    
+    if (!data?.token) {
+      throw new Error('Registration failed: No token received');
     }
+
+    localStorage.setItem('genuai_token', data.token);
+    localStorage.setItem('genuai_user', JSON.stringify(data.user));
+    if (data.company) {
+      localStorage.setItem('genuai_company', JSON.stringify(data.company));
+    }
+
+    setUser(data.user);
+    setCompany(data.company || null);
 
     router.push('/dashboard');
   };

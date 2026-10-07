@@ -57,7 +57,7 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
     ssoText: 'Continue with Google',
     ssoIcon: 'google',
     allowRegister: true,
-    demoCredentials: { email: 'candidate@example.com', pass: 'Candidate@123', name: 'Alex Rivera' },
+    demoCredentials: { email: 'candidate@genuai.test', pass: 'Candidate123!', name: 'Alex Rivera' },
   },
   company: {
     label: 'Company',
@@ -81,7 +81,7 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
     ssoText: 'Continue with Enterprise SSO',
     ssoIcon: 'sso',
     allowRegister: true,
-    demoCredentials: { email: 'recruiter@acmecorp.com', pass: 'Company@123', name: 'Elena Rostova', company: 'Acme Technologies' },
+    demoCredentials: { email: 'companya@genuai.test', pass: 'CompanyA123!', name: 'Alice Owner', company: 'Alpha Technologies' },
   },
   admin: {
     label: 'Admin',
@@ -100,12 +100,12 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
     cardTitle: 'Admin Sign In',
     cardSubtitle: 'Authorized platform administration personnel only',
     emailLabel: 'Admin Email *',
-    emailPlaceholder: 'name@genuaiadmin.com',
+    emailPlaceholder: 'name@genuai.test',
     submitText: 'Secure Sign In',
     ssoText: 'Use Admin SSO',
     ssoIcon: 'sso',
     allowRegister: false,
-    demoCredentials: { email: 'governance@genuaiadmin.com', pass: 'Admin@123', name: 'GenuAI Admin' },
+    demoCredentials: { email: 'admin@genuai.test', pass: 'Admin12345!', name: 'Platform Admin' },
   },
 };
 
@@ -159,7 +159,7 @@ export default function AuthPage() {
       companyName: demo.company || '',
     });
     setAgreedTerms(true);
-    toast.success(`Loaded ${config.label} demo credentials`);
+    toast.success(`Loaded ${config.label} credentials`);
   };
 
   const validateEmail = (email: string) => {
@@ -186,9 +186,6 @@ export default function AuthPage() {
     if (!validateEmail(form.email)) {
       return 'Please enter a valid email address.';
     }
-    if (persona === 'admin' && !form.email.toLowerCase().endsWith('@genuaiadmin.com') && !form.email.toLowerCase().endsWith('@genuai.io')) {
-      return 'Admin accounts require an authorized @genuaiadmin.com address.';
-    }
     if (!form.password || !form.password.trim()) {
       return 'Please enter your password.';
     }
@@ -208,10 +205,6 @@ export default function AuthPage() {
       }
       if (form.password !== form.confirmPassword) {
         return 'Passwords do not match.';
-      }
-    } else {
-      if (!agreedTerms) {
-        return 'Please agree to the Terms of Service and Privacy Policy.';
       }
     }
     return null;

@@ -65,10 +65,10 @@ export default function CompanyVerificationPage() {
 
     if (!matchesSearch) return false;
 
-    if (activeTab === 'PENDING') return comp.verificationStatus === 'Pending' || comp.verificationStatus === 'Under Review';
-    if (activeTab === 'CORRECTION') return comp.verificationStatus === 'Needs Correction';
-    if (activeTab === 'VERIFIED') return comp.verificationStatus === 'Verified';
-    if (activeTab === 'REJECTED') return comp.verificationStatus === 'Rejected' || comp.verificationStatus === 'Suspended';
+    if (activeTab === 'PENDING') return ['Pending', 'Under Review', 'PENDING_VERIFICATION', 'UNDER_REVIEW'].includes(comp.verificationStatus);
+    if (activeTab === 'CORRECTION') return ['Needs Correction', 'ADDITIONAL_INFORMATION_REQUIRED'].includes(comp.verificationStatus);
+    if (activeTab === 'VERIFIED') return ['Verified', 'APPROVED'].includes(comp.verificationStatus);
+    if (activeTab === 'REJECTED') return ['Rejected', 'Suspended', 'REJECTED', 'SUSPENDED'].includes(comp.verificationStatus);
     return true;
   });
 
@@ -77,18 +77,23 @@ export default function CompanyVerificationPage() {
     setActionType(status);
   };
 
-  const handleConfirmAction = (note: string) => {
+  const handleConfirmAction = async (note: string) => {
     if (!dialogCompany || !actionType) return;
-    adminDataService.updateCompanyStatus(
-      dialogCompany.id,
-      actionType,
-      adminUser.name,
-      adminUser.role,
-      note
-    );
-    toast.success(`Company ${dialogCompany.name} marked as ${actionType}`);
-    setActionType(null);
-    setDialogCompany(null);
+    try {
+      await adminDataService.updateCompanyStatus(
+        dialogCompany.id,
+        actionType,
+        adminUser.name,
+        adminUser.role,
+        note
+      );
+      toast.success(`Company ${dialogCompany.name} marked as ${actionType}`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || err.message || 'Failed to update status');
+    } finally {
+      setActionType(null);
+      setDialogCompany(null);
+    }
   };
 
   const columns: Column<AdminCompany>[] = [
@@ -215,7 +220,7 @@ export default function CompanyVerificationPage() {
             </span>
           </div>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
-            Audit and certify corporate identities, DNS ownership, registration documents, and platform trust score.
+            Audit and certify corporate identities, business registration, domain ownership, and compliance documents.
           </p>
         </div>
       </div>
@@ -340,10 +345,10 @@ export default function CompanyVerificationPage() {
             >
               <div>
                 <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                  Platform Trust Score
+                  Verification Completeness
                 </div>
                 <div style={{ fontSize: '24px', fontWeight: 900, color: selectedCompany.trustScore > 80 ? '#059669' : '#d97706' }}>
-                  {selectedCompany.trustScore} / 100
+                  {selectedCompany.trustScore}%
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
