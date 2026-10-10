@@ -273,15 +273,6 @@ export default function HomePage() {
 
           {/* Right Action Buttons */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            {syncTime && (
-              <div className="landing-status-pill">
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669' }} />
-                <span style={{ color: '#059669', fontWeight: 700 }}>Connected</span>
-                <span style={{ opacity: 0.4 }}>|</span>
-                <span style={{ fontVariantNumeric: 'tabular-nums' }}>{syncTime}</span>
-              </div>
-            )}
-
             <Link
               href="/login"
               style={{
@@ -386,6 +377,13 @@ export default function HomePage() {
           >
             <CheckCircle2 size={15} style={{ color: '#b8860b' }} />
             <span>Requirement-Centered Recruitment Intelligence</span>
+            {syncTime && (
+              <>
+                <span style={{ opacity: 0.3 }}>|</span>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669', display: 'inline-block' }} />
+                <span style={{ color: '#059669', fontWeight: 700 }}>Live</span>
+              </>
+            )}
           </div>
 
           <h1
