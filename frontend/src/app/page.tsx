@@ -173,94 +173,98 @@ export default function HomePage() {
 
       {/* 1. STICKY TOPBAR / HEADER (Matches the 3 Dashboards) */}
       <header className="landing-header">
-        {/* Brand identity matching dashboards without shield logo */}
-        <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-          <div>
-            <div className="sidebar-logo-text gold-gradient-text" style={{ fontSize: 16, fontWeight: 900, lineHeight: 1.1, letterSpacing: '-0.3px' }}>
-              GenuAI Technologies
+        <div className="landing-header-inner">
+          {/* Brand identity matching dashboards without shield logo */}
+          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            <div>
+              <div className="sidebar-logo-text gold-gradient-text" style={{ fontSize: 16, fontWeight: 900, lineHeight: 1.1, letterSpacing: '-0.3px' }}>
+                GenuAI Technologies
+              </div>
+              <span
+                className="sidebar-logo-sub"
+                style={{
+                  fontSize: 10,
+                  color: '#854d0e',
+                  fontWeight: 700,
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
+                  display: 'block',
+                }}
+              >
+                Recruitment Intelligence
+              </span>
             </div>
-            <span
-              className="sidebar-logo-sub"
+          </Link>
+
+          {/* Center Nav */}
+          <nav aria-label="Main Navigation" className="landing-nav">
+            <a href="#problem">Product</a>
+            <a href="#how-it-works">How It Works</a>
+            <a href="#candidates">For Candidates</a>
+            <a href="#companies">For Companies</a>
+            <a href="#trust">Trust &amp; Privacy</a>
+            <Link href="/candidate/vacancies" style={{ fontWeight: 700, color: '#b8860b' }}>Vacancies</Link>
+          </nav>
+
+          {/* Right Action Buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+            {syncTime && (
+              <div className="landing-status-pill">
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669' }} />
+                <span style={{ color: '#059669', fontWeight: 700 }}>Connected</span>
+                <span style={{ opacity: 0.4 }}>|</span>
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>{syncTime}</span>
+              </div>
+            )}
+
+            <Link
+              href="/login"
               style={{
-                fontSize: 10,
-                color: '#854d0e',
+                fontSize: 13,
                 fontWeight: 700,
-                letterSpacing: '0.5px',
-                textTransform: 'uppercase',
-                display: 'block',
+                color: '#334155',
+                padding: '7px 14px',
+                borderRadius: 8,
+                textDecoration: 'none',
+                border: '1px solid #cbd5e1',
+                background: '#fff',
+                whiteSpace: 'nowrap',
               }}
             >
-              Recruitment Intelligence
-            </span>
+              Sign In
+            </Link>
+
+            <Link
+              href="/register"
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: '#ffffff',
+                padding: '7px 16px',
+                borderRadius: 8,
+                textDecoration: 'none',
+                background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
+                boxShadow: '0 2px 6px rgba(184, 134, 11, 0.25)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span>Create Account</span>
+              <ArrowRight size={13} />
+            </Link>
+
+            {/* Mobile Menu Toggle */}
+            <button
+              aria-expanded={mobileMenuOpen}
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="landing-mobile-btn"
+            >
+              {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
           </div>
-        </Link>
-
-        {/* Center Nav */}
-        <nav aria-label="Main Navigation" className="landing-nav">
-          <a href="#problem" style={{ fontSize: 13, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>Product</a>
-          <a href="#how-it-works" style={{ fontSize: 13, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>How It Works</a>
-          <a href="#candidates" style={{ fontSize: 13, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>For Candidates</a>
-          <a href="#companies" style={{ fontSize: 13, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>For Companies</a>
-          <a href="#trust" style={{ fontSize: 13, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>Trust &amp; Privacy</a>
-          <Link href="/candidate/vacancies" style={{ fontSize: 13, fontWeight: 700, color: '#b8860b', textDecoration: 'none' }}>Vacancies</Link>
-        </nav>
-
-        {/* Right Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {syncTime && (
-            <div className="landing-status-pill">
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669' }} />
-              <span style={{ color: '#059669', fontWeight: 700 }}>Connected</span>
-              <span style={{ opacity: 0.4 }}>|</span>
-              <span style={{ fontVariantNumeric: 'tabular-nums' }}>{syncTime}</span>
-            </div>
-          )}
-
-          <Link
-            href="/login"
-            style={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: '#334155',
-              padding: '7px 14px',
-              borderRadius: 8,
-              textDecoration: 'none',
-              border: '1px solid #cbd5e1',
-              background: '#fff',
-            }}
-          >
-            Sign In
-          </Link>
-
-          <Link
-            href="/register"
-            style={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: '#ffffff',
-              padding: '7px 16px',
-              borderRadius: 8,
-              textDecoration: 'none',
-              background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
-              boxShadow: '0 2px 6px rgba(184, 134, 11, 0.25)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <span>Create Account</span>
-            <ArrowRight size={13} />
-          </Link>
-
-          {/* Mobile Menu Toggle */}
-          <button
-            aria-expanded={mobileMenuOpen}
-            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="landing-mobile-btn"
-          >
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
         </div>
       </header>
 
