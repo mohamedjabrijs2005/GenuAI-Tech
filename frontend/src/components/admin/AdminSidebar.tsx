@@ -11,20 +11,14 @@ import {
   Users,
   Gavel,
   ShieldCheck,
-  FileCheck2,
-  Shield,
-  BarChart3,
-  Tags,
-  Layers,
-  Bell,
   ScrollText,
-  Activity,
   Settings,
   ChevronRight,
-  ShieldQuestion,
+  LogOut,
 } from 'lucide-react';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
-import { adminDataService } from '@/lib/adminDataService';
+import { useAuth } from '@/contexts/AuthContext';
+import api from '@/lib/api';
 
 interface NavItem {
   label: string;
@@ -41,140 +35,78 @@ interface NavSection {
 
 export function AdminSidebar({ isMobileOpen = false, onCloseMobile }: { isMobileOpen?: boolean; onCloseMobile?: () => void }) {
   const pathname = usePathname();
-  const { adminUser, unreadNotificationsCount } = useAdminAuth();
+  const { adminUser } = useAdminAuth();
+  const { logout } = useAuth();
 
-  // ─── Live badge counts from adminDataService ───────────────────────────────
-  const computeCounts = () => {
-    const companies   = adminDataService.getCompanies();
-    const vacancies   = adminDataService.getVacancies();
-    const assessments = adminDataService.getAssessments();
-    const moderation  = adminDataService.getModerationReports();
-    const disputes    = adminDataService.getDisputes();
-    const integrity   = adminDataService.getIntegrityIncidents();
-    const security    = adminDataService.getSecurityEvents();
-
-    return {
-      pendingCompanies:    companies.filter(c => c.verificationStatus === 'Pending' || c.verificationStatus === 'Under Review').length,
-      pendingVacancies:    vacancies.filter(v => v.status === 'Pending Review').length,
-      flaggedAssessments:  assessments.filter(a => a.status === 'Pending Review' || a.status === 'Flagged').length,
-      openModeration:      moderation.filter(m => m.status === 'Open' || m.status === 'Investigating' || m.status === 'Action Required').length,
-      highDisputes:        disputes.filter(d => (d.status === 'Open' || d.status === 'Investigating') && (d.priority === 'High' || d.priority === 'Urgent')).length,
-      openIntegrity:       integrity.filter(i => i.status === 'Open' || i.status === 'Under Investigation').length,
-      activeSecurityEvents: security.filter(s => s.status === 'Active' || s.status === 'Investigating').length,
-    };
-  };
-
-  const [counts, setCounts] = useState(computeCounts);
+  const [counts, setCounts] = useState({
+    pendingCompanies: 0,
+    pendingVacancies: 0,
+  });
 
   useEffect(() => {
-    const unsub = adminDataService.subscribe(() => setCounts(computeCounts()));
-    return () => unsub();
-  }, []);
+    let isMounted = true;
+    api.get('/admin/overview')
+      .then((res) => {
+        if (!isMounted) return;
+        const metrics = res.data?.metrics || {};
+        setCounts({
+          pendingCompanies: metrics.pendingCompanyVerifications || 0,
+          pendingVacancies: metrics.vacanciesPendingReview || 0,
+        });
+      })
+      .catch(() => {});
 
-  // ─── Build nav sections dynamically using live counts ─────────────────────
-  const buildBadge = (count: number, suffix?: string): { badge?: string | number; badgeColor?: NavItem['badgeColor'] } => {
-    if (count === 0) return {};
-    return { badge: suffix ? `${count} ${suffix}` : count };
-  };
+    return () => { isMounted = false; };
+  }, [pathname]);
 
   const NAV_SECTIONS: NavSection[] = [
     {
       title: 'OVERVIEW',
       items: [
-        { label: 'Admin Overview', href: '/admin', icon: LayoutDashboard },
+        { label: 'Overview', href: '/admin', icon: LayoutDashboard },
       ],
     },
     {
-      title: 'VERIFICATION & GOVERNANCE',
+      title: 'VERIFICATION',
       items: [
         {
           label: 'Companies',
           href: '/admin/verification/companies',
           icon: Building2,
-          ...buildBadge(counts.pendingCompanies, 'Pending'),
-          badgeColor: counts.pendingCompanies > 0 ? 'gold' : undefined,
+          badge: counts.pendingCompanies > 0 ? counts.pendingCompanies : undefined,
+          badgeColor: 'gold',
         },
         {
           label: 'Vacancies',
           href: '/admin/verification/vacancies',
           icon: Briefcase,
-          ...buildBadge(counts.pendingVacancies, 'Review'),
-          badgeColor: counts.pendingVacancies > 0 ? 'warning' : undefined,
+          badge: counts.pendingVacancies > 0 ? counts.pendingVacancies : undefined,
+          badgeColor: 'warning',
         },
         {
           label: 'Assessments',
           href: '/admin/verification/assessments',
           icon: ClipboardList,
-          ...buildBadge(counts.flaggedAssessments, counts.flaggedAssessments === 1 ? 'Flagged' : 'Flagged'),
-          badgeColor: counts.flaggedAssessments > 0 ? 'danger' : undefined,
         },
       ],
     },
     {
-      title: 'USER GOVERNANCE',
+      title: 'OPERATIONS',
       items: [
-        { label: 'Platform Users', href: '/admin/users', icon: Users },
+        { label: 'Users', href: '/admin/users', icon: Users },
+        { label: 'Reports & Disputes', href: '/admin/disputes', icon: Gavel },
+        { label: 'Integrity Review', href: '/admin/integrity', icon: ShieldCheck },
       ],
     },
     {
-      title: 'MODERATION & DISPUTES',
+      title: 'AUDIT & SECURITY',
       items: [
-        {
-          label: 'Content Review',
-          href: '/admin/moderation',
-          icon: ShieldQuestion,
-          ...buildBadge(counts.openModeration, 'Open'),
-          badgeColor: counts.openModeration > 0 ? 'danger' : undefined,
-        },
-        {
-          label: 'Dispute Center',
-          href: '/admin/disputes',
-          icon: Gavel,
-          ...buildBadge(counts.highDisputes, 'High'),
-          badgeColor: counts.highDisputes > 0 ? 'warning' : undefined,
-        },
+        { label: 'Audit Trail', href: '/admin/audit', icon: ScrollText },
       ],
     },
     {
-      title: 'INTEGRITY & TRUST',
+      title: 'SYSTEM',
       items: [
-        {
-          label: 'Integrity Incidents',
-          href: '/admin/integrity',
-          icon: ShieldCheck,
-          ...buildBadge(counts.openIntegrity, 'Alert'),
-          badgeColor: counts.openIntegrity > 0 ? 'danger' : undefined,
-        },
-        { label: 'Evidence Oversight', href: '/admin/evidence', icon: FileCheck2 },
-        {
-          label: 'Security Events',
-          href: '/admin/security',
-          icon: Shield,
-          ...buildBadge(counts.activeSecurityEvents, 'Active'),
-          badgeColor: counts.activeSecurityEvents > 0 ? 'warning' : undefined,
-        },
-      ],
-    },
-    {
-      title: 'PLATFORM INTELLIGENCE',
-      items: [
-        { label: 'Platform Analytics', href: '/admin/analytics', icon: BarChart3 },
-        { label: 'Role Taxonomy', href: '/admin/taxonomy/roles', icon: Tags },
-        { label: 'Assessment Taxonomy', href: '/admin/taxonomy/assessments', icon: Layers },
-      ],
-    },
-    {
-      title: 'SYSTEM & AUDIT',
-      items: [
-        {
-          label: 'Notifications',
-          href: '/admin/notifications',
-          icon: Bell,
-          badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : undefined,
-          badgeColor: 'danger',
-        },
-        { label: 'Audit Logs', href: '/admin/audit', icon: ScrollText },
-        { label: 'System Health', href: '/admin/system', icon: Activity, badge: 'Healthy', badgeColor: 'neutral' },
         { label: 'Settings', href: '/admin/settings', icon: Settings },
       ],
     },
@@ -207,93 +139,63 @@ export function AdminSidebar({ isMobileOpen = false, onCloseMobile }: { isMobile
         top: 0,
         left: 0,
         bottom: 0,
+        height: '100vh',
         zIndex: 110,
         boxShadow: '1px 0 3px rgba(15, 23, 42, 0.03)',
       }}
     >
-      {/* Brand Header */}
+      {/* Brand Header — matches Company Dashboard (text-only, no logo box) */}
       <div
+        className="sidebar-logo"
         style={{
           padding: '16px 20px',
           height: '64px',
           borderBottom: '1px solid var(--border)',
           display: 'flex',
           alignItems: 'center',
-          gap: '12px',
+          flexShrink: 0,
         }}
       >
-        <div
-          style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '9px',
-            background: 'linear-gradient(135deg, #854d0e 0%, #b8860b 50%, #d4af37 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#ffffff',
-            fontWeight: 900,
-            fontSize: '15px',
-            boxShadow: '0 2px 8px rgba(184, 134, 11, 0.3)',
-            border: '1px solid rgba(254, 240, 138, 0.4)',
-            flexShrink: 0,
-          }}
-        >
-          G
-        </div>
         <div>
-          <div
-            style={{
-              fontSize: '14.5px',
-              fontWeight: 800,
-              letterSpacing: '-0.3px',
-              background: 'linear-gradient(135deg, #854d0e 0%, #b8860b 50%, #d4af37 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              lineHeight: 1.2,
-            }}
-          >
-            GenuAI Console
+          <div className="sidebar-logo-text gold-gradient-text" style={{ fontSize: 15 }}>
+            GenuAI Technologies
           </div>
-          <div style={{ fontSize: '10px', color: '#854d0e', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
-            Platform Governance
-          </div>
+          <span className="sidebar-logo-sub" style={{ fontSize: 10, color: '#854d0e', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+            Operational Control Center
+          </span>
         </div>
       </div>
 
-      {/* Governance Scope Pill */}
+      {/* Workspace Identity — matches Company Dashboard workspace block */}
       <div
+        className="sidebar-workspace"
         style={{
           padding: '10px 18px',
-          background: '#f8fafc',
-          borderBottom: '1px solid #f1f5f9',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          background: '#fafaf9',
+          borderBottom: '1px solid var(--border)',
+          flexShrink: 0,
         }}
       >
-        <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.6px' }}>
-          SCOPE: PLATFORM ROOT
-        </span>
-        <span
-          style={{
-            fontSize: '10px',
-            fontWeight: 700,
-            padding: '2px 7px',
-            borderRadius: '99px',
-            background: 'rgba(212, 175, 55, 0.15)',
-            color: '#854d0e',
-            border: '1px solid rgba(212, 175, 55, 0.3)',
-          }}
-        >
-          Governed
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+          <span className="sidebar-workspace-label" style={{ margin: 0, fontSize: 10 }}>
+            WORKSPACE
+          </span>
+          <span className="gold-badge" style={{ fontSize: 9.5, padding: '1px 6px', flexShrink: 0 }}>
+            <span className="badge-dot" style={{ background: '#d4af37', width: 5, height: 5 }} />
+            Active
+          </span>
+        </div>
+        <div className="sidebar-workspace-name" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+          GenuAI Platform Administration
+        </div>
       </div>
 
-      {/* Navigation List */}
+      {/* Navigation */}
       <nav
+        className="sidebar-nav"
         style={{
-          flex: 1,
+          flex: '1 1 auto',
+          minHeight: 0,
           overflowY: 'auto',
           padding: '14px 12px',
           display: 'flex',
@@ -325,21 +227,11 @@ export function AdminSidebar({ isMobileOpen = false, onCloseMobile }: { isMobile
                     key={item.href}
                     href={item.href}
                     onClick={onCloseMobile}
+                    className={`sidebar-nav-item${active ? ' active' : ''}`}
+                    aria-current={active ? 'page' : undefined}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '7px 10px',
-                      borderRadius: '7px',
-                      fontSize: '12.5px',
-                      fontWeight: active ? 700 : 500,
-                      color: active ? '#854d0e' : 'var(--text-primary)',
-                      background: active ? 'rgba(212, 175, 55, 0.12)' : 'transparent',
                       borderLeft: active ? '3px solid #b8860b' : '3px solid transparent',
-                      transition: 'all 0.15s ease',
-                      textDecoration: 'none',
                     }}
-                    className={!active ? 'hover:bg-slate-100/70 hover:text-amber-950' : ''}
                   >
                     <Icon
                       size={15}
@@ -367,7 +259,7 @@ export function AdminSidebar({ isMobileOpen = false, onCloseMobile }: { isMobile
                         {item.badge}
                       </span>
                     )}
-                    {active && <ChevronRight size={13} style={{ color: '#b8860b', flexShrink: 0 }} />}
+                    {active && <ChevronRight size={13} style={{ color: '#b8860b', flexShrink: 0, marginLeft: 'auto' }} />}
                   </Link>
                 );
               })}
@@ -376,40 +268,31 @@ export function AdminSidebar({ isMobileOpen = false, onCloseMobile }: { isMobile
         ))}
       </nav>
 
-      {/* Admin Identity Footer */}
+      {/* User Footer — matches Company Dashboard footer exactly (single sign-out via LogOut icon) */}
       <div
-        style={{
-          padding: '12px 14px',
-          borderTop: '1px solid var(--border)',
-          background: '#f8fafc',
-        }}
+        className="sidebar-footer"
+        style={{ flexShrink: 0 }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px' }}>
-          <div
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: '#b8860b',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '12px',
-              fontWeight: 800,
-              flexShrink: 0,
-            }}
-          >
+        <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', padding: '0 8px 6px' }}>
+          {adminUser.role || 'Super Admin'}
+        </div>
+        <div
+          className="sidebar-user"
+          role="button"
+          tabIndex={0}
+          onClick={logout}
+          onKeyDown={(e) => e.key === 'Enter' && logout()}
+          aria-label="Sign out"
+          title="Sign out"
+        >
+          <div className="user-avatar" style={{ background: '#b8860b', color: '#ffffff' }}>
             {adminUser.avatar}
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {adminUser.name}
-            </div>
-            <div style={{ fontSize: '10.5px', color: '#854d0e', fontWeight: 600 }}>
-              {adminUser.role}
-            </div>
+          <div style={{ flex: 1, overflow: 'hidden' }}>
+            <div className="user-name">{adminUser.name}</div>
+            <div className="user-email">{adminUser.email}</div>
           </div>
+          <LogOut size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
         </div>
       </div>
     </aside>

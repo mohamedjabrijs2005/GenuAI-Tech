@@ -8,12 +8,15 @@ interface ConfirmationDialogProps {
   onClose: () => void;
   onConfirm: (note: string) => void;
   title: string;
-  description: string;
+  description?: string;
+  message?: string;
   confirmLabel?: string;
   cancelLabel?: string;
   variant?: 'danger' | 'warning' | 'primary' | 'success';
   requireNote?: boolean;
+  requireReason?: boolean;
   notePlaceholder?: string;
+  reasonPlaceholder?: string;
   auditWarning?: boolean;
 }
 
@@ -23,20 +26,26 @@ export function ConfirmationDialog({
   onConfirm,
   title,
   description,
+  message,
   confirmLabel = 'Confirm Action',
   cancelLabel = 'Cancel',
   variant = 'primary',
-  requireNote = false,
-  notePlaceholder = 'Enter reason for this governance action (will be logged in immutable audit trail)...',
+  requireNote,
+  requireReason,
+  notePlaceholder,
+  reasonPlaceholder,
   auditWarning = true,
 }: ConfirmationDialogProps) {
+  const finalDescription = description || message || '';
+  const isNoteRequired = requireNote ?? requireReason ?? false;
+  const placeholderText = notePlaceholder || reasonPlaceholder || 'Enter reason for this governance action (will be logged in immutable audit trail)...';
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
   const handleConfirm = () => {
-    if (requireNote && !note.trim()) {
+    if (isNoteRequired && !note.trim()) {
       setError('A mandatory reason is required for this governance action.');
       return;
     }
@@ -140,7 +149,7 @@ export function ConfirmationDialog({
                 {title}
               </h3>
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-                {description}
+                {finalDescription}
               </p>
             </div>
           </div>
@@ -158,7 +167,7 @@ export function ConfirmationDialog({
                 marginBottom: '6px',
               }}
             >
-              Administrative Reason {requireNote && <span style={{ color: '#dc2626' }}>*</span>}
+              Administrative Reason {isNoteRequired && <span style={{ color: '#dc2626' }}>*</span>}
             </label>
             <textarea
               rows={3}
@@ -167,7 +176,7 @@ export function ConfirmationDialog({
                 setNote(e.target.value);
                 if (error) setError('');
               }}
-              placeholder={notePlaceholder}
+              placeholder={placeholderText}
               style={{
                 width: '100%',
                 padding: '10px 12px',

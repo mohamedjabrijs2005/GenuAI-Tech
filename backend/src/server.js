@@ -17,6 +17,7 @@ const reportRoutes = require('./routes/reports');
 const adminRoutes = require('./routes/admin');
 const { router: evidenceRoutes } = require('./routes/evidence');
 const candidateAssessmentRoutes = require('./routes/candidateAssessments');
+const candidatePortalRoutes = require('./routes/candidatePortal');
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use('/api/integrity', integrityRoutes);
 app.use('/api/interviews', interviewRoutes);
 app.use('/api/evidence', evidenceRoutes);
 app.use('/api/candidate-assessments', candidateAssessmentRoutes);
+app.use('/api/candidate-portal', candidatePortalRoutes);
 app.use('/api/reports', reportRoutes);
 
 // Health check

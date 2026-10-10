@@ -424,4 +424,179 @@ router.post('/generate/:appId', async (req, res) => {
   } finally { client.release(); }
 });
 
-module.exports = { router, recomputeCoverage };
+// ============================================================
+// RECRUITER TARGET EVIDENCE REVIEW ENDPOINTS (Phase 2)
+// ============================================================
+
+const { recomputeTargetCoverage } = require('./evidenceService');
+
+// GET /api/evidence/targets  — Recruiter lists targets for own company
+router.get('/targets', async (req, res) => {
+  try {
+    const cid = req.companyMembership.company_id;
+
+    const result = await pool.query(
+      `SELECT t.id AS target_id, t.status AS target_status, t.targeted_at, t.last_activity_at,
+              c.id AS candidate_id, c.first_name, c.last_name, c.email, c.location,
+              cr.id AS vacancy_id, cr.title AS vacancy_title,
+              d.name AS department_name,
+              vv.version_number,
+              tc.total_requirements, tc.supported_count, tc.limited_count, tc.pending_count, tc.gap_count, tc.coverage_pct,
+              COUNT(DISTINCT e.id) FILTER (WHERE e.review_status = 'SUBMITTED') AS pending_review_count
+       FROM targets t
+       JOIN candidates c ON c.id = t.candidate_id
+       JOIN company_roles cr ON cr.id = t.vacancy_id
+       LEFT JOIN departments d ON d.id = cr.department_id
+       LEFT JOIN vacancy_versions vv ON vv.id = t.vacancy_version_id
+       LEFT JOIN target_coverage tc ON tc.target_id = t.id
+       LEFT JOIN evidence e ON e.target_id = t.id
+       WHERE t.company_id = $1
+       GROUP BY t.id, c.id, cr.id, d.name, vv.version_number, tc.total_requirements, tc.supported_count, tc.limited_count, tc.pending_count, tc.gap_count, tc.coverage_pct
+       ORDER BY t.targeted_at DESC`,
+      [cid]
+    );
+
+    return res.json({ targets: result.rows });
+  } catch (err) {
+    console.error('List recruiter targets error:', err);
+    return res.status(500).json({ error: 'Failed to fetch company targets' });
+  }
+});
+
+// GET /api/evidence/targets/:targetId — Recruiter views target evidence list & coverage
+router.get('/targets/:targetId', async (req, res) => {
+  try {
+    const cid = req.companyMembership.company_id;
+    const { targetId } = req.params;
+
+    const targetRes = await pool.query(
+      `SELECT t.id AS target_id, t.status AS target_status, t.targeted_at,
+              c.id AS candidate_id, c.first_name, c.last_name, c.email, c.location,
+              cr.id AS vacancy_id, cr.title AS vacancy_title,
+              vv.id AS vacancy_version_id, vv.version_number
+       FROM targets t
+       JOIN candidates c ON c.id = t.candidate_id
+       JOIN company_roles cr ON cr.id = t.vacancy_id
+       LEFT JOIN vacancy_versions vv ON vv.id = t.vacancy_version_id
+       WHERE t.id = $1 AND t.company_id = $2`,
+      [targetId, cid]
+    );
+
+    if (targetRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Target not found or access denied.' });
+    }
+
+    const target = targetRes.rows[0];
+
+    const [evidenceRes, coverage] = await Promise.all([
+      pool.query(
+        `SELECT e.id, e.requirement_id, e.evidence_type, e.title, e.description,
+                e.external_url, e.file_url, e.file_hash, e.review_status,
+                e.reviewer_note, e.submitted_at, e.reviewed_at,
+                r.name AS requirement_name, r.importance, r.requirement_type
+         FROM evidence e
+         JOIN requirements r ON r.id = e.requirement_id
+         WHERE e.target_id = $1
+         ORDER BY e.created_at DESC`,
+        [targetId]
+      ),
+      recomputeTargetCoverage(pool, targetId),
+    ]);
+
+    return res.json({
+      target,
+      evidence: evidenceRes.rows,
+      coverage,
+    });
+  } catch (err) {
+    console.error('Get target detail for recruiter error:', err);
+    return res.status(500).json({ error: 'Failed to fetch target details' });
+  }
+});
+
+// POST /api/evidence/items/:evidenceId/review — Recruiter reviews submitted evidence
+router.post('/items/:evidenceId/review', async (req, res) => {
+  const cid = req.companyMembership.company_id;
+  const { evidenceId } = req.params;
+  const { decision, reviewerNote } = req.body;
+
+  const validDecisions = ['ACCEPTED', 'LIMITED', 'REJECTED', 'MORE_INFORMATION_REQUESTED'];
+  if (!decision || !validDecisions.includes(decision.toUpperCase())) {
+    return res.status(400).json({
+      error: `Decision must be one of [${validDecisions.join(', ')}]`,
+    });
+  }
+
+  const normalizedDecision = decision.toUpperCase();
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // 1. Verify evidence belongs to recruiter's company
+    const evRes = await client.query(
+      `SELECT e.id, e.target_id, e.company_id, e.title, e.requirement_id
+       FROM evidence e
+       WHERE e.id = $1 AND e.company_id = $2`,
+      [evidenceId, cid]
+    );
+
+    if (evRes.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Evidence record not found or access denied.' });
+    }
+    const ev = evRes.rows[0];
+
+    // 2. Update review status
+    await client.query(
+      `UPDATE evidence
+       SET review_status = $1,
+           reviewed_by = $2,
+           reviewed_at = NOW(),
+           reviewer_note = $3,
+           updated_at = NOW()
+       WHERE id = $4`,
+      [normalizedDecision, req.user.id, reviewerNote || null, evidenceId]
+    );
+
+    // 3. Insert Audit Log
+    const auditAction = `EVIDENCE_${normalizedDecision}`;
+    await client.query(
+      `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, new_status, reason, metadata)
+       VALUES ($1, $2, $3, $4, 'Evidence', $5, $6, $7, $8)`,
+      [
+        cid,
+        req.user.id,
+        req.companyMembership.member_role || 'RECRUITER',
+        auditAction,
+        evidenceId,
+        normalizedDecision,
+        reviewerNote || `Recruiter reviewed evidence item: ${normalizedDecision}`,
+        JSON.stringify({ targetId: ev.target_id, requirementId: ev.requirement_id, decision: normalizedDecision }),
+      ]
+    );
+
+    await client.query('COMMIT');
+
+    // 4. Recompute coverage snapshot
+    let coverage = null;
+    if (ev.target_id) {
+      coverage = await recomputeTargetCoverage(pool, ev.target_id);
+    }
+
+    return res.json({
+      message: `Evidence decision recorded: ${normalizedDecision}`,
+      decision: normalizedDecision,
+      coverage,
+    });
+  } catch (err) {
+    try { await client.query('ROLLBACK'); } catch (_) {}
+    console.error('Evidence review error:', err);
+    return res.status(500).json({ error: 'Failed to record evidence review' });
+  } finally {
+    client.release();
+  }
+});
+
+module.exports = { router, recomputeCoverage, recomputeTargetCoverage };
+

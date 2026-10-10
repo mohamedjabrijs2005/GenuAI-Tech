@@ -5,6 +5,7 @@
 
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const pool = require('./src/database/pool');
+const app = require('./src/server');
 
 const BASE_URL = 'http://127.0.0.1:4000/api';
 
@@ -22,7 +23,7 @@ async function request(path, options = {}) {
   let data = null;
   try {
     data = await res.json();
-  } catch (_) {}
+  } catch (_) { }
   return { status: res.status, ok: res.ok, data };
 }
 
@@ -318,13 +319,11 @@ async function run() {
     console.log('\n====================================================');
     console.log('🎉 ALL 16 STEPS OF LIFECYCLE ACCEPTANCE PASSED CLEANLY');
     console.log('====================================================\n');
-  } finally {
-    await pool.end();
+    process.exit(0);
+  } catch (err) {
+    console.error('\n❌ LIFECYCLE TEST FAILED:', err.message);
+    process.exit(1);
   }
 }
 
-run().catch(err => {
-  console.error('\n❌ LIFECYCLE TEST FAILED:', err.message);
-  pool.end();
-  process.exit(1);
-});
+run();

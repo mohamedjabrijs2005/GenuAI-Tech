@@ -2,266 +2,409 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Compass, Briefcase, Target, ShieldCheck, CheckCircle2,
-  ChevronRight, ArrowRight, Layers, Star, Building2, Search, Filter
+  ChevronRight, ArrowRight, Layers, Building2, Search, Filter,
+  Clock, MapPin, DollarSign, Award, AlertCircle
 } from 'lucide-react';
-import { DataService, Vacancy } from '@/lib/dataService';
+import api from '@/lib/api';
 import toast from 'react-hot-toast';
 
+interface PublishedVacancy {
+  id: string;
+  title: string;
+  experience_level: string;
+  employment_type: string;
+  location: string;
+  work_mode: string;
+  salary_range: string;
+  vacancy_count: number;
+  published_at: string;
+  department_name: string;
+  company_id: string;
+  company_name: string;
+  company_status: string;
+  vacancy_version_id: string;
+  version_number: number;
+  requirements_count: number;
+}
+
+interface VacancyRequirement {
+  id: string;
+  name: string;
+  description: string;
+  requirement_type: string;
+  importance: string;
+  eval_method: string;
+  evaluation_methods: string;
+  weight: number;
+}
+
 export default function CandidateTargetPage() {
-  const [vacancies, setVacancies] = useState<Vacancy[]>([]);
-  const [selectedVacancyId, setSelectedVacancyId] = useState<string>('vac-001');
+  const router = useRouter();
+  const [vacancies, setVacancies] = useState<PublishedVacancy[]>([]);
+  const [selectedVacancy, setSelectedVacancy] = useState<PublishedVacancy | null>(null);
+  const [requirements, setRequirements] = useState<VacancyRequirement[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [isTargeting, setIsTargeting] = useState(false);
+  const [activeTargetId, setActiveTargetId] = useState<string | null>(null);
+  const [existingTargets, setExistingTargets] = useState<Record<string, string>>({});
 
+  // Fetch published vacancies and existing candidate targets
   useEffect(() => {
-    DataService.getVacancies()
-      .then((data) => {
-        setVacancies(data);
-        if (data.length > 0) setSelectedVacancyId(data[0].id);
+    let isMounted = true;
+    setLoading(true);
+
+    Promise.all([
+      api.get('/candidate-portal/vacancies'),
+      api.get('/candidate-portal/targets').catch(() => ({ data: { targets: [] } })),
+    ])
+      .then(([vacRes, targetRes]) => {
+        if (!isMounted) return;
+        const vacs: PublishedVacancy[] = vacRes.data?.vacancies || [];
+        setVacancies(vacs);
+
+        // Map existing targets
+        const targetMap: Record<string, string> = {};
+        const targets = targetRes.data?.targets || [];
+        targets.forEach((t: any) => {
+          targetMap[t.vacancy_id] = t.target_id;
+        });
+        setExistingTargets(targetMap);
+
+        if (vacs.length > 0) {
+          loadVacancyDetail(vacs[0].id, vacs[0]);
+        }
       })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        console.error('Failed to load published vacancies:', err);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => { isMounted = false; };
   }, []);
 
-  const selectedRole = vacancies.find(v => v.id === selectedVacancyId) || vacancies[0] || {
-    id: 'vac-001',
-    roleTitle: 'Software Developer',
-    department: 'Engineering',
-    experienceLevel: 'Mid-Level',
-    employmentType: 'Full-Time',
-    status: 'Active',
-    company: 'Apex Neural Systems Ltd',
+  const loadVacancyDetail = (vacancyId: string, summaryObj?: PublishedVacancy) => {
+    api.get(`/candidate-portal/vacancies/${vacancyId}`)
+      .then((res) => {
+        const vac = res.data?.vacancy || summaryObj;
+        setSelectedVacancy(vac);
+        setRequirements(res.data?.requirements || []);
+      })
+      .catch((err) => {
+        console.error('Failed to load vacancy detail:', err);
+      });
   };
 
-  const REQUIREMENTS = [
-    {
-      id: 'REQ-01',
-      name: 'Java (Core & OOP Design Patterns)',
-      category: 'Technical',
-      type: 'Required',
-      priority: 'High',
-      proficiency: 'Senior',
-      weight: 30,
-      evalMethod: 'Official Technical Assessment',
-      description: 'Concurrency models, memory management, garbage collection mechanics, polymorphic class design, SOLID principles',
-    },
-    {
-      id: 'REQ-02',
-      name: 'Distributed Systems & Concurrency',
-      category: 'Architecture',
-      type: 'Required',
-      priority: 'High',
-      proficiency: 'Senior',
-      weight: 25,
-      evalMethod: 'Official Technical Assessment',
-      description: 'Distributed locking, idempotent messaging, race condition mitigation, event sourcing',
-    },
-    {
-      id: 'REQ-03',
-      name: 'PostgreSQL Relational Optimization',
-      category: 'Database',
-      type: 'Required',
-      priority: 'High',
-      proficiency: 'Mid-Senior',
-      weight: 20,
-      evalMethod: 'Official Technical Assessment',
-      description: 'Partial indexes, query planning (EXPLAIN ANALYZE), schema denormalization trade-offs',
-    },
-    {
-      id: 'REQ-04',
-      name: 'AWS Cloud Infrastructure (ECS & Terraform)',
-      category: 'DevOps',
-      type: 'Preferred',
-      priority: 'Medium',
-      proficiency: 'Mid-Level',
-      weight: 15,
-      evalMethod: 'Structured Interview Rubric',
-      description: 'Container orchestration, infrastructure-as-code state management, VPC network topology',
-    },
-    {
-      id: 'REQ-05',
-      name: 'Technical Trade-off Communication',
-      category: 'Communication',
-      type: 'Required',
-      priority: 'Medium',
-      proficiency: 'All Levels',
-      weight: 10,
-      evalMethod: 'Technical Interview',
-      description: 'Defending architectural decisions, articulating constraints, documentation rigor',
-    },
-  ];
+  const handleCreateTarget = async () => {
+    if (!selectedVacancy) return;
+    setIsTargeting(true);
 
-  const handleSetTarget = () => {
-    toast.success(`Active target set to: ${selectedRole.title}`);
+    try {
+      const res = await api.post('/candidate-portal/targets', {
+        vacancyId: selectedVacancy.id,
+      });
+
+      const targetId = res.data?.target?.id;
+      toast.success(`Target created for ${selectedVacancy.title}`);
+      setExistingTargets((prev) => ({ ...prev, [selectedVacancy.id]: targetId }));
+      setActiveTargetId(targetId);
+    } catch (err: any) {
+      if (err.response?.status === 409) {
+        toast.error('You already have an active target for this vacancy.');
+        if (err.response.data?.targetId) {
+          setExistingTargets((prev) => ({ ...prev, [selectedVacancy.id]: err.response.data.targetId }));
+        }
+      } else if (err.response?.status === 401) {
+        toast.error('Please sign in with a candidate account to create targets.');
+        router.push('/login');
+      } else {
+        const msg = err.response?.data?.error || 'Failed to create target';
+        toast.error(msg);
+      }
+    } finally {
+      setIsTargeting(false);
+    }
   };
+
+  const filteredVacancies = vacancies.filter((v) => {
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase();
+    return v.title.toLowerCase().includes(term) || (v.company_name && v.company_name.toLowerCase().includes(term));
+  });
+
+  const isCurrentTargeted = selectedVacancy && !!existingTargets[selectedVacancy.id];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Stage Header */}
-      <div className="page-header" style={{ marginBottom: 0 }}>
-        <div className="breadcrumbs">
-          <span>Candidate Workspace</span>
-          <span className="breadcrumb-sep">/</span>
-          <span className="breadcrumb-current">Stage 1: Target</span>
+      {/* Top Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.4px', margin: 0 }}>
+            Published Vacancies &amp; Target Setup
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '3px 0 0 0' }}>
+            Explore verified vacancies and create targeted workspaces with transparent requirement rubrics.
+          </p>
         </div>
-        <div className="page-header-row">
-          <div>
-            <h1 className="page-title">Target Role & Requirements Alignment</h1>
-            <p className="page-subtitle">
-              Transparent, verified requirements directly from hiring organizations. Zero hidden criteria.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={handleSetTarget} className="btn btn-gold btn-sm">
-              <Target size={14} />
-              <span>Confirm Active Target</span>
-            </button>
-            <Link href="/candidate/learn" className="btn btn-secondary btn-sm">
-              <span>Next: Study Rubrics</span>
-              <ArrowRight size={14} />
-            </Link>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ position: 'relative' }}>
+            <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+            <input
+              type="text"
+              placeholder="Search roles or companies..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="input-field"
+              style={{ paddingLeft: 30, height: 34, fontSize: 12.5, width: 220 }}
+            />
           </div>
         </div>
       </div>
 
-      {/* Grid: Vacancy Picker (Left) + Requirements Matrix (Right) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 20 }}>
-        {/* Roles List */}
-        <div className="card" style={{ padding: 16 }}>
-          <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--text-primary)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Briefcase size={16} />
-            <span>Open Verified Vacancies</span>
+      {/* Two Column Layout: Left Vacancies List, Right Requirement Detail */}
+      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 18, alignItems: 'start' }}>
+        {/* Left Column: Vacancy List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', padding: '0 4px' }}>
+            Verified Vacancies ({filteredVacancies.length})
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {vacancies.length === 0 ? (
-              <div style={{ padding: 16, textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>Loading vacancies…</div>
-            ) : (
-              vacancies.map((v) => {
-                const isSelected = v.id === selectedVacancyId;
-                return (
-                  <div
-                    key={v.id}
-                    onClick={() => setSelectedVacancyId(v.id)}
-                    style={{
-                      padding: '12px 14px',
-                      borderRadius: 8,
-                      border: `1px solid ${isSelected ? 'var(--primary, #b8860b)' : '#e2e8f0'}`,
-                      background: isSelected ? '#fefce8' : '#fff',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)' }}>{v.title}</span>
-                      {isSelected && <span className="badge badge-gold font-bold text-[10px]">Target</span>}
-                    </div>
-                    <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 3 }}>
-                      {v.dept} · {v.experience_level}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Building2 size={11} /> Apex Neural Systems
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-
-        {/* Selected Role Detailed Requirements Breakdown */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-              <div>
-                <span className="badge badge-gold font-bold text-xs" style={{ marginBottom: 6 }}>
-                  Targeted Role
-                </span>
-                <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', margin: '4px 0' }}>
-                  {selectedRole.title}
-                </h2>
-                <div style={{ fontSize: 12.5, color: '#64748b' }}>
-                  Department: <strong>{selectedRole.dept}</strong> · Level: <strong>{selectedRole.experience_level}</strong> · Status: <strong>{selectedRole.status}</strong>
-                </div>
-              </div>
-
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Total Requirements</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--primary, #b8860b)' }}>{REQUIREMENTS.length}</div>
-              </div>
+          {loading ? (
+            <div className="card" style={{ padding: 24, textAlign: 'center', color: '#64748b', fontSize: 12.5 }}>
+              Loading published vacancies...
             </div>
-
-            <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.5, margin: 0 }}>
-              The company has established explicit requirements for this position. Candidates will be assessed
-              directly against these areas using standardized benchmarks, without arbitrary resume keyword matching.
-            </p>
-          </div>
-
-          {/* Requirements Table */}
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
-              <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--text-primary)' }}>
-                Requirement & Capability Matrix ({REQUIREMENTS.length})
-              </div>
+          ) : filteredVacancies.length === 0 ? (
+            <div className="card" style={{ padding: 24, textAlign: 'center', color: '#64748b', fontSize: 12.5 }}>
+              No published vacancies found matching your criteria.
             </div>
+          ) : (
+            filteredVacancies.map((v) => {
+              const isSelected = selectedVacancy?.id === v.id;
+              const isTargeted = !!existingTargets[v.id];
 
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {REQUIREMENTS.map((req, idx) => (
+              return (
                 <div
-                  key={req.id}
+                  key={v.id}
+                  onClick={() => loadVacancyDetail(v.id, v)}
+                  className="card"
                   style={{
-                    padding: '16px 20px',
-                    borderBottom: idx < REQUIREMENTS.length - 1 ? '1px solid #f1f5f9' : 'none',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 8,
+                    padding: 14,
+                    cursor: 'pointer',
+                    border: isSelected ? '1.5px solid #b8860b' : '1px solid var(--border)',
+                    background: isSelected ? '#fffdf7' : '#ffffff',
+                    transition: 'all 0.15s ease',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 800,
-                          padding: '2px 6px',
-                          borderRadius: 4,
-                          background: '#f1f5f9',
-                          color: '#475569',
-                        }}
-                      >
-                        {req.id}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#854d0e' }}>
+                      {v.company_name || 'Verified Company'}
+                    </span>
+                    {isTargeted && (
+                      <span className="badge badge-green" style={{ fontSize: 9.5, padding: '1px 6px' }}>
+                        Targeted
                       </span>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
-                        {req.name}
-                      </span>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span className={`badge ${req.type === 'Required' ? 'badge-red' : 'badge-blue'} font-bold text-xs`}>
-                        {req.type}
-                      </span>
-                      <span className="badge badge-yellow font-bold text-xs">
-                        Weight: {req.weight}%
-                      </span>
-                    </div>
+                    )}
                   </div>
 
-                  <p style={{ fontSize: 12.5, color: '#64748b', margin: 0 }}>
-                    {req.description}
-                  </p>
+                  <h3 style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px 0' }}>
+                    {v.title}
+                  </h3>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 11.5, color: '#94a3b8' }}>
-                    <span>Category: <strong style={{ color: '#475569' }}>{req.category}</strong></span>
-                    <span>Priority: <strong style={{ color: '#475569' }}>{req.priority}</strong></span>
-                    <span>Expected Proficiency: <strong style={{ color: '#475569' }}>{req.proficiency}</strong></span>
-                    <span>Evaluation Mode: <strong style={{ color: '#b8860b' }}>{req.evalMethod}</strong></span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, fontSize: 11, color: '#64748b' }}>
+                    <span>{v.department_name || 'General'}</span>
+                    <span>•</span>
+                    <span style={{ textTransform: 'capitalize' }}>{v.experience_level}</span>
+                    <span>•</span>
+                    <span>{v.work_mode || 'Remote'}</span>
                   </div>
                 </div>
-              ))}
+              );
+            })
+          )}
+        </div>
+
+        {/* Right Column: Selected Vacancy Requirements & Target Action */}
+        <div>
+          {selectedVacancy ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Vacancy Card */}
+              <div className="card" style={{ padding: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span className="badge badge-yellow" style={{ fontSize: 11 }}>
+                        <Building2 size={11} />
+                        {selectedVacancy.company_name}
+                      </span>
+                      <span className="badge badge-green" style={{ fontSize: 11 }}>
+                        <ShieldCheck size={11} />
+                        Verified Entity
+                      </span>
+                      {selectedVacancy.version_number && (
+                        <span style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>
+                          Version {selectedVacancy.version_number}
+                        </span>
+                      )}
+                    </div>
+
+                    <h2 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>
+                      {selectedVacancy.title}
+                    </h2>
+                  </div>
+
+                  <div>
+                    {isCurrentTargeted ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span className="badge badge-green" style={{ padding: '6px 12px', fontSize: 12 }}>
+                          <CheckCircle2 size={14} /> Active Target
+                        </span>
+                        <Link
+                          href={`/candidate`}
+                          className="btn btn-secondary"
+                          style={{ fontSize: 12 }}
+                        >
+                          Open Workspace
+                        </Link>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleCreateTarget}
+                        disabled={isTargeting}
+                        className="btn btn-primary"
+                        style={{
+                          background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
+                          color: '#fff',
+                          fontWeight: 800,
+                          fontSize: 13,
+                          padding: '8px 18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
+                        <Target size={14} />
+                        <span>{isTargeting ? 'Creating Target...' : 'Create Target for this Role'}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Metadata Pills */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, fontSize: 12, color: '#475569', padding: '10px 14px', background: '#f8fafc', borderRadius: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <MapPin size={13} style={{ color: '#64748b' }} />
+                    <span>{selectedVacancy.location || 'Global'} ({selectedVacancy.work_mode || 'Remote'})</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Briefcase size={13} style={{ color: '#64748b' }} />
+                    <span style={{ textTransform: 'capitalize' }}>{selectedVacancy.employment_type?.replace('_', ' ') || 'Full Time'}</span>
+                  </div>
+                  {selectedVacancy.salary_range && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <DollarSign size={13} style={{ color: '#64748b' }} />
+                      <span>{selectedVacancy.salary_range}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Requirements List */}
+              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', background: '#fafaf9' }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                    Transparent Role Requirements ({requirements.length})
+                  </h3>
+                  <p style={{ fontSize: 11.5, color: '#64748b', margin: '2px 0 0 0' }}>
+                    Criteria and evaluation rubrics defined by the hiring organization.
+                  </p>
+                </div>
+
+                {requirements.length === 0 ? (
+                  <div style={{ padding: 24, textAlign: 'center', color: '#64748b', fontSize: 12.5 }}>
+                    No requirement rubrics published for this vacancy.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {requirements.map((req, idx) => (
+                      <div
+                        key={req.id || idx}
+                        style={{
+                          padding: '14px 18px',
+                          borderBottom: idx < requirements.length - 1 ? '1px solid var(--border)' : 'none',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          gap: 14,
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>
+                              {req.name}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 10,
+                                fontWeight: 700,
+                                padding: '1px 6px',
+                                borderRadius: 4,
+                                background: req.importance === 'REQUIRED' ? '#fef2f2' : '#f0fdf4',
+                                color: req.importance === 'REQUIRED' ? '#991b1b' : '#166534',
+                              }}
+                            >
+                              {req.importance || req.requirement_type || 'Required'}
+                            </span>
+                          </div>
+                          {req.description && (
+                            <p style={{ fontSize: 12, color: '#64748b', margin: 0, lineHeight: 1.45 }}>
+                              {req.description}
+                            </p>
+                          )}
+                        </div>
+
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <span style={{ fontSize: 11, color: '#854d0e', fontWeight: 700 }}>
+                            {req.eval_method || 'Assessment'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Modules Roadmap Notice */}
+              <div
+                style={{
+                  padding: '14px 18px',
+                  borderRadius: 8,
+                  background: '#f8fafc',
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  fontSize: 12,
+                  color: '#64748b',
+                }}
+              >
+                <AlertCircle size={15} style={{ color: '#b8860b', flexShrink: 0 }} />
+                <span>
+                  <strong>Phase Delivery Note:</strong> Target creation and vacancy discovery are active now. Learning rubrics, interactive sandboxes, assessment sessions, and evidence reviews are in development for upcoming releases.
+                </span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="card" style={{ padding: 40, textAlign: 'center', color: '#64748b' }}>
+              Select a vacancy to inspect requirements and create a target.
+            </div>
+          )}
         </div>
       </div>
     </div>

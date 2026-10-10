@@ -110,9 +110,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const role = (data.user?.role || '').toUpperCase();
     const isAdmin = ['SUPER_ADMIN', 'VERIFICATION_ADMIN', 'SUPPORT_ADMIN', 'GENUAI_ADMIN'].includes(role);
+    const isCandidate = role === 'CANDIDATE' || role === 'APPLICANT';
 
     if (isAdmin) {
       router.push('/admin');
+    } else if (isCandidate) {
+      router.push('/candidate');
     } else {
       router.push('/dashboard');
     }
@@ -134,7 +137,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
     setCompany(data.company || null);
 
-    router.push('/dashboard');
+    const role = (data.user?.role || '').toUpperCase();
+    const isCandidate = role === 'CANDIDATE' || role === 'APPLICANT';
+
+    if (isCandidate) {
+      router.push('/candidate');
+    } else {
+      router.push('/dashboard');
+    }
   };
 
   const logout = () => {

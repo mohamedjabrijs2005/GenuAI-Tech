@@ -187,6 +187,30 @@ async function seedDev() {
       await client.query("UPDATE users SET password_hash = $1 WHERE id = $2", [pendingHash, pendingUser.id]);
     }
 
+    // 5. Candidate User (CANDIDATE)
+    const candidateHash = await bcrypt.hash('Candidate123!', 10);
+    let candidateUser = (await client.query('SELECT id FROM users WHERE email = $1', ['candidate@genuai.test'])).rows[0];
+    if (!candidateUser) {
+      const res = await client.query(
+        `INSERT INTO users (email, password_hash, first_name, last_name, role)
+         VALUES ($1, $2, 'Alex', 'Rivera', 'CANDIDATE') RETURNING id`,
+        ['candidate@genuai.test', candidateHash]
+      );
+      candidateUser = res.rows[0];
+    } else {
+      await client.query("UPDATE users SET password_hash = $1, role = 'CANDIDATE' WHERE id = $2", [candidateHash, candidateUser.id]);
+    }
+
+    // Candidate profile record
+    let candRecord = (await client.query('SELECT id FROM candidates WHERE email = $1', ['candidate@genuai.test'])).rows[0];
+    if (!candRecord) {
+      await client.query(
+        `INSERT INTO candidates (first_name, last_name, email, phone, location)
+         VALUES ('Alex', 'Rivera', 'candidate@genuai.test', '+1 (555) 234-5678', 'San Francisco, CA')`,
+        []
+      );
+    }
+
     // Record initial seed audit log
     await client.query(
       `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, new_status, reason, metadata)
@@ -198,6 +222,7 @@ async function seedDev() {
     console.log('✅ Development Database Seeding Completed Successfully.');
     console.log('\nSeed Credentials:');
     console.log('  Admin:       admin@genuai.test    / Admin12345!    (SUPER_ADMIN)');
+    console.log('  Candidate:   candidate@genuai.test/ Candidate123!  (CANDIDATE)');
     console.log('  Company A:   companya@genuai.test / CompanyA123!   (APPROVED)');
     console.log('  Company B:   companyb@genuai.test / CompanyB123!   (APPROVED)');
     console.log('  Pending Co:  pending@genuai.test  / Pending123!    (PENDING_VERIFICATION)');

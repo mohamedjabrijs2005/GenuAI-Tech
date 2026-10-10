@@ -7,361 +7,394 @@ import {
   AlertTriangle,
   Eye,
   CheckCircle2,
-  Clock,
   Search,
-  Filter,
-  Layers,
+  RefreshCw,
 } from 'lucide-react';
-import { DataTable, Column } from '@/components/admin/DataTable';
-import { FilterBar } from '@/components/admin/FilterBar';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { DetailDrawer } from '@/components/admin/DetailDrawer';
 import { ConfirmationDialog } from '@/components/admin/ConfirmationDialog';
-import { KPICard } from '@/components/admin/KPICard';
 import { PermissionDeniedState } from '@/components/admin/States';
-import { adminDataService, IntegrityIncident, IncidentStatus } from '@/lib/adminDataService';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import api from '@/lib/api';
 import toast from 'react-hot-toast';
 
+export interface IntegritySignalRecord {
+  id: string;
+  applicationId: string;
+  companyId: string;
+  companyName: string;
+  vacancyTitle: string;
+  candidateName: string;
+  candidateEmail: string;
+  signalType: string;
+  severity: 'Low' | 'Medium' | 'High' | 'Critical';
+  details: any;
+  status: string;
+  signalTime: string;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  reviewNote?: string;
+}
+
 export default function PlatformIntegrityPage() {
-  const { adminUser, hasPermission } = useAdminAuth();
-  const [incidents, setIncidents] = useState<IntegrityIncident[]>(adminDataService.getIntegrityIncidents());
-  const [selectedIncident, setSelectedIncident] = useState<IntegrityIncident | null>(null);
+  const { hasPermission } = useAdminAuth();
+
+  const [signals, setSignals] = useState<IntegritySignalRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
 
-  const [dialogAction, setDialogAction] = useState<IncidentStatus | null>(null);
-  const [targetIncident, setTargetIncident] = useState<IntegrityIncident | null>(null);
+  const [selectedSignal, setSelectedSignal] = useState<IntegritySignalRecord | null>(null);
 
-  const refresh = () => {
-    const list = adminDataService.getIntegrityIncidents();
-    setIncidents(list);
-    if (selectedIncident) {
-      const updated = list.find((i) => i.id === selectedIncident.id);
-      if (updated) setSelectedIncident(updated);
+  // Dialog state
+  const [dialogAction, setDialogAction] = useState<string | null>(null);
+  const [targetSignal, setTargetSignal] = useState<IntegritySignalRecord | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const fetchSignals = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.get('/admin/integrity', {
+        params: {
+          status: statusFilter !== 'ALL' ? statusFilter : undefined,
+        },
+      });
+      setSignals(res.data?.signals || []);
+    } catch (err: any) {
+      console.error('Fetch integrity signals error:', err);
+      setError('Could not load integrity records from PostgreSQL.');
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    const unsub = adminDataService.subscribe(refresh);
-    return () => unsub();
-  }, [selectedIncident]);
+    fetchSignals();
+  }, [statusFilter]);
+
+  const handleConfirmAction = async (note: string) => {
+    if (!targetSignal || !dialogAction) return;
+    setSubmitting(true);
+    try {
+      await api.patch(`/admin/integrity/${targetSignal.id}`, {
+        status: dialogAction,
+        reviewNote: note,
+      });
+      toast.success(`Integrity signal #${targetSignal.id.slice(0, 8)} updated to ${dialogAction}`);
+      fetchSignals();
+    } catch (err: any) {
+      console.error('Signal review error:', err);
+      toast.error(err.response?.data?.error || 'Failed to update integrity signal');
+    } finally {
+      setSubmitting(false);
+      setDialogAction(null);
+      setTargetSignal(null);
+    }
+  };
 
   if (!hasPermission('inspect_evidence')) {
     return <PermissionDeniedState requiredRole="Trust & Safety Admin or Super Admin" />;
   }
 
-  const filtered = incidents.filter((inc) => {
-    const match =
-      inc.id.toLowerCase().includes(search.toLowerCase()) ||
-      inc.companyName.toLowerCase().includes(search.toLowerCase()) ||
-      inc.vacancyRole.toLowerCase().includes(search.toLowerCase()) ||
-      inc.candidateMaskedId.toLowerCase().includes(search.toLowerCase());
-
-    if (!match) return false;
-
-    if (activeTab === 'OPEN') return inc.status === 'Open';
-    if (activeTab === 'INVESTIGATING') return inc.status === 'Under Investigation';
-    if (activeTab === 'RESOLVED') return inc.status === 'Resolved' || inc.status === 'Dismissed';
-    return true;
+  const filteredSignals = signals.filter((s) => {
+    if (!search) return true;
+    const query = search.toLowerCase();
+    return (
+      s.id.toLowerCase().includes(query) ||
+      s.signalType.toLowerCase().includes(query) ||
+      (s.companyName && s.companyName.toLowerCase().includes(query)) ||
+      (s.vacancyTitle && s.vacancyTitle.toLowerCase().includes(query)) ||
+      (s.candidateName && s.candidateName.toLowerCase().includes(query))
+    );
   });
 
-  const handleOpenAction = (inc: IntegrityIncident, status: IncidentStatus) => {
-    setTargetIncident(inc);
-    setDialogAction(status);
-  };
-
-  const handleConfirmAction = (note: string) => {
-    if (!targetIncident || !dialogAction) return;
-    adminDataService.updateIntegrityIncident(
-      targetIncident.id,
-      dialogAction,
-      note || `Observable signals analyzed and certified under platform integrity protocol.`,
-      adminUser.name,
-      adminUser.role
-    );
-    toast.success(`Incident #${targetIncident.id} marked as ${dialogAction}`);
-    setDialogAction(null);
-    setTargetIncident(null);
-  };
-
-  const totalSignals = incidents.reduce((acc, i) => acc + i.signals.length, 0);
-  const openCount = incidents.filter((i) => i.status === 'Open' || i.status === 'Under Investigation').length;
-  const resolvedCount = incidents.filter((i) => i.status === 'Resolved').length;
-
-  const columns: Column<IntegrityIncident>[] = [
-    {
-      key: 'id',
-      header: 'Incident & Session',
-      render: (item) => (
-        <div>
-          <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '13px' }}>
-            {item.id} ({item.candidateMaskedId})
-          </div>
-          <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-            <span style={{ fontFamily: 'monospace' }}>{item.sessionId}</span>
-          </div>
-        </div>
-      ),
-      sortable: true,
-    },
-    {
-      key: 'companyName',
-      header: 'Company / Role',
-      render: (item) => (
-        <div>
-          <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
-            {item.vacancyRole}
-          </div>
-          <div style={{ fontSize: '11px', color: '#94a3b8' }}>{item.companyName}</div>
-        </div>
-      ),
-      sortable: true,
-    },
-    {
-      key: 'signals',
-      header: 'Observable Signals',
-      render: (item) => (
-        <div>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#dc2626' }}>
-            {item.signals.length} Signals Captured
-          </div>
-          <div style={{ fontSize: '11px', color: '#64748b' }}>
-            {item.signals.map((s) => s.type).join(', ')}
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'observableStatus',
-      header: 'Platform Flag',
-      render: (item) => (
-        <span
-          style={{
-            fontSize: '11px',
-            fontWeight: 700,
-            padding: '2px 8px',
-            borderRadius: '4px',
-            background: item.status === 'Resolved' ? '#ecfdf5' : '#fee2e2',
-            color: item.status === 'Resolved' ? '#065f46' : '#991b1b',
-            border: item.status === 'Resolved' ? '1px solid #a7f3d0' : '1px solid #fecaca',
-          }}
-        >
-          {item.observableStatus}
-        </span>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Investigation State',
-      render: (item) => <StatusBadge status={item.status} />,
-      sortable: true,
-    },
-    {
-      key: 'detectedAt',
-      header: 'Detected At',
-      render: (item) => <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{item.detectedAt}</span>,
-      sortable: true,
-    },
-    {
-      key: 'actions',
-      header: 'Action',
-      align: 'right',
-      render: (item) => (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelectedIncident(item);
-          }}
-          style={{
-            padding: '4px 10px',
-            borderRadius: '6px',
-            background: '#f8fafc',
-            border: '1px solid var(--border)',
-            fontSize: '12px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-          }}
-        >
-          <Eye size={13} /> Inspect Signals
-        </button>
-      ),
-    },
-  ];
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-            Platform Integrity & Trust Monitoring
-          </h1>
-          <span
-            style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              padding: '2px 8px',
-              borderRadius: '99px',
-              background: 'rgba(212, 175, 55, 0.15)',
-              color: '#854d0e',
-            }}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Header */}
+      <div className="page-header" style={{ marginBottom: 0 }}>
+        <div className="page-header-row">
+          <div>
+            <h1 className="page-title">Integrity Review</h1>
+            <p className="page-subtitle">
+              Integrity signal detected — review required. Audit observable telemetry signals objectively.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={fetchSignals}
+            disabled={loading}
+            className="btn btn-secondary btn-sm"
           >
-            Observable Signals Oversight
-          </span>
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
+          </button>
         </div>
-        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
-          Examine candidate session proctoring signals, environment shifts, and browser focus telemetry without prejudicial labeling.
-        </p>
       </div>
 
-      {/* Metrics Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
-        <KPICard title="Total Signals Captured" value={totalSignals} subtitle="Cumulative platform telemetry" icon={ShieldAlert} />
-        <KPICard title="Open Incidents" value={openCount} subtitle="Requires administrative review" icon={AlertTriangle} highlight={openCount > 0 ? 'danger' : 'neutral'} />
-        <KPICard title="Resolved Incidents" value={resolvedCount} subtitle="Documented & verified" icon={CheckCircle2} highlight="success" />
-        <KPICard title="Proctoring Anomaly Rate" value="0.42%" subtitle="Across 1,280 sessions" icon={ShieldCheck} />
-      </div>
-
-      <FilterBar
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Filter incidents by incident ID, session ID, company..."
-        tabs={[
-          { key: 'ALL', label: 'All Incidents', count: incidents.length },
-          { key: 'OPEN', label: 'Open Review Required', count: incidents.filter((i) => i.status === 'Open').length },
-          { key: 'INVESTIGATING', label: 'Under Investigation', count: incidents.filter((i) => i.status === 'Under Investigation').length },
-          { key: 'RESOLVED', label: 'Resolved / Dismissed', count: incidents.filter((i) => i.status === 'Resolved' || i.status === 'Dismissed').length },
-        ]}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
-
-      <DataTable
-        columns={columns}
-        data={filtered}
-        keyExtractor={(item) => item.id}
-        onRowClick={(item) => setSelectedIncident(item)}
-        selectedId={selectedIncident?.id}
-      />
-
-      {/* Incident Review Drawer */}
-      <DetailDrawer
-        isOpen={!!selectedIncident}
-        onClose={() => setSelectedIncident(null)}
-        title={`Integrity Incident #${selectedIncident?.id}`}
-        subtitle={`${selectedIncident?.candidateMaskedId} • Session: ${selectedIncident?.sessionId}`}
-        badge={selectedIncident && <StatusBadge status={selectedIncident.status} />}
-        footer={
-          selectedIncident && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '8px' }}>
-              <button
-                onClick={() => handleOpenAction(selectedIncident, 'Dismissed')}
-                style={{
-                  padding: '7px 12px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border)',
-                  background: '#f8fafc',
-                  color: 'var(--text-primary)',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Dismiss (False Positive)
-              </button>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={() => handleOpenAction(selectedIncident, 'Under Investigation')}
-                  style={{
-                    padding: '7px 14px',
-                    borderRadius: '6px',
-                    background: '#fffbeb',
-                    border: '1px solid #fde68a',
-                    color: '#92400e',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Under Investigation
-                </button>
-                <button
-                  onClick={() => handleOpenAction(selectedIncident, 'Resolved')}
-                  style={{
-                    padding: '7px 16px',
-                    borderRadius: '6px',
-                    background: '#059669',
-                    color: '#ffffff',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Record Signal Resolution
-                </button>
-              </div>
-            </div>
-          )
-        }
+      {/* Controls */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          flexWrap: 'wrap',
+          background: '#ffffff',
+          padding: '16px 20px',
+          borderRadius: '8px',
+          border: '1px solid var(--border)',
+        }}
       >
-        {selectedIncident && (
+        <div style={{ position: 'relative', width: '100%', maxWidth: '380px' }}>
+          <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+          <input
+            type="text"
+            placeholder="Search by signal type, company, or vacancy..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="form-input"
+            style={{ paddingLeft: '36px', height: '38px' }}
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+            Status Filter:
+          </span>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="form-select"
+            style={{ height: '38px', minWidth: '200px', fontSize: '13px' }}
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="New">New</option>
+            <option value="Under Review">Under Review</option>
+            <option value="Candidate explanation requested">Explanation Requested</option>
+            <option value="Resolved">Resolved</option>
+            <option value="No action">No action</option>
+            <option value="Assessment attempt invalidated">Attempt Invalidated</option>
+            <option value="Escalated">Escalated</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Error state */}
+      {error && (
+        <div style={{ padding: '16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#991b1b', fontSize: '13.5px' }}>
+          {error}
+        </div>
+      )}
+
+      {/* Signals Table */}
+      <div className="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Signal ID</th>
+              <th>Signal Type</th>
+              <th>Company & Vacancy</th>
+              <th>Severity</th>
+              <th>Status</th>
+              <th>Detected Timestamp</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
+                  Loading integrity signals from PostgreSQL...
+                </td>
+              </tr>
+            ) : filteredSignals.length === 0 ? (
+              <tr>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
+                  No integrity signals recorded.
+                </td>
+              </tr>
+            ) : (
+              filteredSignals.map((sig) => (
+                <tr key={sig.id}>
+                  <td>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '12.5px', fontFamily: 'monospace' }}>
+                      #{sig.id.slice(0, 8)}
+                    </div>
+                  </td>
+                  <td>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '13.5px' }}>
+                      {sig.signalType}
+                    </div>
+                  </td>
+                  <td>
+                    <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '12.5px' }}>
+                      {sig.vacancyTitle}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>
+                      {sig.companyName}
+                    </div>
+                  </td>
+                  <td>
+                    <span
+                      className={
+                        sig.severity === 'Critical' || sig.severity === 'High'
+                          ? 'priority-high'
+                          : sig.severity === 'Medium'
+                          ? 'priority-medium'
+                          : 'priority-low'
+                      }
+                    >
+                      {sig.severity} Severity
+                    </span>
+                  </td>
+                  <td>
+                    <StatusBadge status={sig.status} />
+                  </td>
+                  <td style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                    {sig.signalTime ? sig.signalTime.replace('T', ' ').substring(0, 16) : '—'}
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSignal(sig)}
+                      className="btn btn-secondary btn-sm"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                    >
+                      <Eye size={13} /> Review Context
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Signal Detail Drawer */}
+      {selectedSignal && (
+        <DetailDrawer
+          isOpen={Boolean(selectedSignal)}
+          onClose={() => setSelectedSignal(null)}
+          title={`Integrity Signal #${selectedSignal.id.slice(0, 8)}`}
+          subtitle={`Type: ${selectedSignal.signalType} • Severity: ${selectedSignal.severity}`}
+        >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', fontSize: '13px' }}>
-            <div style={{ background: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '12px', textTransform: 'uppercase' }}>
-                Captured Telemetry Signals ({selectedIncident.signals.length})
+            <div
+              style={{
+                padding: '14px 16px',
+                borderRadius: '8px',
+                background: '#f8fafc',
+                border: '1px solid var(--border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block' }}>
+                  Current Status
+                </span>
+                <StatusBadge status={selectedSignal.status} />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {selectedIncident.signals.map((sig, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      padding: '12px',
-                      borderRadius: '6px',
-                      background: sig.severity === 'high' ? '#fef2f2' : '#fffbeb',
-                      border: sig.severity === 'high' ? '1px solid #fecaca' : '1px solid #fde68a',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: sig.severity === 'high' ? '#991b1b' : '#92400e' }}>
-                      <span>{sig.type}</span>
-                      <span style={{ fontSize: '11px', fontWeight: 600 }}>{sig.timestamp}</span>
-                    </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                      {sig.context}
-                    </div>
-                  </div>
-                ))}
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block' }}>
+                  Telemetry Timestamp
+                </span>
+                <strong>{selectedSignal.signalTime ? selectedSignal.signalTime.replace('T', ' ').substring(0, 19) : '—'}</strong>
               </div>
             </div>
 
-            {selectedIncident.resolutionNote && (
-              <div style={{ padding: '14px', background: '#ecfdf5', borderRadius: '8px', border: '1px solid #a7f3d0' }}>
-                <div style={{ fontSize: '11px', fontWeight: 800, color: '#065f46', textTransform: 'uppercase', marginBottom: '4px' }}>
-                  Recorded Resolution ({selectedIncident.resolvedBy} • {selectedIncident.resolvedAt})
+            <div>
+              <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                Context & Related Entity
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div style={{ padding: '8px 12px', background: '#ffffff', border: '1px solid var(--border)', borderRadius: '6px' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Company</span>
+                  <strong>{selectedSignal.companyName}</strong>
                 </div>
-                <div style={{ color: '#064e3b', fontSize: '12.5px', lineHeight: 1.5 }}>
-                  {selectedIncident.resolutionNote}
+                <div style={{ padding: '8px 12px', background: '#ffffff', border: '1px solid var(--border)', borderRadius: '6px' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Vacancy</span>
+                  <strong>{selectedSignal.vacancyTitle}</strong>
                 </div>
+              </div>
+            </div>
+
+            {selectedSignal.reviewNote && (
+              <div style={{ padding: '12px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', color: '#92400e' }}>
+                <strong style={{ display: 'block', fontSize: '12px', marginBottom: '2px' }}>Reviewer Note:</strong>
+                {selectedSignal.reviewNote}
               </div>
             )}
-          </div>
-        )}
-      </DetailDrawer>
 
-      <ConfirmationDialog
-        isOpen={!!dialogAction}
-        onClose={() => {
-          setDialogAction(null);
-          setTargetIncident(null);
-        }}
-        onConfirm={handleConfirmAction}
-        title={`Confirm Incident Status: ${dialogAction}`}
-        description={`Record official integrity finding for incident #${targetIncident?.id} as "${dialogAction}"?`}
-        variant={dialogAction === 'Resolved' ? 'success' : 'warning'}
-        requireNote
-      />
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+              <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '10px' }}>
+                Governance Actions
+              </h4>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTargetSignal(selectedSignal);
+                    setDialogAction('No action');
+                  }}
+                  className="btn btn-secondary btn-sm"
+                >
+                  Mark No Action
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTargetSignal(selectedSignal);
+                    setDialogAction('Candidate explanation requested');
+                  }}
+                  className="btn btn-secondary btn-sm"
+                >
+                  Request Explanation
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTargetSignal(selectedSignal);
+                    setDialogAction('Resolved');
+                  }}
+                  className="btn btn-gold btn-sm"
+                >
+                  Resolve Signal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTargetSignal(selectedSignal);
+                    setDialogAction('Assessment attempt invalidated');
+                  }}
+                  style={{ padding: '6px 12px', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', fontSize: '12.5px', fontWeight: 700 }}
+                >
+                  Invalidate Attempt
+                </button>
+              </div>
+            </div>
+          </div>
+        </DetailDrawer>
+      )}
+
+      {/* Confirmation Dialog */}
+      {targetSignal && dialogAction && (
+        <ConfirmationDialog
+          isOpen={Boolean(targetSignal && dialogAction)}
+          onClose={() => {
+            setDialogAction(null);
+            setTargetSignal(null);
+          }}
+          onConfirm={handleConfirmAction}
+          title={`Set status '${dialogAction}' on signal #${targetSignal.id.slice(0, 8)}?`}
+          message="Provide a governance review note for the audit record."
+          confirmLabel={`Confirm ${dialogAction}`}
+          requireReason={true}
+          reasonPlaceholder="Enter review explanation..."
+        />
+      )}
     </div>
   );
 }

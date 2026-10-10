@@ -269,16 +269,13 @@ async function runTestSuite() {
 
     if (failed === 0) {
       console.log('🎉 RESULT: READY FOR CANDIDATE DEVELOPMENT');
-      await pool.end();
       process.exit(0);
     } else {
       console.error('❌ RESULT: NOT READY FOR CANDIDATE DEVELOPMENT');
-      await pool.end();
       process.exit(1);
     }
   } catch (err) {
     console.error('Test Suite Exception:', err);
-    await pool.end();
     process.exit(1);
   }
 }

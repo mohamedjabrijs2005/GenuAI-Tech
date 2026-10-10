@@ -5,8 +5,12 @@ import React from 'react';
 export type StatusVariant =
   | 'pending'
   | 'pending_review'
+  | 'pending_verification'
+  | 'pending_admin_review'
   | 'under_review'
   | 'needs_correction'
+  | 'changes_requested'
+  | 'additional_information_required'
   | 'verified'
   | 'approved'
   | 'rejected'
@@ -38,6 +42,32 @@ interface StatusBadgeProps {
 export function StatusBadge({ status, variant, size = 'sm', showDot = true }: StatusBadgeProps) {
   const norm = (variant || status.toLowerCase().replace(/\s+/g, '_')) as StatusVariant;
 
+  const getLabel = (raw: string): string => {
+    switch (raw.toUpperCase()) {
+      case 'PENDING_VERIFICATION':
+        return 'Pending verification';
+      case 'PENDING_ADMIN_REVIEW':
+        return 'Pending review';
+      case 'CHANGES_REQUESTED':
+        return 'Changes requested';
+      case 'ADDITIONAL_INFORMATION_REQUIRED':
+        return 'Information required';
+      case 'UNDER_REVIEW':
+        return 'Under review';
+      case 'IN_PROGRESS':
+        return 'In progress';
+      default:
+        // Format underscores to spaces and capitalize cleanly
+        if (raw.includes('_')) {
+          return raw
+            .split('_')
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+            .join(' ');
+        }
+        return raw;
+    }
+  };
+
   const getStyle = (): { bg: string; text: string; border: string; dot: string } => {
     switch (norm) {
       case 'verified':
@@ -53,6 +83,8 @@ export function StatusBadge({ status, variant, size = 'sm', showDot = true }: St
         };
       case 'pending':
       case 'pending_review':
+      case 'pending_verification':
+      case 'pending_admin_review':
       case 'under_review':
       case 'investigating':
       case 'open':
@@ -63,6 +95,8 @@ export function StatusBadge({ status, variant, size = 'sm', showDot = true }: St
           dot: '#3b82f6',
         };
       case 'needs_correction':
+      case 'changes_requested':
+      case 'additional_information_required':
       case 'action_required':
       case 'medium':
       case 'degraded':
@@ -138,7 +172,7 @@ export function StatusBadge({ status, variant, size = 'sm', showDot = true }: St
           }}
         />
       )}
-      {status}
+      {getLabel(status)}
     </span>
   );
 }

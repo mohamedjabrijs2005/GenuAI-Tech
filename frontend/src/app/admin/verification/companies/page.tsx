@@ -7,471 +7,479 @@ import {
   AlertTriangle,
   XCircle,
   Clock,
-  ShieldCheck,
-  FileText,
   ExternalLink,
   Search,
   Filter,
   Eye,
-  ShieldAlert,
-  ArrowRight,
+  RefreshCw,
+  UserCheck,
 } from 'lucide-react';
-import { DataTable, Column } from '@/components/admin/DataTable';
-import { FilterBar } from '@/components/admin/FilterBar';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { DetailDrawer } from '@/components/admin/DetailDrawer';
 import { ConfirmationDialog } from '@/components/admin/ConfirmationDialog';
 import { PermissionDeniedState } from '@/components/admin/States';
-import { adminDataService, AdminCompany, VerificationStatus } from '@/lib/adminDataService';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import api from '@/lib/api';
 import toast from 'react-hot-toast';
 
+export interface CompanyRecord {
+  id: string;
+  name: string;
+  domain: string;
+  workEmail: string;
+  industry: string;
+  employeeCount: string;
+  registrationNumber: string;
+  country: string;
+  website: string;
+  description: string;
+  verificationStatus: string;
+  submittedDate: string;
+  updatedAt?: string;
+  reviewState: string;
+  assignedAdmin: string;
+  reviewNote: string;
+  activeVacanciesCount: number;
+}
+
 export default function CompanyVerificationPage() {
-  const { adminUser, hasPermission } = useAdminAuth();
-  const [companies, setCompanies] = useState<AdminCompany[]>(adminDataService.getCompanies());
-  const [selectedCompany, setSelectedCompany] = useState<AdminCompany | null>(null);
+  const { hasPermission } = useAdminAuth();
+
+  const [companies, setCompanies] = useState<CompanyRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
 
-  // Action Dialog state
-  const [actionType, setActionType] = useState<VerificationStatus | null>(null);
-  const [dialogCompany, setDialogCompany] = useState<AdminCompany | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<CompanyRecord | null>(null);
+  const [companyDetails, setCompanyDetails] = useState<any>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
-  const refreshCompanies = () => {
-    const list = adminDataService.getCompanies();
-    setCompanies(list);
-    if (selectedCompany) {
-      const updated = list.find((c) => c.id === selectedCompany.id);
-      if (updated) setSelectedCompany(updated);
+  // Dialog action state
+  const [actionType, setActionType] = useState<string | null>(null);
+  const [dialogCompany, setDialogCompany] = useState<CompanyRecord | null>(null);
+  const [actionSubmitting, setActionSubmitting] = useState(false);
+
+  const fetchCompanies = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.get('/admin/companies', {
+        params: {
+          status: statusFilter !== 'ALL' ? statusFilter : undefined,
+          search: search || undefined,
+        },
+      });
+      setCompanies(res.data?.companies || []);
+    } catch (err: any) {
+      console.error('Fetch companies error:', err);
+      setError('Could not load company verification records from PostgreSQL.');
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    const unsub = adminDataService.subscribe(refreshCompanies);
-    return () => unsub();
-  }, [selectedCompany]);
+    fetchCompanies();
+  }, [statusFilter]);
 
-  if (!hasPermission('verify_company')) {
-    return <PermissionDeniedState requiredRole="Verification Admin or Super Admin" />;
-  }
+  const handleOpenDetails = async (comp: CompanyRecord) => {
+    setSelectedCompany(comp);
+    setDetailsLoading(true);
+    try {
+      const res = await api.get(`/admin/companies/${comp.id}`);
+      setCompanyDetails(res.data);
+    } catch (err) {
+      console.error('Failed to load company details:', err);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
 
-  // Filter logic
-  const filteredCompanies = companies.filter((comp) => {
-    const matchesSearch =
-      comp.name.toLowerCase().includes(search.toLowerCase()) ||
-      comp.domain.toLowerCase().includes(search.toLowerCase()) ||
-      comp.industry.toLowerCase().includes(search.toLowerCase()) ||
-      comp.registrationNumber.toLowerCase().includes(search.toLowerCase());
-
-    if (!matchesSearch) return false;
-
-    if (activeTab === 'PENDING') return ['Pending', 'Under Review', 'PENDING_VERIFICATION', 'UNDER_REVIEW'].includes(comp.verificationStatus);
-    if (activeTab === 'CORRECTION') return ['Needs Correction', 'ADDITIONAL_INFORMATION_REQUIRED'].includes(comp.verificationStatus);
-    if (activeTab === 'VERIFIED') return ['Verified', 'APPROVED'].includes(comp.verificationStatus);
-    if (activeTab === 'REJECTED') return ['Rejected', 'Suspended', 'REJECTED', 'SUSPENDED'].includes(comp.verificationStatus);
-    return true;
-  });
-
-  const handleOpenAction = (company: AdminCompany, status: VerificationStatus) => {
+  const handleOpenAction = (company: CompanyRecord, targetStatus: string) => {
     setDialogCompany(company);
-    setActionType(status);
+    setActionType(targetStatus);
   };
 
   const handleConfirmAction = async (note: string) => {
     if (!dialogCompany || !actionType) return;
+    setActionSubmitting(true);
     try {
-      await adminDataService.updateCompanyStatus(
-        dialogCompany.id,
-        actionType,
-        adminUser.name,
-        adminUser.role,
-        note
-      );
-      toast.success(`Company ${dialogCompany.name} marked as ${actionType}`);
+      await api.put(`/admin/companies/${dialogCompany.id}/status`, {
+        status: actionType,
+        note,
+        reason: note,
+      });
+      toast.success(`Company ${dialogCompany.name} updated to ${actionType.replace(/_/g, ' ')}`);
+      fetchCompanies();
+      if (selectedCompany?.id === dialogCompany.id) {
+        handleOpenDetails(dialogCompany);
+      }
     } catch (err: any) {
-      toast.error(err.response?.data?.error || err.message || 'Failed to update status');
+      console.error('Status change error:', err);
+      toast.error(err.response?.data?.error || 'Failed to update status');
     } finally {
+      setActionSubmitting(false);
       setActionType(null);
       setDialogCompany(null);
     }
   };
 
-  const columns: Column<AdminCompany>[] = [
-    {
-      key: 'name',
-      header: 'Company & Domain',
-      render: (item) => (
-        <div>
-          <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '13.5px' }}>
-            {item.name}
-          </div>
-          <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span>{item.domain}</span>
-            <span style={{ color: '#94a3b8' }}>•</span>
-            <span style={{ color: '#854d0e', fontWeight: 600 }}>{item.country}</span>
-          </div>
-        </div>
-      ),
-      sortable: true,
-    },
-    {
-      key: 'industry',
-      header: 'Industry / Size',
-      render: (item) => (
-        <div>
-          <div style={{ fontSize: '12.5px', color: 'var(--text-primary)' }}>{item.industry}</div>
-          <div style={{ fontSize: '11px', color: '#94a3b8' }}>{item.employeeCount} employees</div>
-        </div>
-      ),
-    },
-    {
-      key: 'verificationStatus',
-      header: 'Verification Status',
-      render: (item) => <StatusBadge status={item.verificationStatus} />,
-      sortable: true,
-    },
-    {
-      key: 'submittedDate',
-      header: 'Submitted Date',
-      render: (item) => (
-        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{item.submittedDate}</span>
-      ),
-      sortable: true,
-    },
-    {
-      key: 'reviewState',
-      header: 'Review State',
-      render: (item) => (
-        <span
-          style={{
-            fontSize: '11px',
-            fontWeight: 700,
-            padding: '2px 8px',
-            borderRadius: '4px',
-            background: '#f1f5f9',
-            color: '#475569',
-          }}
-        >
-          {item.reviewState}
-        </span>
-      ),
-    },
-    {
-      key: 'assignedAdmin',
-      header: 'Assigned Admin',
-      render: (item) => (
-        <span style={{ fontSize: '12px', fontWeight: 600, color: '#0f172a' }}>{item.assignedAdmin}</span>
-      ),
-    },
-    {
-      key: 'actions',
-      header: 'Governance Action',
-      align: 'right',
-      render: (item) => (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }} onClick={(e) => e.stopPropagation()}>
-          <button
-            onClick={() => setSelectedCompany(item)}
-            style={{
-              padding: '4px 10px',
-              borderRadius: '6px',
-              background: '#f8fafc',
-              border: '1px solid var(--border)',
-              color: 'var(--text-primary)',
-              fontSize: '12px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-            }}
-          >
-            <Eye size={13} /> Review
-          </button>
-        </div>
-      ),
-    },
-  ];
+  if (!hasPermission('verify_company')) {
+    return <PermissionDeniedState requiredRole="Verification Admin or Super Admin" />;
+  }
 
-  const pendingCount = companies.filter((c) => c.verificationStatus === 'Pending' || c.verificationStatus === 'Under Review').length;
-  const correctionCount = companies.filter((c) => c.verificationStatus === 'Needs Correction').length;
-  const verifiedCount = companies.filter((c) => c.verificationStatus === 'Verified').length;
-  const rejectedCount = companies.filter((c) => c.verificationStatus === 'Rejected' || c.verificationStatus === 'Suspended').length;
+  // Filter local search
+  const filteredCompanies = companies.filter((c) => {
+    if (!search) return true;
+    const query = search.toLowerCase();
+    return (
+      c.name.toLowerCase().includes(query) ||
+      (c.workEmail && c.workEmail.toLowerCase().includes(query)) ||
+      (c.industry && c.industry.toLowerCase().includes(query))
+    );
+  });
+
+  // Verification completeness calculation (only from clearly defined fields)
+  const calculateCompleteness = (comp: any) => {
+    if (!comp) return 0;
+    const checks = [
+      Boolean(comp.name),
+      Boolean(comp.website),
+      Boolean(comp.official_email || comp.workEmail),
+      Boolean(comp.location || comp.country),
+      Boolean(comp.industry),
+      Boolean(comp.hiring_contact_name || comp.hiring_contact_email),
+    ];
+    const completed = checks.filter(Boolean).length;
+    return Math.round((completed / checks.length) * 100);
+  };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Page Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-              Company Verification
-            </h1>
-            <span
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                padding: '2px 8px',
-                borderRadius: '99px',
-                background: 'rgba(212, 175, 55, 0.15)',
-                color: '#854d0e',
-              }}
-            >
-              Platform Trust Center
-            </span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Header */}
+      <div className="page-header" style={{ marginBottom: 0 }}>
+        <div className="page-header-row">
+          <div>
+            <h1 className="page-title">Company Verification</h1>
+            <p className="page-subtitle">
+              Review company registration details before allowing recruitment activity.
+            </p>
           </div>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
-            Audit and certify corporate identities, business registration, domain ownership, and compliance documents.
-          </p>
+          <button
+            type="button"
+            onClick={fetchCompanies}
+            disabled={loading}
+            className="btn btn-secondary btn-sm"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
+          </button>
         </div>
       </div>
 
-      {/* Filter and Tab Bar */}
-      <FilterBar
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Filter companies by name, domain, industry, tax ID..."
-        tabs={[
-          { key: 'ALL', label: 'All Companies', count: companies.length },
-          { key: 'PENDING', label: 'Pending Verification', count: pendingCount },
-          { key: 'CORRECTION', label: 'Needs Correction', count: correctionCount },
-          { key: 'VERIFIED', label: 'Verified Entities', count: verifiedCount },
-          { key: 'REJECTED', label: 'Rejected / Suspended', count: rejectedCount },
-        ]}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
-
-      {/* Data Table */}
-      <DataTable
-        columns={columns}
-        data={filteredCompanies}
-        keyExtractor={(item) => item.id}
-        onRowClick={(item) => setSelectedCompany(item)}
-        selectedId={selectedCompany?.id}
-      />
-
-      {/* Company Review Detail Drawer */}
-      <DetailDrawer
-        isOpen={!!selectedCompany}
-        onClose={() => setSelectedCompany(null)}
-        title={selectedCompany?.name || 'Company Profile'}
-        subtitle={`Domain: ${selectedCompany?.domain} • Reg: ${selectedCompany?.registrationNumber}`}
-        badge={selectedCompany && <StatusBadge status={selectedCompany.verificationStatus} />}
-        footer={
-          selectedCompany && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button
-                  onClick={() => handleOpenAction(selectedCompany, 'Suspended')}
-                  style={{
-                    padding: '7px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid #fee2e2',
-                    background: '#ffffff',
-                    color: '#dc2626',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Suspend Entity
-                </button>
-                <button
-                  onClick={() => handleOpenAction(selectedCompany, 'Rejected')}
-                  style={{
-                    padding: '7px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid #fee2e2',
-                    background: '#fef2f2',
-                    color: '#991b1b',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Reject Application
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={() => handleOpenAction(selectedCompany, 'Needs Correction')}
-                  style={{
-                    padding: '7px 14px',
-                    borderRadius: '6px',
-                    background: '#fffbeb',
-                    border: '1px solid #fde68a',
-                    color: '#92400e',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Request Correction
-                </button>
-                <button
-                  onClick={() => handleOpenAction(selectedCompany, 'Verified')}
-                  style={{
-                    padding: '7px 18px',
-                    borderRadius: '6px',
-                    background: '#059669',
-                    color: '#ffffff',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  }}
-                >
-                  Grant Verified Status
-                </button>
-              </div>
-            </div>
-          )
-        }
-      >
-        {selectedCompany && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontSize: '13px' }}>
-            {/* Trust Score & Verification Overview */}
-            <div
-              style={{
-                padding: '16px',
-                borderRadius: '8px',
-                background: '#ffffff',
-                border: '1px solid var(--border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                  Verification Completeness
-                </div>
-                <div style={{ fontSize: '24px', fontWeight: 900, color: selectedCompany.trustScore > 80 ? '#059669' : '#d97706' }}>
-                  {selectedCompany.trustScore}%
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Active Vacancies: <strong>{selectedCompany.activeVacanciesCount}</strong></div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Total Assessments: <strong>{selectedCompany.totalAssessmentsCount}</strong></div>
-              </div>
-            </div>
-
-            {/* Business & Legal Information */}
-            <div style={{ background: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '12px', textTransform: 'uppercase' }}>
-                Corporate Identification
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Work Email</div>
-                  <div style={{ fontWeight: 600 }}>{selectedCompany.workEmail}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Official Website</div>
-                  <a
-                    href={selectedCompany.website}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ color: '#b8860b', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                  >
-                    {selectedCompany.website} <ExternalLink size={11} />
-                  </a>
-                </div>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Registration / Tax ID</div>
-                  <div style={{ fontFamily: 'monospace', fontWeight: 600 }}>{selectedCompany.registrationNumber}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Jurisdiction</div>
-                  <div style={{ fontWeight: 600 }}>{selectedCompany.country}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Submitted Documents */}
-            <div style={{ background: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '12px', textTransform: 'uppercase' }}>
-                Verification Documents ({selectedCompany.documents.length})
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {selectedCompany.documents.map((doc, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      padding: '10px 12px',
-                      borderRadius: '6px',
-                      background: '#f8fafc',
-                      border: '1px solid var(--border)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <FileText size={16} style={{ color: '#b8860b' }} />
-                      <div>
-                        <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {doc.name}
-                        </div>
-                        <div style={{ fontSize: '10.5px', color: '#94a3b8' }}>Type: {doc.type}</div>
-                      </div>
-                    </div>
-                    <span
-                      style={{
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        color: doc.verified ? '#059669' : '#d97706',
-                      }}
-                    >
-                      {doc.verified ? 'Cryptographically Verified' : 'Awaiting Review'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Audit & Action History */}
-            <div style={{ background: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '12px', textTransform: 'uppercase' }}>
-                Audit History Trail
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {selectedCompany.history.map((h, i) => (
-                  <div key={i} style={{ borderLeft: '2px solid #b8860b', paddingLeft: '10px', fontSize: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b' }}>
-                      <span style={{ fontWeight: 700, color: '#0f172a' }}>{h.action} ({h.admin})</span>
-                      <span style={{ fontSize: '11px' }}>{h.date}</span>
-                    </div>
-                    <div style={{ color: 'var(--text-secondary)', marginTop: '2px' }}>{h.note}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </DetailDrawer>
-
-      {/* Confirmation Dialog for Actions */}
-      <ConfirmationDialog
-        isOpen={!!actionType}
-        onClose={() => {
-          setActionType(null);
-          setDialogCompany(null);
+      {/* Primary Controls */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          flexWrap: 'wrap',
+          background: '#ffffff',
+          padding: '16px 20px',
+          borderRadius: '8px',
+          border: '1px solid var(--border)',
         }}
-        onConfirm={handleConfirmAction}
-        title={`Confirm Action: ${actionType}`}
-        description={`Are you sure you want to set the verification status of "${dialogCompany?.name}" to ${actionType}? This will be recorded in the platform immutable audit log.`}
-        variant={
-          actionType === 'Rejected' || actionType === 'Suspended'
-            ? 'danger'
-            : actionType === 'Needs Correction'
-            ? 'warning'
-            : 'success'
-        }
-        confirmLabel={`Confirm ${actionType}`}
-        requireNote={actionType === 'Needs Correction' || actionType === 'Rejected' || actionType === 'Suspended'}
-      />
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '280px' }}>
+          <div style={{ position: 'relative', width: '100%', maxWidth: '360px' }}>
+            <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+            <input
+              type="text"
+              placeholder="Search by company name, email, or industry..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="form-input"
+              style={{ paddingLeft: '36px', height: '38px' }}
+            />
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+            Status Filter:
+          </span>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="form-select"
+            style={{ height: '38px', minWidth: '210px', fontSize: '13px' }}
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="PENDING_VERIFICATION">Pending verification</option>
+            <option value="UNDER_REVIEW">Under review</option>
+            <option value="ADDITIONAL_INFORMATION_REQUIRED">Information required</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+            <option value="SUSPENDED">Suspended</option>
+            <option value="ARCHIVED">Archived</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Error state */}
+      {error && (
+        <div style={{ padding: '16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#991b1b', fontSize: '13.5px' }}>
+          {error}
+        </div>
+      )}
+
+      {/* Companies Table */}
+      <div className="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Contact Email</th>
+              <th>Industry</th>
+              <th>Verification Status</th>
+              <th>Vacancies</th>
+              <th>Registered Date</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
+                  Loading company verification records from PostgreSQL...
+                </td>
+              </tr>
+            ) : filteredCompanies.length === 0 ? (
+              <tr>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
+                  No companies found matching the filter criteria.
+                </td>
+              </tr>
+            ) : (
+              filteredCompanies.map((comp) => (
+                <tr key={comp.id}>
+                  <td>
+                    <div>
+                      <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '13.5px' }}>
+                        {comp.name}
+                      </div>
+                      {comp.website && (
+                        <a
+                          href={comp.website.startsWith('http') ? comp.website : `https://${comp.website}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ fontSize: '11.5px', color: '#b8860b', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                        >
+                          {comp.website} <ExternalLink size={10} />
+                        </a>
+                      )}
+                    </div>
+                  </td>
+                  <td style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                    {comp.workEmail || '—'}
+                  </td>
+                  <td style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                    {comp.industry || 'Technology'}
+                  </td>
+                  <td>
+                    <StatusBadge status={comp.verificationStatus} />
+                  </td>
+                  <td style={{ fontSize: '13px', fontWeight: 600 }}>
+                    {comp.activeVacanciesCount ?? 0} active
+                  </td>
+                  <td style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                    {comp.submittedDate || '—'}
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenDetails(comp)}
+                      className="btn btn-secondary btn-sm"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                    >
+                      <Eye size={13} /> Review
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Company Detail Drawer */}
+      {selectedCompany && (
+        <DetailDrawer
+          isOpen={Boolean(selectedCompany)}
+          onClose={() => {
+            setSelectedCompany(null);
+            setCompanyDetails(null);
+          }}
+          title={selectedCompany.name}
+          subtitle={`Registration ID: ${selectedCompany.id}`}
+        >
+          {detailsLoading ? (
+            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              Loading full company profile and audit history...
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontSize: '13px' }}>
+              {/* Header Status & Completeness */}
+              <div
+                style={{
+                  padding: '16px',
+                  borderRadius: '8px',
+                  background: '#f8fafc',
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '16px',
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Verification Status
+                  </div>
+                  <div style={{ marginTop: '4px' }}>
+                    <StatusBadge status={selectedCompany.verificationStatus} />
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Verification Completeness
+                  </div>
+                  <div style={{ fontSize: '18px', fontWeight: 800, color: '#854d0e', marginTop: '2px' }}>
+                    {calculateCompleteness(companyDetails?.company || selectedCompany)}%
+                  </div>
+                </div>
+              </div>
+
+              {/* Company Metadata */}
+              <div>
+                <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                  Registration Specifications
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div style={{ padding: '10px', background: '#ffffff', border: '1px solid var(--border)', borderRadius: '6px' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Official Domain</span>
+                    <strong>{companyDetails?.company?.website || selectedCompany.website || '—'}</strong>
+                  </div>
+                  <div style={{ padding: '10px', background: '#ffffff', border: '1px solid var(--border)', borderRadius: '6px' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Official Email</span>
+                    <strong>{companyDetails?.company?.official_email || selectedCompany.workEmail || '—'}</strong>
+                  </div>
+                  <div style={{ padding: '10px', background: '#ffffff', border: '1px solid var(--border)', borderRadius: '6px' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Industry</span>
+                    <strong>{companyDetails?.company?.industry || selectedCompany.industry || '—'}</strong>
+                  </div>
+                  <div style={{ padding: '10px', background: '#ffffff', border: '1px solid var(--border)', borderRadius: '6px' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Location / Address</span>
+                    <strong>{companyDetails?.company?.location || selectedCompany.country || 'Global'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              {companyDetails?.company?.description && (
+                <div>
+                  <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                    Company Description
+                  </h4>
+                  <p style={{ color: 'var(--text-secondary)', lineHeight: 1.5, background: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                    {companyDetails.company.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Admin Decision Note if exists */}
+              {selectedCompany.reviewNote && (
+                <div style={{ padding: '12px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', color: '#92400e' }}>
+                  <strong style={{ display: 'block', fontSize: '12px', marginBottom: '2px' }}>Previous Review Note:</strong>
+                  {selectedCompany.reviewNote}
+                </div>
+              )}
+
+              {/* Actions Section */}
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '10px' }}>
+                  Governance Actions
+                </h4>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {selectedCompany.verificationStatus !== 'APPROVED' && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenAction(selectedCompany, 'APPROVED')}
+                      className="btn btn-gold btn-sm"
+                    >
+                      <CheckCircle2 size={13} /> Approve Company
+                    </button>
+                  )}
+                  {selectedCompany.verificationStatus !== 'ADDITIONAL_INFORMATION_REQUIRED' && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenAction(selectedCompany, 'ADDITIONAL_INFORMATION_REQUIRED')}
+                      className="btn btn-secondary btn-sm"
+                    >
+                      <AlertTriangle size={13} /> Request Info
+                    </button>
+                  )}
+                  {selectedCompany.verificationStatus !== 'REJECTED' && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenAction(selectedCompany, 'REJECTED')}
+                      style={{ padding: '6px 12px', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', fontSize: '12.5px', fontWeight: 700 }}
+                    >
+                      <XCircle size={13} /> Reject
+                    </button>
+                  )}
+                  {selectedCompany.verificationStatus !== 'SUSPENDED' && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenAction(selectedCompany, 'SUSPENDED')}
+                      style={{ padding: '6px 12px', borderRadius: '6px', background: '#475569', color: '#ffffff', fontSize: '12.5px', fontWeight: 700 }}
+                    >
+                      Suspend
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </DetailDrawer>
+      )}
+
+      {/* Confirmation Dialog */}
+      {dialogCompany && actionType && (
+        <ConfirmationDialog
+          isOpen={Boolean(dialogCompany && actionType)}
+          onClose={() => {
+            setActionType(null);
+            setDialogCompany(null);
+          }}
+          onConfirm={handleConfirmAction}
+          title={`${actionType.replace(/_/g, ' ')} ${dialogCompany.name}?`}
+          message={
+            actionType === 'APPROVED'
+              ? 'This will allow the company to create and submit recruitment vacancies.'
+              : actionType === 'ADDITIONAL_INFORMATION_REQUIRED'
+              ? 'The company will need to update its profile before continuing.'
+              : actionType === 'REJECTED'
+              ? 'Provide a reason for rejection. This reason will be stored in review history.'
+              : 'This action will restrict recruitment activity for this company. Provide a reason.'
+          }
+          confirmLabel={`Confirm ${actionType.replace(/_/g, ' ')}`}
+          requireReason={actionType === 'REJECTED' || actionType === 'SUSPENDED' || actionType === 'ADDITIONAL_INFORMATION_REQUIRED'}
+          reasonPlaceholder="Enter governance reason..."
+        />
+      )}
     </div>
   );
 }

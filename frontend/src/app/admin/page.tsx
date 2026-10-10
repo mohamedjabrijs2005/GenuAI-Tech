@@ -6,640 +6,531 @@ import { useRouter } from 'next/navigation';
 import {
   Building2,
   Briefcase,
-  ClipboardList,
-  Users,
-  ShieldCheck,
-  ShieldAlert,
-  Gavel,
-  Shield,
-  Activity,
-  ArrowRight,
-  Clock,
-  CheckCircle2,
+  Globe,
   AlertTriangle,
   RefreshCw,
+  ArrowRight,
+  ShieldAlert,
+  CheckCircle2,
+  Clock,
   ExternalLink,
+  Shield,
+  ScrollText,
 } from 'lucide-react';
-import { KPICard } from '@/components/admin/KPICard';
-import { ActivityTimeline } from '@/components/admin/ActivityTimeline';
-import { SystemStatusCard } from '@/components/admin/SystemStatusCard';
-import { StatusBadge } from '@/components/admin/StatusBadge';
-import { ChartCard } from '@/components/admin/ChartCard';
-import { adminDataService, AuditRecord } from '@/lib/adminDataService';
-import { useAdminAuth } from '@/contexts/AdminAuthContext';
-import { DetailDrawer } from '@/components/admin/DetailDrawer';
+import api from '@/lib/api';
+
+interface MetricData {
+  pendingCompanyVerifications: number;
+  vacanciesPendingReview: number;
+  publishedVacancies: number;
+  openGovernanceCases?: number | null;
+}
+
+interface ActionQueueCompany {
+  id: string;
+  name: string;
+  workEmail: string;
+  website: string;
+  industry: string;
+  country: string;
+  verificationStatus: string;
+  submittedDate: string;
+}
+
+interface ActionQueueVacancy {
+  id: string;
+  companyId: string;
+  companyName: string;
+  roleTitle: string;
+  department: string;
+  requirementCount: number;
+  status: string;
+  submittedDate: string;
+}
+
+interface AuditActivity {
+  id: string;
+  actor: string;
+  role: string;
+  action: string;
+  entity: string;
+  entityId: string;
+  companyName?: string;
+  timestamp: string;
+  previousState?: string;
+  newState?: string;
+  reason?: string;
+}
 
 export default function AdminOverviewPage() {
   const router = useRouter();
-  const { adminUser } = useAdminAuth();
 
-  const [companies, setCompanies] = useState(adminDataService.getCompanies());
-  const [vacancies, setVacancies] = useState(adminDataService.getVacancies());
-  const [assessments, setAssessments] = useState(adminDataService.getAssessments());
-  const [users, setUsers] = useState(adminDataService.getUsers());
-  const [incidents, setIncidents] = useState(adminDataService.getIntegrityIncidents());
-  const [disputes, setDisputes] = useState(adminDataService.getDisputes());
-  const [securityEvents, setSecurityEvents] = useState(adminDataService.getSecurityEvents());
-  const [auditLogs, setAuditLogs] = useState(adminDataService.getAuditLogs());
-  const [systemHealth, setSystemHealth] = useState(adminDataService.getSystemHealth());
-  const [selectedAuditLog, setSelectedAuditLog] = useState<AuditRecord | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [metrics, setMetrics] = useState<MetricData | null>(null);
+  const [pendingCompanies, setPendingCompanies] = useState<ActionQueueCompany[]>([]);
+  const [pendingVacancies, setPendingVacancies] = useState<ActionQueueVacancy[]>([]);
+  const [recentActivities, setRecentActivities] = useState<AuditActivity[]>([]);
 
-  const refreshData = () => {
-    setCompanies(adminDataService.getCompanies());
-    setVacancies(adminDataService.getVacancies());
-    setAssessments(adminDataService.getAssessments());
-    setUsers(adminDataService.getUsers());
-    setIncidents(adminDataService.getIntegrityIncidents());
-    setDisputes(adminDataService.getDisputes());
-    setSecurityEvents(adminDataService.getSecurityEvents());
-    setAuditLogs(adminDataService.getAuditLogs());
-    setSystemHealth(adminDataService.getSystemHealth());
+  const fetchOverviewData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.get('/admin/overview');
+      const data = res.data || {};
+      setMetrics(data.metrics || {});
+      setPendingCompanies(data.actionQueue?.pendingCompanies || []);
+      setPendingVacancies(data.actionQueue?.pendingVacancies || []);
+      setRecentActivities(data.recentActivity || []);
+    } catch (err: any) {
+      console.error('Failed to fetch admin overview:', err);
+      setError('We could not load platform metrics from PostgreSQL. Check backend connection.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    const unsub = adminDataService.subscribe(refreshData);
-    return () => unsub();
+    fetchOverviewData();
   }, []);
 
-  // Metrics computation
-  const pendingCompanies = companies.filter((c) => ['Pending', 'Under Review', 'PENDING_VERIFICATION', 'UNDER_REVIEW', 'ADDITIONAL_INFORMATION_REQUIRED'].includes(c.verificationStatus));
-  const pendingVacancies = vacancies.filter((v) => ['Pending Review', 'PENDING_ADMIN_REVIEW', 'UNDER_REVIEW'].includes(v.status));
-  const pendingAssessments = assessments.filter((a) => ['Pending Review', 'PENDING_ADMIN_REVIEW', 'Flagged'].includes(a.status));
-  const openIncidents = incidents.filter((i) => ['Open', 'Under Investigation'].includes(i.status));
-  const openDisputes = disputes.filter((d) => ['Open', 'Investigating'].includes(d.status));
-  const activeSecurityEvents = securityEvents.filter((s) => ['Active', 'Investigating'].includes(s.status));
+  // Action required items calculated directly from backend response queues
+  const actionItems: {
+    type: string;
+    title: string;
+    relatedEntity: string;
+    date: string;
+    actionLabel: string;
+    actionHref: string;
+  }[] = [];
 
-  // Chart telemetry data
-  const throughputData = [
-    { label: 'Mon', value: 34 },
-    { label: 'Tue', value: 48 },
-    { label: 'Wed', value: 42 },
-    { label: 'Thu', value: 65 },
-    { label: 'Fri', value: 58 },
-    { label: 'Sat', value: 24 },
-    { label: 'Sun', value: 31 },
-  ];
+  pendingCompanies.forEach((c) => {
+    actionItems.push({
+      type: 'Company Verification',
+      title: `Verification pending for ${c.name}`,
+      relatedEntity: c.name,
+      date: c.submittedDate || 'Recently',
+      actionLabel: 'Review company',
+      actionHref: `/admin/verification/companies?id=${c.id}`,
+    });
+  });
+
+  pendingVacancies.forEach((v) => {
+    actionItems.push({
+      type: 'Vacancy Moderation',
+      title: `Vacancy review required: ${v.roleTitle}`,
+      relatedEntity: `${v.companyName || 'Company'} (${v.requirementCount} requirements)`,
+      date: v.submittedDate || 'Recently',
+      actionLabel: 'Review vacancy',
+      actionHref: `/admin/verification/vacancies?id=${v.id}`,
+    });
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
       {/* Page Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.6px', margin: 0 }}>
-              GenuAI Admin Console
-            </h1>
-            <span
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                padding: '3px 9px',
-                borderRadius: '99px',
-                background: 'rgba(212, 175, 55, 0.15)',
-                color: '#854d0e',
-                border: '1px solid rgba(212, 175, 55, 0.4)',
-              }}
-            >
-              Operational Control Center
-            </span>
+      <div className="page-header" style={{ marginBottom: 0 }}>
+        <div className="page-header-row">
+          <div>
+            <h1 className="page-title">Operational Control Center</h1>
+            <p className="page-subtitle">
+              Monitor verification queues, moderation work, platform activity, and governance actions.
+            </p>
           </div>
-          <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
-            Monitor tenant verifications, vacancy reviews, audit trails, and system operations.
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={fetchOverviewData}
+              disabled={loading}
+              className="btn btn-secondary btn-sm"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              <span>Refresh</span>
+            </button>
+            <Link href="/admin/audit" className="btn btn-gold btn-sm">
+              <ScrollText size={14} /> Audit Trail
+            </Link>
+          </div>
         </div>
+      </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      {/* Error state if API call failed */}
+      {error && (
+        <div
+          style={{
+            padding: '16px 20px',
+            borderRadius: '8px',
+            background: '#fef2f2',
+            border: '1px solid #fecaca',
+            color: '#991b1b',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <AlertTriangle size={18} style={{ color: '#dc2626' }} />
+            <span style={{ fontSize: '13.5px', fontWeight: 600 }}>{error}</span>
+          </div>
           <button
-            onClick={refreshData}
+            type="button"
+            onClick={fetchOverviewData}
             style={{
-              padding: '8px 14px',
-              borderRadius: '8px',
-              background: '#ffffff',
-              border: '1px solid var(--border)',
-              fontSize: '12.5px',
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <RefreshCw size={14} /> Refresh Stream
-          </button>
-          <Link
-            href="/admin/audit"
-            style={{
-              padding: '8px 16px',
-              borderRadius: '8px',
-              background: '#b8860b',
+              padding: '6px 12px',
+              borderRadius: '6px',
+              background: '#dc2626',
               color: '#ffffff',
-              fontSize: '12.5px',
+              fontSize: '12px',
               fontWeight: 700,
-              textDecoration: 'none',
-              boxShadow: '0 2px 6px rgba(184, 134, 11, 0.25)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
             }}
           >
-            Inspect Immutable Audit
-          </Link>
+            Try again
+          </button>
+        </div>
+      )}
+
+      {/* 4 Summary Cards */}
+      <div className="stats-grid">
+        {/* Card 1: Companies Pending Verification */}
+        <Link href="/admin/verification/companies?status=PENDING_VERIFICATION" style={{ textDecoration: 'none' }}>
+          <div className="stat-card stat-card-gold" style={{ cursor: 'pointer' }}>
+            <div className="stat-icon stat-icon-gold">
+              <Building2 size={20} />
+            </div>
+            <div className="stat-label">Companies Pending Verification</div>
+            <div className="stat-value">
+              {loading ? '…' : (metrics?.pendingCompanyVerifications ?? 0)}
+            </div>
+            <div className="stat-sub">Pending identity verification</div>
+          </div>
+        </Link>
+
+        {/* Card 2: Vacancies Pending Review */}
+        <Link href="/admin/verification/vacancies?status=PENDING_ADMIN_REVIEW" style={{ textDecoration: 'none' }}>
+          <div className="stat-card stat-card-warning" style={{ cursor: 'pointer' }}>
+            <div className="stat-icon stat-icon-warning">
+              <Briefcase size={20} />
+            </div>
+            <div className="stat-label">Vacancies Pending Review</div>
+            <div className="stat-value">
+              {loading ? '…' : (metrics?.vacanciesPendingReview ?? 0)}
+            </div>
+            <div className="stat-sub">Submitted for moderation review</div>
+          </div>
+        </Link>
+
+        {/* Card 3: Published Vacancies */}
+        <Link href="/admin/verification/vacancies?status=PUBLISHED" style={{ textDecoration: 'none' }}>
+          <div className="stat-card stat-card-success" style={{ cursor: 'pointer' }}>
+            <div className="stat-icon stat-icon-success">
+              <Globe size={20} />
+            </div>
+            <div className="stat-label">Published Vacancies</div>
+            <div className="stat-value">
+              {loading ? '…' : (metrics?.publishedVacancies ?? 0)}
+            </div>
+            <div className="stat-sub">Currently visible to candidates</div>
+          </div>
+        </Link>
+
+        {/* Card 4: Open Governance Cases */}
+        <div className="stat-card" style={{ borderTop: '3px solid #64748b' }}>
+          <div className="stat-icon" style={{ background: '#f1f5f9', color: '#475569' }}>
+            <ShieldAlert size={20} />
+          </div>
+          <div className="stat-label">Open Governance Cases</div>
+          <div className="stat-value" style={{ fontSize: '24px', color: '#64748b', marginTop: '4px' }}>
+            —
+          </div>
+          <div className="stat-sub" style={{ color: '#64748b', fontWeight: 600 }}>
+            Governance case module not yet active
+          </div>
         </div>
       </div>
 
-      {/* 8 Primary Platform Governance KPI Cards */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '16px',
-        }}
-      >
-        <KPICard
-          title="Total Companies"
-          value={companies.length}
-          subtitle="Registered corporate tenants"
-          icon={Building2}
-          onClick={() => router.push('/admin/verification/companies')}
-          trend={{ value: '+2 this month', isPositive: true }}
-        />
-        <KPICard
-          title="Pending Verifications"
-          value={pendingCompanies.length}
-          subtitle="Awaiting corporate audit"
-          icon={ShieldAlert}
-          highlight={pendingCompanies.length > 0 ? 'warning' : 'neutral'}
-          badgeText={pendingCompanies.length > 0 ? 'Action Queue' : undefined}
-          onClick={() => router.push('/admin/verification/companies')}
-        />
-        <KPICard
-          title="Active Vacancies"
-          value={vacancies.length}
-          subtitle="Published role specifications"
-          icon={Briefcase}
-          onClick={() => router.push('/admin/verification/vacancies')}
-        />
-        <KPICard
-          title="Vacancies Pending Review"
-          value={pendingVacancies.length}
-          subtitle="Awaiting taxonomy review"
-          icon={Briefcase}
-          highlight={pendingVacancies.length > 0 ? 'warning' : 'neutral'}
-          onClick={() => router.push('/admin/verification/vacancies')}
-        />
-        <KPICard
-          title="Assessments Pending Review"
-          value={pendingAssessments.length}
-          subtitle="Requires integrity config sign-off"
-          icon={ClipboardList}
-          highlight={pendingAssessments.length > 0 ? 'danger' : 'neutral'}
-          badgeText={pendingAssessments.length > 0 ? 'Requires Sign-off' : undefined}
-          onClick={() => router.push('/admin/verification/assessments')}
-        />
-        <KPICard
-          title="Platform Users"
-          value={users.length}
-          subtitle="Governed accounts & RBAC"
-          icon={Users}
-          onClick={() => router.push('/admin/users')}
-        />
-        <KPICard
-          title="Open Integrity Incidents"
-          value={openIncidents.length}
-          subtitle="Observable signal reviews"
-          icon={ShieldCheck}
-          highlight={openIncidents.length > 0 ? 'danger' : 'neutral'}
-          onClick={() => router.push('/admin/integrity')}
-        />
-        <KPICard
-          title="Open Disputes"
-          value={openDisputes.length}
-          subtitle="Candidate / Company cases"
-          icon={Gavel}
-          highlight={openDisputes.length > 0 ? 'warning' : 'neutral'}
-          onClick={() => router.push('/admin/disputes')}
-        />
-      </div>
+      {/* Prominent Action Required Section */}
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertTriangle size={18} style={{ color: '#d97706' }} />
+              Action Required
+            </h3>
+            <p className="card-subtitle">
+              Platform governance actions, company verifications, and vacancy moderation items awaiting decision.
+            </p>
+          </div>
+          <span
+            style={{
+              fontSize: '12px',
+              fontWeight: 700,
+              padding: '3px 10px',
+              borderRadius: '99px',
+              background: actionItems.length > 0 ? '#fef3c7' : '#f1f5f9',
+              color: actionItems.length > 0 ? '#92400e' : '#475569',
+              border: `1px solid ${actionItems.length > 0 ? '#fde68a' : '#cbd5e1'}`,
+            }}
+          >
+            {actionItems.length} {actionItems.length === 1 ? 'item requiring action' : 'items requiring action'}
+          </span>
+        </div>
 
-      {/* Main Grid: Action Queue (Left) & Platform Activity + System Status (Right) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '24px' }}>
-        {/* Left Column: ACTION QUEUE */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        {actionItems.length === 0 ? (
           <div
             style={{
-              background: '#ffffff',
-              borderRadius: '12px',
-              border: '1px solid var(--border)',
-              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
-              overflow: 'hidden',
+              padding: '36px 20px',
+              textAlign: 'center',
+              background: '#fafaf9',
+              borderRadius: '8px',
+              border: '1px border var(--border)',
             }}
           >
-            <div
-              style={{
-                padding: '16px 20px',
-                borderBottom: '1px solid var(--border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div>
-                <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                  Administrative Action Queue
-                </h3>
-                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
-                  Critical verification, review, dispute, and security tasks requiring attention
-                </p>
-              </div>
-              <span
+            <CheckCircle2 size={32} style={{ color: '#059669', margin: '0 auto 10px' }} />
+            <h4 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+              No governance actions require attention right now.
+            </h4>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+              All current platform queues are clear.
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {actionItems.map((item, idx) => (
+              <div
+                key={idx}
                 style={{
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  padding: '2px 8px',
-                  borderRadius: '99px',
-                  background: '#fee2e2',
-                  color: '#991b1b',
-                  border: '1px solid #fecaca',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '14px 18px',
+                  borderRadius: '8px',
+                  background: '#ffffff',
+                  border: '1px solid var(--border)',
+                  gap: '16px',
+                  flexWrap: 'wrap',
                 }}
               >
-                {pendingCompanies.length + pendingVacancies.length + pendingAssessments.length + openIncidents.length + openDisputes.length + activeSecurityEvents.length} Tasks
-              </span>
-            </div>
+                <div style={{ flex: 1, minWidth: '240px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                    <span
+                      style={{
+                        fontSize: '10.5px',
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        background: '#fef3c7',
+                        color: '#92400e',
+                        border: '1px solid #fde68a',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {item.type}
+                    </span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                      Submitted {item.date}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    {item.title}
+                  </div>
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                    Related: {item.relatedEntity}
+                  </div>
+                </div>
 
-            <div className="divide-y divide-slate-100">
-              {/* 1. Companies Awaiting Verification */}
-              {pendingCompanies.slice(0, 2).map((comp) => (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                  <Link href={item.actionHref} className="btn btn-gold btn-sm">
+                    {item.actionLabel} <ArrowRight size={13} />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Verification Queue Preview (2 Panels Side-by-Side) */}
+      <div className="grid-2">
+        {/* Panel 1: Companies Awaiting Verification */}
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <h3 className="card-title">Companies awaiting verification</h3>
+              <p className="card-subtitle">Recent registrations pending identity review</p>
+            </div>
+            <Link href="/admin/verification/companies" className="btn btn-ghost btn-sm">
+              View all <ArrowRight size={13} />
+            </Link>
+          </div>
+
+          {pendingCompanies.length === 0 ? (
+            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+              No companies are waiting for verification.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {pendingCompanies.slice(0, 5).map((comp) => (
                 <div
                   key={comp.id}
-                  onClick={() => router.push('/admin/verification/companies')}
                   style={{
-                    padding: '14px 20px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    cursor: 'pointer',
-                    borderBottom: '1px solid #f1f5f9',
+                    padding: '12px 14px',
+                    borderRadius: '6px',
+                    background: '#f8fafc',
+                    border: '1px solid var(--border)',
                   }}
-                  className="hover:bg-amber-50/50"
                 >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                    <div
-                      style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        background: 'rgba(212, 175, 55, 0.15)',
-                        color: '#854d0e',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Building2 size={16} />
+                  <div>
+                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {comp.name}
                     </div>
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        Company Verification: {comp.name}
-                      </div>
-                      <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-                        Domain: {comp.domain} • Submitted: {comp.submittedDate}
-                      </div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                      {comp.industry || 'Technology'} · Registered {comp.submittedDate}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <StatusBadge status={comp.verificationStatus} />
-                    <ArrowRight size={14} style={{ color: '#cbd5e1' }} />
-                  </div>
+                  <Link href={`/admin/verification/companies?id=${comp.id}`} className="btn btn-secondary btn-sm">
+                    Review
+                  </Link>
                 </div>
               ))}
-
-              {/* 2. Vacancies Requiring Review */}
-              {pendingVacancies.slice(0, 2).map((vac) => (
-                <div
-                  key={vac.id}
-                  onClick={() => router.push('/admin/verification/vacancies')}
-                  style={{
-                    padding: '14px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer',
-                    borderBottom: '1px solid #f1f5f9',
-                  }}
-                  className="hover:bg-amber-50/50"
-                >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                    <div
-                      style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        background: '#fffbeb',
-                        color: '#b45309',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Briefcase size={16} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        Vacancy Governance: {vac.roleTitle}
-                      </div>
-                      <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-                        {vac.companyName} • Completeness: {vac.completenessScore}%
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <StatusBadge status={vac.status} />
-                    <ArrowRight size={14} style={{ color: '#cbd5e1' }} />
-                  </div>
-                </div>
-              ))}
-
-              {/* 3. Assessments Requiring Review / Flagged */}
-              {pendingAssessments.slice(0, 2).map((asm) => (
-                <div
-                  key={asm.id}
-                  onClick={() => router.push('/admin/verification/assessments')}
-                  style={{
-                    padding: '14px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer',
-                    borderBottom: '1px solid #f1f5f9',
-                  }}
-                  className="hover:bg-amber-50/50"
-                >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                    <div
-                      style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        background: '#fef2f2',
-                        color: '#dc2626',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <ClipboardList size={16} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        Assessment Sign-off: {asm.title}
-                      </div>
-                      <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-                        {asm.companyName} • Type: {asm.assessmentType}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <StatusBadge status={asm.status} />
-                    <ArrowRight size={14} style={{ color: '#cbd5e1' }} />
-                  </div>
-                </div>
-              ))}
-
-              {/* 4. Integrity Incidents Requiring Review */}
-              {openIncidents.slice(0, 1).map((inc) => (
-                <div
-                  key={inc.id}
-                  onClick={() => router.push('/admin/integrity')}
-                  style={{
-                    padding: '14px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer',
-                    borderBottom: '1px solid #f1f5f9',
-                  }}
-                  className="hover:bg-amber-50/50"
-                >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                    <div
-                      style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        background: '#fef2f2',
-                        color: '#dc2626',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <ShieldCheck size={16} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        Integrity Incident: {inc.id} ({inc.candidateMaskedId})
-                      </div>
-                      <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-                        {inc.signals.length} Signals Detected • {inc.companyName}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <StatusBadge status="Action Required" />
-                    <ArrowRight size={14} style={{ color: '#cbd5e1' }} />
-                  </div>
-                </div>
-              ))}
-
-              {/* 5. Open Disputes */}
-              {openDisputes.slice(0, 1).map((dsp) => (
-                <div
-                  key={dsp.id}
-                  onClick={() => router.push('/admin/disputes')}
-                  style={{
-                    padding: '14px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer',
-                  }}
-                  className="hover:bg-amber-50/50"
-                >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                    <div
-                      style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        background: '#faf5ff',
-                        color: '#7e22ce',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Gavel size={16} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        Dispute Arbitration: {dsp.id}
-                      </div>
-                      <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-                        {dsp.type} • {dsp.companyName}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <StatusBadge status={dsp.status} />
-                    <ArrowRight size={14} style={{ color: '#cbd5e1' }} />
-                  </div>
-                </div>
-              ))}
-
-              {/* Empty state when queue is clear */}
-              {pendingCompanies.length === 0 && pendingVacancies.length === 0 && pendingAssessments.length === 0 && openIncidents.length === 0 && openDisputes.length === 0 && (
-                <div style={{ padding: '32px 20px', textAlign: 'center' }}>
-                  <CheckCircle2 size={32} style={{ color: '#059669', margin: '0 auto 10px' }} />
-                  <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)', marginBottom: 4 }}>All Clear</div>
-                  <div style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>No pending governance actions. All items are up to date.</div>
-                </div>
-              )}
             </div>
-          </div>
-
-          {/* Platform Activity Volume Chart */}
-          <ChartCard
-            title="Platform Governance Activity Stream"
-            subtitle="7-day volume of verification events and audit submissions"
-            data={throughputData}
-            totalLabel="Actions Logged This Week"
-            badge="Audited"
-          />
+          )}
         </div>
 
-        {/* Right Column: RECENT PLATFORM ACTIVITY & REALTIME SYSTEM STATUS */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Realtime System Subsystems Status */}
-          <SystemStatusCard subsystems={systemHealth.subsystems} />
-
-          {/* Recent Platform Activity Timeline */}
-          <div
-            style={{
-              background: '#ffffff',
-              borderRadius: '12px',
-              border: '1px solid var(--border)',
-              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
-              padding: '20px',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '16px',
-                borderBottom: '1px solid #f1f5f9',
-                paddingBottom: '12px',
-              }}
-            >
-              <div>
-                <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                  Recent Platform Activity
-                </h3>
-                <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
-                  Live append-only audit stream across all platform entities
-                </p>
-              </div>
-              <Link
-                href="/admin/audit"
-                style={{ fontSize: '11.5px', fontWeight: 700, color: '#b8860b', textDecoration: 'none' }}
-              >
-                View Full Audit &rarr;
-              </Link>
+        {/* Panel 2: Vacancies Awaiting Review */}
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <h3 className="card-title">Vacancies awaiting review</h3>
+              <p className="card-subtitle">Recruitment roles submitted for moderation</p>
             </div>
-
-            <ActivityTimeline
-              logs={auditLogs}
-              onSelectLog={(log) => setSelectedAuditLog(log)}
-              maxItems={6}
-            />
+            <Link href="/admin/verification/vacancies" className="btn btn-ghost btn-sm">
+              View all <ArrowRight size={13} />
+            </Link>
           </div>
+
+          {pendingVacancies.length === 0 ? (
+            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+              No vacancies are waiting for moderation review.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {pendingVacancies.slice(0, 5).map((vac) => (
+                <div
+                  key={vac.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '12px 14px',
+                    borderRadius: '6px',
+                    background: '#f8fafc',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {vac.roleTitle}
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                      {vac.companyName} · {vac.requirementCount} requirements · Submitted {vac.submittedDate}
+                    </div>
+                  </div>
+                  <Link href={`/admin/verification/vacancies?id=${vac.id}`} className="btn btn-secondary btn-sm">
+                    Review
+                  </Link>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Audit Detail Drawer for clicked timeline event */}
-      <DetailDrawer
-        isOpen={!!selectedAuditLog}
-        onClose={() => setSelectedAuditLog(null)}
-        title="Audit Record Detail"
-        subtitle={selectedAuditLog?.id}
-      >
-        {selectedAuditLog && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px' }}>
-            <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
-                Action
-              </div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {selectedAuditLog.action}
-              </div>
-            </div>
+      {/* Recent Administrative Activity */}
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Clock size={18} style={{ color: '#b8860b' }} />
+              Recent administrative activity
+            </h3>
+            <p className="card-subtitle">Append-only log of platform governance decisions recorded in PostgreSQL</p>
+          </div>
+          <Link href="/admin/audit" className="btn btn-secondary btn-sm">
+            View full audit trail
+          </Link>
+        </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>Actor</div>
-                <div style={{ fontWeight: 600 }}>{selectedAuditLog.actor}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>Role</div>
-                <div style={{ fontWeight: 600 }}>{selectedAuditLog.role}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>Entity</div>
-                <div style={{ fontWeight: 600 }}>{selectedAuditLog.entity}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>Entity ID</div>
-                <div style={{ fontFamily: 'monospace' }}>{selectedAuditLog.entityId}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>Timestamp</div>
-                <div>{selectedAuditLog.timestamp}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>IP Address</div>
-                <div style={{ fontFamily: 'monospace' }}>{selectedAuditLog.ipAddress || '—'}</div>
-              </div>
-            </div>
-
-            {selectedAuditLog.metadata && (
-              <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
-                  Recorded Metadata
-                </div>
-                <pre
-                  style={{
-                    background: '#0f172a',
-                    color: '#f8fafc',
-                    padding: '12px',
-                    borderRadius: '6px',
-                    fontSize: '11.5px',
-                    overflowX: 'auto',
-                  }}
-                >
-                  {JSON.stringify(selectedAuditLog.metadata, null, 2)}
-                </pre>
-              </div>
-            )}
+        {recentActivities.length === 0 ? (
+          <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13.5px' }}>
+            No administrative activity has been recorded yet.
+          </div>
+        ) : (
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th>Entity</th>
+                  <th>Actor</th>
+                  <th>Timestamp</th>
+                  <th>State Transition</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentActivities.slice(0, 10).map((act) => (
+                  <tr key={act.id}>
+                    <td>
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          background: '#f1f5f9',
+                          color: '#0f172a',
+                          border: '1px solid #cbd5e1',
+                        }}
+                      >
+                        {act.action}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{act.entity}</div>
+                      {act.companyName && (
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                          {act.companyName}
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{act.actor}</div>
+                      <div style={{ fontSize: '11px', color: '#854d0e' }}>{act.role}</div>
+                    </td>
+                    <td style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                      {act.timestamp}
+                    </td>
+                    <td>
+                      {act.previousState && act.newState ? (
+                        <span style={{ fontSize: '12px', fontWeight: 600 }}>
+                          <span style={{ color: '#dc2626' }}>{act.previousState}</span>
+                          <span style={{ margin: '0 6px', color: '#94a3b8' }}>→</span>
+                          <span style={{ color: '#059669' }}>{act.newState}</span>
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Recorded</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
-      </DetailDrawer>
+      </div>
     </div>
   );
 }

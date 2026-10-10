@@ -50,11 +50,14 @@ router.get('/overview', async (req, res) => {
       pool.query(`
         SELECT cr.id, cr.title, cr.status, cr.created_at, cr.submitted_at,
                c.id AS company_id, c.name AS company_name,
-               d.name AS department_name
+               d.name AS department_name,
+               COUNT(DISTINCT r.id) AS requirement_count
         FROM company_roles cr
         JOIN companies c ON c.id = cr.company_id
         LEFT JOIN departments d ON d.id = cr.department_id
+        LEFT JOIN requirements r ON r.role_id = cr.id
         WHERE cr.status = 'PENDING_ADMIN_REVIEW'
+        GROUP BY cr.id, c.id, d.id
         ORDER BY COALESCE(cr.submitted_at, cr.created_at) ASC
         LIMIT 10
       `),
@@ -108,6 +111,7 @@ router.get('/overview', async (req, res) => {
           companyName: v.company_name,
           roleTitle: v.title,
           department: v.department_name,
+          requirementCount: Number(v.requirement_count) || 0,
           status: v.status,
           submittedDate: (v.submitted_at || v.created_at)?.toISOString().split('T')[0] || '',
         })),
@@ -709,12 +713,12 @@ router.get('/users', async (req, res) => {
       id: u.id,
       name: `${u.first_name} ${u.last_name}`.trim(),
       email: u.email,
-      userType: u.role === 'genuai_admin' || u.role === 'SUPER_ADMIN' ? 'GenuAI Admin' : 'Company User',
+      role: u.role,
+      userType: u.role === 'genuai_admin' || u.role === 'SUPER_ADMIN' || u.role === 'VERIFICATION_ADMIN' ? 'GenuAI Admin' : 'Company User',
       organization: u.company_name || 'GenuAI Platform',
       companyId: u.company_id,
       companyStatus: u.verification_status,
-      accountStatus: 'Active',
-      mfaEnabled: true,
+      accountStatus: u.status || 'Active',
       createdDate: u.created_at ? u.created_at.toISOString().split('T')[0] : '',
       lastLogin: u.created_at ? u.created_at.toISOString().split('T')[0] : '',
     }));
@@ -726,4 +730,232 @@ router.get('/users', async (req, res) => {
   }
 });
 
+// PATCH /api/admin/users/:id/status
+router.patch('/users/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, reason } = req.body;
+    const validStatuses = ['Active', 'Suspended', 'Deactivated'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: `Invalid status '${status}'. Must be one of: ${validStatuses.join(', ')}` });
+    }
+
+    const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+    if (userRes.rowCount === 0) return res.status(404).json({ error: 'User not found' });
+    const prevStatus = userRes.rows[0].status || 'Active';
+
+    await pool.query('UPDATE users SET status = $1, updated_at = NOW() WHERE id = $2', [status, id]);
+
+    await pool.query(
+      `INSERT INTO audit_logs (actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, reason, metadata)
+       VALUES ($1, $2, $3, 'User', $4, $5, $6, $7, $8)`,
+      [
+        req.user.id,
+        req.user.role || 'SUPER_ADMIN',
+        `USER_${status.toUpperCase()}`,
+        id,
+        prevStatus,
+        status,
+        reason || `User status changed to ${status}`,
+        JSON.stringify({ targetEmail: userRes.rows[0].email }),
+      ]
+    );
+
+    return res.json({ success: true, message: `User status updated to ${status}` });
+  } catch (err) {
+    console.error('Admin user status update error:', err);
+    return res.status(500).json({ error: 'Failed to update user status' });
+  }
+});
+
+// PATCH /api/admin/users/:id/role
+router.patch('/users/:id/role', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role, reason } = req.body;
+    if (!role) return res.status(400).json({ error: 'Role is required' });
+
+    const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+    if (userRes.rowCount === 0) return res.status(404).json({ error: 'User not found' });
+    const prevRole = userRes.rows[0].role;
+
+    await pool.query('UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2', [role, id]);
+
+    await pool.query(
+      `INSERT INTO audit_logs (actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, reason, metadata)
+       VALUES ($1, $2, 'USER_ROLE_CHANGED', 'User', $3, $4, $5, $6, $7)`,
+      [
+        req.user.id,
+        req.user.role || 'SUPER_ADMIN',
+        id,
+        prevRole,
+        role,
+        reason || `User role updated from ${prevRole} to ${role}`,
+        JSON.stringify({ targetEmail: userRes.rows[0].email }),
+      ]
+    );
+
+    return res.json({ success: true, message: `User role updated to ${role}` });
+  } catch (err) {
+    console.error('Admin user role update error:', err);
+    return res.status(500).json({ error: 'Failed to update user role' });
+  }
+});
+
+// ============================================================
+// 10. GET /api/admin/integrity
+// Fetch real integrity signals across all companies
+// ============================================================
+router.get('/integrity', async (req, res) => {
+  try {
+    const { status, severity } = req.query;
+    let query = `
+      SELECT is2.*,
+             c.name AS company_name,
+             cr.title AS vacancy_title,
+             cand.first_name AS candidate_first, cand.last_name AS candidate_last, cand.email AS candidate_email,
+             u.email AS reviewer_email, CONCAT(u.first_name, ' ', u.last_name) AS reviewer_name
+      FROM integrity_signals is2
+      LEFT JOIN companies c ON c.id = is2.company_id
+      LEFT JOIN applications a ON a.id = is2.application_id
+      LEFT JOIN company_roles cr ON cr.id = a.role_id
+      LEFT JOIN candidates cand ON cand.id = a.candidate_id
+      LEFT JOIN users u ON u.id = is2.reviewed_by
+      WHERE 1=1
+    `;
+    const params = [];
+    if (status) {
+      params.push(status);
+      query += ` AND is2.status = $${params.length}`;
+    }
+    if (severity) {
+      params.push(severity);
+      query += ` AND is2.severity = $${params.length}`;
+    }
+    query += ' ORDER BY is2.signal_time DESC LIMIT 100';
+
+    const result = await pool.query(query, params);
+    const signals = result.rows.map((s) => ({
+      id: s.id,
+      applicationId: s.application_id,
+      companyId: s.company_id,
+      companyName: s.company_name || 'Platform Company',
+      vacancyTitle: s.vacancy_title || 'Unassigned Vacancy',
+      candidateName: `${s.candidate_first || ''} ${s.candidate_last || ''}`.trim() || 'Candidate',
+      candidateEmail: s.candidate_email || '',
+      signalType: s.signal_type,
+      severity: s.severity,
+      details: s.details,
+      status: s.status,
+      signalTime: s.signal_time ? s.signal_time.toISOString() : '',
+      reviewedBy: s.reviewer_name || null,
+      reviewedAt: s.reviewed_at ? s.reviewed_at.toISOString() : null,
+      reviewNote: s.review_note || '',
+    }));
+
+    return res.json({ signals });
+  } catch (err) {
+    console.error('Admin get integrity signals error:', err);
+    return res.status(500).json({ error: 'Failed to fetch integrity signals' });
+  }
+});
+
+// PATCH /api/admin/integrity/:id
+router.patch('/integrity/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, reviewNote } = req.body;
+    const validStatuses = ['New', 'Under Review', 'Candidate explanation requested', 'Resolved', 'No action', 'Assessment attempt invalidated', 'Escalated', 'Acknowledged', 'Dismissed'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: `Invalid status '${status}'` });
+    }
+
+    const sigRes = await pool.query('SELECT * FROM integrity_signals WHERE id = $1', [id]);
+    if (sigRes.rowCount === 0) return res.status(404).json({ error: 'Integrity signal not found' });
+    const prevStatus = sigRes.rows[0].status;
+
+    const result = await pool.query(
+      `UPDATE integrity_signals
+       SET status = $1, review_note = $2, reviewed_by = $3, reviewed_at = NOW()
+       WHERE id = $4 RETURNING *`,
+      [status, reviewNote || `Status updated to ${status}`, req.user.id, id]
+    );
+
+    await pool.query(
+      `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, reason)
+       VALUES ($1, $2, $3, 'INTEGRITY_SIGNAL_REVIEWED', 'IntegritySignal', $4, $5, $6, $7)`,
+      [
+        sigRes.rows[0].company_id,
+        req.user.id,
+        req.user.role || 'SUPER_ADMIN',
+        id,
+        prevStatus,
+        status,
+        reviewNote || `Status updated to ${status}`,
+      ]
+    );
+
+    return res.json({ success: true, signal: result.rows[0] });
+  } catch (err) {
+    console.error('Admin review integrity signal error:', err);
+    return res.status(500).json({ error: 'Failed to update integrity signal' });
+  }
+});
+
+// ============================================================
+// 11. GET /api/admin/assessments
+// Fetch assessment configurations from PostgreSQL
+// ============================================================
+router.get('/assessments', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT ag.*,
+             c.name AS company_name,
+             cr.title AS vacancy_title,
+             COUNT(DISTINCT eg.id)::int AS evaluation_group_count,
+             COUNT(DISTINCT q.id)::int AS question_count
+      FROM assessment_groups ag
+      JOIN companies c ON c.id = ag.company_id
+      LEFT JOIN company_roles cr ON cr.id = ag.role_id
+      LEFT JOIN evaluation_groups eg ON eg.assessment_group_id = ag.id
+      LEFT JOIN questions q ON q.evaluation_group_id = eg.id
+      GROUP BY ag.id, c.id, cr.id
+      ORDER BY ag.created_at DESC
+    `);
+
+    const assessments = result.rows.map((a) => ({
+      id: a.id,
+      title: a.name,
+      companyId: a.company_id,
+      companyName: a.company_name,
+      vacancyTitle: a.vacancy_title || 'General Vacancy',
+      type: a.type,
+      durationMinutes: a.duration,
+      questionCount: a.question_count || 0,
+      evaluationGroupCount: a.evaluation_group_count || 0,
+      status: a.status || 'Active',
+      integrityConfig: a.integrity_config || {},
+      createdDate: a.created_at ? a.created_at.toISOString().split('T')[0] : '',
+    }));
+
+    return res.json({ assessments });
+  } catch (err) {
+    console.error('Admin get assessments error:', err);
+    return res.status(500).json({ error: 'Failed to fetch assessment configurations' });
+  }
+});
+
+// ============================================================
+// 12. GET /api/admin/disputes
+// Module status indicator for Reports & Disputes
+// ============================================================
+router.get('/disputes', async (req, res) => {
+  return res.json({
+    disputes: [],
+    moduleActive: false,
+    message: 'Governance case module not yet active',
+  });
+});
+
 module.exports = router;
+

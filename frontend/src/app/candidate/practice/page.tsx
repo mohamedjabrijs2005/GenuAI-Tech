@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   ClipboardCheck, CheckCircle2, XCircle, ArrowRight, RefreshCw,
-  Award, Play, HelpCircle, Code, Lightbulb, Check
+  Award, Play, HelpCircle, Code, Lightbulb, Check, AlertCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -58,255 +58,177 @@ const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       'Convert the table to a GIN index without a WHERE clause.',
     ],
     correctIndex: 1,
-    explanation: 'A Partial Index covers only the 2% of active rows, taking a fraction of the RAM/disk footprint of a full index and avoiding unnecessary B-Tree updates for archived records.',
+    explanation: 'A partial index indexes only the rows matching the predicate (`status = \'PENDING\'`), remaining lightweight and fast for high selectivity workloads.',
   },
 ];
 
 export default function CandidatePracticePage() {
-  const [answers, setAnswers] = useState<Record<string, number>>({});
-  const [submitted, setSubmitted] = useState(false);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [selectedOpt, setSelectedOpt] = useState<number | null>(null);
+  const [isAnswered, setIsAnswered] = useState(false);
 
-  const handleSelect = (questionId: string, optionIndex: number) => {
-    if (submitted) return;
-    setAnswers(prev => ({ ...prev, [questionId]: optionIndex }));
+  const currentQ = PRACTICE_QUESTIONS[currentIdx];
+
+  const handleSelect = (idx: number) => {
+    if (isAnswered) return;
+    setSelectedOpt(idx);
+    setIsAnswered(true);
   };
 
-  const handleSubmit = () => {
-    if (Object.keys(answers).length < PRACTICE_QUESTIONS.length) {
-      toast.error('Please answer all practice questions before scoring');
-      return;
+  const handleNext = () => {
+    if (currentIdx < PRACTICE_QUESTIONS.length - 1) {
+      setCurrentIdx(prev => prev + 1);
+      setSelectedOpt(null);
+      setIsAnswered(false);
+    } else {
+      toast.success('Practice preview session completed.');
     }
-    setSubmitted(true);
-    toast.success('Practice assessment completed!');
   };
-
-  const handleReset = () => {
-    setAnswers({});
-    setSubmitted(false);
-  };
-
-  const correctCount = PRACTICE_QUESTIONS.filter(
-    q => answers[q.id] === q.correctIndex
-  ).length;
-
-  const scorePct = Math.round((correctCount / PRACTICE_QUESTIONS.length) * 100);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Stage Header */}
-      <div className="page-header" style={{ marginBottom: 0 }}>
-        <div className="breadcrumbs">
-          <span>Candidate Workspace</span>
-          <span className="breadcrumb-sep">/</span>
-          <span className="breadcrumb-current">Stage 3: Practice</span>
-        </div>
-        <div className="page-header-row">
-          <div>
-            <h1 className="page-title">Interactive Capability Sandbox</h1>
-            <p className="page-subtitle">
-              Verify your readiness against official vacancy requirements with instant feedback.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {submitted && (
-              <button onClick={handleReset} className="btn btn-secondary btn-sm">
-                <RefreshCw size={14} />
-                <span>Retry Practice</span>
-              </button>
-            )}
-            <Link href="/candidate/prove" className="btn btn-gold btn-sm">
-              <Play size={14} fill="#fff" />
-              <span>Next: Stage 4 Prove</span>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Score Summary Banner if submitted */}
-      {submitted && (
-        <div
+      {/* Preview Banner */}
+      <div
+        style={{
+          background: '#f8fafc',
+          border: '1px solid #e2e8f0',
+          borderRadius: 10,
+          padding: '12px 18px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          fontSize: 12.5,
+          color: '#475569',
+        }}
+      >
+        <span
           style={{
-            padding: '20px 24px',
-            borderRadius: 12,
-            background: scorePct >= 70 ? '#ecfdf5' : '#fffbeb',
-            border: `1px solid ${scorePct >= 70 ? '#a7f3d0' : '#fde68a'}`,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            fontSize: 10.5,
+            fontWeight: 800,
+            padding: '2px 8px',
+            borderRadius: 4,
+            background: '#f1f5f9',
+            color: '#64748b',
+            textTransform: 'uppercase',
+            border: '1px solid #cbd5e1',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: '50%',
-                background: scorePct >= 70 ? '#059669' : '#d97706',
-                color: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: 18,
-              }}
-            >
-              {scorePct}%
-            </div>
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>
-                {scorePct >= 70 ? 'Readiness Standard Achieved!' : 'Further Preparation Recommended'}
-              </div>
-              <div style={{ fontSize: 13, color: '#64748b' }}>
-                You scored {correctCount} of {PRACTICE_QUESTIONS.length} correct across the targeted requirement rubrics.
-              </div>
-            </div>
-          </div>
-
-          <Link href="/candidate/prove" className="btn btn-gold btn-sm">
-            <span>Proceed to Official Assessment</span>
-            <ArrowRight size={14} />
-          </Link>
-        </div>
-      )}
-
-      {/* Questions List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {PRACTICE_QUESTIONS.map((q, idx) => {
-          const selected = answers[q.id];
-          const isCorrect = submitted && selected === q.correctIndex;
-          const isWrong = submitted && selected !== undefined && selected !== q.correctIndex;
-
-          return (
-            <div key={q.id} className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                <span className="badge badge-yellow font-bold text-xs">
-                  {q.requirement}
-                </span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>
-                  Question {idx + 1} of {PRACTICE_QUESTIONS.length}
-                </span>
-              </div>
-
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.5, margin: '0 0 12px 0' }}>
-                {q.question}
-              </h3>
-
-              {q.codeSnippet && (
-                <div
-                  style={{
-                    background: '#0f172a',
-                    color: '#f8fafc',
-                    fontFamily: 'monospace',
-                    fontSize: 13,
-                    padding: '10px 14px',
-                    borderRadius: 6,
-                    marginBottom: 14,
-                    overflowX: 'auto',
-                  }}
-                >
-                  {q.codeSnippet}
-                </div>
-              )}
-
-              {/* Options */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {q.options.map((opt, optIdx) => {
-                  const isOptionSelected = selected === optIdx;
-                  let bg = '#fff';
-                  let border = '#e2e8f0';
-
-                  if (submitted) {
-                    if (optIdx === q.correctIndex) {
-                      bg = '#ecfdf5';
-                      border = '#059669';
-                    } else if (isOptionSelected) {
-                      bg = '#fef2f2';
-                      border = '#dc2626';
-                    }
-                  } else if (isOptionSelected) {
-                    bg = '#fefce8';
-                    border = 'var(--primary, #b8860b)';
-                  }
-
-                  return (
-                    <div
-                      key={optIdx}
-                      onClick={() => handleSelect(q.id, optIdx)}
-                      style={{
-                        padding: '12px 14px',
-                        borderRadius: 8,
-                        border: `1px solid ${border}`,
-                        background: bg,
-                        cursor: submitted ? 'default' : 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontSize: 13.5,
-                        color: 'var(--text-primary)',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div
-                          style={{
-                            width: 20,
-                            height: 20,
-                            borderRadius: '50%',
-                            border: `2px solid ${isOptionSelected ? 'var(--primary, #b8860b)' : '#cbd5e1'}`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          {isOptionSelected && (
-                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--primary, #b8860b)' }} />
-                          )}
-                        </div>
-                        <span>{opt}</span>
-                      </div>
-
-                      {submitted && optIdx === q.correctIndex && (
-                        <CheckCircle2 size={16} color="#059669" />
-                      )}
-                      {submitted && isOptionSelected && optIdx !== q.correctIndex && (
-                        <XCircle size={16} color="#dc2626" />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Explanation after submission */}
-              {submitted && (
-                <div
-                  style={{
-                    marginTop: 14,
-                    padding: '12px 14px',
-                    borderRadius: 8,
-                    background: '#f8fafc',
-                    border: '1px solid #e2e8f0',
-                    fontSize: 12.5,
-                    color: '#475569',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  <strong style={{ color: 'var(--text-primary)' }}>Explanation: </strong>
-                  {q.explanation}
-                </div>
-              )}
-            </div>
-          );
-        })}
+          Preview Module
+        </span>
+        <span>
+          <strong>In Development (Phase 2):</strong> Interactive readiness sandboxes are a simulation prototype. Practice sessions are non-scored self-checks and do not alter official candidate records.
+        </span>
       </div>
 
-      {/* Submit Action */}
-      {!submitted && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-          <button onClick={handleSubmit} className="btn btn-gold">
-            Submit & Verify Readiness
-          </button>
+      {/* Header */}
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.4px', margin: 0 }}>
+          Interactive Practice Sandbox
+        </h1>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '3px 0 0 0' }}>
+          Test your comprehension against technical scenarios before official assessment sessions.
+        </p>
+      </div>
+
+      {/* Sandbox Question Card */}
+      <div className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span className="badge badge-yellow" style={{ fontSize: 11 }}>
+            {currentQ.requirement}
+          </span>
+          <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>
+            Question {currentIdx + 1} of {PRACTICE_QUESTIONS.length}
+          </span>
         </div>
-      )}
+
+        <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.4 }}>
+          {currentQ.question}
+        </h3>
+
+        {currentQ.codeSnippet && (
+          <pre style={{ background: '#0f172a', color: '#f8fafc', padding: 12, borderRadius: 8, fontSize: 12, overflowX: 'auto', margin: 0 }}>
+            <code>{currentQ.codeSnippet}</code>
+          </pre>
+        )}
+
+        {/* Options */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {currentQ.options.map((opt, i) => {
+            const isCorrect = i === currentQ.correctIndex;
+            const isSelected = i === selectedOpt;
+
+            let border = '1px solid var(--border)';
+            let bg = '#ffffff';
+
+            if (isAnswered) {
+              if (isCorrect) {
+                border = '1.5px solid #059669';
+                bg = '#f0fdf4';
+              } else if (isSelected) {
+                border = '1.5px solid #dc2626';
+                bg = '#fef2f2';
+              }
+            }
+
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => handleSelect(i)}
+                disabled={isAnswered}
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: 8,
+                  border,
+                  background: bg,
+                  textAlign: 'left',
+                  cursor: isAnswered ? 'default' : 'pointer',
+                  fontSize: 13,
+                  color: 'var(--text-primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                }}
+              >
+                <span style={{ fontWeight: 700, color: '#854d0e', width: 20 }}>
+                  {String.fromCharCode(65 + i)}.
+                </span>
+                <span style={{ flex: 1 }}>{opt}</span>
+                {isAnswered && isCorrect && <CheckCircle2 size={16} style={{ color: '#059669' }} />}
+                {isAnswered && isSelected && !isCorrect && <XCircle size={16} style={{ color: '#dc2626' }} />}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Explanation */}
+        {isAnswered && (
+          <div style={{ padding: '12px 16px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12.5, color: '#334155' }}>
+            <strong>Explanation:</strong> {currentQ.explanation}
+          </div>
+        )}
+
+        {/* Next Button */}
+        {isAnswered && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+            <button
+              type="button"
+              onClick={handleNext}
+              className="btn btn-primary"
+              style={{
+                background: '#b8860b',
+                color: '#fff',
+                fontSize: 13,
+                fontWeight: 700,
+                padding: '8px 18px',
+              }}
+            >
+              <span>{currentIdx < PRACTICE_QUESTIONS.length - 1 ? 'Next Question' : 'Finish Practice'}</span>
+              <ArrowRight size={14} />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

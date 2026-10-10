@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -134,6 +134,30 @@ export default function AuthPage() {
     companyName: '',
   });
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      const params = new URLSearchParams(window.location.search);
+      const roleParam = params.get('role');
+      const modeParam = params.get('mode');
+
+      if (path.includes('/register') || modeParam === 'register') {
+        setIsLogin(false);
+      } else if (path.includes('/login') || modeParam === 'login') {
+        setIsLogin(true);
+      }
+
+      if (roleParam === 'candidate') {
+        setPersona('candidate');
+      } else if (roleParam === 'company') {
+        setPersona('company');
+      } else if (roleParam === 'admin') {
+        setPersona('admin');
+        setIsLogin(true);
+      }
+    }
+  }, []);
+
   const config = PERSONA_CONFIG[persona];
 
   const handlePersonaChange = (p: UserPersona) => {
@@ -228,8 +252,11 @@ export default function AuthPage() {
         if (isAdmin) {
           toast.success('Admin identity verified. Entering Governance Console...');
           router.push('/admin');
+        } else if (persona === 'candidate') {
+          toast.success('Signed in to Candidate Workspace');
+          router.push('/candidate');
         } else {
-          toast.success(`Signed in to ${persona === 'company' ? 'Company' : 'Candidate'} Workspace`);
+          toast.success('Signed in to Company Workspace');
           router.push('/dashboard');
         }
       } else {
@@ -246,7 +273,11 @@ export default function AuthPage() {
         });
 
         toast.success('Account created successfully');
-        router.push('/dashboard');
+        if (persona === 'candidate') {
+          router.push('/candidate');
+        } else {
+          router.push('/dashboard');
+        }
       }
     } catch (e: any) {
       const msg = e.response?.data?.error || e.message || 'Authentication failed. Please verify credentials.';

@@ -4,301 +4,312 @@ import React, { useState, useEffect } from 'react';
 import {
   ScrollText,
   Search,
-  Filter,
-  Download,
+  RefreshCw,
   Eye,
   ArrowRight,
   ShieldCheck,
-  User,
   Clock,
-  Layers,
+  Download,
 } from 'lucide-react';
-import { DataTable, Column } from '@/components/admin/DataTable';
-import { FilterBar } from '@/components/admin/FilterBar';
 import { DetailDrawer } from '@/components/admin/DetailDrawer';
 import { PermissionDeniedState } from '@/components/admin/States';
-import { adminDataService, AuditRecord } from '@/lib/adminDataService';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import api from '@/lib/api';
 import toast from 'react-hot-toast';
+
+export interface AuditRecordItem {
+  id: string;
+  actor: string;
+  actorEmail?: string;
+  role: string;
+  action: string;
+  entity: string;
+  entityId: string;
+  companyId?: string;
+  companyName?: string;
+  timestamp: string;
+  previousState?: string;
+  newState?: string;
+  reason?: string;
+  metadata?: any;
+  ipAddress?: string;
+}
 
 export default function AuditLogsPage() {
   const { hasPermission } = useAdminAuth();
-  const [logs, setLogs] = useState<AuditRecord[]>(adminDataService.getAuditLogs());
-  const [selectedLog, setSelectedLog] = useState<AuditRecord | null>(null);
-  const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState('ALL');
 
-  const refresh = () => {
-    setLogs(adminDataService.getAuditLogs());
+  const [logs, setLogs] = useState<AuditRecordItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [entityFilter, setEntityFilter] = useState('ALL');
+
+  const [selectedLog, setSelectedLog] = useState<AuditRecordItem | null>(null);
+
+  const fetchAuditLogs = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.get('/admin/audit', {
+        params: {
+          entityType: entityFilter !== 'ALL' ? entityFilter : undefined,
+        },
+      });
+      setLogs(res.data?.logs || []);
+    } catch (err: any) {
+      console.error('Fetch audit logs error:', err);
+      setError('Could not load immutable audit trail from PostgreSQL.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    const unsub = adminDataService.subscribe(refresh);
-    return () => unsub();
-  }, []);
+    fetchAuditLogs();
+  }, [entityFilter]);
 
   if (!hasPermission('view_audit')) {
     return <PermissionDeniedState requiredRole="Admin or Compliance Officer" />;
   }
 
-  const filtered = logs.filter((log) => {
-    const match =
-      log.action.toLowerCase().includes(search.toLowerCase()) ||
-      log.actor.toLowerCase().includes(search.toLowerCase()) ||
-      log.entity.toLowerCase().includes(search.toLowerCase()) ||
-      log.entityId.toLowerCase().includes(search.toLowerCase()) ||
-      log.id.toLowerCase().includes(search.toLowerCase());
-
-    if (!match) return false;
-
-    if (activeTab === 'COMPANIES') return log.entity === 'Company';
-    if (activeTab === 'VACANCIES') return log.entity === 'Vacancy';
-    if (activeTab === 'ASSESSMENTS') return log.entity === 'Assessment';
-    if (activeTab === 'SECURITY') return log.entity === 'SecurityEvent' || log.action.includes('SECURITY');
-    if (activeTab === 'EVIDENCE') return log.entity === 'EvidenceVault' || log.action.includes('EVIDENCE');
-    return true;
+  const filteredLogs = logs.filter((l) => {
+    if (!search) return true;
+    const query = search.toLowerCase();
+    return (
+      l.action.toLowerCase().includes(query) ||
+      (l.actor && l.actor.toLowerCase().includes(query)) ||
+      (l.entity && l.entity.toLowerCase().includes(query)) ||
+      (l.companyName && l.companyName.toLowerCase().includes(query)) ||
+      (l.entityId && l.entityId.toLowerCase().includes(query))
+    );
   });
 
   const handleExportJSON = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(logs, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `genuai_audit_export_${Date.now()}.json`);
+    downloadAnchor.setAttribute('download', `genuai_postgresql_audit_${Date.now()}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
-    toast.success('Immutable audit log archive exported.');
+    toast.success('PostgreSQL audit log trail exported.');
   };
 
-  const columns: Column<AuditRecord>[] = [
-    {
-      key: 'action',
-      header: 'Audited Action & Entity',
-      render: (item) => (
-        <div>
-          <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '13px' }}>
-            {item.action}
-          </div>
-          <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-            <span style={{ fontWeight: 600, color: '#854d0e' }}>{item.entity}</span> •{' '}
-            <code style={{ fontSize: '11px', background: '#f1f5f9', padding: '1px 5px', borderRadius: '4px' }}>
-              {item.entityId}
-            </code>
-          </div>
-        </div>
-      ),
-      sortable: true,
-    },
-    {
-      key: 'actor',
-      header: 'Admin Actor',
-      render: (item) => (
-        <div>
-          <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
-            {item.actor}
-          </div>
-          <div style={{ fontSize: '11px', color: '#94a3b8' }}>{item.role}</div>
-        </div>
-      ),
-      sortable: true,
-    },
-    {
-      key: 'stateTransition',
-      header: 'State Mutation',
-      render: (item) => {
-        if (!item.previousState && !item.newState) return <span style={{ color: '#94a3b8' }}>—</span>;
-        return (
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
-            <span style={{ color: '#64748b' }}>{item.previousState || 'Initial'}</span>
-            <ArrowRight size={12} style={{ color: '#94a3b8' }} />
-            <span style={{ fontWeight: 700, color: '#0f172a' }}>{item.newState}</span>
-          </div>
-        );
-      },
-    },
-    {
-      key: 'timestamp',
-      header: 'Timestamp',
-      render: (item) => <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{item.timestamp}</span>,
-      sortable: true,
-    },
-    {
-      key: 'actions',
-      header: 'Detail',
-      align: 'right',
-      render: (item) => (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelectedLog(item);
-          }}
-          style={{
-            padding: '4px 10px',
-            borderRadius: '6px',
-            background: '#f8fafc',
-            border: '1px solid var(--border)',
-            fontSize: '12px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-          }}
-        >
-          <Eye size={13} /> View Log
-        </button>
-      ),
-    },
-  ];
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-              Immutable Platform Audit Log
-            </h1>
-            <span
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                padding: '2px 8px',
-                borderRadius: '99px',
-                background: 'rgba(212, 175, 55, 0.15)',
-                color: '#854d0e',
-              }}
-            >
-              Append-Only Ledger
-            </span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Header */}
+      <div className="page-header" style={{ marginBottom: 0 }}>
+        <div className="page-header-row">
+          <div>
+            <h1 className="page-title">Audit Trail</h1>
+            <p className="page-subtitle">
+              Immutable, append-only record of administrative actions, company verification decisions, and vacancy moderation events.
+            </p>
           </div>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
-            Every state mutation, verification change, dispute resolution, and evidence inspection is cryptographically signed and stored.
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={handleExportJSON}
+              className="btn btn-secondary btn-sm"
+            >
+              <Download size={14} /> Export JSON
+            </button>
+            <button
+              type="button"
+              onClick={fetchAuditLogs}
+              disabled={loading}
+              className="btn btn-secondary btn-sm"
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
+            </button>
+          </div>
         </div>
-
-        <button
-          onClick={handleExportJSON}
-          style={{
-            padding: '8px 16px',
-            borderRadius: '8px',
-            background: '#ffffff',
-            border: '1px solid var(--border)',
-            fontSize: '12.5px',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-          }}
-        >
-          <Download size={14} /> Export Audit Ledger (.JSON)
-        </button>
       </div>
 
-      <FilterBar
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Filter audit records by action, actor, entity ID..."
-        tabs={[
-          { key: 'ALL', label: 'All Records', count: logs.length },
-          { key: 'COMPANIES', label: 'Company Events', count: logs.filter((l) => l.entity === 'Company').length },
-          { key: 'VACANCIES', label: 'Vacancy Events', count: logs.filter((l) => l.entity === 'Vacancy').length },
-          { key: 'ASSESSMENTS', label: 'Assessment Events', count: logs.filter((l) => l.entity === 'Assessment').length },
-          { key: 'SECURITY', label: 'Security & WAF', count: logs.filter((l) => l.entity === 'SecurityEvent').length },
-          { key: 'EVIDENCE', label: 'Evidence Vault Access', count: logs.filter((l) => l.entity === 'EvidenceVault').length },
-        ]}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
-
-      <DataTable
-        columns={columns}
-        data={filtered}
-        keyExtractor={(item) => item.id}
-        onRowClick={(item) => setSelectedLog(item)}
-        selectedId={selectedLog?.id}
-      />
-
-      {/* Audit Detail Drawer */}
-      <DetailDrawer
-        isOpen={!!selectedLog}
-        onClose={() => setSelectedLog(null)}
-        title="Audit Record Detail"
-        subtitle={`Log ID: ${selectedLog?.id}`}
+      {/* Primary Controls */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          flexWrap: 'wrap',
+          background: '#ffffff',
+          padding: '16px 20px',
+          borderRadius: '8px',
+          border: '1px solid var(--border)',
+        }}
       >
-        {selectedLog && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', fontSize: '13px' }}>
-            <div style={{ background: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '10px', textTransform: 'uppercase' }}>
-                Action & Scope
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Action Type</div>
-                  <div style={{ fontWeight: 700, color: '#854d0e' }}>{selectedLog.action}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Entity Type</div>
-                  <div style={{ fontWeight: 600 }}>{selectedLog.entity}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Entity Identifier</div>
-                  <code style={{ fontSize: '11.5px', background: '#f8fafc', padding: '2px 6px', borderRadius: '4px' }}>
-                    {selectedLog.entityId}
-                  </code>
-                </div>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Timestamp</div>
-                  <div>{selectedLog.timestamp}</div>
-                </div>
-              </div>
+        <div style={{ position: 'relative', width: '100%', maxWidth: '380px' }}>
+          <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+          <input
+            type="text"
+            placeholder="Search action, actor, entity ID, or company..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="form-input"
+            style={{ paddingLeft: '36px', height: '38px' }}
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+            Entity Filter:
+          </span>
+          <select
+            value={entityFilter}
+            onChange={(e) => setEntityFilter(e.target.value)}
+            className="form-select"
+            style={{ height: '38px', minWidth: '180px', fontSize: '13px' }}
+          >
+            <option value="ALL">All Entities</option>
+            <option value="Company">Company</option>
+            <option value="Vacancy">Vacancy</option>
+            <option value="User">User</option>
+            <option value="IntegritySignal">Integrity Signal</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Error state */}
+      {error && (
+        <div style={{ padding: '16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#991b1b', fontSize: '13.5px' }}>
+          {error}
+        </div>
+      )}
+
+      {/* Audit Log Table */}
+      <div className="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Action</th>
+              <th>Entity Type & ID</th>
+              <th>Actor & Role</th>
+              <th>Company</th>
+              <th>State Transition</th>
+              <th>Reason</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={8} style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
+                  Loading audit logs from PostgreSQL...
+                </td>
+              </tr>
+            ) : filteredLogs.length === 0 ? (
+              <tr>
+                <td colSpan={8} style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
+                  No administrative activity has been recorded yet.
+                </td>
+              </tr>
+            ) : (
+              filteredLogs.map((l) => (
+                <tr key={l.id}>
+                  <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    {l.timestamp || '—'}
+                  </td>
+                  <td>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: '4px',
+                        background: '#f1f5f9',
+                        color: '#0f172a',
+                        border: '1px solid #cbd5e1',
+                      }}
+                    >
+                      {l.action}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '12.5px' }}>
+                      {l.entity}
+                    </div>
+                    <code style={{ fontSize: '10.5px', color: '#64748b' }}>
+                      {l.entityId}
+                    </code>
+                  </td>
+                  <td>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '12.5px' }}>
+                      {l.actor}
+                    </div>
+                    <div style={{ fontSize: '10.5px', color: '#854d0e', fontWeight: 600 }}>
+                      {l.role}
+                    </div>
+                  </td>
+                  <td style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                    {l.companyName || '—'}
+                  </td>
+                  <td>
+                    {l.previousState || l.newState ? (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px' }}>
+                        <span style={{ color: '#dc2626' }}>{l.previousState || 'Initial'}</span>
+                        <ArrowRight size={12} style={{ color: '#94a3b8' }} />
+                        <span style={{ color: '#059669', fontWeight: 700 }}>{l.newState}</span>
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Recorded</span>
+                    )}
+                  </td>
+                  <td style={{ fontSize: '12px', color: 'var(--text-secondary)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {l.reason || '—'}
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedLog(l)}
+                      className="btn btn-secondary btn-sm"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <Eye size={13} /> View
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Log Detail Drawer */}
+      {selectedLog && (
+        <DetailDrawer
+          isOpen={Boolean(selectedLog)}
+          onClose={() => setSelectedLog(null)}
+          title={`Audit Record #${selectedLog.id}`}
+          subtitle={`Action: ${selectedLog.action} • Timestamp: ${selectedLog.timestamp}`}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px' }}>
+            <div style={{ padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '6px' }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Actor Identity</span>
+              <strong>{selectedLog.actor} ({selectedLog.role})</strong>
+              {selectedLog.actorEmail && <div style={{ fontSize: '11.5px', color: '#64748b' }}>{selectedLog.actorEmail}</div>}
             </div>
 
-            <div style={{ background: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '10px', textTransform: 'uppercase' }}>
-                Signer & Actor Attribution
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Actor Name</div>
-                  <div style={{ fontWeight: 600 }}>{selectedLog.actor}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Platform Role</div>
-                  <div style={{ fontWeight: 600 }}>{selectedLog.role}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Origin IP Address</div>
-                  <div style={{ fontFamily: 'monospace' }}>{selectedLog.ipAddress || '—'}</div>
-                </div>
-              </div>
+            <div style={{ padding: '12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '6px' }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Audit Reason</span>
+              <p style={{ marginTop: '2px', color: 'var(--text-primary)' }}>{selectedLog.reason || 'No specific rationale string attached.'}</p>
             </div>
 
             {selectedLog.metadata && (
-              <div style={{ background: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px', textTransform: 'uppercase' }}>
-                  Cryptographic Payload Metadata
-                </div>
-                <pre
-                  style={{
-                    background: '#0f172a',
-                    color: '#f8fafc',
-                    padding: '12px',
-                    borderRadius: '6px',
-                    fontSize: '11.5px',
-                    overflowX: 'auto',
-                    lineHeight: 1.5,
-                  }}
-                >
+              <div>
+                <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  Raw Metadata
+                </h4>
+                <pre style={{ background: '#0f172a', color: '#f8fafc', padding: '12px', borderRadius: '6px', fontSize: '11.5px', overflowX: 'auto' }}>
                   {JSON.stringify(selectedLog.metadata, null, 2)}
                 </pre>
               </div>
             )}
           </div>
-        )}
-      </DetailDrawer>
+        </DetailDrawer>
+      )}
     </div>
   );
 }

@@ -42,6 +42,7 @@ router.post(
       description,
       location,
       phone,
+      role: requestedRole,
     } = req.body;
 
     let client;
@@ -65,53 +66,81 @@ router.post(
       // Hash password
       const passwordHash = await bcrypt.hash(password, 12);
 
-      // Create user with COMPANY_OWNER role
+      const isCandidate = requestedRole === 'CANDIDATE' || companyName === 'Candidate Workspace' || !companyName;
+      const userRole = isCandidate ? 'CANDIDATE' : 'COMPANY_OWNER';
+
+      // Create user
       const userResult = await client.query(
         `INSERT INTO users (email, password_hash, first_name, last_name, role)
-         VALUES ($1, $2, $3, $4, 'COMPANY_OWNER')
+         VALUES ($1, $2, $3, $4, $5)
          RETURNING id, email, first_name, last_name, role`,
-        [email, passwordHash, firstName, lastName]
+        [email, passwordHash, firstName, lastName, userRole]
       );
       const user = userResult.rows[0];
 
-      // Create company with canonical PENDING_VERIFICATION status
-      const companyResult = await client.query(
-        `INSERT INTO companies (name, official_email, website, industry, description, location, hiring_contact_name, hiring_contact_email, hiring_contact_phone, verification_status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'PENDING_VERIFICATION')
-         RETURNING id, name, verification_status, created_at`,
-        [
-          companyName,
-          email,
-          website || null,
-          industry || 'Technology',
-          description || null,
-          location || 'Global',
-          `${firstName} ${lastName}`,
-          email,
-          phone || null,
-        ]
-      );
-      const company = companyResult.rows[0];
+      let companyData = null;
 
-      // Create membership linking owner to company
-      await client.query(
-        `INSERT INTO company_members (company_id, user_id, member_role)
-         VALUES ($1, $2, 'COMPANY_OWNER')`,
-        [company.id, user.id]
-      );
+      if (isCandidate) {
+        // Create candidate profile record if candidates table exists
+        try {
+          await client.query(
+            `INSERT INTO candidates (first_name, last_name, email, phone, location)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (email) DO NOTHING`,
+            [firstName, lastName, email, phone || '—', location || 'Global']
+          );
+        } catch (candErr) {
+          console.warn('Candidate profile creation note:', candErr.message);
+        }
+      } else {
+        // Create company with canonical PENDING_VERIFICATION status
+        const companyResult = await client.query(
+          `INSERT INTO companies (name, official_email, website, industry, description, location, hiring_contact_name, hiring_contact_email, hiring_contact_phone, verification_status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'PENDING_VERIFICATION')
+           RETURNING id, name, verification_status, created_at`,
+          [
+            companyName,
+            email,
+            website || null,
+            industry || 'Technology',
+            description || null,
+            location || 'Global',
+            `${firstName} ${lastName}`,
+            email,
+            phone || null,
+          ]
+        );
+        const company = companyResult.rows[0];
 
-      // Record registration in audit_logs
-      await client.query(
-        `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, new_status, reason, metadata, ip_address)
-         VALUES ($1, $2, 'COMPANY_OWNER', 'COMPANY_REGISTERED', 'Company', $3, 'PENDING_VERIFICATION', 'Initial registration submitted', $4, $5)`,
-        [
-          company.id,
-          user.id,
-          company.id,
-          JSON.stringify({ companyName, email, contact: `${firstName} ${lastName}` }),
-          req.ip || null,
-        ]
-      );
+        // Create membership linking owner to company
+        await client.query(
+          `INSERT INTO company_members (company_id, user_id, member_role)
+           VALUES ($1, $2, 'COMPANY_OWNER')`,
+          [company.id, user.id]
+        );
+
+        // Record registration in audit_logs
+        try {
+          await client.query(
+            `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, new_status, reason, metadata, ip_address)
+             VALUES ($1, $2, 'COMPANY_OWNER', 'COMPANY_REGISTERED', 'Company', $3, 'PENDING_VERIFICATION', 'Initial registration submitted', $4, $5)`,
+            [
+              company.id,
+              user.id,
+              company.id,
+              JSON.stringify({ companyName, email, contact: `${firstName} ${lastName}` }),
+              req.ip || null,
+            ]
+          );
+        } catch (_) {}
+
+        companyData = {
+          id: company.id,
+          name: company.name,
+          verificationStatus: company.verification_status,
+          createdAt: company.created_at,
+        };
+      }
 
       await client.query('COMMIT');
 
@@ -131,12 +160,7 @@ router.post(
           lastName: user.last_name,
           role: user.role,
         },
-        company: {
-          id: company.id,
-          name: company.name,
-          verificationStatus: company.verification_status,
-          createdAt: company.created_at,
-        },
+        company: companyData,
       });
     } catch (err) {
       try { await client.query('ROLLBACK'); } catch (_) {}
