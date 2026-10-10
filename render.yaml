@@ -6,7 +6,7 @@ services:
     region: oregon
     plan: free
     rootDir: backend
-    buildCommand: npm install && node src/database/migrate.js && node src/database/migrate_v2.js && node src/database/migrate_v3.js && node src/database/migrate_v4.js && node src/database/migrate_v5.js && node src/database/migrate_v6.js
+    buildCommand: npm install && node src/database/migrate.js && node src/database/migrate_v2.js && node src/database/migrate_v3.js && node src/database/migrate_v4.js && node src/database/migrate_v5.js && node src/database/migrate_v6.js && node src/database/seed_dev.js
     startCommand: node src/server.js
     envVars:
       - key: NODE_VERSION

@@ -88,13 +88,22 @@ app.use((err, req, res, next) => {
 });
 
 // ============================================================
-// Start
+// Start & Auto-Seed
 // ============================================================
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
   console.log(`🚀 GenuAI API v2.0 running on http://127.0.0.1:${PORT} and http://localhost:${PORT}`);
   console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`   Routes: auth, company, departments, roles, vacancies, candidates, assessments, integrity, interviews, reports`);
+
+  // Auto-seed default credentials in production and development
+  try {
+    const { seedDev } = require('./database/seed_dev');
+    await seedDev();
+    console.log('✅ Default accounts verified and ready for login.');
+  } catch (seedErr) {
+    console.warn('⚠️ Auto-seed check note:', seedErr.message);
+  }
 });
 
 module.exports = app;

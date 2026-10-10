@@ -13,17 +13,22 @@ async function seedDev() {
     const companyBHash = await bcrypt.hash('CompanyB123!', 10);
     const pendingHash = await bcrypt.hash('Pending123!', 10);
 
-    // 1. Super Admin
-    let adminUser = (await client.query('SELECT id FROM users WHERE email = $1', ['admin@genuai.test'])).rows[0];
-    if (!adminUser) {
-      const res = await client.query(
-        `INSERT INTO users (email, password_hash, first_name, last_name, role)
-         VALUES ($1, $2, 'Platform', 'Administrator', 'SUPER_ADMIN') RETURNING id`,
-        ['admin@genuai.test', adminHash]
-      );
-      adminUser = res.rows[0];
-    } else {
-      await client.query("UPDATE users SET password_hash = $1, role = 'SUPER_ADMIN' WHERE id = $2", [adminHash, adminUser.id]);
+    // 1. Super Admin accounts
+    const adminEmails = ['admin@genuai.test', 'admin@genuai.io', 'admin@genuaiadmin.com'];
+    let adminUser;
+    for (const email of adminEmails) {
+      let u = (await client.query('SELECT id FROM users WHERE email = $1', [email])).rows[0];
+      if (!u) {
+        const res = await client.query(
+          `INSERT INTO users (email, password_hash, first_name, last_name, role)
+           VALUES ($1, $2, 'Platform', 'Administrator', 'SUPER_ADMIN') RETURNING id`,
+          [email, adminHash]
+        );
+        u = res.rows[0];
+      } else {
+        await client.query("UPDATE users SET password_hash = $1, role = 'SUPER_ADMIN' WHERE id = $2", [adminHash, u.id]);
+      }
+      if (email === 'admin@genuai.test') adminUser = u;
     }
 
     // 2. Company A (APPROVED)
@@ -219,21 +224,28 @@ async function seedDev() {
     );
 
     await client.query('COMMIT');
-    console.log('✅ Development Database Seeding Completed Successfully.');
+    console.log('✅ Database Seeding Completed Successfully.');
     console.log('\nSeed Credentials:');
     console.log('  Admin:       admin@genuai.test    / Admin12345!    (SUPER_ADMIN)');
     console.log('  Candidate:   candidate@genuai.test/ Candidate123!  (CANDIDATE)');
     console.log('  Company A:   companya@genuai.test / CompanyA123!   (APPROVED)');
     console.log('  Company B:   companyb@genuai.test / CompanyB123!   (APPROVED)');
     console.log('  Pending Co:  pending@genuai.test  / Pending123!    (PENDING_VERIFICATION)');
+    return true;
   } catch (err) {
-    await client.query('ROLLBACK');
+    try { await client.query('ROLLBACK'); } catch (_) {}
     console.error('❌ Seeding failed:', err);
     throw err;
   } finally {
-    client.release();
-    await pool.end();
+    try { client.release(); } catch (_) {}
+    if (require.main === module) {
+      try { await pool.end(); } catch (_) {}
+    }
   }
 }
 
-seedDev().catch(() => process.exit(1));
+if (require.main === module) {
+  seedDev().catch(() => process.exit(1));
+}
+
+module.exports = { seedDev };
