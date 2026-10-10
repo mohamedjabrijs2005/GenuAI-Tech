@@ -9,6 +9,8 @@ services:
     buildCommand: npm install && node src/database/migrate.js && node src/database/migrate_v2.js && node src/database/migrate_v3.js && node src/database/migrate_v4.js && node src/database/migrate_v5.js && node src/database/migrate_v6.js
     startCommand: node src/server.js
     envVars:
+      - key: NODE_VERSION
+        value: 20
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
@@ -26,6 +28,10 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=460"
       - key: NEXT_PUBLIC_API_URL
         sync: false
       - key: NODE_ENV
