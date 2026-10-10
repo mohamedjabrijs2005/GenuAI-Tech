@@ -14,6 +14,14 @@ export default function HomePage() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [liveVacanciesCount, setLiveVacanciesCount] = useState<number | null>(null);
   const [syncTime, setSyncTime] = useState<string>('');
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const updateTime = () => {
@@ -210,7 +218,7 @@ export default function HomePage() {
         </Link>
 
         {/* Center Nav */}
-        <nav aria-label="Main Navigation" style={{ display: 'flex', alignItems: 'center', gap: 22 }} className="hidden md:flex">
+        <nav aria-label="Main Navigation" style={{ display: isMobile ? 'none' : 'flex', alignItems: 'center', gap: 22 }}>
           <a href="#problem" style={{ fontSize: 13, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>Product</a>
           <a href="#how-it-works" style={{ fontSize: 13, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>How It Works</a>
           <a href="#candidates" style={{ fontSize: 13, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>For Candidates</a>
@@ -224,7 +232,7 @@ export default function HomePage() {
           {syncTime && (
             <div
               style={{
-                display: 'flex',
+                display: isMobile ? 'none' : 'flex',
                 alignItems: 'center',
                 gap: 6,
                 padding: '4px 10px',
@@ -235,7 +243,6 @@ export default function HomePage() {
                 fontWeight: 600,
                 color: '#64748b',
               }}
-              className="hidden sm:flex"
             >
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669' }} />
               <span style={{ color: '#059669', fontWeight: 700 }}>Connected</span>
@@ -286,13 +293,13 @@ export default function HomePage() {
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             style={{
+              display: isMobile ? 'flex' : 'none',
               background: 'none',
               border: 'none',
               padding: 6,
               cursor: 'pointer',
               color: '#0f172a',
             }}
-            className="flex md:hidden"
           >
             {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
