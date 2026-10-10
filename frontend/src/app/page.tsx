@@ -5,13 +5,16 @@ import Link from 'next/link';
 import {
   Compass, FileCheck, ArrowRight,
   Building2, Lock, Layers, CheckCircle2, Menu, X, ChevronDown, ChevronUp,
-  FileText, UserCheck, HelpCircle, Mail, ExternalLink, RefreshCw
+  FileText, UserCheck, HelpCircle, Mail, ExternalLink, RefreshCw,
+  Check, Minus, Sparkles, ShieldCheck, Briefcase, GraduationCap
 } from 'lucide-react';
 import api from '@/lib/api';
 
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [openPricingFaqIndex, setOpenPricingFaqIndex] = useState<number | null>(0);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [liveVacanciesCount, setLiveVacanciesCount] = useState<number | null>(null);
   const [syncTime, setSyncTime] = useState<string>('');
 
@@ -134,6 +137,67 @@ export default function HomePage() {
     },
   ];
 
+  const PRICING_FAQS = [
+    {
+      q: 'Is GenuAI free for candidates?',
+      a: 'Core candidate access is free, including exploring verified vacancies, creating targets, and participating in the standard target workflow. Optional premium career-support services may be introduced separately in the future.',
+    },
+    {
+      q: 'Why is company pricing not listed publicly?',
+      a: 'GenuAI is currently being developed and validated with organizations of different sizes and recruitment needs. Company pricing depends on team size, workflow needs, assessment configuration, and required support.',
+    },
+    {
+      q: 'Does GenuAI charge candidates to apply for jobs?',
+      a: 'No. Candidates should not need to pay to access verified opportunities or create targets for a company vacancy.',
+    },
+    {
+      q: 'Are assessments included in every company plan?',
+      a: 'Assessment capability is being released in phases. Organizations can discuss assessment requirements during onboarding or through the assessment-services option.',
+    },
+    {
+      q: 'Can a company start small and upgrade later?',
+      a: 'Yes. The plan structure is designed to support a move from structured vacancy management to deeper evidence review, assessment workflows, and enterprise governance as needs grow.',
+    },
+    {
+      q: 'Does GenuAI make hiring decisions?',
+      a: 'No. GenuAI organizes requirements, evidence, coverage, and review information. Recruiters and companies make final human hiring decisions.',
+    },
+    {
+      q: 'What does “Evidence Gap” mean?',
+      a: 'It means sufficient supporting evidence is not currently available for a vacancy requirement. It does not mean the candidate lacks the skill.',
+    },
+    {
+      q: 'Can institutions or recruitment partners use GenuAI?',
+      a: 'Yes. Enterprise and institutional plans are intended for organizations that need multi-team governance, placement workflows, reporting, or customized implementation.',
+    },
+  ];
+
+  const COMPARISON_ROWS = [
+    { name: 'Candidate profile', candidate: 'Included', starter: '—', pro: '—', enterprise: '—' },
+    { name: 'Explore verified vacancies', candidate: 'Included', starter: '—', pro: '—', enterprise: '—' },
+    { name: 'Create targets', candidate: 'Included', starter: '—', pro: '—', enterprise: '—' },
+    { name: 'Company workspace', candidate: '—', starter: 'Included', pro: 'Included', enterprise: 'Included' },
+    { name: 'Company verification workflow', candidate: '—', starter: 'Included', pro: 'Included', enterprise: 'Included' },
+    { name: 'Vacancy creation & publishing', candidate: '—', starter: 'Included', pro: 'Included', enterprise: 'Included' },
+    { name: 'Requirement definition', candidate: 'View only', starter: 'Included', pro: 'Included', enterprise: 'Included' },
+    { name: 'Target-specific evidence', candidate: 'Submit', starter: 'Review', pro: 'Advanced Review', enterprise: 'Full Governance' },
+    { name: 'Evidence coverage view', candidate: 'View', starter: 'Basic view', pro: 'Detailed view', enterprise: 'Custom metrics' },
+    { name: 'Recruiter evidence review', candidate: '—', starter: 'Standard', pro: 'Structured rubrics', enterprise: 'Multi-evaluator' },
+    { name: 'Recruiter seats', candidate: '—', starter: '1–2 seats', pro: 'Multiple seats', enterprise: 'Custom / Scaled' },
+    { name: 'Candidate pipeline', candidate: 'My targets', starter: 'Basic list', pro: 'Advanced pipeline', enterprise: 'Multi-team pipeline' },
+    { name: 'Assessment workflow', candidate: 'When configured', starter: '—', pro: 'Planned', enterprise: 'Planned / Custom' },
+    { name: 'Interview workflow', candidate: 'When scheduled', starter: '—', pro: 'Planned', enterprise: 'Planned / Custom' },
+    { name: 'Audit history', candidate: 'Activity log', starter: 'Basic history', pro: 'Enhanced history', enterprise: 'Advanced compliance' },
+    { name: 'Advanced reporting', candidate: '—', starter: '—', pro: 'Included', enterprise: 'Custom reporting' },
+    { name: 'Governance & permissions', candidate: '—', starter: '—', pro: 'Team settings', enterprise: 'Multi-department' },
+    { name: 'Enterprise onboarding', candidate: '—', starter: 'Standard guide', pro: 'Priority setup', enterprise: 'Dedicated pathway' },
+    { name: 'Custom integrations', candidate: '—', starter: '—', pro: '—', enterprise: 'Integration planning' },
+  ];
+
+  const togglePricingFaq = (index: number) => {
+    setOpenPricingFaqIndex(openPricingFaqIndex === index ? null : index);
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: '#fafaf9', color: '#0f172a', display: 'flex', flexDirection: 'column', fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}>
       {/* Skip to Content for Accessibility */}
@@ -202,6 +266,7 @@ export default function HomePage() {
             <a href="#how-it-works">How It Works</a>
             <a href="#candidates">For Candidates</a>
             <a href="#companies">For Companies</a>
+            <a href="#pricing">Pricing</a>
             <a href="#trust">Trust &amp; Privacy</a>
             <Link href="/candidate/vacancies" style={{ fontWeight: 700, color: '#b8860b' }}>Vacancies</Link>
           </nav>
@@ -290,6 +355,7 @@ export default function HomePage() {
           <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>How It Works</a>
           <a href="#candidates" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>For Candidates</a>
           <a href="#companies" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>For Companies</a>
+          <a href="#pricing" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>Pricing</a>
           <a href="#trust" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>Trust &amp; Privacy</a>
           <Link href="/candidate/vacancies" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 700, color: '#b8860b', textDecoration: 'none' }}>Explore Vacancies</Link>
           <div style={{ height: 1, background: '#e2e8f0', margin: '8px 0' }} />
@@ -994,12 +1060,800 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 11. FAQ ACCORDION */}
-        <section style={{ background: '#ffffff', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', padding: '72px 24px' }}>
+        {/* 11. PRICING SECTION */}
+        <section id="pricing" style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', padding: '80px 24px' }}>
+          <div style={{ maxWidth: 1240, margin: '0 auto' }}>
+
+            {/* Header & Positioning */}
+            <div style={{ textAlign: 'center', marginBottom: 36 }}>
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '5px 14px',
+                  borderRadius: 99,
+                  background: 'rgba(212, 175, 55, 0.12)',
+                  border: '1px solid rgba(212, 175, 55, 0.4)',
+                  color: '#854d0e',
+                  fontSize: 12,
+                  fontWeight: 800,
+                  marginBottom: 16,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                <Sparkles size={14} style={{ color: '#b8860b' }} />
+                <span>Transparent &amp; Workflow-Aligned Plans</span>
+              </div>
+
+              <h2 style={{ fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-1px', marginBottom: 12 }}>
+                Pricing that grows with your hiring workflow.
+              </h2>
+              <p style={{ fontSize: 'clamp(14.5px, 1.6vw, 16px)', color: '#475569', maxWidth: 780, margin: '0 auto 20px', lineHeight: 1.6 }}>
+                Start with a structured recruitment workspace. Upgrade when your team needs deeper evidence review, assessment workflows, governance, or enterprise controls.
+              </p>
+
+              {/* Highlighted Candidate Statement */}
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '8px 18px',
+                  borderRadius: 8,
+                  background: '#ffffff',
+                  border: '1.5px solid #b8860b',
+                  color: '#0f172a',
+                  fontSize: 13.5,
+                  fontWeight: 700,
+                  boxShadow: '0 2px 8px rgba(184, 134, 11, 0.08)',
+                }}
+              >
+                <CheckCircle2 size={16} style={{ color: '#059669', flexShrink: 0 }} />
+                <span>Candidates can explore verified vacancies and create targets at no cost.</span>
+              </div>
+            </div>
+
+            {/* Billing Toggle (Keyboard Accessible) */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 40 }}>
+              <div
+                role="radiogroup"
+                aria-label="Billing frequency selection"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  background: '#ffffff',
+                  padding: 4,
+                  borderRadius: 99,
+                  border: '1px solid #cbd5e1',
+                  boxShadow: '0 1px 3px rgba(15, 23, 42, 0.05)',
+                }}
+              >
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={billingCycle === 'monthly'}
+                  onClick={() => setBillingCycle('monthly')}
+                  style={{
+                    padding: '8px 20px',
+                    borderRadius: 99,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    background: billingCycle === 'monthly' ? '#0f172a' : 'transparent',
+                    color: billingCycle === 'monthly' ? '#ffffff' : '#475569',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  Monthly billing
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={billingCycle === 'annual'}
+                  onClick={() => setBillingCycle('annual')}
+                  style={{
+                    padding: '8px 20px',
+                    borderRadius: 99,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    background: billingCycle === 'annual' ? '#0f172a' : 'transparent',
+                    color: billingCycle === 'annual' ? '#ffffff' : '#475569',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  Annual billing
+                </button>
+              </div>
+              <span style={{ fontSize: 12, color: '#64748b', marginTop: 8, fontWeight: 500 }}>
+                {billingCycle === 'annual' ? 'Annual pricing available on request for verified teams' : 'Monthly early access billing terms'}
+              </span>
+            </div>
+
+            {/* 4 Plan Cards */}
+            <div className="pricing-grid" style={{ marginBottom: 48 }}>
+
+              {/* 1. CANDIDATE ACCESS */}
+              <div
+                style={{
+                  background: '#ffffff',
+                  borderRadius: 14,
+                  border: '1px solid #e2e8f0',
+                  padding: '28px 22px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 800, color: '#059669', background: '#ecfdf5', padding: '3px 10px', borderRadius: 99, border: '1px solid #a7f3d0', marginBottom: 12 }}>
+                    Free to get started
+                  </div>
+                  <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', marginBottom: 6 }}>
+                    Candidate Access
+                  </h3>
+                  <div style={{ fontSize: 30, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', marginBottom: 4 }}>
+                    ₹0 <span style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>/ Free</span>
+                  </div>
+                  <p style={{ fontSize: 12, color: '#64748b', fontWeight: 600, marginBottom: 16 }}>
+                    Core candidate opportunity access remains free.
+                  </p>
+                  <p style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5, marginBottom: 18 }}>
+                    For candidates exploring verified roles and building target-specific recruitment records.
+                  </p>
+
+                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16, marginBottom: 16 }}>
+                    <div style={{ fontSize: 11.5, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 10 }}>
+                      What is included:
+                    </div>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5, color: '#334155' }}>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Candidate profile</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Explore verified published vacancies</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Create and manage targets</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>View role requirements</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Submit accepted target-specific evidence</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>View evidence status and coverage</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Candidate-visible recruitment updates</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Basic privacy controls</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 14, marginBottom: 20 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
+                      What is not included:
+                    </div>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 11.5, color: '#64748b' }}>
+                      <li style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Minus size={13} style={{ color: '#94a3b8', flexShrink: 0 }} />
+                        <span>Guaranteed interviews or job placement</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Minus size={13} style={{ color: '#94a3b8', flexShrink: 0 }} />
+                        <span>Automatic evidence acceptance</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Minus size={13} style={{ color: '#94a3b8', flexShrink: 0 }} />
+                        <span>Candidate ranking or AI hiring score</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div>
+                  <Link
+                    href="/register/candidate"
+                    style={{
+                      width: '100%',
+                      padding: '11px 16px',
+                      borderRadius: 8,
+                      background: '#0f172a',
+                      color: '#ffffff',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <span>Create candidate account</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                  <p style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', marginTop: 10, margin: '10px 0 0' }}>
+                    Some company-configured assessments or premium career services may be introduced separately in the future.
+                  </p>
+                </div>
+              </div>
+
+              {/* 2. COMPANY STARTER */}
+              <div
+                style={{
+                  background: '#ffffff',
+                  borderRadius: 14,
+                  border: '1px solid #e2e8f0',
+                  padding: '28px 22px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 800, color: '#475569', background: '#f1f5f9', padding: '3px 10px', borderRadius: 99, border: '1px solid #cbd5e1', marginBottom: 12 }}>
+                    For small teams starting structured hiring
+                  </div>
+                  <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', marginBottom: 6 }}>
+                    Company Starter
+                  </h3>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.3px', marginBottom: 4 }}>
+                    Contact for early access
+                  </div>
+                  <p style={{ fontSize: 12, color: '#64748b', fontWeight: 600, marginBottom: 16 }}>
+                    Early access pricing for verified organizations
+                  </p>
+                  <p style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5, marginBottom: 18 }}>
+                    For small hiring teams that need verified vacancy management and structured candidate review.
+                  </p>
+
+                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16, marginBottom: 20 }}>
+                    <div style={{ fontSize: 11.5, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 10 }}>
+                      What is included:
+                    </div>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5, color: '#334155' }}>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Company workspace &amp; verification workflow</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Department and role management</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Vacancy creation &amp; publishing workflow</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Requirement definition &amp; vacancy versions</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Candidate target visibility for company roles</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Requirement-linked evidence review</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Basic evidence coverage view &amp; recruiter notes</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Basic audit history &amp; standard support</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div>
+                  <Link
+                    href="/register/company"
+                    style={{
+                      width: '100%',
+                      padding: '11px 16px',
+                      borderRadius: 8,
+                      background: '#ffffff',
+                      border: '1.5px solid #cbd5e1',
+                      color: '#0f172a',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <span>Request company access</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                  <p style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', marginTop: 10, margin: '10px 0 0' }}>
+                    Availability may depend on verification and onboarding capacity.
+                  </p>
+                </div>
+              </div>
+
+              {/* 3. COMPANY PROFESSIONAL (RECOMMENDED) */}
+              <div
+                style={{
+                  background: '#ffffff',
+                  borderRadius: 14,
+                  border: '2px solid #b8860b',
+                  padding: '28px 22px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  boxShadow: '0 6px 24px rgba(184, 134, 11, 0.12)',
+                  position: 'relative',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 800, color: '#854d0e', background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', padding: '3px 10px', borderRadius: 99, border: '1px solid #d4af37', marginBottom: 12 }}>
+                    <Sparkles size={12} style={{ color: '#b8860b' }} />
+                    <span>Recommended</span>
+                  </div>
+                  <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', marginBottom: 6 }}>
+                    Company Professional
+                  </h3>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: '#854d0e', letterSpacing: '-0.3px', marginBottom: 4 }}>
+                    Custom team pricing
+                  </div>
+                  <p style={{ fontSize: 12, color: '#64748b', fontWeight: 600, marginBottom: 16 }}>
+                    Tailored to active hiring volume &amp; seats
+                  </p>
+                  <p style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5, marginBottom: 18 }}>
+                    For growing recruiting teams that need deeper review workflows and configurable evaluation.
+                  </p>
+
+                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16, marginBottom: 20 }}>
+                    <div style={{ fontSize: 11.5, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 10 }}>
+                      Everything in Starter, plus:
+                    </div>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5, color: '#334155' }}>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Multiple recruiter seats &amp; pipeline controls</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Structured requirement-by-requirement review</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Evidence request &amp; clarification workflow</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>
+                          Assessment configuration <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 4, background: '#f1f5f9', color: '#64748b' }}>Planned</span>
+                        </span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Assessment results linked to requirements</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>
+                          Interview workflow <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 4, background: '#f1f5f9', color: '#64748b' }}>Planned</span>
+                        </span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Enhanced audit &amp; reporting views</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Priority support &amp; configurable settings</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div>
+                  <Link
+                    href="/contact"
+                    style={{
+                      width: '100%',
+                      padding: '11px 16px',
+                      borderRadius: 8,
+                      background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
+                      color: '#ffffff',
+                      fontSize: 13,
+                      fontWeight: 800,
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      boxShadow: '0 2px 8px rgba(184, 134, 11, 0.3)',
+                    }}
+                  >
+                    <span>Talk to our team</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                  <p style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', marginTop: 10, margin: '10px 0 0' }}>
+                    Planned features available as modules are released.
+                  </p>
+                </div>
+              </div>
+
+              {/* 4. ENTERPRISE / INSTITUTION */}
+              <div
+                style={{
+                  background: '#ffffff',
+                  borderRadius: 14,
+                  border: '1px solid #e2e8f0',
+                  padding: '28px 22px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 800, color: '#1e40af', background: '#eff6ff', padding: '3px 10px', borderRadius: 99, border: '1px solid #bfdbfe', marginBottom: 12 }}>
+                    For large employers &amp; colleges
+                  </div>
+                  <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', marginBottom: 6 }}>
+                    Enterprise &amp; Institution
+                  </h3>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.3px', marginBottom: 4 }}>
+                    Custom pricing
+                  </div>
+                  <p style={{ fontSize: 12, color: '#64748b', fontWeight: 600, marginBottom: 16 }}>
+                    Scaled for multi-department governance
+                  </p>
+                  <p style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5, marginBottom: 18 }}>
+                    For organizations that need governance, scale, multi-team workflows, and tailored deployment.
+                  </p>
+
+                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16, marginBottom: 20 }}>
+                    <div style={{ fontSize: 11.5, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 10 }}>
+                      Everything in Professional, plus:
+                    </div>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5, color: '#334155' }}>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Multi-team and multi-department governance</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Advanced role and permission controls</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Institutional &amp; placement workflows</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Advanced audit and compliance support</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Enterprise onboarding &amp; dedicated success pathway</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Custom reporting &amp; integration planning</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Custom retention and governance configuration</span>
+                      </li>
+                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                        <span>Custom assessment &amp; evaluation programs (where available)</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div>
+                  <Link
+                    href="/contact"
+                    style={{
+                      width: '100%',
+                      padding: '11px 16px',
+                      borderRadius: 8,
+                      background: '#0f172a',
+                      color: '#ffffff',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <span>Contact sales</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                  <p style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', marginTop: 10, margin: '10px 0 0' }}>
+                    Custom SLAs and integrations scoped upon request.
+                  </p>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Assessment Services Add-On Panel */}
+            <div
+              style={{
+                background: '#ffffff',
+                borderRadius: 14,
+                border: '1px solid #e2e8f0',
+                padding: '32px 28px',
+                marginBottom: 36,
+                boxShadow: '0 2px 10px rgba(15, 23, 42, 0.04)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20, marginBottom: 20 }}>
+                <div style={{ maxWidth: 740 }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, color: '#854d0e', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                    <ShieldCheck size={14} style={{ color: '#b8860b' }} />
+                    <span>Evaluation Add-On</span>
+                  </div>
+                  <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', marginBottom: 8 }}>
+                    Assessment Services
+                  </h3>
+                  <p style={{ fontSize: 13.5, color: '#475569', lineHeight: 1.6, margin: 0 }}>
+                    For companies that want company-configured, role-relevant evaluation as part of the requirement-to-evidence workflow.
+                  </p>
+                </div>
+
+                <Link
+                  href="/contact"
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: 8,
+                    background: '#ffffff',
+                    border: '1.5px solid #cbd5e1',
+                    color: '#0f172a',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    flexShrink: 0,
+                  }}
+                >
+                  <span>Discuss assessment needs</span>
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14, borderTop: '1px solid #f1f5f9', paddingTop: 20, marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: '#334155' }}>
+                  <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                  <span>Requirement-aligned assessment design</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: '#334155' }}>
+                  <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                  <span>Assessment configuration &amp; attempt workflow</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: '#334155' }}>
+                  <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                  <span>Requirement-level result mapping</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: '#334155' }}>
+                  <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                  <span>Candidate instructions and transparency</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: '#334155' }}>
+                  <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                  <span>Human review of any integrity signals</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: '#334155' }}>
+                  <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                  <span>Assessment version history</span>
+                </div>
+              </div>
+
+              <div style={{ background: '#fafaf9', padding: '12px 16px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12, color: '#64748b', fontStyle: 'italic' }}>
+                Assessment services are released in phases and may be available through early access or custom implementation. Integrity signals may require human review.
+              </div>
+            </div>
+
+            {/* Optional Candidate Career Tools Section */}
+            <div
+              style={{
+                background: '#fafaf9',
+                borderRadius: 12,
+                border: '1px solid #e2e8f0',
+                padding: '24px 24px',
+                marginBottom: 48,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <GraduationCap size={18} style={{ color: '#b8860b' }} />
+                  <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    Optional candidate career tools
+                  </h3>
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1' }}>
+                  Planned / optional future services
+                </span>
+              </div>
+              <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.5, marginBottom: 14 }}>
+                Core access to verified vacancies and target creation remains free. Optional preparation or career-support features may be offered separately as the product evolves.
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 12, color: '#334155' }}>
+                <span style={{ background: '#ffffff', padding: '4px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>• Advanced preparation pathways</span>
+                <span style={{ background: '#ffffff', padding: '4px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>• Expanded practice content</span>
+                <span style={{ background: '#ffffff', padding: '4px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>• Career insights</span>
+                <span style={{ background: '#ffffff', padding: '4px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>• Portfolio guidance</span>
+                <span style={{ background: '#ffffff', padding: '4px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>• Interview preparation</span>
+              </div>
+            </div>
+
+            {/* Plan Comparison Table */}
+            <div style={{ marginBottom: 56 }}>
+              <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                <h3 style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', marginBottom: 6 }}>
+                  Detailed Plan Comparison
+                </h3>
+                <p style={{ fontSize: 14, color: '#475569' }}>
+                  Compare feature coverage and capability across all four tiers.
+                </p>
+              </div>
+
+              <div className="pricing-table-wrapper">
+                <table>
+                  <caption className="sr-only">Detailed feature comparison across GenuAI plans</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col" style={{ width: '28%' }}>Feature</th>
+                      <th scope="col" style={{ width: '18%' }}>Candidate Access</th>
+                      <th scope="col" style={{ width: '18%' }}>Company Starter</th>
+                      <th scope="col" style={{ width: '18%', color: '#854d0e', background: '#fefce8' }}>Company Professional</th>
+                      <th scope="col" style={{ width: '18%' }}>Enterprise &amp; Institution</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {COMPARISON_ROWS.map((row, i) => (
+                      <tr key={i} style={{ background: i % 2 === 0 ? '#ffffff' : '#fafaf9' }}>
+                        <th scope="row" style={{ fontWeight: 700, color: '#0f172a', background: 'transparent' }}>
+                          {row.name}
+                        </th>
+                        <td>
+                          {row.candidate === 'Included' ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#059669', fontWeight: 700 }}>
+                              <Check size={14} /> Included
+                            </span>
+                          ) : (
+                            <span style={{ color: '#64748b' }}>{row.candidate}</span>
+                          )}
+                        </td>
+                        <td>
+                          {row.starter === 'Included' ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#059669', fontWeight: 700 }}>
+                              <Check size={14} /> Included
+                            </span>
+                          ) : (
+                            <span style={{ color: '#64748b' }}>{row.starter}</span>
+                          )}
+                        </td>
+                        <td style={{ background: '#fffbeb' }}>
+                          {row.pro === 'Included' ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#059669', fontWeight: 700 }}>
+                              <Check size={14} /> Included
+                            </span>
+                          ) : row.pro === 'Planned' ? (
+                            <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: '#e2e8f0', color: '#475569' }}>
+                              Planned
+                            </span>
+                          ) : (
+                            <span style={{ color: '#0f172a', fontWeight: 600 }}>{row.pro}</span>
+                          )}
+                        </td>
+                        <td>
+                          {row.enterprise === 'Included' ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#059669', fontWeight: 700 }}>
+                              <Check size={14} /> Included
+                            </span>
+                          ) : (
+                            <span style={{ color: '#0f172a', fontWeight: 600 }}>{row.enterprise}</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Pricing FAQ Accordion */}
+            <div>
+              <div style={{ textAlign: 'center', marginBottom: 28 }}>
+                <h3 style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', marginBottom: 6 }}>
+                  Pricing &amp; Plan Questions
+                </h3>
+                <p style={{ fontSize: 14, color: '#475569' }}>
+                  Clear explanations of GenuAI pricing models and policies.
+                </p>
+              </div>
+
+              <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {PRICING_FAQS.map((faq, index) => {
+                  const isOpen = openPricingFaqIndex === index;
+                  return (
+                    <div
+                      key={index}
+                      style={{
+                        borderRadius: 8,
+                        border: '1px solid #e2e8f0',
+                        background: isOpen ? '#ffffff' : '#fafaf9',
+                        overflow: 'hidden',
+                        boxShadow: isOpen ? '0 2px 6px rgba(15, 23, 42, 0.04)' : 'none',
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => togglePricingFaq(index)}
+                        aria-expanded={isOpen}
+                        style={{
+                          width: '100%',
+                          padding: '16px 18px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          fontSize: 14,
+                          fontWeight: 800,
+                          color: '#0f172a',
+                        }}
+                      >
+                        <span>{faq.q}</span>
+                        {isOpen ? <ChevronUp size={16} style={{ color: '#b8860b', flexShrink: 0 }} /> : <ChevronDown size={16} style={{ color: '#64748b', flexShrink: 0 }} />}
+                      </button>
+                      {isOpen && (
+                        <div style={{ padding: '0 18px 16px', fontSize: 13, color: '#475569', lineHeight: 1.6, borderTop: '1px solid #f1f5f9' }}>
+                          {faq.a}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        {/* 12. GENERAL FAQ ACCORDION */}
+        <section style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '72px 24px' }}>
           <div style={{ maxWidth: 860, margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 36 }}>
               <h2 style={{ fontSize: 'clamp(22px, 3.2vw, 34px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.8px', marginBottom: 8 }}>
-                Questions, answered clearly.
+                Platform questions, answered clearly.
               </h2>
               <p style={{ fontSize: 14.5, color: '#475569' }}>
                 Honest answers about GenuAI's recruitment intelligence platform.
@@ -1052,18 +1906,18 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 12. FINAL CTA */}
-        <section style={{ padding: '72px 24px', textAlign: 'center', maxWidth: 960, margin: '0 auto' }}>
+        {/* 13. FINAL ENTERPRISE CTA */}
+        <section style={{ padding: '80px 24px', textAlign: 'center', maxWidth: 960, margin: '0 auto' }}>
           <h2 style={{ fontSize: 'clamp(24px, 3.8vw, 38px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-1px', marginBottom: 12 }}>
-            Start with a clearer role. Build a stronger evidence story.
+            Build a clearer recruitment workflow.
           </h2>
-          <p style={{ fontSize: 15.5, color: '#475569', maxWidth: 640, margin: '0 auto 28px' }}>
-            Explore verified opportunities, create a target, and understand how your preparation relates to real role requirements.
+          <p style={{ fontSize: 15.5, color: '#475569', maxWidth: 680, margin: '0 auto 28px', lineHeight: 1.6 }}>
+            Whether you are hiring for one role or coordinating recruitment across teams, GenuAI helps connect vacancy requirements with relevant evidence and human review.
           </p>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 16 }}>
             <Link
-              href="/candidate/vacancies"
+              href="/contact"
               style={{
                 padding: '13px 26px',
                 borderRadius: 9,
@@ -1078,13 +1932,12 @@ export default function HomePage() {
                 boxShadow: '0 4px 14px rgba(184, 134, 11, 0.25)',
               }}
             >
-              <Compass size={17} />
-              <span>Explore Verified Vacancies</span>
+              <span>Talk to our team</span>
               <ArrowRight size={15} />
             </Link>
 
             <Link
-              href="/register"
+              href="/register/company"
               style={{
                 padding: '13px 26px',
                 borderRadius: 9,
@@ -1094,20 +1947,23 @@ export default function HomePage() {
                 fontSize: 14.5,
                 fontWeight: 800,
                 textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
               }}
             >
-              <span>Create an Account</span>
+              <span>Create company account</span>
             </Link>
           </div>
 
-          <div style={{ fontSize: 12.5, color: '#64748b' }}>
-            Hiring for a role? <Link href="/register?role=company" style={{ color: '#854d0e', fontWeight: 700 }}>Create a company workspace →</Link>
+          <div style={{ fontSize: 12, color: '#64748b' }}>
+            Company access follows a verification workflow. Candidates can explore verified vacancies at no cost.
           </div>
         </section>
 
       </main>
 
-      {/* 13. COMPLETE SEMANTIC FOOTER */}
+      {/* 14. COMPLETE SEMANTIC FOOTER */}
       <footer style={{ background: '#0f172a', color: '#cbd5e1', paddingTop: 52, paddingBottom: 28, borderTop: '1px solid #1e293b' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 36, marginBottom: 40 }}>
@@ -1133,6 +1989,7 @@ export default function HomePage() {
                 <li><a href="#how-it-works" style={{ color: '#cbd5e1', textDecoration: 'none' }}>How It Works</a></li>
                 <li><a href="#candidates" style={{ color: '#cbd5e1', textDecoration: 'none' }}>For Candidates</a></li>
                 <li><a href="#companies" style={{ color: '#cbd5e1', textDecoration: 'none' }}>For Companies</a></li>
+                <li><a href="#pricing" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Pricing</a></li>
                 <li><Link href="/candidate/vacancies" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Explore Vacancies</Link></li>
                 <li><Link href="/register" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Create Account</Link></li>
                 <li><Link href="/login" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Sign In</Link></li>
