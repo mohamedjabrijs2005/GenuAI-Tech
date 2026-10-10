@@ -2095,6 +2095,84 @@ tbody tr:hover { background: #f1f5f9; }
   background: #fef3c7;
 }
 
+/* ============================================================
+   DEPARTMENT GRID CARDS — PROFESSIONAL DESIGN
+   ============================================================ */
+.dept-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
 
+.dept-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  overflow: hidden;
+}
 
+.dept-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #d4af37, #b8860b);
+  border-radius: 12px 12px 0 0;
+}
 
+.dept-card.inactive::before {
+  background: #e2e8f0;
+}
+
+.dept-card:hover {
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+  border-color: rgba(212, 175, 55, 0.35);
+  transform: translateY(-1px);
+}
+
+.dept-card.inactive {
+  opacity: 0.72;
+  background: #f8fafc;
+}
+
+.dept-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.dept-meta {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 14px;
+  min-height: 18px;
+}
+
+.dept-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.actions-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

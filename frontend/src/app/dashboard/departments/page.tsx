@@ -87,31 +87,70 @@ function DepartmentModal({
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="dept-modal-title">
-      <div className="modal">
-        <div className="modal-header">
-          <h2 className="modal-title" id="dept-modal-title">{isEdit ? 'Edit Department' : 'New Department'}</h2>
+      <div className="modal" style={{ maxWidth: 480 }}>
+        <div className="modal-header" style={{ borderBottom: '1px solid var(--border)', paddingBottom: 16, marginBottom: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 9,
+              background: 'linear-gradient(135deg, rgba(212,175,55,0.18), rgba(184,134,11,0.1))',
+              border: '1px solid rgba(212,175,55,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#854d0e',
+            }}>
+              <FolderOpen size={17} />
+            </div>
+            <div>
+              <h2 className="modal-title" id="dept-modal-title" style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>
+                {isEdit ? 'Edit Department' : 'Create Department'}
+              </h2>
+              <p style={{ margin: 0, fontSize: 11.5, color: 'var(--text-muted)' }}>
+                {isEdit ? 'Update this department\'s details' : 'Add a new department to your organisation'}
+              </p>
+            </div>
+          </div>
           <button className="modal-close" onClick={onClose} aria-label="Close"><X size={16} /></button>
         </div>
         <form onSubmit={handleSubmit}>
-          <div className="modal-body">
+          <div className="modal-body" style={{ paddingTop: 20 }}>
             <div className="form-group">
-              <label className="form-label" htmlFor="dept-name">Department Name <span className="required">*</span></label>
-              <input id="dept-name" type="text" className={`form-input${errors.name ? ' error' : ''}`}
-                placeholder="e.g. Technology" value={name} onChange={e => { setName(e.target.value); setErrors(p => ({...p, name:''})); }} required autoFocus />
+              <label className="form-label" htmlFor="dept-name">
+                Department Name <span className="required">*</span>
+              </label>
+              <input
+                id="dept-name"
+                type="text"
+                className={`form-input${errors.name ? ' error' : ''}`}
+                placeholder="e.g. Engineering, Product, Sales"
+                value={name}
+                onChange={e => { setName(e.target.value); setErrors(p => ({...p, name:''})); }}
+                required
+                autoFocus
+              />
               {errors.name && <div className="form-error"><AlertCircle size={11}/> {errors.name}</div>}
+              <div className="form-hint">Use a clear, recognisable name for this department</div>
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" htmlFor="dept-desc">Description</label>
-              <textarea id="dept-desc" className="form-textarea"
-                placeholder="Optional: describe this department's purpose"
-                value={description} onChange={e => setDescription(e.target.value)}
-                style={{ minHeight: 80 }} />
+              <label className="form-label" htmlFor="dept-desc">
+                Description <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>
+              </label>
+              <textarea
+                id="dept-desc"
+                className="form-textarea"
+                placeholder="Briefly describe this department's purpose and responsibilities…"
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                style={{ minHeight: 90, resize: 'vertical' }}
+              />
             </div>
           </div>
-          <div className="modal-footer">
-            <button type="button" className="btn btn-secondary btn-sm" onClick={onClose} disabled={saving}>Cancel</button>
-            <button id="save-dept" type="submit" className="btn btn-primary btn-sm" disabled={saving}>
-              {saving ? <><Loader2 size={13} style={{animation:'spin 0.6s linear infinite'}}/> Saving...</> : isEdit ? 'Save Changes' : 'Create Department'}
+          <div className="modal-footer" style={{ borderTop: '1px solid var(--border)', paddingTop: 16, gap: 8 }}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={onClose} disabled={saving}>
+              Cancel
+            </button>
+            <button id="save-dept" type="submit" className="btn btn-primary btn-sm" disabled={saving} style={{ minWidth: 130 }}>
+              {saving
+                ? <><Loader2 size={13} style={{animation:'spin 0.6s linear infinite'}}/> Saving…</>
+                : isEdit ? 'Save Changes' : 'Create Department'
+              }
             </button>
           </div>
         </form>
@@ -527,19 +566,48 @@ function DepartmentsPageInner() {
             <div className="dept-grid">
               {departments.map(dept => (
                 <div key={dept.id} className={`dept-card${dept.is_active ? '' : ' inactive'}`}>
-                  <div className="dept-name">
-                    {dept.name}
-                    {!dept.is_active && (
-                      <span className="badge" style={{ background: 'var(--color-surface-3)', color: 'var(--color-text-muted)', fontSize: 11 }}>
-                        Inactive
-                      </span>
-                    )}
+                  {/* Card top: icon + name + status */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 8 }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                      background: dept.is_active
+                        ? 'linear-gradient(135deg, rgba(212,175,55,0.18), rgba(184,134,11,0.08))'
+                        : '#f1f5f9',
+                      border: `1px solid ${dept.is_active ? 'rgba(212,175,55,0.3)' : '#e2e8f0'}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: dept.is_active ? '#854d0e' : '#94a3b8',
+                      marginTop: 2,
+                    }}>
+                      <FolderOpen size={18} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="dept-name">
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {dept.name}
+                        </span>
+                        {!dept.is_active && (
+                          <span className="badge" style={{ background: '#f1f5f9', color: '#64748b', fontSize: 10, flexShrink: 0 }}>
+                            Inactive
+                          </span>
+                        )}
+                      </div>
+                      {dept.description ? (
+                        <div className="dept-meta">{dept.description}</div>
+                      ) : (
+                        <div className="dept-meta" style={{ color: '#94a3b8', fontStyle: 'italic' }}>
+                          No description provided
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  {dept.description && (
-                    <div className="dept-meta">{dept.description}</div>
-                  )}
                   <div className="dept-footer">
-                    <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      fontSize: 11.5, fontWeight: 600, color: '#64748b',
+                      background: '#f8fafc', border: '1px solid #e2e8f0',
+                      borderRadius: 20, padding: '3px 10px',
+                    }}>
+                      <Briefcase size={11} />
                       {dept.role_count} {parseInt(dept.role_count) === 1 ? 'role' : 'roles'}
                     </span>
                     <div className="actions-row">

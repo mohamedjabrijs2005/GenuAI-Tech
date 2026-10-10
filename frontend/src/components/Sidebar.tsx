@@ -43,14 +43,14 @@ const NAV: NavSection[] = [
     ],
   },
   {
-    section: 'Candidate Intelligence (Preview)',
+    section: 'Candidate Intelligence',
     items: [
-      { label: 'Evidence Review', href: '/dashboard/evidence', icon: FileCheck, comingSoon: true },
-      { label: 'Coverage & Gaps', href: '/dashboard/evidence/coverage', icon: Shield, comingSoon: true },
-      { label: 'Assessment Setup', href: '/dashboard/assessments', icon: ClipboardList, comingSoon: true },
-      { label: 'Integrity Signals', href: '/dashboard/integrity', icon: Shield, comingSoon: true },
-      { label: 'Interviews', href: '/dashboard/interviews', icon: Mic2, comingSoon: true },
-      { label: 'Reports', href: '/dashboard/reports', icon: FileText, comingSoon: true },
+      { label: 'Evidence Review', href: '/dashboard/evidence', icon: FileCheck },
+      { label: 'Coverage & Gaps', href: '/dashboard/evidence/coverage', icon: Shield },
+      { label: 'Assessment Setup', href: '/dashboard/assessments', icon: ClipboardList },
+      { label: 'Integrity Signals', href: '/dashboard/integrity', icon: Shield },
+      { label: 'Interviews', href: '/dashboard/interviews', icon: Mic2 },
+      { label: 'Reports', href: '/dashboard/reports', icon: FileText },
     ],
   },
 ];
