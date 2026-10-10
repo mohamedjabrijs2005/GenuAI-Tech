@@ -14,14 +14,6 @@ export default function HomePage() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [liveVacanciesCount, setLiveVacanciesCount] = useState<number | null>(null);
   const [syncTime, setSyncTime] = useState<string>('');
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   useEffect(() => {
     const updateTime = () => {
@@ -180,21 +172,7 @@ export default function HomePage() {
       </a>
 
       {/* 1. STICKY TOPBAR / HEADER (Matches the 3 Dashboards) */}
-      <header
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          background: '#ffffff',
-          borderBottom: '1px solid #e2e8f0',
-          height: 64,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 28px',
-          boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
-        }}
-      >
+      <header className="landing-header">
         {/* Brand identity matching dashboards without shield logo */}
         <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
           <div>
@@ -218,7 +196,7 @@ export default function HomePage() {
         </Link>
 
         {/* Center Nav */}
-        <nav aria-label="Main Navigation" style={{ display: isMobile ? 'none' : 'flex', alignItems: 'center', gap: 22 }}>
+        <nav aria-label="Main Navigation" className="landing-nav">
           <a href="#problem" style={{ fontSize: 13, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>Product</a>
           <a href="#how-it-works" style={{ fontSize: 13, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>How It Works</a>
           <a href="#candidates" style={{ fontSize: 13, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>For Candidates</a>
@@ -230,20 +208,7 @@ export default function HomePage() {
         {/* Right Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {syncTime && (
-            <div
-              style={{
-                display: isMobile ? 'none' : 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '4px 10px',
-                borderRadius: 99,
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                fontSize: 11,
-                fontWeight: 600,
-                color: '#64748b',
-              }}
-            >
+            <div className="landing-status-pill">
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669' }} />
               <span style={{ color: '#059669', fontWeight: 700 }}>Connected</span>
               <span style={{ opacity: 0.4 }}>|</span>
@@ -292,14 +257,7 @@ export default function HomePage() {
             aria-expanded={mobileMenuOpen}
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            style={{
-              display: isMobile ? 'flex' : 'none',
-              background: 'none',
-              border: 'none',
-              padding: 6,
-              cursor: 'pointer',
-              color: '#0f172a',
-            }}
+            className="landing-mobile-btn"
           >
             {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
