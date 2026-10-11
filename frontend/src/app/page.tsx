@@ -293,7 +293,7 @@ export default function HomePage() {
             </Link>
 
             <Link
-              href="/login"
+              href="/login?mode=register"
               style={{
                 fontSize: 13,
                 fontWeight: 700,
@@ -352,7 +352,8 @@ export default function HomePage() {
           <a href="#pricing" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>Pricing</a>
           <a href="#trust" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>Trust &amp; Privacy</a>
           <div style={{ height: 1, background: '#e2e8f0', margin: '8px 0' }} />
-          <Link href="/login?role=candidate" onClick={() => setMobileMenuOpen(false)} style={{ padding: '10px', textAlign: 'center', background: '#b8860b', color: '#fff', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Candidate Login</Link>
+          <Link href="/login?mode=register" onClick={() => setMobileMenuOpen(false)} style={{ padding: '10px', textAlign: 'center', background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)', color: '#fff', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Create Account</Link>
+          <Link href="/login?role=candidate" onClick={() => setMobileMenuOpen(false)} style={{ padding: '10px', textAlign: 'center', background: '#f1f5f9', color: '#0f172a', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Candidate Login</Link>
           <Link href="/login?role=company" onClick={() => setMobileMenuOpen(false)} style={{ padding: '10px', textAlign: 'center', background: '#0f172a', color: '#fff', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Company Login</Link>
         </div>
       )}

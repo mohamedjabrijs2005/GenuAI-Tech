@@ -140,15 +140,15 @@ export default function AuthPage() {
       const roleParam = params.get('role');
       const modeParam = params.get('mode');
 
-      if (path.includes('/register') || modeParam === 'register') {
+      const wantsRegister = path.includes('/register') || modeParam === 'register';
+      if (wantsRegister) {
         setIsLogin(false);
-      } else if (path.includes('/login') || modeParam === 'login') {
+      } else {
         setIsLogin(true);
       }
 
       if (roleParam === 'candidate') {
         setPersona('candidate');
-        setIsLogin(true);
       } else if (roleParam === 'company') {
         setPersona('company');
       } else if (roleParam === 'admin') {

@@ -67,16 +67,23 @@ export default function CandidateOnboardingPage() {
     } catch {}
 
     try {
-      await api.patch('/candidate-portal/profile', {
+      await api.put('/candidate-portal/profile', {
         phone: form.phone,
         location: form.location,
+        resumeUrl: form.resumeUrl,
         resume_url: form.resumeUrl,
+        githubUrl: form.githubUrl,
         github_url: form.githubUrl,
+        portfolioUrl: form.portfolioUrl,
         portfolio_url: form.portfolioUrl,
+        linkedinUrl: form.linkedinUrl,
         linkedin_url: form.linkedinUrl,
+        experienceSummary: form.experienceSummary,
         experience_summary: form.experienceSummary,
+        generalSkills: form.skills,
         general_skills: form.skills,
         education: form.degree ? [{ degree: form.degree, institution: form.institution, year: form.graduationYear }] : [],
+        workPreferences: { workMode: form.workMode, availability: form.availability },
         work_preferences: { workMode: form.workMode, availability: form.availability },
       }).catch(() => null);
 

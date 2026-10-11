@@ -167,6 +167,82 @@ export default function CandidateDashboardPage() {
         </div>
       </div>
 
+      {/* ── Profile Registration / Completion Notice ── */}
+      {completionPct < 100 && (
+        <div style={{
+          background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+          borderRadius: 12,
+          padding: '16px 20px',
+          border: '1px solid #fde68a',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 14,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 38, height: 38, borderRadius: 8,
+              background: '#fef3c7', border: '1px solid #fcd34d',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#b45309', flexShrink: 0,
+            }}>
+              <User size={19} />
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#92400e', marginBottom: 2 }}>
+                Profile Registration Incomplete ({completionPct}% Complete)
+              </div>
+              <div style={{ fontSize: 12.5, color: '#b45309', lineHeight: 1.4 }}>
+                {data?.profileCompletion?.missingItems?.length ? (
+                  <>Missing: {data.profileCompletion.missingItems.slice(0, 3).join(', ')}{data.profileCompletion.missingItems.length > 3 ? '…' : ''}. Complete your profile details to unlock all role requirements.</>
+                ) : (
+                  <>Complete your contact information, experience, and skills to target verified vacancies.</>
+                )}
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Link
+              href="/onboarding/candidate"
+              style={{
+                padding: '8px 16px',
+                borderRadius: 8,
+                background: '#ffffff',
+                border: '1px solid #d4af37',
+                color: '#854d0e',
+                fontSize: 12.5,
+                fontWeight: 700,
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Onboarding Wizard
+            </Link>
+            <Link
+              href="/candidate/profile"
+              style={{
+                padding: '8px 18px',
+                borderRadius: 8,
+                background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
+                color: '#ffffff',
+                fontSize: 12.5,
+                fontWeight: 800,
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                boxShadow: '0 2px 6px rgba(184, 134, 11, 0.2)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span>Complete Profile</span>
+              <ArrowRight size={13} />
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* ── Stats Grid ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
 

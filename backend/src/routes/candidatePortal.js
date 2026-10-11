@@ -391,27 +391,25 @@ router.get('/profile', authenticate, requireCandidate, async (req, res) => {
   }
 });
 
-// PUT /api/candidate-portal/profile
+// PUT & PATCH /api/candidate-portal/profile
 // Update candidate profile
-router.put('/profile', authenticate, requireCandidate, async (req, res) => {
-  const {
-    firstName,
-    lastName,
-    phone,
-    location,
-    resumeUrl,
-    education,
-    generalSkills,
-    experienceSummary,
-    employmentHistory,
-    githubUrl,
-    portfolioUrl,
-    linkedinUrl,
-    languages,
-    workPreferences,
-    accessibilityNeeds,
-    privacySettings,
-  } = req.body;
+const handleProfileUpdate = async (req, res) => {
+  const firstName = req.body.firstName || req.body.first_name;
+  const lastName = req.body.lastName || req.body.last_name;
+  const phone = req.body.phone;
+  const location = req.body.location;
+  const resumeUrl = req.body.resumeUrl !== undefined ? req.body.resumeUrl : req.body.resume_url;
+  const education = req.body.education;
+  const generalSkills = req.body.generalSkills !== undefined ? req.body.generalSkills : req.body.general_skills;
+  const experienceSummary = req.body.experienceSummary !== undefined ? req.body.experienceSummary : req.body.experience_summary;
+  const employmentHistory = req.body.employmentHistory !== undefined ? req.body.employmentHistory : req.body.employment_history;
+  const githubUrl = req.body.githubUrl !== undefined ? req.body.githubUrl : req.body.github_url;
+  const portfolioUrl = req.body.portfolioUrl !== undefined ? req.body.portfolioUrl : req.body.portfolio_url;
+  const linkedinUrl = req.body.linkedinUrl !== undefined ? req.body.linkedinUrl : req.body.linkedin_url;
+  const languages = req.body.languages;
+  const workPreferences = req.body.workPreferences !== undefined ? req.body.workPreferences : req.body.work_preferences;
+  const accessibilityNeeds = req.body.accessibilityNeeds !== undefined ? req.body.accessibilityNeeds : req.body.accessibility_needs;
+  const privacySettings = req.body.privacySettings !== undefined ? req.body.privacySettings : req.body.privacy_settings;
 
   const client = await pool.connect();
   try {
@@ -428,6 +426,14 @@ router.put('/profile', authenticate, requireCandidate, async (req, res) => {
         [firstName || null, lastName || null, req.user.email]
       );
     }
+
+    // Ensure candidate row exists
+    await client.query(
+      `INSERT INTO candidates (first_name, last_name, email, phone, location)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (email) DO NOTHING`,
+      [req.user.first_name || firstName || 'Candidate', req.user.last_name || lastName || 'User', req.user.email, phone || '—', location || 'Global']
+    );
 
     // Update candidates table
     const updateRes = await client.query(
@@ -509,7 +515,10 @@ router.put('/profile', authenticate, requireCandidate, async (req, res) => {
   } finally {
     client.release();
   }
-});
+};
+
+router.put('/profile', authenticate, requireCandidate, handleProfileUpdate);
+router.patch('/profile', authenticate, requireCandidate, handleProfileUpdate);
 
 // GET /api/candidate-portal/targets
 // List active targets for the authenticated candidate
