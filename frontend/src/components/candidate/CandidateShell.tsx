@@ -11,12 +11,21 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      router.replace('/login?role=candidate');
+    if (!isLoading) {
+      if (!user) {
+        router.replace('/login?role=candidate');
+        return;
+      }
+      const done = typeof window !== 'undefined' && localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true';
+      if (!done) {
+        router.replace('/onboarding/candidate');
+      }
     }
   }, [user, isLoading, router]);
 
-  if (isLoading) {
+  const onboardingDone = typeof window !== 'undefined' && user?.id ? localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true' : true;
+
+  if (isLoading || (user && !onboardingDone)) {
     return (
       <div style={{
         minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',

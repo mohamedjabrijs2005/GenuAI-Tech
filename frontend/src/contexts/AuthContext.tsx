@@ -43,37 +43,19 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-/** Checks whether a candidate has completed onboarding. */
-async function isCandidateProfileComplete(): Promise<boolean> {
+/** Checks whether a candidate has completed onboarding by checking a flag keyed to their user ID. */
+function isCandidateOnboardingDone(userId: string): boolean {
   try {
-    const cached = localStorage.getItem('genuai_candidate_profile');
-    if (cached) {
-      const p = JSON.parse(cached);
-      if (p?.phone || p?.location || p?.experience_summary) return true;
-    }
-  } catch {}
-  try {
-    const { data } = await api.get('/candidate-portal/profile');
-    const p = data?.profile || data;
-    return !!(p?.phone || p?.location || p?.experience_summary || (p?.general_skills && p.general_skills.length > 0));
+    return localStorage.getItem(`genuai_onboarding_done_${userId}`) === 'true';
   } catch {
     return false;
   }
 }
 
-/** Checks whether a company has completed onboarding. */
-async function isCompanyProfileComplete(): Promise<boolean> {
+/** Checks whether a company has completed onboarding by checking a flag keyed to their user ID. */
+function isCompanyOnboardingDone(userId: string): boolean {
   try {
-    const cached = localStorage.getItem('genuai_company_profile');
-    if (cached) {
-      const p = JSON.parse(cached);
-      if (p?.industry || p?.location) return true;
-    }
-  } catch {}
-  try {
-    const { data } = await api.get('/company/profile');
-    const p = data?.profile || data;
-    return !!(p?.industry || p?.location);
+    return localStorage.getItem(`genuai_onboarding_done_${userId}`) === 'true';
   } catch {
     return false;
   }
@@ -153,14 +135,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    const userId = data.user?.id || '';
     if (isCandidate) {
-      // Require complete profile before accessing dashboard
-      const profileDone = await isCandidateProfileComplete();
-      router.push(profileDone ? '/candidate' : '/onboarding/candidate');
+      // Require onboarding before accessing dashboard (keyed to user ID)
+      const onboardingDone = isCandidateOnboardingDone(userId);
+      router.push(onboardingDone ? '/candidate' : '/onboarding/candidate');
     } else {
-      // Company: require complete profile before accessing dashboard
-      const profileDone = await isCompanyProfileComplete();
-      router.push(profileDone ? '/dashboard' : '/onboarding/company');
+      // Company: require onboarding before accessing dashboard (keyed to user ID)
+      const onboardingDone = isCompanyOnboardingDone(userId);
+      router.push(onboardingDone ? '/dashboard' : '/onboarding/company');
     }
   };
 

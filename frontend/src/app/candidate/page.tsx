@@ -171,48 +171,52 @@ export default function CandidateDashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
 
         {/* Active Targets */}
-        <Link href="/candidate/targets" style={{ textDecoration: 'none', color: 'inherit' }} className="dashboard-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-              Active Targets
-            </span>
-            <div style={{
-              width: 34, height: 34, borderRadius: 8,
-              background: 'var(--brand-subtle)', color: 'var(--primary)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Target size={17} />
+        <Link href="/candidate/targets" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <div className="card" style={{ padding: '20px 22px', transition: 'transform 0.15s, box-shadow 0.15s', cursor: 'pointer' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                Active Targets
+              </span>
+              <div style={{
+                width: 34, height: 34, borderRadius: 8,
+                background: '#fef3c7', color: '#b45309',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Target size={17} />
+              </div>
             </div>
-          </div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4, lineHeight: 1 }}>
-            {data?.activeTargetsCount || 0}
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span>Independent vacancy workspaces</span>
-            <ArrowRight size={12} style={{ marginLeft: 'auto', color: 'var(--primary)' }} />
+            <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4, lineHeight: 1 }}>
+              {data?.activeTargetsCount || 0}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span>Independent vacancy workspaces</span>
+              <ArrowRight size={12} style={{ marginLeft: 'auto', color: '#b45309' }} />
+            </div>
           </div>
         </Link>
 
         {/* Published Vacancies */}
-        <Link href="/candidate/vacancies" style={{ textDecoration: 'none', color: 'inherit' }} className="dashboard-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-              Open Vacancies
-            </span>
-            <div style={{
-              width: 34, height: 34, borderRadius: 8,
-              background: 'rgba(5,150,105,0.1)', color: '#059669',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Compass size={17} />
+        <Link href="/candidate/vacancies" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <div className="card" style={{ padding: '20px 22px', transition: 'transform 0.15s, box-shadow 0.15s', cursor: 'pointer' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                Open Vacancies
+              </span>
+              <div style={{
+                width: 34, height: 34, borderRadius: 8,
+                background: '#fef3c7', color: '#b45309',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Compass size={17} />
+              </div>
             </div>
-          </div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4, lineHeight: 1 }}>
-            {data?.publishedVacanciesCount || 0}
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span>From approved verified employers</span>
-            <ArrowRight size={12} style={{ marginLeft: 'auto', color: '#059669' }} />
+            <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4, lineHeight: 1 }}>
+              {data?.publishedVacanciesCount || 0}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span>From approved verified employers</span>
+              <ArrowRight size={12} style={{ marginLeft: 'auto', color: '#b45309' }} />
+            </div>
           </div>
         </Link>
 
@@ -220,38 +224,39 @@ export default function CandidateDashboardPage() {
         <Link
           href={activeTargets.length > 0 ? `/candidate/targets/${activeTargets[0].target_id}/evidence` : '/candidate/targets'}
           style={{ textDecoration: 'none', color: 'inherit' }}
-          className="dashboard-card"
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-              Evidence Pending
-            </span>
-            <div style={{
-              width: 34, height: 34, borderRadius: 8,
-              background: 'rgba(234,88,12,0.08)', color: '#ea580c',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <FileCheck size={17} />
+          <div className="card" style={{ padding: '20px 22px', transition: 'transform 0.15s, box-shadow 0.15s', cursor: 'pointer' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                Evidence Pending
+              </span>
+              <div style={{
+                width: 34, height: 34, borderRadius: 8,
+                background: '#fef3c7', color: '#b45309',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <FileCheck size={17} />
+              </div>
             </div>
-          </div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4, lineHeight: 1 }}>
-            {data?.evidenceAwaitingActionCount || 0}
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span>Drafts or more info requested</span>
-            <ArrowRight size={12} style={{ marginLeft: 'auto', color: '#ea580c' }} />
+            <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4, lineHeight: 1 }}>
+              {data?.evidenceAwaitingActionCount || 0}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span>Drafts or more info requested</span>
+              <ArrowRight size={12} style={{ marginLeft: 'auto', color: '#b45309' }} />
+            </div>
           </div>
         </Link>
 
         {/* Upcoming Schedule */}
-        <div className="dashboard-card">
+        <div className="card" style={{ padding: '20px 22px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
               Upcoming Schedule
             </span>
             <div style={{
               width: 34, height: 34, borderRadius: 8,
-              background: 'rgba(59,130,246,0.08)', color: '#3b82f6',
+              background: '#fef3c7', color: '#b45309',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <Calendar size={17} />
@@ -262,7 +267,7 @@ export default function CandidateDashboardPage() {
               <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
                 {data.upcomingSchedule.vacancy_title}
               </div>
-              <div style={{ fontSize: 12, color: '#2563eb', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ fontSize: 12, color: '#b45309', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                 <Clock size={12} />
                 <span>
                   {new Date(data.upcomingSchedule.scheduled_at).toLocaleDateString()} at{' '}

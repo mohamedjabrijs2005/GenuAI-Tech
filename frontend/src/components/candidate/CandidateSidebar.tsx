@@ -161,78 +161,6 @@ export function CandidateSidebar({
         </div>
       </div>
 
-      {/* Target Selector Bar */}
-      <div
-        style={{
-          padding: '10px 14px',
-          background: '#fafaf9',
-          borderBottom: '1px solid var(--border)',
-          flexShrink: 0,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, color: '#64748b', letterSpacing: '0.5px' }}>
-            ACTIVE TARGET CONTEXT
-          </span>
-          {selectedTarget && (
-            <span
-              style={{
-                fontSize: 9.5,
-                padding: '1px 6px',
-                borderRadius: 4,
-                background: 'rgba(212, 175, 55, 0.15)',
-                color: '#854d0e',
-                fontWeight: 700,
-              }}
-            >
-              {selectedTarget.target_status}
-            </span>
-          )}
-        </div>
-        {targets.length > 0 ? (
-          <select
-            value={targetId}
-            onChange={(e) => handleTargetChange(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '6px 8px',
-              fontSize: 12,
-              fontWeight: 600,
-              color: '#1e293b',
-              background: '#ffffff',
-              border: '1px solid var(--border)',
-              borderRadius: 6,
-              outline: 'none',
-              cursor: 'pointer',
-            }}
-            aria-label="Active Target Selection"
-          >
-            {targets.map((t) => (
-              <option key={t.target_id} value={t.target_id}>
-                {t.vacancy_title} ({t.company_name})
-              </option>
-            ))}
-          </select>
-        ) : (
-          <Link
-            href="/candidate/vacancies"
-            onClick={onCloseMobile}
-            style={{
-              fontSize: 11.5,
-              color: 'var(--primary)',
-              textDecoration: 'none',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <Compass size={13} />
-            + Target a Published Vacancy
-          </Link>
-        )}
-      </div>
-
       {/* Navigation Links */}
       <nav
         className="sidebar-nav"
@@ -355,20 +283,56 @@ export function CandidateSidebar({
               fontWeight: 800,
               color: '#94a3b8',
               letterSpacing: '0.8px',
-              padding: '0 8px 4px',
+              padding: '0 8px 6px',
               textTransform: 'uppercase',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
             }}
           >
-            <span>TARGET WORKSPACE</span>
-            {targetId && (
-              <span style={{ fontSize: 9, color: '#d4af37', fontWeight: 700 }}>
-                {selectedTarget?.company_name}
-              </span>
-            )}
+            TARGET WORKSPACE
           </div>
+
+          {/* Compact target selector inside this section */}
+          {targets.length > 1 ? (
+            <select
+              value={targetId}
+              onChange={(e) => handleTargetChange(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '6px 8px',
+                fontSize: 11.5,
+                fontWeight: 600,
+                color: '#1e293b',
+                background: '#f8fafc',
+                border: '1px solid var(--border)',
+                borderRadius: 6,
+                outline: 'none',
+                cursor: 'pointer',
+                marginBottom: 6,
+              }}
+              aria-label="Active Target Selection"
+            >
+              {targets.map((t) => (
+                <option key={t.target_id} value={t.target_id}>
+                  {t.vacancy_title}
+                </option>
+              ))}
+            </select>
+          ) : selectedTarget ? (
+            <div style={{
+              fontSize: 11.5,
+              fontWeight: 700,
+              color: '#854d0e',
+              padding: '4px 8px 6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}>
+              <Target size={12} style={{ flexShrink: 0 }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {selectedTarget.vacancy_title}
+              </span>
+            </div>
+          ) : null}
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             {targetId ? (
               <>
@@ -418,7 +382,7 @@ export function CandidateSidebar({
                   className={`sidebar-nav-item${isActive(`/candidate/targets/${targetId}/coverage`) ? ' active' : ''}`}
                 >
                   <Shield size={16} />
-                  <span>Coverage & Gaps</span>
+                  <span>Coverage &amp; Gaps</span>
                 </Link>
                 <Link
                   href={`/candidate/targets/${targetId}/interview`}
@@ -430,18 +394,26 @@ export function CandidateSidebar({
                 </Link>
               </>
             ) : (
-              <div
+              <Link
+                href="/candidate/vacancies"
+                onClick={onCloseMobile}
                 style={{
                   padding: '8px 10px',
-                  fontSize: 11,
-                  color: '#94a3b8',
-                  background: '#f8fafc',
+                  fontSize: 11.5,
+                  color: 'var(--primary)',
+                  textDecoration: 'none',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
                   borderRadius: 6,
-                  textAlign: 'center',
+                  border: '1px dashed #cbd5e1',
+                  background: '#f8fafc',
                 }}
               >
-                Select or create a target to open workspace modules.
-              </div>
+                <Compass size={13} />
+                + Target a Published Vacancy
+              </Link>
             )}
           </div>
         </div>

@@ -4,6 +4,22 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  async redirects() {
+    return [
+      { source: "/pricing", destination: "/#pricing", permanent: false },
+      { source: "/how-it-works", destination: "/#how-it-works", permanent: false },
+      { source: "/product", destination: "/#problem", permanent: false },
+      { source: "/for-candidates", destination: "/#candidates", permanent: false },
+      { source: "/for-companies", destination: "/#companies", permanent: false },
+      { source: "/subscription", destination: "/candidate/subscription", permanent: false },
+      { source: "/vacancies", destination: "/candidate/vacancies", permanent: false },
+      { source: "/genuai-landing/pricing", destination: "/#pricing", permanent: false },
+      { source: "/genuai-landing/how-it-works", destination: "/#how-it-works", permanent: false },
+      { source: "/genuai-landing/product", destination: "/#problem", permanent: false },
+      { source: "/genuai-landing/candidates", destination: "/#candidates", permanent: false },
+      { source: "/genuai-landing/companies", destination: "/#companies", permanent: false },
+    ];
+  },
   async rewrites() {
     return [
       // ─── Landing Page ───────────────────────────────────────────────
@@ -38,12 +54,19 @@ const nextConfig: NextConfig = {
       { source: "/company-dashboard", destination: "/dashboard" },
       { source: "/company-dashboard/:path*", destination: "/dashboard/:path*" },
 
-      // ─── Info Pages ──────────────────────────────────────────────────
+      // ─── Info & Landing Routes ───────────────────────────────────────
       { source: "/genuai-landing/subscription", destination: "/candidate/subscription" },
+      { source: "/genuai-landing/vacancies", destination: "/candidate/vacancies" },
       { source: "/genuai-landing/contact", destination: "/contact" },
       { source: "/genuai-landing/privacy", destination: "/privacy" },
       { source: "/genuai-landing/terms", destination: "/terms" },
       { source: "/genuai-landing/trust", destination: "/trust" },
+
+      // ─── API Proxy Fallback (Prevents 404 in deployed sites) ─────────
+      {
+        source: "/api/:path*",
+        destination: `${process.env.BACKEND_URL || process.env.GENUAI_BACKEND_URL || "http://127.0.0.1:4000"}/api/:path*`,
+      },
     ];
   },
 };

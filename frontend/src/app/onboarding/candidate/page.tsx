@@ -80,9 +80,26 @@ export default function CandidateOnboardingPage() {
         work_preferences: { workMode: form.workMode, availability: form.availability },
       }).catch(() => null);
 
+      // Mark onboarding as complete for this user
+      try {
+        const storedUser = localStorage.getItem('genuai_user');
+        if (storedUser) {
+          const u = JSON.parse(storedUser);
+          if (u?.id) localStorage.setItem(`genuai_onboarding_done_${u.id}`, 'true');
+        }
+      } catch {}
+
       toast.success('Profile set up successfully!');
       router.push('/candidate');
     } catch {
+      // Even if API fails, mark onboarding done and proceed
+      try {
+        const storedUser = localStorage.getItem('genuai_user');
+        if (storedUser) {
+          const u = JSON.parse(storedUser);
+          if (u?.id) localStorage.setItem(`genuai_onboarding_done_${u.id}`, 'true');
+        }
+      } catch {}
       toast.success('Profile set up successfully!');
       router.push('/candidate');
     } finally {
@@ -111,22 +128,14 @@ export default function CandidateOnboardingPage() {
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 16 }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: 10,
-              background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-              border: '1.5px solid rgba(212,175,55,0.5)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#d4af37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M2 17L12 22L22 17" stroke="rgba(212,175,55,0.6)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
             <div>
-              <div style={{ fontSize: 17, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.3px' }}>GenuAI Technologies</div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#b8860b', textTransform: 'uppercase', letterSpacing: '0.14em' }}>Candidate Setup</div>
+              <div className="sidebar-logo-text gold-gradient-text" style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.4px', lineHeight: 1.1 }}>
+                GenuAI Technologies
+              </div>
+              <div style={{ fontSize: 10.5, fontWeight: 700, color: '#854d0e', textTransform: 'uppercase', letterSpacing: '0.14em', marginTop: 3 }}>
+                Candidate Workspace Setup
+              </div>
             </div>
           </div>
 

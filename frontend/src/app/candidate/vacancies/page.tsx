@@ -112,31 +112,31 @@ export default function CandidateVacanciesPage() {
           padding: '16px 20px',
           display: 'flex',
           flexWrap: 'wrap',
-          gap: 12,
+          gap: 14,
           alignItems: 'center',
           justifyContent: 'space-between',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 260 }}>
+        <div style={{ display: 'flex', alignItems: 'center', flex: '1 1 320px', minWidth: 260 }}>
           <div style={{ position: 'relative', width: '100%' }}>
-            <Search size={16} style={{ position: 'absolute', left: 12, top: 12, color: '#94a3b8' }} />
+            <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
             <input
               type="text"
-              className="input-field"
+              className="form-input input-field"
               placeholder="Search by role title or company name..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ paddingLeft: 36 }}
+              style={{ width: '100%', paddingLeft: 40, height: 42, fontSize: 13.5 }}
             />
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <select
-            className="input-field"
+            className="form-select input-field"
             value={workMode}
             onChange={(e) => setWorkMode(e.target.value)}
-            style={{ width: 140, cursor: 'pointer' }}
+            style={{ width: 150, height: 42, cursor: 'pointer', fontSize: 13 }}
           >
             <option value="ALL">All Work Modes</option>
             <option value="Remote">Remote</option>
@@ -145,10 +145,10 @@ export default function CandidateVacanciesPage() {
           </select>
 
           <select
-            className="input-field"
+            className="form-select input-field"
             value={level}
             onChange={(e) => setLevel(e.target.value)}
-            style={{ width: 140, cursor: 'pointer' }}
+            style={{ width: 140, height: 42, cursor: 'pointer', fontSize: 13 }}
           >
             <option value="ALL">All Levels</option>
             <option value="Junior">Junior</option>
