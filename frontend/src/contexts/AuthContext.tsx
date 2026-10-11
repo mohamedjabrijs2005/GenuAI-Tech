@@ -139,11 +139,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (isCandidate) {
       // Check backend profile to determine if onboarding is genuinely complete
+      // Use validateStatus to prevent global 401 interceptor from redirecting to /login
       try {
-        const profileRes = await api.get('/candidate-portal/profile').catch(() => null);
+        const profileRes = await api.get('/candidate-portal/profile', {
+          validateStatus: (s) => s < 500,
+        });
         const profile = profileRes?.data?.profile;
-        // Consider onboarding done if candidate has set at least phone or experience summary
-        const profileComplete = !!(profile?.phone || profile?.experience_summary || profile?.location);
+        // Backend creates new candidates with placeholder values phone='—' and location='Global'
+        // So check for actual user-entered data (matching backend calculateProfileCompletion logic)
+        const hasPhone = !!(profile?.phone && profile.phone !== '—' && profile.phone !== '-');
+        const hasLocation = !!(profile?.location && profile.location !== 'Global' && profile.location.trim() !== '');
+        const hasExperience = !!(profile?.experience_summary && profile.experience_summary.trim() !== '');
+        const profileComplete = profileRes.status === 200 && (hasPhone || hasLocation || hasExperience);
         if (profileComplete) {
           localStorage.setItem(`genuai_onboarding_done_${userId}`, 'true');
           router.push('/candidate');

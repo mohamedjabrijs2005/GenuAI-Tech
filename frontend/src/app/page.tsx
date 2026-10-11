@@ -266,7 +266,7 @@ export default function HomePage() {
           <nav aria-label="Main Navigation" className="landing-nav">
             <a href="#problem">Product</a>
             <a href="#how-it-works">How It Works</a>
-            <a href="#vacancies" style={{ fontWeight: 700, color: '#b8860b' }}>Vacancies</a>
+            <a href="#vacancies">Vacancies</a>
             <a href="#candidates">For Candidates</a>
             <a href="#companies">For Companies</a>
             <a href="#pricing">Pricing</a>
@@ -346,7 +346,7 @@ export default function HomePage() {
         >
           <a href="#problem" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>Product</a>
           <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>How It Works</a>
-          <a href="#vacancies" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 700, color: '#b8860b', textDecoration: 'none' }}>Vacancies</a>
+          <a href="#vacancies" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>Vacancies</a>
           <a href="#candidates" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>For Candidates</a>
           <a href="#companies" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>For Companies</a>
           <a href="#pricing" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>Pricing</a>
