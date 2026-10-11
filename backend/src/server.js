@@ -50,6 +50,10 @@ app.use('/api/candidate-portal', candidatePortalRoutes);
 app.use('/api/reports', reportRoutes);
 
 // Health check
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', service: 'GenuAI API', version: '2.0', message: 'Backend is running' });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'GenuAI API', version: '2.0', timestamp: new Date().toISOString() });
 });
