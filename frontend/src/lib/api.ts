@@ -1,6 +1,19 @@
 import axios from 'axios';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:4000/api';
+const getBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (typeof window !== 'undefined') {
+    return '/api';
+  }
+  if (process.env.GENUAI_BACKEND_URL) {
+    return `${process.env.GENUAI_BACKEND_URL}/api`;
+  }
+  return 'http://127.0.0.1:4000/api';
+};
+
+const API_BASE = getBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE,
