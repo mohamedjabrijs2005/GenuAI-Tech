@@ -4,11 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Eye, EyeOff, Shield, ShieldCheck, Lock, Mail, CheckCircle2,
-  AlertCircle, ArrowRight, Sparkles, Building2, User,
+  Eye, EyeOff, Lock, Mail, CheckCircle2,
+  AlertCircle, ArrowRight, Building2, User,
   FileCheck, Target, UserCheck, ChevronRight, Activity, Award,
   Check, X, HelpCircle, KeyRound, Laptop, Compass, BookOpen,
-  ClipboardCheck, BadgeCheck, Sliders, ShieldAlert, FileText, CheckCheck
+  ClipboardCheck, BadgeCheck, Sliders, FileText, CheckCheck
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { GenuAILogo } from '@/components/GenuAILogo';
@@ -90,11 +90,11 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
     subtext: 'Centralized governance engine for company verification, assessment taxonomy, platform security signals, and compliance audits.',
     flowSteps: ['VERIFY', 'GOVERN', 'MONITOR', 'RESOLVE', 'AUDIT'],
     workings: [
-      { title: '1. Verify', desc: 'Review & approve company identities, vacancy submissions, and compliance status', icon: ShieldCheck },
+      { title: '1. Verify', desc: 'Review & approve company identities, vacancy submissions, and compliance status', icon: CheckCircle2 },
       { title: '2. Govern', desc: 'Standardize platform role taxonomies and benchmark evaluation models', icon: FileText },
-      { title: '3. Monitor', desc: 'Inspect real-time anti-cheat integrity signals and system health telemetry', icon: Activity },
-      { title: '4. Resolve', desc: 'Adjudicate candidate dispute tickets, policy flags, and moderation reports', icon: ShieldAlert },
-      { title: '5. Audit', desc: 'Maintain complete, immutable system audit logs with cryptographic auditability', icon: KeyRound },
+      { title: '3. Monitor', desc: 'Inspect real-time integrity signals and system health telemetry', icon: Activity },
+      { title: '4. Resolve', desc: 'Adjudicate candidate dispute tickets, policy flags, and moderation reports', icon: UserCheck },
+      { title: '5. Audit', desc: 'Maintain complete, immutable system audit logs with full auditability', icon: KeyRound },
     ],
     trustFooter: 'Platform Security • Governance • Auditability',
     cardTitle: 'Admin Sign In',
@@ -274,9 +274,9 @@ export default function AuthPage() {
 
         toast.success('Account created successfully');
         if (persona === 'candidate') {
-          router.push('/candidate');
+          router.push('/onboarding/candidate');
         } else {
-          router.push('/dashboard');
+          router.push('/onboarding/company');
         }
       }
     } catch (e: any) {
@@ -324,12 +324,16 @@ export default function AuthPage() {
               style={{
                 width: 40,
                 height: 40,
-                background: 'linear-gradient(135deg, #ffffff 0%, #fffbeb 50%, #fef3c7 100%)',
-                border: '1.5px solid rgba(212, 175, 55, 0.6)',
-                boxShadow: '0 4px 14px rgba(184, 134, 11, 0.15)',
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                border: '1.5px solid rgba(212, 175, 55, 0.5)',
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.2)',
               }}
             >
-              <Shield size={20} style={{ color: '#b8860b' }} />
+              <svg width={20} height={20} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#d4af37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M2 17L12 22L22 17" stroke="rgba(212,175,55,0.6)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </div>
             <div>
               <div style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.3px', lineHeight: 1.1 }}>
@@ -342,7 +346,7 @@ export default function AuthPage() {
           </div>
 
           <div className="auth-hero-badge">
-            <Sparkles size={13} style={{ color: '#b8860b' }} />
+            <CheckCircle2 size={13} style={{ color: '#b8860b' }} />
             <span>Recruitment Intelligence &amp; Evidence</span>
           </div>
         </div>
@@ -712,7 +716,7 @@ export default function AuthPage() {
               {config.ssoIcon === 'google' ? (
                 <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" style={{ width: 14, height: 14 }} />
               ) : (
-                <ShieldCheck size={15} style={{ color: '#b8860b' }} />
+                <CheckCircle2 size={15} style={{ color: '#b8860b' }} />
               )}
               <span>{config.ssoText}</span>
             </button>

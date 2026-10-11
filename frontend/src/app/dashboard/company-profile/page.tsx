@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Building2, Globe, MapPin, Users, Mail, Phone, Edit2, CheckCircle, Clock, XCircle, Sparkles, ShieldCheck, Save } from 'lucide-react';
+import { Building2, Globe, MapPin, Users, Mail, Phone, Edit2, CheckCircle, Clock, XCircle, Shield, Save } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -26,14 +26,26 @@ export default function CompanyProfilePage() {
   });
 
   useEffect(() => {
-    if (company) {
+    let localData: any = null;
+    try {
+      const stored = localStorage.getItem('genuai_company_profile');
+      if (stored) localData = JSON.parse(stored);
+    } catch {}
+
+    if (company || localData) {
       setForm(prev => ({
         ...prev,
-        name: company.name || '',
-        officialEmail: user?.email || prev.officialEmail,
-        hiringContactName: user ? `${user.firstName} ${user.lastName}`.trim() : prev.hiringContactName,
-        hiringContactEmail: user?.email || prev.hiringContactEmail,
-        verificationStatus: (company.verificationStatus as any) || 'UNVERIFIED',
+        name: company?.name || prev.name,
+        industry: localData?.industry || prev.industry,
+        description: localData?.description || prev.description,
+        website: localData?.website || prev.website,
+        location: localData?.location || prev.location,
+        size: localData?.size || prev.size,
+        officialEmail: localData?.officialEmail || user?.email || prev.officialEmail,
+        phone: localData?.phone || prev.phone,
+        hiringContactName: localData?.hiringContactName || (user ? `${user.firstName} ${user.lastName}`.trim() : prev.hiringContactName),
+        hiringContactEmail: localData?.hiringContactEmail || user?.email || prev.hiringContactEmail,
+        verificationStatus: (company?.verificationStatus as any) || 'UNVERIFIED',
       }));
     }
 
@@ -44,15 +56,15 @@ export default function CompanyProfilePage() {
           const c = res.data.company;
           setForm({
             name: c.name || company?.name || '',
-            industry: c.industry || '',
-            description: c.description || '',
-            website: c.website || '',
-            location: c.location || '',
-            size: c.size || '',
-            officialEmail: c.official_email || user?.email || '',
-            phone: c.hiring_contact_phone || '',
-            hiringContactName: c.hiring_contact_name || (user ? `${user.firstName} ${user.lastName}`.trim() : ''),
-            hiringContactEmail: c.hiring_contact_email || user?.email || '',
+            industry: c.industry || localData?.industry || '',
+            description: c.description || localData?.description || '',
+            website: c.website || localData?.website || '',
+            location: c.location || localData?.location || '',
+            size: c.size || localData?.size || '',
+            officialEmail: c.official_email || localData?.officialEmail || user?.email || '',
+            phone: c.hiring_contact_phone || localData?.phone || '',
+            hiringContactName: c.hiring_contact_name || localData?.hiringContactName || (user ? `${user.firstName} ${user.lastName}`.trim() : ''),
+            hiringContactEmail: c.hiring_contact_email || localData?.hiringContactEmail || user?.email || '',
             verificationStatus: c.verification_status || 'UNVERIFIED',
           });
         }
@@ -63,6 +75,20 @@ export default function CompanyProfilePage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
+    try {
+      localStorage.setItem('genuai_company_profile', JSON.stringify({
+        industry: form.industry,
+        description: form.description,
+        website: form.website,
+        location: form.location,
+        size: form.size,
+        officialEmail: form.officialEmail,
+        phone: form.phone,
+        hiringContactName: form.hiringContactName,
+        hiringContactEmail: form.hiringContactEmail,
+      }));
+    } catch {}
+
     try {
       await api.patch('/company/profile', {
         industry: form.industry,
@@ -126,7 +152,7 @@ export default function CompanyProfilePage() {
       >
         <div className="flex items-center gap-3">
           <div className="avatar avatar-md" style={{ background: '#dcfce7', color: '#059669' }}>
-            <ShieldCheck size={22} />
+            <CheckCircle size={22} />
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>

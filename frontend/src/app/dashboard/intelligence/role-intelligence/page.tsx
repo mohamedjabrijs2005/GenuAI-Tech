@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  BrainCircuit, Sparkles, Building2, ShieldCheck, Layers, Target, CheckCircle2,
-  HelpCircle, ArrowRight, Lock, AlertCircle, Info, RefreshCw, BarChart2,
+  BarChart2, Building2, ShieldCheck, Layers, Target, CheckCircle2,
+  HelpCircle, ArrowRight, Lock, AlertCircle, Info, RefreshCw,
   Check, ChevronRight, FileText, Award, Download
 } from 'lucide-react';
 import { DataService, Vacancy } from '@/lib/dataService';
@@ -156,7 +156,7 @@ export default function RoleIntelligencePage() {
               onClick={handleApplyToRole}
               className="btn btn-gold btn-sm"
             >
-              <Sparkles size={14} />
+              <CheckCircle2 size={14} />
               <span>Apply Benchmarks</span>
             </button>
           </div>

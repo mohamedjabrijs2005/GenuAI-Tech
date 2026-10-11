@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Briefcase, Target, ClipboardList,
-  Users, Shield, Mic2, BrainCircuit, FileCheck, Settings,
-  Bell, FileText, HandshakeIcon, LogOut, ChevronRight, Sparkles, ScrollText,
+  Users, Shield, Mic2, FileCheck, Settings,
+  Bell, FileText, HandshakeIcon, LogOut, ChevronRight, CreditCard, ScrollText,
 } from 'lucide-react';
 
 interface NavItem {
@@ -43,7 +43,7 @@ const NAV: NavSection[] = [
     ],
   },
   {
-    section: 'Candidate Intelligence',
+    section: 'Review & Assessment',
     items: [
       { label: 'Evidence Review', href: '/dashboard/evidence', icon: FileCheck },
       { label: 'Coverage & Gaps', href: '/dashboard/evidence/coverage', icon: Shield },
@@ -51,6 +51,12 @@ const NAV: NavSection[] = [
       { label: 'Integrity Signals', href: '/dashboard/integrity', icon: Shield },
       { label: 'Interviews', href: '/dashboard/interviews', icon: Mic2 },
       { label: 'Reports', href: '/dashboard/reports', icon: FileText },
+    ],
+  },
+  {
+    section: 'Account',
+    items: [
+      { label: 'Subscription', href: '/dashboard/subscription', icon: CreditCard },
     ],
   },
 ];

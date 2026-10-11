@@ -1193,10 +1193,10 @@ export default function HomePage() {
                     Free to get started
                   </div>
                   <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', marginBottom: 6 }}>
-                    Candidate Access
+                    Candidate Free
                   </h3>
                   <div style={{ fontSize: 30, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', marginBottom: 4 }}>
-                    ₹0 <span style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>/ Free</span>
+                    ₹0 <span style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>/ Always Free</span>
                   </div>
                   <p style={{ fontSize: 12, color: '#64748b', fontWeight: 600, marginBottom: 16 }}>
                     Core candidate opportunity access remains free.
@@ -1313,11 +1313,14 @@ export default function HomePage() {
                   <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', marginBottom: 6 }}>
                     Company Starter
                   </h3>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.3px', marginBottom: 4 }}>
-                    Contact for early access
+                  <div style={{ fontSize: 28, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.3px', marginBottom: 4 }}>
+                    {billingCycle === 'monthly' ? '₹4,999' : '₹49,999'}
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginLeft: 4 }}>
+                      {billingCycle === 'monthly' ? '/month' : '/year'}
+                    </span>
                   </div>
                   <p style={{ fontSize: 12, color: '#64748b', fontWeight: 600, marginBottom: 16 }}>
-                    Early access pricing for verified organizations
+                    {billingCycle === 'annual' ? 'Save ~17% vs monthly billing' : 'Up to 3 recruiters · 3 vacancies · 150 targets/month'}
                   </p>
                   <p style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5, marginBottom: 18 }}>
                     For small hiring teams that need verified vacancy management and structured candidate review.
@@ -1412,13 +1415,16 @@ export default function HomePage() {
                     <span>Recommended</span>
                   </div>
                   <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', marginBottom: 6 }}>
-                    Company Professional
+                    Company Growth
                   </h3>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: '#854d0e', letterSpacing: '-0.3px', marginBottom: 4 }}>
-                    Custom team pricing
+                  <div style={{ fontSize: 28, fontWeight: 900, color: '#854d0e', letterSpacing: '-0.3px', marginBottom: 4 }}>
+                    {billingCycle === 'monthly' ? '₹12,999' : '₹1,29,999'}
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginLeft: 4 }}>
+                      {billingCycle === 'monthly' ? '/month' : '/year'}
+                    </span>
                   </div>
                   <p style={{ fontSize: 12, color: '#64748b', fontWeight: 600, marginBottom: 16 }}>
-                    Tailored to active hiring volume &amp; seats
+                    {billingCycle === 'annual' ? 'Save ~17% vs monthly billing' : 'Up to 10 recruiters · 15 vacancies · 1,000 targets/month'}
                   </p>
                   <p style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5, marginBottom: 18 }}>
                     For growing recruiting teams that need deeper review workflows and configurable evaluation.
@@ -1693,13 +1699,27 @@ export default function HomePage() {
                     Optional candidate career tools
                   </h3>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1' }}>
-                  Planned / optional future services
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0' }}>
+                  From ₹299/month
                 </span>
               </div>
               <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.5, marginBottom: 14 }}>
-                Core access to verified vacancies and target creation remains free. Optional preparation or career-support features may be offered separately as the product evolves.
+                Core access to verified vacancies and target creation remains free. Optional preparation and career-support plans are available separately.
               </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
+                {[
+                  { name: 'Candidate Plus', price: '₹299/month', note: 'or ₹2,499/year', desc: 'Up to 3 guided targets, practice sessions, preparation checklists' },
+                  { name: 'Candidate Pro', price: '₹699/month', note: 'or ₹5,999/year', desc: 'Up to 10 targets, 25 practice sessions, multi-target workspace' },
+                  { name: 'Career Pack', price: '₹1,499 one-time', note: '60-day access', desc: 'One role-specific preparation plan with practice sessions' },
+                ].map(p => (
+                  <div key={p.name} style={{ background: '#ffffff', borderRadius: 8, border: '1px solid #e2e8f0', padding: '14px 16px' }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0f172a', marginBottom: 2 }}>{p.name}</div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: '#b8860b', marginBottom: 2 }}>{p.price}</div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, marginBottom: 6 }}>{p.note}</div>
+                    <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.4 }}>{p.desc}</div>
+                  </div>
+                ))}
+              </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 12, color: '#334155' }}>
                 <span style={{ background: '#ffffff', padding: '4px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>• Advanced preparation pathways</span>
                 <span style={{ background: '#ffffff', padding: '4px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>• Expanded practice content</span>
@@ -1715,8 +1735,8 @@ export default function HomePage() {
                 <h3 style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', marginBottom: 6 }}>
                   Detailed Plan Comparison
                 </h3>
-                <p style={{ fontSize: 14, color: '#475569' }}>
-                  Compare feature coverage and capability across all four tiers.
+                <p style={{ fontSize: 14, color: '#475569', marginBottom: 0 }}>
+                  Compare feature coverage across Candidate Free, Company Starter, Company Growth, and Enterprise plans.
                 </p>
               </div>
 
@@ -1726,9 +1746,9 @@ export default function HomePage() {
                   <thead>
                     <tr>
                       <th scope="col" style={{ width: '28%' }}>Feature</th>
-                      <th scope="col" style={{ width: '18%' }}>Candidate Access</th>
+                      <th scope="col" style={{ width: '18%' }}>Candidate Free</th>
                       <th scope="col" style={{ width: '18%' }}>Company Starter</th>
-                      <th scope="col" style={{ width: '18%', color: '#854d0e', background: '#fefce8' }}>Company Professional</th>
+                      <th scope="col" style={{ width: '18%', color: '#854d0e', background: '#fefce8' }}>Company Growth</th>
                       <th scope="col" style={{ width: '18%' }}>Enterprise &amp; Institution</th>
                     </tr>
                   </thead>

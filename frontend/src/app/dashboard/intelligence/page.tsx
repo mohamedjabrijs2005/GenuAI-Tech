@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Target, FileCheck, TrendingUp, AlertTriangle, Clock, CheckCircle2,
-  ShieldCheck, ArrowRight, Sparkles, BrainCircuit, RefreshCw, BarChart2,
+  ShieldCheck, ArrowRight, RefreshCw, BarChart2,
   Users, Briefcase, Eye, ChevronRight, Hash
 } from 'lucide-react';
 import { DataService, Candidate, Vacancy } from '@/lib/dataService';
@@ -54,20 +54,20 @@ export default function IntelligencePage() {
         <div className="breadcrumbs">
           <span>Recruitment</span>
           <span className="breadcrumb-sep">/</span>
-          <span className="breadcrumb-current">Recruiter Intelligence</span>
+          <span className="breadcrumb-current">Evidence Review Hub</span>
         </div>
         <div className="page-header-row">
           <div>
             <h1 className="page-title">
-              Recruiter Evidence &amp; Intelligence Hub
+              Evidence &amp; Candidate Review Hub
             </h1>
             <p className="page-subtitle">
               Structured multi-modal competency proof — requirement coverage, verified evidence, and zero disqualification bias.
             </p>
           </div>
           <Link href="/dashboard/intelligence/role-intelligence" className="btn btn-gold">
-            <BrainCircuit size={16} />
-            Cross-Company Role Intelligence →
+            <BarChart2 size={16} />
+            Cross-Company Role Analysis →
           </Link>
         </div>
       </div>

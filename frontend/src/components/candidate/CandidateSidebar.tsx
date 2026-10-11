@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   Briefcase,
   User,
+  CreditCard,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
@@ -506,6 +507,14 @@ export function CandidateSidebar({
             >
               <Sliders size={16} />
               <span>Settings</span>
+            </Link>
+            <Link
+              href="/candidate/subscription"
+              onClick={onCloseMobile}
+              className={`sidebar-nav-item${isActive('/candidate/subscription') ? ' active' : ''}`}
+            >
+              <CreditCard size={16} />
+              <span>Subscription</span>
             </Link>
           </div>
         </div>

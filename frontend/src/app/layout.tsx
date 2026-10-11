@@ -4,8 +4,8 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 export const metadata: Metadata = {
-  title: 'GenuAI Technologies — Company Dashboard',
-  description: 'GenuAI Technologies — Structured recruitment intelligence platform',
+  title: 'GenuAI Technologies — Structured Recruitment Platform',
+  description: 'GenuAI Technologies — Requirement-centered recruitment platform for companies and candidates',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -140,10 +140,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const role = (data.user?.role || '').toUpperCase();
     const isCandidate = role === 'CANDIDATE' || role === 'APPLICANT';
 
+    // New registration: redirect to onboarding first
     if (isCandidate) {
-      router.push('/candidate');
+      router.push('/onboarding/candidate');
     } else {
-      router.push('/dashboard');
+      router.push('/onboarding/company');
     }
   };
 
