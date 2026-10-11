@@ -293,7 +293,7 @@ export default function HomePage() {
             </Link>
 
             <Link
-              href="/register"
+              href="/login"
               style={{
                 fontSize: 13,
                 fontWeight: 700,
