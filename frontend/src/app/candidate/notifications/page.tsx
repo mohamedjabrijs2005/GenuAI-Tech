@@ -70,12 +70,11 @@ export default function CandidateNotificationsPage() {
       {/* Header */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-          borderRadius: 16,
+          background: '#ffffff',
+          borderRadius: 12,
           padding: '24px 28px',
-          color: '#ffffff',
-          boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.2)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--border)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
@@ -85,17 +84,18 @@ export default function CandidateNotificationsPage() {
                 style={{
                   padding: '3px 10px',
                   borderRadius: 99,
-                  background: 'rgba(212, 175, 55, 0.2)',
+                  background: '#fef3c7',
+                  border: '1px solid #fde68a',
                   fontSize: 11,
                   fontWeight: 700,
-                  color: '#fef08a',
+                  color: '#b45309',
                   textTransform: 'uppercase',
                 }}
               >
                 In-App Notification Stream
               </span>
             </div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0' }}>Notifications</h1>
+            <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0', color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>Notifications</h1>
           </div>
 
           {unreadCount > 0 && (

@@ -25,12 +25,11 @@ export default function CandidatePrivacyPage() {
       {/* Header */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+          background: '#ffffff',
           borderRadius: 16,
           padding: '24px 28px',
-          color: '#ffffff',
-          boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.2)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+          border: '1px solid #e2e8f0',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -38,20 +37,20 @@ export default function CandidatePrivacyPage() {
             style={{
               padding: '3px 10px',
               borderRadius: 99,
-              background: 'rgba(5, 150, 105, 0.2)',
+              background: 'rgba(5, 150, 105, 0.1)',
               fontSize: 11,
               fontWeight: 700,
-              color: '#86efac',
+              color: '#065f46',
               textTransform: 'uppercase',
             }}
           >
-            Privacy & Tenant Isolation Architecture
+            Privacy &amp; Tenant Isolation Architecture
           </span>
         </div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px' }}>
-          Privacy, Data Separation & Control Center
+        <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px', color: '#0f172a' }}>
+          Privacy, Data Separation &amp; Control Center
         </h1>
-        <p style={{ fontSize: 13, color: '#cbd5e1', margin: 0, maxWidth: 650 }}>
+        <p style={{ fontSize: 13, color: '#64748b', margin: 0, maxWidth: 650 }}>
           Understand your privacy boundaries, company data separation, and control your personal recruitment records.
         </p>
       </div>

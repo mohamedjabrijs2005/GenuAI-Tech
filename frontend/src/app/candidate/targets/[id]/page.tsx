@@ -122,12 +122,11 @@ export default function TargetWorkspacePage() {
       {/* Target Identity Hero */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-          borderRadius: 16,
+          background: '#ffffff',
+          borderRadius: 12,
           padding: '28px 32px',
-          color: '#ffffff',
-          boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.2)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--border)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
@@ -137,10 +136,11 @@ export default function TargetWorkspacePage() {
                 style={{
                   padding: '3px 10px',
                   borderRadius: 99,
-                  background: 'rgba(212, 175, 55, 0.2)',
+                  background: '#fef3c7',
+                  border: '1px solid #fde68a',
                   fontSize: 11,
                   fontWeight: 700,
-                  color: '#fef08a',
+                  color: '#b45309',
                   textTransform: 'uppercase',
                 }}
               >
@@ -150,10 +150,11 @@ export default function TargetWorkspacePage() {
                 style={{
                   padding: '3px 10px',
                   borderRadius: 99,
-                  background: 'rgba(255, 255, 255, 0.1)',
+                  background: '#f1f5f9',
+                  border: '1px solid var(--border)',
                   fontSize: 11,
                   fontWeight: 700,
-                  color: '#e2e8f0',
+                  color: 'var(--text-secondary)',
                 }}
               >
                 Status: {target.status}
@@ -163,9 +164,9 @@ export default function TargetWorkspacePage() {
               )}
             </div>
 
-            <h1 style={{ fontSize: 26, fontWeight: 800, margin: '4px 0 10px' }}>{target.vacancy_title}</h1>
+            <h1 style={{ fontSize: 26, fontWeight: 800, margin: '4px 0 10px', color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>{target.vacancy_title}</h1>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, fontSize: 12.5, color: '#cbd5e1' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, fontSize: 12.5, color: 'var(--text-secondary)' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <Building2 size={14} />
                 {target.company_name}

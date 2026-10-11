@@ -102,76 +102,68 @@ export default function CandidateDashboardPage() {
 
       {/* ── Hero Banner ── */}
       <div style={{
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-        borderRadius: 16,
+        background: '#ffffff',
+        borderRadius: 12,
         padding: '24px 28px',
-        color: '#ffffff',
-        boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.2)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        position: 'relative',
-        overflow: 'hidden',
+        border: '1px solid var(--border)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        flexWrap: 'wrap',
+        gap: 20,
       }}>
-        {/* decorative blur */}
-        <div style={{
-          position: 'absolute', top: -40, right: -40, width: 200, height: 200,
-          background: 'radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '3px 10px', borderRadius: 99,
-                background: 'rgba(212,175,55,0.2)', border: '1px solid rgba(212,175,55,0.4)',
-                fontSize: 10.5, fontWeight: 700, color: '#fef08a', letterSpacing: '0.5px',
-                textTransform: 'uppercase',
-              }}>
-                <Shield size={11} style={{ color: '#d4af37' }} />
-                Private Career Workspace
-              </span>
-              <span style={{ fontSize: 11.5, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
-                Connected · {lastSyncTime}
-              </span>
-            </div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 8px', letterSpacing: '-0.5px' }}>
-              {getGreeting()}, {candidateFirstName}
-            </h1>
-            <p style={{ fontSize: 13, color: '#cbd5e1', margin: 0, maxWidth: 600, lineHeight: 1.6 }}>
-              Your private recruitment workspace — understand role requirements, submit requirement-linked evidence, and track human recruiter review.
-            </p>
-          </div>
-
-          {/* Profile Completion Card */}
-          <div style={{
-            background: 'rgba(255,255,255,0.06)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 12,
-            padding: '16px 20px',
-            minWidth: 220,
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: '#e2e8f0' }}>Profile Completion</span>
-              <span style={{ fontSize: 15, fontWeight: 800, color: '#fef08a' }}>{completionPct}%</span>
-            </div>
-            <div style={{ height: 6, borderRadius: 99, background: 'rgba(255,255,255,0.15)', overflow: 'hidden', marginBottom: 10 }}>
-              <div style={{
-                height: '100%', width: `${completionPct}%`,
-                background: 'linear-gradient(90deg, #d4af37, #fde047)',
-                borderRadius: 99, transition: 'width 0.5s ease',
-              }} />
-            </div>
-            <Link href="/candidate/profile" style={{
-              fontSize: 11.5, color: '#93c5fd', textDecoration: 'none',
-              fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4,
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '3px 10px', borderRadius: 99,
+              background: '#fef3c7', border: '1px solid #fde68a',
+              fontSize: 10.5, fontWeight: 700, color: '#b45309', letterSpacing: '0.5px',
+              textTransform: 'uppercase',
             }}>
-              <span>{completionPct === 100 ? 'View your profile' : 'Complete your profile'}</span>
-              <ChevronRight size={13} />
-            </Link>
+              <Shield size={11} style={{ color: '#b45309' }} />
+              Private Career Workspace
+            </span>
+            <span style={{ fontSize: 11.5, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
+              Connected · {lastSyncTime}
+            </span>
           </div>
+          <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 8px', letterSpacing: '-0.4px', color: 'var(--text-primary)' }}>
+            {getGreeting()}, {candidateFirstName}
+          </h1>
+          <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', margin: 0, maxWidth: 600, lineHeight: 1.6 }}>
+            Your private recruitment workspace — understand role requirements, submit requirement-linked evidence, and track human recruiter review.
+          </p>
+        </div>
+
+        {/* Profile Completion Card */}
+        <div style={{
+          background: '#f8fafc',
+          border: '1px solid var(--border)',
+          borderRadius: 12,
+          padding: '16px 20px',
+          minWidth: 220,
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-secondary)' }}>Profile Completion</span>
+            <span style={{ fontSize: 15, fontWeight: 800, color: '#b45309' }}>{completionPct}%</span>
+          </div>
+          <div style={{ height: 6, borderRadius: 99, background: '#e2e8f0', overflow: 'hidden', marginBottom: 10 }}>
+            <div style={{
+              height: '100%', width: `${completionPct}%`,
+              background: 'linear-gradient(90deg, #b8860b, #d4af37)',
+              borderRadius: 99, transition: 'width 0.5s ease',
+            }} />
+          </div>
+          <Link href="/candidate/profile" style={{
+            fontSize: 11.5, color: '#b45309', textDecoration: 'none',
+            fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4,
+          }}>
+            <span>{completionPct === 100 ? 'View your profile' : 'Complete your profile'}</span>
+            <ChevronRight size={13} />
+          </Link>
         </div>
       </div>
 

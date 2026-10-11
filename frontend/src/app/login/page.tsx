@@ -11,7 +11,6 @@ import {
   ClipboardCheck, BadgeCheck, Sliders, FileText, CheckCheck
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { GenuAILogo } from '@/components/GenuAILogo';
 import toast from 'react-hot-toast';
 
 type UserPersona = 'candidate' | 'company' | 'admin';
@@ -246,19 +245,8 @@ export default function AuthPage() {
 
     try {
       if (isLogin) {
-        const trimmedEmail = form.email.trim().toLowerCase();
-        const isAdmin = trimmedEmail.endsWith('@genuaiadmin.com') || trimmedEmail.endsWith('@genuai.io') || persona === 'admin';
-        await login(trimmedEmail, form.password);
-        if (isAdmin) {
-          toast.success('Admin identity verified. Entering Governance Console...');
-          router.push('/admin');
-        } else if (persona === 'candidate') {
-          toast.success('Signed in to Candidate Workspace');
-          router.push('/candidate');
-        } else {
-          toast.success('Signed in to Company Workspace');
-          router.push('/dashboard');
-        }
+        await login(form.email.trim().toLowerCase(), form.password);
+        // AuthContext.login() handles all routing (including profile completion check)
       } else {
         const nameParts = form.name.trim().split(' ');
         const firstName = nameParts[0] || 'User';
@@ -271,13 +259,7 @@ export default function AuthPage() {
           password: form.password,
           companyName: persona === 'company' ? (form.companyName.trim() || 'My Company') : 'Candidate Workspace',
         });
-
-        toast.success('Account created successfully');
-        if (persona === 'candidate') {
-          router.push('/onboarding/candidate');
-        } else {
-          router.push('/onboarding/company');
-        }
+        // AuthContext.register() handles onboarding redirect
       }
     } catch (e: any) {
       const msg = e.response?.data?.error || e.message || 'Authentication failed. Please verify credentials.';
@@ -319,29 +301,23 @@ export default function AuthPage() {
         {/* Top Header */}
         <div className="auth-hero-top-nav">
           <div className="flex items-center gap-3">
-            <div
-              className="rounded-xl flex items-center justify-center relative overflow-hidden"
-              style={{
-                width: 40,
-                height: 40,
-                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-                border: '1.5px solid rgba(212, 175, 55, 0.5)',
-                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.2)',
-              }}
-            >
-              <svg width={20} height={20} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#d4af37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M2 17L12 22L22 17" stroke="rgba(212,175,55,0.6)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
             <div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.3px', lineHeight: 1.1 }}>
-                GenuAI
+              <div className="sidebar-logo-text gold-gradient-text" style={{ fontSize: 18, fontWeight: 900, lineHeight: 1.1, letterSpacing: '-0.3px' }}>
+                GenuAI Technologies
               </div>
-              <div style={{ fontSize: 9.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#b8860b' }}>
-                Technologies
-              </div>
+              <span
+                className="sidebar-logo-sub"
+                style={{
+                  fontSize: 10,
+                  color: '#854d0e',
+                  fontWeight: 700,
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
+                  display: 'block',
+                }}
+              >
+                {persona === 'candidate' ? 'Candidate Workspace' : persona === 'admin' ? 'Platform Governance' : 'Enterprise Suite'}
+              </span>
             </div>
           </div>
 

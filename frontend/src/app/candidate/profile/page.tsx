@@ -241,12 +241,11 @@ export default function CandidateProfilePage() {
       {/* Header Banner */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+          background: '#ffffff',
           borderRadius: 16,
           padding: '24px 28px',
-          color: '#ffffff',
-          boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.2)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+          border: '1px solid #e2e8f0',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
@@ -256,20 +255,20 @@ export default function CandidateProfilePage() {
                 style={{
                   padding: '3px 10px',
                   borderRadius: 99,
-                  background: 'rgba(212, 175, 55, 0.2)',
+                  background: 'rgba(212, 175, 55, 0.12)',
                   fontSize: 11,
                   fontWeight: 700,
-                  color: '#fef08a',
+                  color: '#92400e',
                   textTransform: 'uppercase',
                 }}
               >
                 Global Candidate Profile
               </span>
             </div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px' }}>
+            <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px', color: '#0f172a' }}>
               {firstName} {lastName}
             </h1>
-            <p style={{ fontSize: 13, color: '#cbd5e1', margin: 0, maxWidth: 600 }}>
+            <p style={{ fontSize: 13, color: '#64748b', margin: 0, maxWidth: 600 }}>
               This is your reusable candidate background. It provides foundational details across all targets, while
               target-specific evidence is submitted per vacancy requirement.
             </p>
@@ -278,23 +277,22 @@ export default function CandidateProfilePage() {
           {/* Profile Completion Checklist */}
           <div
             style={{
-              background: 'rgba(255, 255, 255, 0.06)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
               borderRadius: 12,
               padding: '16px 20px',
               minWidth: 260,
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>Profile Completion</span>
-              <span style={{ fontSize: 15, fontWeight: 800, color: '#fef08a' }}>{completionPct}%</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#374151' }}>Profile Completion</span>
+              <span style={{ fontSize: 15, fontWeight: 800, color: '#92400e' }}>{completionPct}%</span>
             </div>
             <div
               style={{
                 height: 6,
                 borderRadius: 99,
-                background: 'rgba(255, 255, 255, 0.15)',
+                background: '#e2e8f0',
                 overflow: 'hidden',
                 marginBottom: 10,
               }}
@@ -303,14 +301,14 @@ export default function CandidateProfilePage() {
                 style={{
                   height: '100%',
                   width: `${completionPct}%`,
-                  background: 'linear-gradient(90deg, #d4af37, #fde047)',
+                  background: 'linear-gradient(90deg, #b8860b, #d4af37)',
                   borderRadius: 99,
                   transition: 'width 0.5s ease',
                 }}
               />
             </div>
             {completion?.missingItems && completion.missingItems.length > 0 ? (
-              <div style={{ fontSize: 11, color: '#cbd5e1' }}>
+              <div style={{ fontSize: 11, color: '#64748b' }}>
                 <span style={{ fontWeight: 600 }}>Optional items to complete:</span>
                 <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
                   {completion.missingItems.slice(0, 3).map((item: string, idx: number) => (
@@ -319,7 +317,7 @@ export default function CandidateProfilePage() {
                 </ul>
               </div>
             ) : (
-              <div style={{ fontSize: 11, color: '#86efac', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ fontSize: 11, color: '#065f46', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <CheckCircle2 size={12} />
                 <span>All core profile checklist items completed!</span>
               </div>

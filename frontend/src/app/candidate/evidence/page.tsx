@@ -58,12 +58,11 @@ export default function CandidateEvidenceIndexPage() {
       {/* Header Banner */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+          background: '#ffffff',
           borderRadius: 16,
           padding: '24px 28px',
-          color: '#ffffff',
-          boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.2)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+          border: '1px solid #e2e8f0',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -71,21 +70,21 @@ export default function CandidateEvidenceIndexPage() {
             style={{
               padding: '3px 10px',
               borderRadius: 99,
-              background: 'rgba(234, 88, 12, 0.2)',
+              background: 'rgba(234, 88, 12, 0.1)',
               fontSize: 11,
               fontWeight: 700,
-              color: '#fdba74',
+              color: '#ea580c',
               textTransform: 'uppercase',
             }}
           >
             Target-Specific Evidence Lockers
           </span>
         </div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px' }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px', color: '#0f172a' }}>
           Evidence Lockers
         </h1>
-        <p style={{ fontSize: 13, color: '#cbd5e1', margin: 0, maxWidth: 650 }}>
-          Evidence in GenuAI is never a generic document dump. Every work sample, repository, and credential is bound to a specific vacancy requirement inside that role's Target Workspace.
+        <p style={{ fontSize: 13, color: '#64748b', margin: 0, maxWidth: 650 }}>
+          Evidence in GenuAI is never a generic document dump. Every work sample, repository, and credential is bound to a specific vacancy requirement inside that role&apos;s Target Workspace.
         </p>
       </div>
 

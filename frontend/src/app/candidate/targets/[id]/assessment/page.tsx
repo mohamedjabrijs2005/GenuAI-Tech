@@ -84,12 +84,11 @@ export default function TargetAssessmentPage() {
       {/* Header */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-          borderRadius: 16,
+          background: '#ffffff',
+          borderRadius: 12,
           padding: '24px 28px',
-          color: '#ffffff',
-          boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.2)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--border)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -97,21 +96,22 @@ export default function TargetAssessmentPage() {
             style={{
               padding: '3px 10px',
               borderRadius: 99,
-              background: 'rgba(139, 92, 246, 0.2)',
+              background: '#fef3c7',
+              border: '1px solid #fde68a',
               fontSize: 11,
               fontWeight: 700,
-              color: '#c4b5fd',
+              color: '#b45309',
               textTransform: 'uppercase',
             }}
           >
             {target?.company_name} · Official Evaluation
           </span>
         </div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px' }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px', color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>
           Official Assessment Workspace
         </h1>
-        <p style={{ fontSize: 13, color: '#cbd5e1', margin: 0 }}>
-          Role-configured technical evaluation for <strong>{target?.vacancy_title}</strong>.
+        <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', margin: 0 }}>
+          Role-configured technical evaluation for <strong style={{ color: 'var(--text-primary)' }}>{target?.vacancy_title}</strong>.
         </p>
       </div>
 

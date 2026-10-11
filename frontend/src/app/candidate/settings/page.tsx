@@ -66,12 +66,11 @@ export default function CandidateSettingsPage() {
       {/* Header */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+          background: '#ffffff',
           borderRadius: 16,
           padding: '24px 28px',
-          color: '#ffffff',
-          boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.2)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+          border: '1px solid #e2e8f0',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -79,20 +78,20 @@ export default function CandidateSettingsPage() {
             style={{
               padding: '3px 10px',
               borderRadius: 99,
-              background: 'rgba(212, 175, 55, 0.2)',
+              background: 'rgba(212, 175, 55, 0.12)',
               fontSize: 11,
               fontWeight: 700,
-              color: '#fef08a',
+              color: '#92400e',
               textTransform: 'uppercase',
             }}
           >
-            Account & Security
+            Account &amp; Security
           </span>
         </div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px' }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px', color: '#0f172a' }}>
           Candidate Settings
         </h1>
-        <p style={{ fontSize: 13, color: '#cbd5e1', margin: 0 }}>
+        <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>
           Manage your account credentials, security options, and notification channels.
         </p>
       </div>

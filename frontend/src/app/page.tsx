@@ -944,55 +944,55 @@ export default function HomePage() {
         </section>
 
         {/* 9. PRIVACY, SECURITY, AND HUMAN OVERSIGHT */}
-        <section id="trust" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', color: '#ffffff', padding: '72px 24px' }}>
+        <section id="trust" style={{ background: '#ffffff', color: '#0f172a', padding: '72px 24px', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 40 }}>
-              <span style={{ fontSize: 11.5, fontWeight: 800, color: '#fef08a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <span style={{ fontSize: 11.5, fontWeight: 800, color: '#b8860b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Platform Governance &amp; Ethics
               </span>
-              <h2 style={{ fontSize: 'clamp(22px, 3.2vw, 34px)', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.8px', margin: '6px 0 10px' }}>
+              <h2 style={{ fontSize: 'clamp(22px, 3.2vw, 34px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.8px', margin: '6px 0 10px' }}>
                 Designed for clarity, privacy, and human review.
               </h2>
-              <p style={{ fontSize: 15, color: '#cbd5e1', maxWidth: 680, margin: '0 auto' }}>
+              <p style={{ fontSize: 15, color: '#475569', maxWidth: 680, margin: '0 auto' }}>
                 How GenuAI protects candidate data, enforces multi-tenant boundaries, and maintains human responsibility.
               </p>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 30 }}>
-              <div style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: 10, border: '1px solid rgba(255, 255, 255, 0.12)', padding: 20 }}>
-                <Lock size={20} style={{ color: '#fde047', marginBottom: 10 }} />
-                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#ffffff', marginBottom: 6 }}>1. Target-Specific Privacy</h3>
-                <p style={{ fontSize: 12.5, color: '#cbd5e1', lineHeight: 1.5, margin: 0 }}>
+              <div style={{ background: '#fafaf9', borderRadius: 10, border: '1px solid #e2e8f0', padding: 20 }}>
+                <Lock size={20} style={{ color: '#b8860b', marginBottom: 10 }} />
+                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>1. Target-Specific Privacy</h3>
+                <p style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.5, margin: 0 }}>
                   Company data is separated by Target. One company cannot access another company’s target history, evidence, or recruiter notes.
                 </p>
               </div>
 
-              <div style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: 10, border: '1px solid rgba(255, 255, 255, 0.12)', padding: 20 }}>
-                <UserCheck size={20} style={{ color: '#a7f3d0', marginBottom: 10 }} />
-                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#ffffff', marginBottom: 6 }}>2. Human-Led Decisions</h3>
-                <p style={{ fontSize: 12.5, color: '#cbd5e1', lineHeight: 1.5, margin: 0 }}>
+              <div style={{ background: '#fafaf9', borderRadius: 10, border: '1px solid #e2e8f0', padding: 20 }}>
+                <UserCheck size={20} style={{ color: '#059669', marginBottom: 10 }} />
+                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>2. Human-Led Decisions</h3>
+                <p style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.5, margin: 0 }}>
                   GenuAI organizes requirement evidence. Human recruiters and hiring managers make all hiring decisions.
                 </p>
               </div>
 
-              <div style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: 10, border: '1px solid rgba(255, 255, 255, 0.12)', padding: 20 }}>
-                <FileCheck size={20} style={{ color: '#93c5fd', marginBottom: 10 }} />
-                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#ffffff', marginBottom: 6 }}>3. Evidence Traceability</h3>
-                <p style={{ fontSize: 12.5, color: '#cbd5e1', lineHeight: 1.5, margin: 0 }}>
+              <div style={{ background: '#fafaf9', borderRadius: 10, border: '1px solid #e2e8f0', padding: 20 }}>
+                <FileCheck size={20} style={{ color: '#0284c7', marginBottom: 10 }} />
+                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>3. Evidence Traceability</h3>
+                <p style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.5, margin: 0 }}>
                   Evidence submission records, file hashes, and recruiter review decisions maintain persistent audit logs.
                 </p>
               </div>
 
-              <div style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: 10, border: '1px solid rgba(255, 255, 255, 0.12)', padding: 20 }}>
-                <CheckCircle2 size={20} style={{ color: '#fde047', marginBottom: 10 }} />
-                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#ffffff', marginBottom: 6 }}>4. Governance &amp; Audit History</h3>
-                <p style={{ fontSize: 12.5, color: '#cbd5e1', lineHeight: 1.5, margin: 0 }}>
+              <div style={{ background: '#fafaf9', borderRadius: 10, border: '1px solid #e2e8f0', padding: 20 }}>
+                <CheckCircle2 size={20} style={{ color: '#b8860b', marginBottom: 10 }} />
+                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>4. Governance &amp; Audit History</h3>
+                <p style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.5, margin: 0 }}>
                   Company verification and vacancy moderation ensure legitimate recruitment workflows across all tenants.
                 </p>
               </div>
             </div>
 
-            <div style={{ background: 'rgba(212, 175, 55, 0.1)', borderRadius: 8, border: '1px solid rgba(212, 175, 55, 0.3)', padding: 14, fontSize: 12.5, color: '#fef08a', textAlign: 'center', maxWidth: 820, margin: '0 auto' }}>
+            <div style={{ background: '#fef3c7', borderRadius: 8, border: '1px solid #fde68a', padding: 14, fontSize: 12.5, color: '#92400e', textAlign: 'center', maxWidth: 820, margin: '0 auto' }}>
               A file-integrity record can show that a submitted file has not changed after it was recorded. It does not by itself prove document authenticity, ownership, or competence.
             </div>
           </div>
@@ -1982,91 +1982,91 @@ export default function HomePage() {
       </main>
 
       {/* 14. COMPLETE SEMANTIC FOOTER */}
-      <footer style={{ background: '#0f172a', color: '#cbd5e1', paddingTop: 52, paddingBottom: 28, borderTop: '1px solid #1e293b' }}>
+      <footer style={{ background: '#ffffff', color: '#475569', paddingTop: 52, paddingBottom: 28, borderTop: '1px solid #e2e8f0' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 36, marginBottom: 40 }}>
             {/* Brand */}
             <div>
               <div style={{ marginBottom: 10 }}>
-                <span style={{ fontSize: 16, fontWeight: 900, color: '#ffffff' }}>GenuAI Technologies</span>
+                <span style={{ fontSize: 16, fontWeight: 900, color: '#0f172a' }}>GenuAI Technologies</span>
               </div>
-              <p style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.6, margin: '0 0 12px' }}>
+              <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6, margin: '0 0 12px' }}>
                 Requirement-centered recruitment intelligence. Connecting company vacancy requirements with candidate preparation, evidence, and human-led hiring decisions.
               </p>
-              <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>
+              <span style={{ fontSize: 11, color: '#94a3b8', display: 'block' }}>
                 No automated AI hiring decisions.
               </span>
             </div>
 
             {/* Product */}
             <div>
-              <h3 style={{ fontSize: 11.5, fontWeight: 800, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
+              <h3 style={{ fontSize: 11.5, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
                 Product
               </h3>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5 }}>
-                <li><a href="#how-it-works" style={{ color: '#cbd5e1', textDecoration: 'none' }}>How It Works</a></li>
-                <li><a href="#candidates" style={{ color: '#cbd5e1', textDecoration: 'none' }}>For Candidates</a></li>
-                <li><a href="#companies" style={{ color: '#cbd5e1', textDecoration: 'none' }}>For Companies</a></li>
-                <li><a href="#pricing" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Pricing</a></li>
-                <li><Link href="/candidate/vacancies" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Explore Vacancies</Link></li>
-                <li><Link href="/register" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Create Account</Link></li>
-                <li><Link href="/login" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Sign In</Link></li>
+                <li><a href="#how-it-works" style={{ color: '#475569', textDecoration: 'none' }}>How It Works</a></li>
+                <li><a href="#candidates" style={{ color: '#475569', textDecoration: 'none' }}>For Candidates</a></li>
+                <li><a href="#companies" style={{ color: '#475569', textDecoration: 'none' }}>For Companies</a></li>
+                <li><a href="#pricing" style={{ color: '#475569', textDecoration: 'none' }}>Pricing</a></li>
+                <li><Link href="/candidate/vacancies" style={{ color: '#475569', textDecoration: 'none' }}>Explore Vacancies</Link></li>
+                <li><Link href="/register" style={{ color: '#475569', textDecoration: 'none' }}>Create Account</Link></li>
+                <li><Link href="/login" style={{ color: '#475569', textDecoration: 'none' }}>Sign In</Link></li>
               </ul>
             </div>
 
             {/* Platform */}
             <div>
-              <h3 style={{ fontSize: 11.5, fontWeight: 800, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
+              <h3 style={{ fontSize: 11.5, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
                 Platform
               </h3>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5 }}>
-                <li><Link href="/register?role=company" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Company Workspace</Link></li>
-                <li><Link href="/register?role=candidate" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Candidate Workspace</Link></li>
-                <li><Link href="/trust" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Verification Process</Link></li>
-                <li><a href="#problem" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Evidence &amp; Coverage</a></li>
+                <li><Link href="/register?role=company" style={{ color: '#475569', textDecoration: 'none' }}>Company Workspace</Link></li>
+                <li><Link href="/register?role=candidate" style={{ color: '#475569', textDecoration: 'none' }}>Candidate Workspace</Link></li>
+                <li><Link href="/trust" style={{ color: '#475569', textDecoration: 'none' }}>Verification Process</Link></li>
+                <li><a href="#problem" style={{ color: '#475569', textDecoration: 'none' }}>Evidence &amp; Coverage</a></li>
               </ul>
             </div>
 
             {/* Trust & Legal */}
             <div>
-              <h3 style={{ fontSize: 11.5, fontWeight: 800, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
+              <h3 style={{ fontSize: 11.5, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
                 Trust &amp; Legal
               </h3>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5 }}>
-                <li><Link href="/trust" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Trust &amp; Privacy</Link></li>
-                <li><Link href="/privacy" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Privacy Policy</Link></li>
-                <li><Link href="/terms" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Terms of Use</Link></li>
-                <li><Link href="/accessibility" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Accessibility</Link></li>
+                <li><Link href="/trust" style={{ color: '#475569', textDecoration: 'none' }}>Trust &amp; Privacy</Link></li>
+                <li><Link href="/privacy" style={{ color: '#475569', textDecoration: 'none' }}>Privacy Policy</Link></li>
+                <li><Link href="/terms" style={{ color: '#475569', textDecoration: 'none' }}>Terms of Use</Link></li>
+                <li><Link href="/accessibility" style={{ color: '#475569', textDecoration: 'none' }}>Accessibility</Link></li>
               </ul>
             </div>
 
             {/* Support */}
             <div>
-              <h3 style={{ fontSize: 11.5, fontWeight: 800, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
+              <h3 style={{ fontSize: 11.5, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
                 Support
               </h3>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5 }}>
-                <li><Link href="/contact" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Contact Support</Link></li>
-                <li><Link href="/contact" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Report a Concern</Link></li>
-                <li><Link href="/accessibility" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Accommodation Request</Link></li>
+                <li><Link href="/contact" style={{ color: '#475569', textDecoration: 'none' }}>Contact Support</Link></li>
+                <li><Link href="/contact" style={{ color: '#475569', textDecoration: 'none' }}>Report a Concern</Link></li>
+                <li><Link href="/accessibility" style={{ color: '#475569', textDecoration: 'none' }}>Accommodation Request</Link></li>
               </ul>
             </div>
           </div>
 
           {/* Legal Review Disclaimer */}
-          <div style={{ padding: '10px 14px', borderRadius: 6, background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', fontSize: 11, color: '#94a3b8', marginBottom: 24, textAlign: 'center' }}>
+          <div style={{ padding: '10px 14px', borderRadius: 6, background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: 11, color: '#64748b', marginBottom: 24, textAlign: 'center' }}>
             This page is a product draft and should be reviewed by qualified legal counsel before production launch.
           </div>
 
           {/* Bottom bar */}
-          <div style={{ borderTop: '1px solid #1e293b', paddingTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, fontSize: 11.5, color: '#64748b' }}>
+          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, fontSize: 11.5, color: '#64748b' }}>
             <div>
               © {new Date().getFullYear()} GenuAI Technologies. All rights reserved.
             </div>
             <div style={{ display: 'flex', gap: 14 }}>
-              <Link href="/privacy" style={{ color: '#94a3b8', textDecoration: 'none' }}>Privacy</Link>
-              <Link href="/terms" style={{ color: '#94a3b8', textDecoration: 'none' }}>Terms</Link>
-              <Link href="/accessibility" style={{ color: '#94a3b8', textDecoration: 'none' }}>Accessibility</Link>
+              <Link href="/privacy" style={{ color: '#64748b', textDecoration: 'none' }}>Privacy</Link>
+              <Link href="/terms" style={{ color: '#64748b', textDecoration: 'none' }}>Terms</Link>
+              <Link href="/accessibility" style={{ color: '#64748b', textDecoration: 'none' }}>Accessibility</Link>
             </div>
           </div>
         </div>

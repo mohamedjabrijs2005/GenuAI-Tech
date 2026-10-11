@@ -94,12 +94,11 @@ export default function CandidateAccessibilityPage() {
       {/* Header */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+          background: '#ffffff',
           borderRadius: 16,
           padding: '24px 28px',
-          color: '#ffffff',
-          boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.2)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+          border: '1px solid #e2e8f0',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -107,20 +106,20 @@ export default function CandidateAccessibilityPage() {
             style={{
               padding: '3px 10px',
               borderRadius: 99,
-              background: 'rgba(59, 130, 246, 0.2)',
+              background: 'rgba(59, 130, 246, 0.1)',
               fontSize: 11,
               fontWeight: 700,
-              color: '#93c5fd',
+              color: '#1d4ed8',
               textTransform: 'uppercase',
             }}
           >
-            Inclusive Hiring & Universal Design
+            Inclusive Hiring &amp; Universal Design
           </span>
         </div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px' }}>
-          Accessibility & Accommodations
+        <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px', color: '#0f172a' }}>
+          Accessibility &amp; Accommodations
         </h1>
-        <p style={{ fontSize: 13, color: '#cbd5e1', margin: 0, maxWidth: 650 }}>
+        <p style={{ fontSize: 13, color: '#64748b', margin: 0, maxWidth: 650 }}>
           GenuAI is committed to accessible recruitment. Request evaluation adjustments, time extensions, or assistive technology compatibility without unnecessary medical disclosure.
         </p>
       </div>

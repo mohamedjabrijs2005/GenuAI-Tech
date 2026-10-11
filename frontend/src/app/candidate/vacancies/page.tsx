@@ -70,12 +70,11 @@ export default function CandidateVacanciesPage() {
       {/* Header Banner */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-          borderRadius: 16,
+          background: '#ffffff',
+          borderRadius: 12,
           padding: '24px 28px',
-          color: '#ffffff',
-          boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.2)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--border)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -83,10 +82,11 @@ export default function CandidateVacanciesPage() {
             style={{
               padding: '3px 10px',
               borderRadius: 99,
-              background: 'rgba(5, 150, 105, 0.2)',
+              background: 'rgba(5, 150, 105, 0.1)',
+              border: '1px solid rgba(5, 150, 105, 0.25)',
               fontSize: 11,
               fontWeight: 700,
-              color: '#86efac',
+              color: '#059669',
               textTransform: 'uppercase',
               display: 'inline-flex',
               alignItems: 'center',
@@ -97,10 +97,10 @@ export default function CandidateVacanciesPage() {
             Verified Opportunities Only
           </span>
         </div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px' }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px', color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>
           Explore Published Vacancies
         </h1>
-        <p style={{ fontSize: 13, color: '#cbd5e1', margin: 0, maxWidth: 650 }}>
+        <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', margin: 0, maxWidth: 650 }}>
           Browse genuine vacancies from verified companies. Understand the exact role requirements before you commit to creating a Target Workspace.
         </p>
       </div>

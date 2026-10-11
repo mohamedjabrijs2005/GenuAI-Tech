@@ -85,12 +85,11 @@ export default function CandidateTargetsPage() {
       {/* Header Banner */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-          borderRadius: 16,
+          background: '#ffffff',
+          borderRadius: 12,
           padding: '24px 28px',
-          color: '#ffffff',
-          boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.2)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--border)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
@@ -100,20 +99,21 @@ export default function CandidateTargetsPage() {
                 style={{
                   padding: '3px 10px',
                   borderRadius: 99,
-                  background: 'rgba(212, 175, 55, 0.2)',
+                  background: '#fef3c7',
+                  border: '1px solid #fde68a',
                   fontSize: 11,
                   fontWeight: 700,
-                  color: '#fef08a',
+                  color: '#b45309',
                   textTransform: 'uppercase',
                 }}
               >
                 Multi-Target Management
               </span>
             </div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px' }}>
+            <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px', color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>
               My Career Targets
             </h1>
-            <p style={{ fontSize: 13, color: '#cbd5e1', margin: 0, maxWidth: 650 }}>
+            <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', margin: 0, maxWidth: 650 }}>
               Each Target represents a distinct vacancy with isolated requirements, learning roadmaps, submitted evidence, and recruiter review workflows.
             </p>
           </div>
@@ -214,7 +214,7 @@ export default function CandidateTargetsPage() {
                             ? '#f1f5f9'
                             : t.target_status === 'INTERVIEW'
                             ? '#dbeafe'
-                            : 'rgba(212, 175, 55, 0.15)',
+                            : '#fef3c7',
                         color:
                           t.target_status === 'UNDER_REVIEW'
                             ? '#92400e'
@@ -222,7 +222,7 @@ export default function CandidateTargetsPage() {
                             ? '#64748b'
                             : t.target_status === 'INTERVIEW'
                             ? '#1d4ed8'
-                            : '#854d0e',
+                            : '#b45309',
                       }}
                     >
                       {t.target_status}
@@ -236,7 +236,7 @@ export default function CandidateTargetsPage() {
                     {t.vacancy_title}
                   </h3>
 
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>
                     {t.company_name}
                   </div>
 

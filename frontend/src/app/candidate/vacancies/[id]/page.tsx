@@ -144,12 +144,11 @@ export default function VacancyDetailPage() {
       {/* Hero Header */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-          borderRadius: 16,
+          background: '#ffffff',
+          borderRadius: 12,
           padding: '28px 32px',
-          color: '#ffffff',
-          boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.2)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--border)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
@@ -159,10 +158,11 @@ export default function VacancyDetailPage() {
                 style={{
                   padding: '3px 10px',
                   borderRadius: 99,
-                  background: 'rgba(5, 150, 105, 0.2)',
+                  background: 'rgba(5, 150, 105, 0.1)',
+                  border: '1px solid rgba(5, 150, 105, 0.25)',
                   fontSize: 11,
                   fontWeight: 700,
-                  color: '#86efac',
+                  color: '#059669',
                   textTransform: 'uppercase',
                 }}
               >
@@ -173,9 +173,9 @@ export default function VacancyDetailPage() {
               )}
             </div>
 
-            <h1 style={{ fontSize: 26, fontWeight: 800, margin: '4px 0 10px' }}>{vacancy.title}</h1>
+            <h1 style={{ fontSize: 26, fontWeight: 800, margin: '4px 0 10px', color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>{vacancy.title}</h1>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, fontSize: 12.5, color: '#cbd5e1' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, fontSize: 12.5, color: 'var(--text-secondary)' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <Building2 size={14} />
                 {vacancy.department_name || 'Engineering'}

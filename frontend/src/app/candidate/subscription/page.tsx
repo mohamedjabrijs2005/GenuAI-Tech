@@ -180,14 +180,16 @@ export default function CandidateSubscriptionPage() {
 
       {/* Current Plan */}
       <div style={{
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+        background: '#ffffff',
+        border: '1.5px solid #e2e8f0',
         borderRadius: 12, padding: '20px 24px', marginBottom: 28,
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
       }}>
         <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#d4af37', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Current Plan</div>
-          <div style={{ fontSize: 18, fontWeight: 900, color: '#ffffff' }}>Candidate Free</div>
-          <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 2 }}>All core features included at no cost</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Current Plan</div>
+          <div style={{ fontSize: 18, fontWeight: 900, color: '#0f172a' }}>Candidate Free</div>
+          <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>All core features included at no cost</div>
         </div>
         <Link href="/contact" style={{
           padding: '10px 20px', borderRadius: 8,

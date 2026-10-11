@@ -152,12 +152,11 @@ export default function TargetEvidencePage() {
       {/* Header */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-          borderRadius: 16,
+          background: '#ffffff',
+          borderRadius: 12,
           padding: '24px 28px',
-          color: '#ffffff',
-          boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.2)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--border)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
@@ -167,21 +166,22 @@ export default function TargetEvidencePage() {
                 style={{
                   padding: '3px 10px',
                   borderRadius: 99,
-                  background: 'rgba(234, 88, 12, 0.2)',
+                  background: 'rgba(234, 88, 12, 0.1)',
+                  border: '1px solid rgba(234, 88, 12, 0.25)',
                   fontSize: 11,
                   fontWeight: 700,
-                  color: '#fdba74',
+                  color: '#ea580c',
                   textTransform: 'uppercase',
                 }}
               >
                 {target?.company_name} · Evidence Locker
               </span>
             </div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px' }}>
+            <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px', color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>
               Target-Specific Evidence Locker
             </h1>
-            <p style={{ fontSize: 13, color: '#cbd5e1', margin: 0, maxWidth: 650 }}>
-              Submit projects, code repositories, work samples, and credentials linked directly to <strong>{target?.vacancy_title}</strong> requirements.
+            <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', margin: 0, maxWidth: 650 }}>
+              Submit projects, code repositories, work samples, and credentials linked directly to <strong style={{ color: 'var(--text-primary)' }}>{target?.vacancy_title}</strong> requirements.
             </p>
           </div>
 
