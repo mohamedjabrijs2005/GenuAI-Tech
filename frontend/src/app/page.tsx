@@ -6,7 +6,8 @@ import {
   Compass, FileCheck, ArrowRight,
   Building2, Lock, Layers, CheckCircle2, Menu, X, ChevronDown, ChevronUp,
   FileText, UserCheck, HelpCircle, Mail, ExternalLink, RefreshCw,
-  Check, Minus, Sparkles, ShieldCheck, Briefcase, GraduationCap
+  Check, Minus, Sparkles, ShieldCheck, Briefcase, GraduationCap,
+  Sliders, Target
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -264,11 +265,11 @@ export default function HomePage() {
           <nav aria-label="Main Navigation" className="landing-nav">
             <a href="#problem">Product</a>
             <a href="#how-it-works">How It Works</a>
+            <a href="#vacancies" style={{ fontWeight: 700, color: '#b8860b' }}>Vacancies</a>
             <a href="#candidates">For Candidates</a>
             <a href="#companies">For Companies</a>
             <a href="#pricing">Pricing</a>
             <a href="#trust">Trust &amp; Privacy</a>
-            <Link href="/candidate/vacancies" style={{ fontWeight: 700, color: '#b8860b' }}>Vacancies</Link>
           </nav>
 
           {/* Right Action Buttons */}
@@ -291,7 +292,7 @@ export default function HomePage() {
             </Link>
 
             <Link
-              href="/register"
+              href="/login?role=candidate"
               style={{
                 fontSize: 13,
                 fontWeight: 700,
@@ -307,7 +308,7 @@ export default function HomePage() {
                 whiteSpace: 'nowrap',
               }}
             >
-              <span>Create Account</span>
+              <span>Candidate Access</span>
               <ArrowRight size={13} />
             </Link>
 
@@ -344,14 +345,14 @@ export default function HomePage() {
         >
           <a href="#problem" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>Product</a>
           <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>How It Works</a>
+          <a href="#vacancies" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 700, color: '#b8860b', textDecoration: 'none' }}>Vacancies</a>
           <a href="#candidates" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>For Candidates</a>
           <a href="#companies" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>For Companies</a>
           <a href="#pricing" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>Pricing</a>
           <a href="#trust" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>Trust &amp; Privacy</a>
-          <Link href="/candidate/vacancies" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 700, color: '#b8860b', textDecoration: 'none' }}>Explore Vacancies</Link>
           <div style={{ height: 1, background: '#e2e8f0', margin: '8px 0' }} />
-          <Link href="/register?role=candidate" onClick={() => setMobileMenuOpen(false)} style={{ padding: '10px', textAlign: 'center', background: '#b8860b', color: '#fff', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Candidate Registration</Link>
-          <Link href="/register?role=company" onClick={() => setMobileMenuOpen(false)} style={{ padding: '10px', textAlign: 'center', background: '#0f172a', color: '#fff', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Company Registration</Link>
+          <Link href="/login?role=candidate" onClick={() => setMobileMenuOpen(false)} style={{ padding: '10px', textAlign: 'center', background: '#b8860b', color: '#fff', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Candidate Login</Link>
+          <Link href="/login?role=company" onClick={() => setMobileMenuOpen(false)} style={{ padding: '10px', textAlign: 'center', background: '#0f172a', color: '#fff', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Company Login</Link>
         </div>
       )}
 
@@ -407,7 +408,7 @@ export default function HomePage() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 18 }}>
             <Link
-              href="/candidate/vacancies"
+              href="/login?role=candidate"
               style={{
                 padding: '13px 26px',
                 borderRadius: 9,
@@ -423,7 +424,7 @@ export default function HomePage() {
               }}
             >
               <Compass size={17} />
-              <span>Explore Verified Vacancies</span>
+              <span>Candidate Sign In</span>
               {liveVacanciesCount !== null && (
                 <span style={{ fontSize: 11, background: 'rgba(255,255,255,0.25)', padding: '2px 6px', borderRadius: 99 }}>
                   {liveVacanciesCount} active
@@ -432,14 +433,14 @@ export default function HomePage() {
               <ArrowRight size={15} />
             </Link>
 
-            <Link
-              href="/register?role=candidate"
+            <a
+              href="#vacancies"
               style={{
                 padding: '13px 26px',
                 borderRadius: 9,
                 background: '#ffffff',
-                border: '1.5px solid #cbd5e1',
-                color: '#0f172a',
+                border: '1.5px solid #d4af37',
+                color: '#854d0e',
                 fontSize: 14.5,
                 fontWeight: 800,
                 textDecoration: 'none',
@@ -448,13 +449,13 @@ export default function HomePage() {
                 gap: 8,
               }}
             >
-              <span>Create Candidate Account</span>
-            </Link>
+              <span>How Vacancies Work</span>
+            </a>
           </div>
 
           <div style={{ marginBottom: 28 }}>
-            <Link href="/register?role=company" style={{ fontSize: 13, color: '#854d0e', fontWeight: 700, textDecoration: 'underline' }}>
-              Hiring for a company? Create a company workspace →
+            <Link href="/login?role=company" style={{ fontSize: 13, color: '#854d0e', fontWeight: 700, textDecoration: 'underline' }}>
+              Hiring for a company? Access company workspace →
             </Link>
           </div>
 
@@ -773,6 +774,87 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* 6.5 VERIFIED VACANCIES EXPLANATION SECTION */}
+        <section id="vacancies" style={{ padding: '72px 24px', maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 44 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 14px', borderRadius: 99, background: 'rgba(212, 175, 55, 0.12)', border: '1px solid rgba(212, 175, 55, 0.4)', color: '#854d0e', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
+              <Compass size={13} style={{ color: '#b8860b' }} />
+              <span>Verified Vacancy Architecture</span>
+            </div>
+            <h2 style={{ fontSize: 'clamp(24px, 3.4vw, 36px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.8px', marginBottom: 12 }}>
+              How Vacancies Work in GenuAI
+            </h2>
+            <p style={{ fontSize: 15, color: '#475569', maxWidth: 740, margin: '0 auto', lineHeight: 1.6 }}>
+              Unlike generic job boards with phantom listings and opaque algorithms, every vacancy in GenuAI is verified, requirement-structured, and connected directly to human review.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, marginBottom: 36 }}>
+            <div className="card" style={{ padding: '24px', background: '#ffffff' }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#fef3c7', color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+                <Building2 size={19} />
+              </div>
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>1. Verified Employers Only</h3>
+              <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: 0 }}>
+                Every hiring organization completes verification before publishing vacancies. No scraped listings, duplicate recruiters, or ghost roles.
+              </p>
+            </div>
+
+            <div className="card" style={{ padding: '24px', background: '#ffffff' }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#fef3c7', color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+                <Sliders size={19} />
+              </div>
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>2. Explicit Requirement Rubrics</h3>
+              <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: 0 }}>
+                Roles publish transparent skill criteria, benchmark levels, and evidence expectations so candidates understand what is evaluated before targeting.
+              </p>
+            </div>
+
+            <div className="card" style={{ padding: '24px', background: '#ffffff' }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#fef3c7', color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+                <Target size={19} />
+              </div>
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>3. Target Isolation &amp; Privacy</h3>
+              <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: 0 }}>
+                Targeting a vacancy creates an isolated workspace. Evidence submitted for Company A is never shared or visible to Company B.
+              </p>
+            </div>
+
+            <div className="card" style={{ padding: '24px', background: '#ffffff' }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#fef3c7', color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+                <UserCheck size={19} />
+              </div>
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>4. Human Recruiter Decisions</h3>
+              <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: 0 }}>
+                Zero automated AI rejections. Human hiring managers evaluate evidence coverage with role-specific rubrics and contextual review.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'center' }}>
+            <Link
+              href="/login?role=candidate"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '12px 28px',
+                borderRadius: 8,
+                background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
+                color: '#ffffff',
+                fontSize: 14,
+                fontWeight: 800,
+                textDecoration: 'none',
+                boxShadow: '0 2px 8px rgba(184, 134, 11, 0.25)',
+              }}
+            >
+              <Compass size={16} />
+              <span>Sign In to Candidate Workspace</span>
+              <ArrowRight size={14} />
+            </Link>
+          </div>
+        </section>
+
         {/* 7. FOR CANDIDATES */}
         <section id="candidates" style={{ background: '#ffffff', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', padding: '72px 24px' }}>
           <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 40, alignItems: 'center' }}>
@@ -806,7 +888,7 @@ export default function HomePage() {
 
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 <Link
-                  href="/candidate/vacancies"
+                  href="/login?role=candidate"
                   style={{
                     padding: '11px 22px',
                     borderRadius: 8,
@@ -815,25 +897,29 @@ export default function HomePage() {
                     fontSize: 13.5,
                     fontWeight: 800,
                     textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
                   }}
                 >
-                  Explore Vacancies
+                  <span>Candidate Login</span>
+                  <ArrowRight size={14} />
                 </Link>
-                <Link
-                  href="/register?role=candidate"
+                <a
+                  href="#vacancies"
                   style={{
                     padding: '11px 22px',
                     borderRadius: 8,
                     background: '#fff',
-                    border: '1px solid #cbd5e1',
-                    color: '#0f172a',
+                    border: '1.5px solid #d4af37',
+                    color: '#854d0e',
                     fontSize: 13.5,
                     fontWeight: 800,
                     textDecoration: 'none',
                   }}
                 >
-                  Create Candidate Account
-                </Link>
+                  How Vacancies Work
+                </a>
               </div>
             </div>
 
@@ -910,18 +996,22 @@ export default function HomePage() {
 
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 <Link
-                  href="/register?role=company"
+                  href="/login?role=company"
                   style={{
                     padding: '11px 22px',
                     borderRadius: 8,
-                    background: '#0f172a',
+                    background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
                     color: '#fff',
                     fontSize: 13.5,
                     fontWeight: 800,
                     textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
                   }}
                 >
-                  Create Company Workspace
+                  <span>Company Workspace Sign In</span>
+                  <ArrowRight size={14} />
                 </Link>
                 <Link
                   href="/login?role=company"
@@ -929,14 +1019,14 @@ export default function HomePage() {
                     padding: '11px 22px',
                     borderRadius: 8,
                     background: '#fff',
-                    border: '1px solid #cbd5e1',
-                    color: '#0f172a',
+                    border: '1.5px solid #d4af37',
+                    color: '#854d0e',
                     fontSize: 13.5,
                     fontWeight: 800,
                     textDecoration: 'none',
                   }}
                 >
-                  Sign In to Workspace
+                  Recruiter Access
                 </Link>
               </div>
             </div>
@@ -1268,7 +1358,7 @@ export default function HomePage() {
 
                 <div>
                   <Link
-                    href="/register/candidate"
+                    href="/login?role=candidate"
                     style={{
                       width: '100%',
                       padding: '11px 16px',
@@ -1285,11 +1375,11 @@ export default function HomePage() {
                       boxShadow: '0 2px 8px rgba(184,134,11,0.25)',
                     }}
                   >
-                    <span>Create candidate account</span>
+                    <span>Sign In to Candidate Workspace</span>
                     <ArrowRight size={14} />
                   </Link>
                   <p style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', marginTop: 10, margin: '10px 0 0' }}>
-                    Some company-configured assessments or premium career services may be introduced separately in the future.
+                    Access candidate workspace, review role requirements, and prepare evidence at no cost.
                   </p>
                 </div>
               </div>
@@ -1370,7 +1460,7 @@ export default function HomePage() {
 
                 <div>
                   <Link
-                    href="/register/company"
+                    href="/login?role=company"
                     style={{
                       width: '100%',
                       padding: '11px 16px',
@@ -1387,7 +1477,7 @@ export default function HomePage() {
                       gap: 6,
                     }}
                   >
-                    <span>Request company access</span>
+                    <span>Company Workspace Sign In</span>
                     <ArrowRight size={14} />
                   </Link>
                   <p style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', marginTop: 10, margin: '10px 0 0' }}>
@@ -1957,13 +2047,13 @@ export default function HomePage() {
             </Link>
 
             <Link
-              href="/register/company"
+              href="/login?role=company"
               style={{
                 padding: '13px 26px',
                 borderRadius: 9,
                 background: '#ffffff',
-                border: '1.5px solid #cbd5e1',
-                color: '#0f172a',
+                border: '1.5px solid #d4af37',
+                color: '#854d0e',
                 fontSize: 14.5,
                 fontWeight: 800,
                 textDecoration: 'none',
@@ -1972,7 +2062,7 @@ export default function HomePage() {
                 gap: 8,
               }}
             >
-              <span>Create company account</span>
+              <span>Access Company Workspace</span>
             </Link>
           </div>
 
@@ -2007,12 +2097,11 @@ export default function HomePage() {
               </h3>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5 }}>
                 <li><a href="#how-it-works" style={{ color: '#475569', textDecoration: 'none' }}>How It Works</a></li>
+                <li><a href="#vacancies" style={{ color: '#475569', textDecoration: 'none' }}>Verified Vacancies</a></li>
                 <li><a href="#candidates" style={{ color: '#475569', textDecoration: 'none' }}>For Candidates</a></li>
                 <li><a href="#companies" style={{ color: '#475569', textDecoration: 'none' }}>For Companies</a></li>
                 <li><a href="#pricing" style={{ color: '#475569', textDecoration: 'none' }}>Pricing</a></li>
-                <li><Link href="/candidate/vacancies" style={{ color: '#475569', textDecoration: 'none' }}>Explore Vacancies</Link></li>
-                <li><Link href="/register" style={{ color: '#475569', textDecoration: 'none' }}>Create Account</Link></li>
-                <li><Link href="/login" style={{ color: '#475569', textDecoration: 'none' }}>Sign In</Link></li>
+                <li><Link href="/login" style={{ color: '#475569', textDecoration: 'none' }}>Workspace Sign In</Link></li>
               </ul>
             </div>
 
@@ -2022,8 +2111,8 @@ export default function HomePage() {
                 Platform
               </h3>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5 }}>
-                <li><Link href="/register?role=company" style={{ color: '#475569', textDecoration: 'none' }}>Company Workspace</Link></li>
-                <li><Link href="/register?role=candidate" style={{ color: '#475569', textDecoration: 'none' }}>Candidate Workspace</Link></li>
+                <li><Link href="/login?role=company" style={{ color: '#475569', textDecoration: 'none' }}>Company Workspace</Link></li>
+                <li><Link href="/login?role=candidate" style={{ color: '#475569', textDecoration: 'none' }}>Candidate Workspace</Link></li>
                 <li><Link href="/trust" style={{ color: '#475569', textDecoration: 'none' }}>Verification Process</Link></li>
                 <li><a href="#problem" style={{ color: '#475569', textDecoration: 'none' }}>Evidence &amp; Coverage</a></li>
               </ul>

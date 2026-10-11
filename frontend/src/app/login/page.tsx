@@ -148,6 +148,7 @@ export default function AuthPage() {
 
       if (roleParam === 'candidate') {
         setPersona('candidate');
+        setIsLogin(true);
       } else if (roleParam === 'company') {
         setPersona('company');
       } else if (roleParam === 'admin') {
