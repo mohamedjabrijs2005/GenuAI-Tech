@@ -5,9 +5,7 @@ import Link from 'next/link';
 import {
   Compass, FileCheck, ArrowRight,
   Building2, Lock, Layers, CheckCircle2, Menu, X, ChevronDown, ChevronUp,
-  FileText, UserCheck, HelpCircle, Mail, ExternalLink, RefreshCw,
-  Check, Minus, Sparkles, ShieldCheck, Briefcase, GraduationCap,
-  Sliders, Target, MapPin
+  UserCheck, Sparkles, Briefcase, GraduationCap, MapPin
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -19,30 +17,28 @@ export default function HomePage() {
   const [liveVacanciesCount, setLiveVacanciesCount] = useState<number | null>(null);
   const [vacanciesList, setVacanciesList] = useState<any[]>([]);
   const [vacanciesLoading, setVacanciesLoading] = useState(true);
-  const [syncTime, setSyncTime] = useState<string>('');
 
   useEffect(() => {
-    const updateTime = () => {
-      setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
-
     // Fetch real published vacancies for landing page display
     setVacanciesLoading(true);
     api.get('/candidate-portal/vacancies')
       .then((res) => {
-        const list: any[] = res.data?.vacancies || [];
-        setVacanciesList(list);
-        setLiveVacanciesCount(list.length);
+        const raw: any[] = res.data?.vacancies || [];
+        // Deduplicate by id and cap at 6 for landing page
+        const seen = new Set<string>();
+        const deduped = raw.filter((v) => {
+          if (seen.has(v.id)) return false;
+          seen.add(v.id);
+          return true;
+        }).slice(0, 6);
+        setVacanciesList(deduped);
+        setLiveVacanciesCount(raw.length);
       })
       .catch(() => {
         setVacanciesList([]);
         setLiveVacanciesCount(null);
       })
       .finally(() => setVacanciesLoading(false));
-
-    return () => clearInterval(timer);
   }, []);
 
   const toggleFaq = (index: number) => {
@@ -383,13 +379,9 @@ export default function HomePage() {
           >
             <CheckCircle2 size={15} style={{ color: '#b8860b' }} />
             <span>Requirement-Centered Recruitment Intelligence</span>
-            {syncTime && (
-              <>
-                <span style={{ opacity: 0.3 }}>|</span>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669', display: 'inline-block' }} />
-                <span style={{ color: '#059669', fontWeight: 700 }}>Live</span>
-              </>
-            )}
+            <span style={{ opacity: 0.3 }}>|</span>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669', display: 'inline-block' }} />
+            <span style={{ color: '#059669', fontWeight: 700 }}>Live</span>
           </div>
 
           <h1
@@ -1098,7 +1090,7 @@ export default function HomePage() {
                   <ArrowRight size={14} />
                 </Link>
                 <Link
-                  href="/login?role=company"
+                  href="/contact"
                   style={{
                     padding: '11px 22px',
                     borderRadius: 8,
@@ -1110,7 +1102,7 @@ export default function HomePage() {
                     textDecoration: 'none',
                   }}
                 >
-                  Recruiter Access
+                  Talk to Our Team
                 </Link>
               </div>
             </div>
