@@ -128,6 +128,19 @@
 }
 
 /* ============================================================
+   UTILITY ANIMATIONS & SCROLL OFFSET
+   ============================================================ */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Ensure anchor targets are not hidden behind the 64px sticky header */
+#vacancies, #candidates, #companies, #pricing, #trust, #problem, #how-it-works {
+  scroll-margin-top: 72px;
+}
+
+/* ============================================================
    LANDING PAGE HEADER & RESPONSIVE ALIGNMENT
    ============================================================ */
 .landing-header {

@@ -7,7 +7,7 @@ import {
   Building2, Lock, Layers, CheckCircle2, Menu, X, ChevronDown, ChevronUp,
   FileText, UserCheck, HelpCircle, Mail, ExternalLink, RefreshCw,
   Check, Minus, Sparkles, ShieldCheck, Briefcase, GraduationCap,
-  Sliders, Target
+  Sliders, Target, MapPin
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -17,6 +17,8 @@ export default function HomePage() {
   const [openPricingFaqIndex, setOpenPricingFaqIndex] = useState<number | null>(0);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [liveVacanciesCount, setLiveVacanciesCount] = useState<number | null>(null);
+  const [vacanciesList, setVacanciesList] = useState<any[]>([]);
+  const [vacanciesLoading, setVacanciesLoading] = useState(true);
   const [syncTime, setSyncTime] = useState<string>('');
 
   useEffect(() => {
@@ -26,16 +28,19 @@ export default function HomePage() {
     updateTime();
     const timer = setInterval(updateTime, 1000);
 
-    // Fetch real-time published vacancies count from live backend
-    api.get('/candidate-portal/vacancies?limit=1')
+    // Fetch real published vacancies for landing page display
+    setVacanciesLoading(true);
+    api.get('/candidate-portal/vacancies')
       .then((res) => {
-        if (res.data?.pagination?.total !== undefined) {
-          setLiveVacanciesCount(res.data.pagination.total);
-        }
+        const list: any[] = res.data?.vacancies || [];
+        setVacanciesList(list);
+        setLiveVacanciesCount(list.length);
       })
       .catch(() => {
+        setVacanciesList([]);
         setLiveVacanciesCount(null);
-      });
+      })
+      .finally(() => setVacanciesLoading(false));
 
     return () => clearInterval(timer);
   }, []);
@@ -774,62 +779,141 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 6.5 VERIFIED VACANCIES EXPLANATION SECTION */}
-        <section id="vacancies" style={{ padding: '72px 24px', maxWidth: 1200, margin: '0 auto' }}>
+        {/* 6.5 LIVE PUBLISHED VACANCIES SECTION */}
+        <section
+          id="vacancies"
+          style={{
+            padding: '72px 24px',
+            maxWidth: 1200,
+            margin: '0 auto',
+            scrollMarginTop: 72,
+          }}
+        >
           <div style={{ textAlign: 'center', marginBottom: 44 }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 14px', borderRadius: 99, background: 'rgba(212, 175, 55, 0.12)', border: '1px solid rgba(212, 175, 55, 0.4)', color: '#854d0e', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
               <Compass size={13} style={{ color: '#b8860b' }} />
-              <span>Verified Vacancy Architecture</span>
+              <span>Verified Published Vacancies</span>
             </div>
             <h2 style={{ fontSize: 'clamp(24px, 3.4vw, 36px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.8px', marginBottom: 12 }}>
-              How Vacancies Work in GenuAI
+              Explore Live Opportunities
             </h2>
             <p style={{ fontSize: 15, color: '#475569', maxWidth: 740, margin: '0 auto', lineHeight: 1.6 }}>
-              Unlike generic job boards with phantom listings and opaque algorithms, every vacancy in GenuAI is verified, requirement-structured, and connected directly to human review.
+              Every vacancy is published by a verified employer with explicit skill requirements, transparent rubrics, and human review. No phantom listings.
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, marginBottom: 36 }}>
-            <div className="card" style={{ padding: '24px', background: '#ffffff' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#fef3c7', color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-                <Building2 size={19} />
-              </div>
-              <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>1. Verified Employers Only</h3>
-              <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: 0 }}>
-                Every hiring organization completes verification before publishing vacancies. No scraped listings, duplicate recruiters, or ghost roles.
-              </p>
+          {/* Live Vacancy Cards */}
+          {vacanciesLoading ? (
+            <div style={{ textAlign: 'center', padding: '48px 0', color: '#94a3b8', fontSize: 14 }}>
+              <div style={{ display: 'inline-block', width: 28, height: 28, border: '3px solid #e2e8f0', borderTopColor: '#b8860b', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: 12 }} />
+              <div>Loading verified vacancies…</div>
             </div>
+          ) : vacanciesList.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 24px', background: '#fafaf9', borderRadius: 12, border: '1px solid #e2e8f0', marginBottom: 36 }}>
+              <Building2 size={36} style={{ color: '#cbd5e1', marginBottom: 12 }} />
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#64748b', marginBottom: 6 }}>No published vacancies yet</div>
+              <div style={{ fontSize: 13, color: '#94a3b8' }}>New verified roles will appear here once companies publish them.</div>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20, marginBottom: 36 }}>
+              {vacanciesList.map((v) => (
+                <div
+                  key={v.id}
+                  className="card"
+                  style={{
+                    padding: '22px 20px',
+                    background: '#ffffff',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 14,
+                    position: 'relative',
+                    overflow: 'hidden',
+                    transition: 'box-shadow 0.18s ease, transform 0.18s ease',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(184,134,11,0.13)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = ''; (e.currentTarget as HTMLElement).style.transform = ''; }}
+                >
+                  {/* Top accent */}
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, #b8860b, #d4af37)' }} />
 
-            <div className="card" style={{ padding: '24px', background: '#ffffff' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#fef3c7', color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-                <Sliders size={19} />
-              </div>
-              <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>2. Explicit Requirement Rubrics</h3>
-              <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: 0 }}>
-                Roles publish transparent skill criteria, benchmark levels, and evidence expectations so candidates understand what is evaluated before targeting.
-              </p>
-            </div>
+                  {/* Header */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, paddingTop: 4 }}>
+                    <div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', lineHeight: 1.3, marginBottom: 4 }}>{v.title}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12.5, color: '#64748b', fontWeight: 600 }}>
+                        <Building2 size={13} style={{ flexShrink: 0 }} />
+                        <span>{v.company_name}</span>
+                      </div>
+                    </div>
+                    <span style={{ flexShrink: 0, padding: '3px 10px', borderRadius: 99, background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#065f46', fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase' }}>Live</span>
+                  </div>
 
-            <div className="card" style={{ padding: '24px', background: '#ffffff' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#fef3c7', color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-                <Target size={19} />
-              </div>
-              <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>3. Target Isolation &amp; Privacy</h3>
-              <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: 0 }}>
-                Targeting a vacancy creates an isolated workspace. Evidence submitted for Company A is never shared or visible to Company B.
-              </p>
-            </div>
+                  {/* Meta tags */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {v.work_mode && (
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: '#f1f5f9', color: '#475569', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Briefcase size={10} />{v.work_mode}
+                      </span>
+                    )}
+                    {v.experience_level && (
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: '#fef3c7', color: '#92400e' }}>
+                        {v.experience_level.charAt(0).toUpperCase() + v.experience_level.slice(1)}
+                      </span>
+                    )}
+                    {v.location && (
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#f8fafc', color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <MapPin size={10} />{v.location}
+                      </span>
+                    )}
+                    {v.employment_type && (
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#f0fdf4', color: '#166534' }}>
+                        {v.employment_type.replace('_', ' ')}
+                      </span>
+                    )}
+                  </div>
 
-            <div className="card" style={{ padding: '24px', background: '#ffffff' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#fef3c7', color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-                <UserCheck size={19} />
-              </div>
-              <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>4. Human Recruiter Decisions</h3>
-              <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: 0 }}>
-                Zero automated AI rejections. Human hiring managers evaluate evidence coverage with role-specific rubrics and contextual review.
-              </p>
+                  {/* Requirements count */}
+                  {(v.requirements_count > 0 || v.salary_range) && (
+                    <div style={{ display: 'flex', gap: 16, fontSize: 12.5, color: '#334155' }}>
+                      {v.requirements_count > 0 && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
+                          <Layers size={12} style={{ color: '#b8860b' }} />
+                          {v.requirements_count} requirement{v.requirements_count !== 1 ? 's' : ''}
+                        </span>
+                      )}
+                      {v.salary_range && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
+                          <span style={{ fontSize: 11, color: '#64748b' }}>{v.salary_range}</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* CTA */}
+                  <Link
+                    href="/login?role=candidate"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      padding: '10px 16px',
+                      borderRadius: 8,
+                      background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
+                      color: '#ffffff',
+                      fontSize: 13,
+                      fontWeight: 800,
+                      textDecoration: 'none',
+                      marginTop: 'auto',
+                    }}
+                  >
+                    <span>View &amp; Target Role</span>
+                    <ArrowRight size={13} />
+                  </Link>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
 
           <div style={{ textAlign: 'center' }}>
             <Link
@@ -849,7 +933,7 @@ export default function HomePage() {
               }}
             >
               <Compass size={16} />
-              <span>Sign In to Candidate Workspace</span>
+              <span>Sign In to Explore All Vacancies</span>
               <ArrowRight size={14} />
             </Link>
           </div>
