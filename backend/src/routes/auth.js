@@ -260,7 +260,11 @@ router.post(
       });
     } catch (err) {
       console.error('Login error:', err);
-      return res.status(500).json({ error: 'Login failed' });
+      return res.status(500).json({
+        error: 'Login failed',
+        details: err.message,
+        dbConfigured: !!process.env.DATABASE_URL
+      });
     }
   }
 );

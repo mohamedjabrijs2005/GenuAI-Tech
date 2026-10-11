@@ -54,8 +54,26 @@ app.get('/', (req, res) => {
   res.json({ status: 'ok', service: 'GenuAI API', version: '2.0', message: 'Backend is running' });
 });
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'GenuAI API', version: '2.0', timestamp: new Date().toISOString() });
+app.get('/api/health', async (req, res) => {
+  let dbStatus = 'disconnected';
+  let dbError = null;
+  try {
+    const pool = require('./database/pool');
+    await pool.query('SELECT 1');
+    dbStatus = 'connected';
+  } catch (e) {
+    dbStatus = 'error';
+    dbError = e.message;
+  }
+  res.json({
+    status: 'ok',
+    service: 'GenuAI API',
+    version: '2.0',
+    database: dbStatus,
+    databaseError: dbError,
+    dbConfigured: !!process.env.DATABASE_URL,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // 404 handler
