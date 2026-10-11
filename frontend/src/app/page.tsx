@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Compass, FileCheck, ArrowRight,
   Building2, Lock, Layers, CheckCircle2, Menu, X, ChevronDown, ChevronUp,
-  UserCheck, Sparkles, Briefcase, GraduationCap, MapPin
+  FileText, UserCheck, Check, Minus, Sparkles, ShieldCheck, Briefcase, GraduationCap, MapPin
 } from 'lucide-react';
 import api from '@/lib/api';
 
