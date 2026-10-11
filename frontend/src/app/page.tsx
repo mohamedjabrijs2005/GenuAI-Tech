@@ -142,7 +142,7 @@ export default function HomePage() {
   const PRICING_FAQS = [
     {
       q: 'Is GenuAI free for candidates?',
-      a: 'Core candidate access is free, including exploring verified vacancies, creating targets, and participating in the standard target workflow. Optional premium career-support services may be introduced separately in the future.',
+      a: 'Core candidate access is free, including exploring verified vacancies, creating targets, and participating in the standard target workflow. Candidate career plans (Candidate Plus, Pro, and Career Pack) are available as paid upgrades for additional preparation, practice sessions, and career support.',
     },
     {
       q: 'Why is company pricing not listed publicly?',
@@ -293,7 +293,7 @@ export default function HomePage() {
             </Link>
 
             <Link
-              href="/login?role=candidate"
+              href="/register"
               style={{
                 fontSize: 13,
                 fontWeight: 700,
@@ -309,7 +309,7 @@ export default function HomePage() {
                 whiteSpace: 'nowrap',
               }}
             >
-              <span>Candidate Access</span>
+              <span>Create Account</span>
               <ArrowRight size={13} />
             </Link>
 
@@ -1275,7 +1275,7 @@ export default function HomePage() {
                 }}
               >
                 <CheckCircle2 size={16} style={{ color: '#059669', flexShrink: 0 }} />
-                <span>Candidates can explore verified vacancies and create targets at no cost.</span>
+                <span>Core vacancy access and target creation are free. Candidate career plans are available as paid upgrades.</span>
               </div>
             </div>
 
@@ -1864,7 +1864,7 @@ export default function HomePage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <GraduationCap size={18} style={{ color: '#b8860b' }} />
                   <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                    Optional candidate career tools
+                    Candidate career plans
                   </h3>
                 </div>
                 <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0' }}>
@@ -1872,7 +1872,7 @@ export default function HomePage() {
                 </span>
               </div>
               <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.5, marginBottom: 14 }}>
-                Core access to verified vacancies and target creation remains free. Optional preparation and career-support plans are available separately.
+                Core vacancy access and target creation are free. Upgrade with a candidate career plan for guided preparation, practice sessions, and career support.
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
                 {[
