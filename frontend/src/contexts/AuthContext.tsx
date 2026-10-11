@@ -136,16 +136,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const userId = data.user?.id || '';
+
     if (isCandidate) {
-      // Require onboarding before accessing dashboard (keyed to user ID)
-      const onboardingDone = isCandidateOnboardingDone(userId);
-      router.push(onboardingDone ? '/candidate' : '/onboarding/candidate');
+      // Check backend profile to determine if onboarding is genuinely complete
+      try {
+        const profileRes = await api.get('/candidate-portal/profile').catch(() => null);
+        const profile = profileRes?.data?.profile;
+        // Consider onboarding done if candidate has set at least phone or experience summary
+        const profileComplete = !!(profile?.phone || profile?.experience_summary || profile?.location);
+        if (profileComplete) {
+          localStorage.setItem(`genuai_onboarding_done_${userId}`, 'true');
+          router.push('/candidate');
+        } else {
+          localStorage.removeItem(`genuai_onboarding_done_${userId}`);
+          router.push('/onboarding/candidate');
+        }
+      } catch {
+        // Fallback to localStorage flag if API fails
+        const onboardingDone = isCandidateOnboardingDone(userId);
+        router.push(onboardingDone ? '/candidate' : '/onboarding/candidate');
+      }
     } else {
       // Company: require onboarding before accessing dashboard (keyed to user ID)
       const onboardingDone = isCompanyOnboardingDone(userId);
       router.push(onboardingDone ? '/dashboard' : '/onboarding/company');
     }
   };
+
 
   const register = async (formData: RegisterData) => {
     const { data } = await api.post('/auth/register', formData);

@@ -340,11 +340,20 @@ export default function CandidateOnboardingPage() {
                   </button>
                 </div>
 
-                <button type="button" onClick={() => router.push('/candidate')} style={{
+                <button type="button" onClick={() => {
+                  try {
+                    const storedUser = localStorage.getItem('genuai_user');
+                    if (storedUser) {
+                      const u = JSON.parse(storedUser);
+                      if (u?.id) localStorage.setItem(`genuai_onboarding_done_${u.id}`, 'true');
+                    }
+                  } catch {}
+                  router.push('/candidate');
+                }} style={{
                   width: '100%', marginTop: 12, padding: '10px', borderRadius: 8,
                   background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#94a3b8', fontWeight: 600,
                 }}>
-                  Skip for now — I'll complete this later
+                  Skip for now — I'll complete my profile later
                 </button>
               </>
             )}
