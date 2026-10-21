@@ -100,7 +100,26 @@ export default function AuditTrailPage() {
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Preview Notice */}
+      <div style={{
+        background: '#fffbeb',
+        border: '1px solid #fde68a',
+        borderRadius: 8,
+        padding: '10px 16px',
+        marginBottom: 20,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        fontSize: 12.5,
+        color: '#92400e',
+        fontWeight: 600,
+      }}>
+        <Info size={15} style={{ flexShrink: 0, color: '#b45309' }} />
+        <span>
+          <strong>Preview:</strong> This module displays illustrative sample data when the audit API is unavailable. Real audit persistence is in development.
+        </span>
+      </div>
+
       <div className="stats-grid" style={{ marginBottom: 24 }}>
         {[
           { label: 'Total Events', value: logs.length, icon: <Shield size={18} />, cls: 'stat-card-gold' },

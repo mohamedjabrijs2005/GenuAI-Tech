@@ -357,13 +357,9 @@ export default function AuthPage() {
       toast.error('Please enter a valid email address');
       return;
     }
-    setForgotSent(true);
-    toast.success('Password reset instructions sent to ' + forgotEmail);
-    setTimeout(() => {
-      setShowForgotModal(false);
-      setForgotSent(false);
-      setForgotEmail('');
-    }, 2000);
+    toast.error('Password reset via email is not yet available. Please contact support at admin@genuai.test.');
+    setShowForgotModal(false);
+    setForgotEmail('');
   };
 
   const passStrength = getPasswordStrength(form.password);
@@ -423,7 +419,7 @@ export default function AuthPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span className="auth-pulse-dot" />
                 <span style={{ fontSize: 11, fontWeight: 800, color: '#f8fafc', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                  Live Requirement &amp; Evidence Ledger
+                  Illustrative Requirement &amp; Evidence Ledger
                 </span>
               </div>
               <span style={{ fontSize: 10.5, color: '#94a3b8', fontWeight: 600 }}>
