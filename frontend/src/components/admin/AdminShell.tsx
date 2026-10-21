@@ -46,8 +46,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         }}
         className="admin-main-wrapper"
       >
-        <AdminTopbar />
-        <main style={{ padding: '28px 32px 64px', flex: 1, maxWidth: '1440px', width: '100%', margin: '0 auto' }}>
+        <AdminTopbar onToggleMobileSidebar={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
+        <main className="admin-page-main" style={{ padding: '28px 32px 64px', flex: 1, maxWidth: '1440px', width: '100%', margin: '0 auto' }}>
           {children}
         </main>
       </div>
@@ -120,7 +120,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       </Modal>
 
       <style jsx global>{`
-        @media (max-width: 768px) {
+        @media (max-width: 1023px) {
           .admin-sidebar {
             transform: translateX(-100%);
             transition: transform 0.25s ease;
@@ -131,6 +131,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           .admin-main-wrapper {
             margin-left: 0 !important;
             width: 100% !important;
+          }
+          .admin-page-main {
+            padding: 16px !important;
           }
         }
       `}</style>

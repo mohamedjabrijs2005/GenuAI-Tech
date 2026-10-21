@@ -14,32 +14,6 @@ export default function HomePage() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [openPricingFaqIndex, setOpenPricingFaqIndex] = useState<number | null>(0);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-  const [liveVacanciesCount, setLiveVacanciesCount] = useState<number | null>(null);
-  const [vacanciesList, setVacanciesList] = useState<any[]>([]);
-  const [vacanciesLoading, setVacanciesLoading] = useState(true);
-
-  useEffect(() => {
-    // Fetch real published vacancies for landing page display
-    setVacanciesLoading(true);
-    api.get('/candidate-portal/vacancies')
-      .then((res) => {
-        const raw: any[] = res.data?.vacancies || [];
-        // Deduplicate by id and cap at 6 for landing page
-        const seen = new Set<string>();
-        const deduped = raw.filter((v) => {
-          if (seen.has(v.id)) return false;
-          seen.add(v.id);
-          return true;
-        }).slice(0, 6);
-        setVacanciesList(deduped);
-        setLiveVacanciesCount(raw.length);
-      })
-      .catch(() => {
-        setVacanciesList([]);
-        setLiveVacanciesCount(null);
-      })
-      .finally(() => setVacanciesLoading(false));
-  }, []);
 
   const toggleFaq = (index: number) => {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
@@ -145,8 +119,8 @@ export default function HomePage() {
       a: 'Core candidate access is free, including exploring verified vacancies, creating targets, and participating in the standard target workflow. Candidate career plans (Candidate Plus, Pro, and Career Pack) are available as paid upgrades for additional preparation, practice sessions, and career support.',
     },
     {
-      q: 'Why is company pricing not listed publicly?',
-      a: 'GenuAI is currently being developed and validated with organizations of different sizes and recruitment needs. Company pricing depends on team size, workflow needs, assessment configuration, and required support.',
+      q: 'How does company workspace onboarding work?',
+      a: 'Companies register their workspace and undergo platform governance verification. Once verified, hiring teams can define requirements, publish verified vacancies, and review candidate evidence within their plan.',
     },
     {
       q: 'Does GenuAI charge candidates to apply for jobs?',
@@ -266,7 +240,6 @@ export default function HomePage() {
           <nav aria-label="Main Navigation" className="landing-nav">
             <a href="#problem">Product</a>
             <a href="#how-it-works">How It Works</a>
-            <a href="#vacancies">Vacancies</a>
             <a href="#candidates">For Candidates</a>
             <a href="#companies">For Companies</a>
             <a href="#pricing">Pricing</a>
@@ -277,6 +250,7 @@ export default function HomePage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             <Link
               href="/login"
+              className="landing-header-signin"
               style={{
                 fontSize: 13,
                 fontWeight: 700,
@@ -294,6 +268,7 @@ export default function HomePage() {
 
             <Link
               href="/login?mode=register"
+              className="landing-header-cta"
               style={{
                 fontSize: 13,
                 fontWeight: 700,
@@ -346,15 +321,13 @@ export default function HomePage() {
         >
           <a href="#problem" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>Product</a>
           <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>How It Works</a>
-          <a href="#vacancies" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>Vacancies</a>
           <a href="#candidates" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>For Candidates</a>
           <a href="#companies" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>For Companies</a>
           <a href="#pricing" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>Pricing</a>
           <a href="#trust" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>Trust &amp; Privacy</a>
           <div style={{ height: 1, background: '#e2e8f0', margin: '8px 0' }} />
-          <Link href="/login?mode=register" onClick={() => setMobileMenuOpen(false)} style={{ padding: '10px', textAlign: 'center', background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)', color: '#fff', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Create Account</Link>
-          <Link href="/login?role=candidate" onClick={() => setMobileMenuOpen(false)} style={{ padding: '10px', textAlign: 'center', background: '#f1f5f9', color: '#0f172a', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Candidate Login</Link>
-          <Link href="/login?role=company" onClick={() => setMobileMenuOpen(false)} style={{ padding: '10px', textAlign: 'center', background: '#0f172a', color: '#fff', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Company Login</Link>
+          <Link href="/login" onClick={() => setMobileMenuOpen(false)} style={{ padding: '10px', textAlign: 'center', background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)', color: '#fff', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Sign In to Workspace</Link>
+          <Link href="/login?mode=register" onClick={() => setMobileMenuOpen(false)} style={{ padding: '10px', textAlign: 'center', background: '#f1f5f9', color: '#0f172a', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Create Account</Link>
         </div>
       )}
 
@@ -406,9 +379,9 @@ export default function HomePage() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 18 }}>
             <Link
-              href="/login?role=candidate"
+              href="/login"
               style={{
-                padding: '13px 26px',
+                padding: '13px 28px',
                 borderRadius: 9,
                 background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
                 color: '#ffffff',
@@ -421,18 +394,12 @@ export default function HomePage() {
                 boxShadow: '0 4px 14px rgba(184, 134, 11, 0.25)',
               }}
             >
-              <Compass size={17} />
-              <span>Candidate Sign In</span>
-              {liveVacanciesCount !== null && (
-                <span style={{ fontSize: 11, background: 'rgba(255,255,255,0.25)', padding: '2px 6px', borderRadius: 99 }}>
-                  {liveVacanciesCount} active
-                </span>
-              )}
+              <span>Get Started</span>
               <ArrowRight size={15} />
             </Link>
 
             <a
-              href="#vacancies"
+              href="#how-it-works"
               style={{
                 padding: '13px 26px',
                 borderRadius: 9,
@@ -447,7 +414,7 @@ export default function HomePage() {
                 gap: 8,
               }}
             >
-              <span>How Vacancies Work</span>
+              <span>How It Works</span>
             </a>
           </div>
 
@@ -772,165 +739,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 6.5 LIVE PUBLISHED VACANCIES SECTION */}
-        <section
-          id="vacancies"
-          style={{
-            padding: '72px 24px',
-            maxWidth: 1200,
-            margin: '0 auto',
-            scrollMarginTop: 72,
-          }}
-        >
-          <div style={{ textAlign: 'center', marginBottom: 44 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 14px', borderRadius: 99, background: 'rgba(212, 175, 55, 0.12)', border: '1px solid rgba(212, 175, 55, 0.4)', color: '#854d0e', fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-              <Compass size={13} style={{ color: '#b8860b' }} />
-              <span>Verified Published Vacancies</span>
-            </div>
-            <h2 style={{ fontSize: 'clamp(24px, 3.4vw, 36px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.8px', marginBottom: 12 }}>
-              Explore Live Opportunities
-            </h2>
-            <p style={{ fontSize: 15, color: '#475569', maxWidth: 740, margin: '0 auto', lineHeight: 1.6 }}>
-              Every vacancy is published by a verified employer with explicit skill requirements, transparent rubrics, and human review. No phantom listings.
-            </p>
-          </div>
-
-          {/* Live Vacancy Cards */}
-          {vacanciesLoading ? (
-            <div style={{ textAlign: 'center', padding: '48px 0', color: '#94a3b8', fontSize: 14 }}>
-              <div style={{ display: 'inline-block', width: 28, height: 28, border: '3px solid #e2e8f0', borderTopColor: '#b8860b', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: 12 }} />
-              <div>Loading verified vacancies…</div>
-            </div>
-          ) : vacanciesList.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '48px 24px', background: '#fafaf9', borderRadius: 12, border: '1px solid #e2e8f0', marginBottom: 36 }}>
-              <Building2 size={36} style={{ color: '#cbd5e1', marginBottom: 12 }} />
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#64748b', marginBottom: 6 }}>No published vacancies yet</div>
-              <div style={{ fontSize: 13, color: '#94a3b8' }}>New verified roles will appear here once companies publish them.</div>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20, marginBottom: 36 }}>
-              {vacanciesList.map((v) => (
-                <div
-                  key={v.id}
-                  className="card"
-                  style={{
-                    padding: '22px 20px',
-                    background: '#ffffff',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 14,
-                    position: 'relative',
-                    overflow: 'hidden',
-                    transition: 'box-shadow 0.18s ease, transform 0.18s ease',
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(184,134,11,0.13)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = ''; (e.currentTarget as HTMLElement).style.transform = ''; }}
-                >
-                  {/* Top accent */}
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, #b8860b, #d4af37)' }} />
-
-                  {/* Header */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, paddingTop: 4 }}>
-                    <div>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', lineHeight: 1.3, marginBottom: 4 }}>{v.title}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12.5, color: '#64748b', fontWeight: 600 }}>
-                        <Building2 size={13} style={{ flexShrink: 0 }} />
-                        <span>{v.company_name}</span>
-                      </div>
-                    </div>
-                    <span style={{ flexShrink: 0, padding: '3px 10px', borderRadius: 99, background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#065f46', fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase' }}>Live</span>
-                  </div>
-
-                  {/* Meta tags */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {v.work_mode && (
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: '#f1f5f9', color: '#475569', display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <Briefcase size={10} />{v.work_mode}
-                      </span>
-                    )}
-                    {v.experience_level && (
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: '#fef3c7', color: '#92400e' }}>
-                        {v.experience_level.charAt(0).toUpperCase() + v.experience_level.slice(1)}
-                      </span>
-                    )}
-                    {v.location && (
-                      <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#f8fafc', color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <MapPin size={10} />{v.location}
-                      </span>
-                    )}
-                    {v.employment_type && (
-                      <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#f0fdf4', color: '#166534' }}>
-                        {v.employment_type.replace('_', ' ')}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Requirements count */}
-                  {(v.requirements_count > 0 || v.salary_range) && (
-                    <div style={{ display: 'flex', gap: 16, fontSize: 12.5, color: '#334155' }}>
-                      {v.requirements_count > 0 && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
-                          <Layers size={12} style={{ color: '#b8860b' }} />
-                          {v.requirements_count} requirement{v.requirements_count !== 1 ? 's' : ''}
-                        </span>
-                      )}
-                      {v.salary_range && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
-                          <span style={{ fontSize: 11, color: '#64748b' }}>{v.salary_range}</span>
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* CTA */}
-                  <Link
-                    href="/login?role=candidate"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                      padding: '10px 16px',
-                      borderRadius: 8,
-                      background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
-                      color: '#ffffff',
-                      fontSize: 13,
-                      fontWeight: 800,
-                      textDecoration: 'none',
-                      marginTop: 'auto',
-                    }}
-                  >
-                    <span>View &amp; Target Role</span>
-                    <ArrowRight size={13} />
-                  </Link>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div style={{ textAlign: 'center' }}>
-            <Link
-              href="/login?role=candidate"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '12px 28px',
-                borderRadius: 8,
-                background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
-                color: '#ffffff',
-                fontSize: 14,
-                fontWeight: 800,
-                textDecoration: 'none',
-                boxShadow: '0 2px 8px rgba(184, 134, 11, 0.25)',
-              }}
-            >
-              <Compass size={16} />
-              <span>Sign In to Explore All Vacancies</span>
-              <ArrowRight size={14} />
-            </Link>
-          </div>
-        </section>
 
         {/* 7. FOR CANDIDATES */}
         <section id="candidates" style={{ background: '#ffffff', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', padding: '72px 24px' }}>
@@ -967,7 +775,7 @@ export default function HomePage() {
                 <Link
                   href="/login?role=candidate"
                   style={{
-                    padding: '11px 22px',
+                    padding: '12px 24px',
                     borderRadius: 8,
                     background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
                     color: '#fff',
@@ -977,26 +785,12 @@ export default function HomePage() {
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 6,
+                    boxShadow: '0 2px 8px rgba(184, 134, 11, 0.25)',
                   }}
                 >
-                  <span>Candidate Login</span>
+                  <span>Candidate Workspace</span>
                   <ArrowRight size={14} />
                 </Link>
-                <a
-                  href="#vacancies"
-                  style={{
-                    padding: '11px 22px',
-                    borderRadius: 8,
-                    background: '#fff',
-                    border: '1.5px solid #d4af37',
-                    color: '#854d0e',
-                    fontSize: 13.5,
-                    fontWeight: 800,
-                    textDecoration: 'none',
-                  }}
-                >
-                  How Vacancies Work
-                </a>
               </div>
             </div>
 
@@ -1075,7 +869,7 @@ export default function HomePage() {
                 <Link
                   href="/login?role=company"
                   style={{
-                    padding: '11px 22px',
+                    padding: '12px 24px',
                     borderRadius: 8,
                     background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
                     color: '#fff',
@@ -1085,25 +879,11 @@ export default function HomePage() {
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 6,
+                    boxShadow: '0 2px 8px rgba(184, 134, 11, 0.25)',
                   }}
                 >
-                  <span>Company Workspace Sign In</span>
+                  <span>Company Workspace</span>
                   <ArrowRight size={14} />
-                </Link>
-                <Link
-                  href="/contact"
-                  style={{
-                    padding: '11px 22px',
-                    borderRadius: 8,
-                    background: '#fff',
-                    border: '1.5px solid #d4af37',
-                    color: '#854d0e',
-                    fontSize: 13.5,
-                    fontWeight: 800,
-                    textDecoration: 'none',
-                  }}
-                >
-                  Talk to Our Team
                 </Link>
               </div>
             </div>
@@ -2174,7 +1954,6 @@ export default function HomePage() {
               </h3>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5 }}>
                 <li><a href="#how-it-works" style={{ color: '#475569', textDecoration: 'none' }}>How It Works</a></li>
-                <li><a href="#vacancies" style={{ color: '#475569', textDecoration: 'none' }}>Verified Vacancies</a></li>
                 <li><a href="#candidates" style={{ color: '#475569', textDecoration: 'none' }}>For Candidates</a></li>
                 <li><a href="#companies" style={{ color: '#475569', textDecoration: 'none' }}>For Companies</a></li>
                 <li><a href="#pricing" style={{ color: '#475569', textDecoration: 'none' }}>Pricing</a></li>
@@ -2221,10 +2000,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Legal Review Disclaimer */}
-          <div style={{ padding: '10px 14px', borderRadius: 6, background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: 11, color: '#64748b', marginBottom: 24, textAlign: 'center' }}>
-            This page is a product draft and should be reviewed by qualified legal counsel before production launch.
-          </div>
 
           {/* Bottom bar */}
           <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, fontSize: 11.5, color: '#64748b' }}>

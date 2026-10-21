@@ -45,13 +45,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = React.useState(false);
+
   if (!user) return null;
 
   return (
     <div className="app-layout">
-      <Sidebar />
+      {/* Mobile Drawer Backdrop */}
+      {isMobileSidebarOpen && (
+        <div
+          onClick={() => setIsMobileSidebarOpen(false)}
+          className="sidebar-backdrop"
+          aria-hidden="true"
+        />
+      )}
+      <Sidebar
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+      />
       <div className="main-content">
-        <Topbar />
+        <Topbar onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} />
         <main>{children}</main>
       </div>
     </div>

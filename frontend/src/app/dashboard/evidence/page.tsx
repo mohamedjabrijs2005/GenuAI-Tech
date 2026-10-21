@@ -280,7 +280,7 @@ export default function EvidencePage() {
                   </span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 12, background: '#fafbfc', padding: '10px 12px', borderRadius: 8, marginBottom: 10, border: '1px solid var(--border)' }}>
+                <div className="grid-2" style={{ gap: 12, fontSize: 12, background: '#fafbfc', padding: '10px 12px', borderRadius: 8, marginBottom: 10, border: '1px solid var(--border)' }}>
                   <div>
                     <span className="td-muted">Evaluation Source:</span> <strong>{req.method}</strong> ({req.assessmentVersion})
                   </div>

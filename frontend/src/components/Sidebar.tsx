@@ -63,9 +63,15 @@ const NAV: NavSection[] = [
 
 
 
+import { X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
-export default function Sidebar() {
+interface SidebarProps {
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
+}
+
+export default function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
   const pathname = usePathname();
   const { user, company, logout } = useAuth();
 
@@ -82,13 +88,38 @@ export default function Sidebar() {
   const initials = user ? `${user.firstName?.[0] || 'U'}${user.lastName?.[0] || ''}`.toUpperCase() : 'U';
 
   return (
-    <aside className="sidebar" role="navigation" aria-label="Main navigation">
+    <aside
+      className={`sidebar ${isMobileOpen ? 'open' : ''}`}
+      role="navigation"
+      aria-label="Main navigation"
+    >
       {/* BRANDING HEADER */}
-      <div className="sidebar-logo">
+      <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <div className="sidebar-logo-text gold-gradient-text" style={{ fontSize: 15 }}>GenuAI Technologies</div>
           <span className="sidebar-logo-sub">Enterprise Suite</span>
         </div>
+        {onCloseMobile && (
+          <button
+            onClick={onCloseMobile}
+            className="sidebar-close-btn"
+            aria-label="Close sidebar"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 32,
+              height: 32,
+              borderRadius: 6,
+              background: '#f8fafc',
+              border: '1px solid var(--border)',
+              color: '#64748b',
+              cursor: 'pointer',
+            }}
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
 
       {/* Company Workspace */}
@@ -123,6 +154,7 @@ export default function Sidebar() {
                 <Link
                   key={item.label}
                   href={item.href}
+                  onClick={onCloseMobile}
                   className={`sidebar-nav-item${active ? ' active' : ''}`}
                   aria-current={active ? 'page' : undefined}
                   style={item.comingSoon ? { opacity: 0.7 } : undefined}

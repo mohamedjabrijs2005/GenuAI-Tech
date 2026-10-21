@@ -15,6 +15,7 @@ import {
   Settings,
   ChevronRight,
   LogOut,
+  X,
 } from 'lucide-react';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -153,6 +154,7 @@ export function AdminSidebar({ isMobileOpen = false, onCloseMobile }: { isMobile
           borderBottom: '1px solid var(--border)',
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
           flexShrink: 0,
         }}
       >
@@ -164,6 +166,27 @@ export function AdminSidebar({ isMobileOpen = false, onCloseMobile }: { isMobile
             Operational Control Center
           </span>
         </div>
+        {onCloseMobile && (
+          <button
+            onClick={onCloseMobile}
+            className="sidebar-close-btn"
+            aria-label="Close sidebar"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 32,
+              height: 32,
+              borderRadius: 6,
+              background: '#f8fafc',
+              border: '1px solid var(--border)',
+              color: '#64748b',
+              cursor: 'pointer',
+            }}
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
 
       {/* Workspace Identity — matches Company Dashboard workspace block */}

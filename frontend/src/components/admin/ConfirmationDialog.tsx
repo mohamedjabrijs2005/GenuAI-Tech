@@ -219,13 +219,14 @@ export function ConfirmationDialog({
         {/* Action Buttons */}
         <div
           style={{
-            padding: '14px 24px',
+            padding: '14px 20px',
             background: '#f8fafc',
             borderTop: '1px solid var(--border)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'flex-end',
             gap: '10px',
+            flexWrap: 'wrap',
           }}
         >
           <button
@@ -234,14 +235,17 @@ export function ConfirmationDialog({
               onClose();
             }}
             style={{
-              padding: '8px 14px',
+              padding: '9px 16px',
               borderRadius: '6px',
               border: '1px solid var(--border)',
               background: '#ffffff',
               color: 'var(--text-primary)',
-              fontSize: '12.5px',
+              fontSize: '13px',
               fontWeight: 600,
               cursor: 'pointer',
+              flex: '1 1 auto',
+              textAlign: 'center',
+              minHeight: '40px',
             }}
           >
             {cancelLabel}
@@ -249,15 +253,18 @@ export function ConfirmationDialog({
           <button
             onClick={handleConfirm}
             style={{
-              padding: '8px 16px',
+              padding: '9px 18px',
               borderRadius: '6px',
               background: cStyle.background,
               color: cStyle.color,
-              fontSize: '12.5px',
+              fontSize: '13px',
               fontWeight: 700,
               cursor: 'pointer',
               border: 'none',
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              flex: '1 1 auto',
+              textAlign: 'center',
+              minHeight: '40px',
             }}
           >
             {confirmLabel}

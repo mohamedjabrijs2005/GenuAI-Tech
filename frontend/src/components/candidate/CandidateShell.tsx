@@ -43,13 +43,26 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const [isMobileOpen, setIsMobileOpen] = React.useState(false);
+
   if (!user) return null;
 
   return (
     <div className="app-layout">
-      <CandidateSidebar />
+      {/* Mobile Drawer Backdrop */}
+      {isMobileOpen && (
+        <div
+          onClick={() => setIsMobileOpen(false)}
+          className="sidebar-backdrop"
+          aria-hidden="true"
+        />
+      )}
+      <CandidateSidebar
+        isMobileOpen={isMobileOpen}
+        onCloseMobile={() => setIsMobileOpen(false)}
+      />
       <div className="main-content">
-        <CandidateTopbar />
+        <CandidateTopbar onToggleMobileSidebar={() => setIsMobileOpen(!isMobileOpen)} />
         <main className="page-content">{children}</main>
       </div>
     </div>

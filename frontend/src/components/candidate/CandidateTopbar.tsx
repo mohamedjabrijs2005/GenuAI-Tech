@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { ShieldCheck, Bell, User, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Bell, User, CheckCircle2, Menu } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 
@@ -19,7 +19,11 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/candidate/settings': 'Account Settings',
 };
 
-export function CandidateTopbar() {
+interface CandidateTopbarProps {
+  onToggleMobileSidebar?: () => void;
+}
+
+export function CandidateTopbar({ onToggleMobileSidebar }: CandidateTopbarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
   const [syncTime, setSyncTime] = useState<string>('');
@@ -78,14 +82,38 @@ export function CandidateTopbar() {
 
   return (
     <header className="topbar">
-      {/* Left: page title */}
-      <div style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+      {/* Left: page title & hamburger button */}
+      <div className="flex items-center gap-2.5 min-w-0" style={{ flexShrink: 1, overflow: 'hidden' }}>
+        {onToggleMobileSidebar && (
+          <button
+            onClick={onToggleMobileSidebar}
+            className="topbar-mobile-btn"
+            aria-label="Toggle candidate navigation"
+            style={{
+              padding: '6px',
+              borderRadius: '6px',
+              border: '1px solid var(--border)',
+              background: '#f8fafc',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <Menu size={18} />
+          </button>
+        )}
         <h2
           style={{
             fontWeight: 800,
             fontSize: 16,
             color: 'var(--text-primary)',
             letterSpacing: '-0.3px',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
             margin: 0,
           }}
         >

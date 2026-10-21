@@ -77,7 +77,7 @@ export function EvidenceAuditModal({ isOpen, onClose, record }: EvidenceAuditMod
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
             gap: '12px',
             padding: '14px',
             background: '#f8fafc',

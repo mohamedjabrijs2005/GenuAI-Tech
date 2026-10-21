@@ -101,7 +101,7 @@ export default function AuditTrailPage() {
       </div>
 
       {/* Stats */}
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
+      <div className="stats-grid" style={{ marginBottom: 24 }}>
         {[
           { label: 'Total Events', value: logs.length, icon: <Shield size={18} />, cls: 'stat-card-gold' },
           { label: 'Today', value: logs.filter(l => l.created_at.startsWith('2026-10-01')).length, icon: <Clock size={18} />, cls: 'stat-card-brand' },

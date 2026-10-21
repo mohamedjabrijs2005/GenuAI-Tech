@@ -147,7 +147,7 @@ function RecruiterReviewContent() {
       </div>
 
       {/* Evidence summary strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+      <div className="grid-4" style={{ gap: 12, marginBottom: 24 }}>
         {[
           { icon: FileCheck, label: 'Supporting Evidence', value: supportingCount, color: '#059669', bg: '#ecfdf5' },
           { icon: XCircle, label: 'Evidence Gaps', value: gapCount, color: '#ba1a1a', bg: '#fef2f2' },
@@ -164,7 +164,7 @@ function RecruiterReviewContent() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 20, alignItems: 'start' }}>
+      <div className="grid-2" style={{ gap: 20, alignItems: 'start' }}>
         {/* Left: Review notes */}
         <div>
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '20px 24px', marginBottom: 16 }}>

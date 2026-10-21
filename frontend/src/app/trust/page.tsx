@@ -41,20 +41,6 @@ export default function TrustPage() {
             Our platform principles, data isolation boundaries, evidence traceability standards, and governance policies.
           </p>
 
-          <div
-            style={{
-              padding: '12px 16px',
-              borderRadius: 8,
-              background: '#fffbeb',
-              border: '1px solid #fde68a',
-              color: '#92400e',
-              fontSize: 12.5,
-              fontWeight: 600,
-              marginBottom: 24,
-            }}
-          >
-            Notice: This page is a product draft and should be reviewed by qualified legal counsel before production launch.
-          </div>
 
           <div style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, display: 'flex', flexDirection: 'column', gap: 24 }}>
             <section>

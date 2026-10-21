@@ -67,7 +67,7 @@ export function DetailDrawer({
         style={{
           position: 'relative',
           width,
-          maxWidth: '92vw',
+          maxWidth: '100vw',
           height: '100%',
           background: '#ffffff',
           boxShadow: '-8px 0 28px rgba(0, 0, 0, 0.15)',
@@ -76,6 +76,7 @@ export function DetailDrawer({
           zIndex: 10,
           animation: 'slideInRight 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
+        className="w-full sm:max-w-xl"
       >
         {/* Header */}
         <div

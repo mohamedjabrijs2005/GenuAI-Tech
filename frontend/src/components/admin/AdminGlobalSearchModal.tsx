@@ -109,9 +109,7 @@ export function AdminGlobalSearchModal() {
         display: 'flex',
         alignItems: 'flex-start',
         justifyContent: 'center',
-        paddingTop: '80px',
-        paddingLeft: '16px',
-        paddingRight: '16px',
+        padding: '20px 12px',
       }}
     >
       <div
@@ -129,12 +127,15 @@ export function AdminGlobalSearchModal() {
           position: 'relative',
           width: '100%',
           maxWidth: '620px',
+          maxHeight: 'calc(100dvh - 40px)',
           background: '#ffffff',
           borderRadius: '12px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           overflow: 'hidden',
           zIndex: 10,
           border: '1px solid var(--border)',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         {/* Search Input */}
@@ -142,25 +143,27 @@ export function AdminGlobalSearchModal() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            padding: '14px 18px',
+            padding: '14px 16px',
             borderBottom: '1px solid var(--border)',
-            gap: '12px',
+            gap: '10px',
+            flexShrink: 0,
           }}
         >
-          <Search size={18} style={{ color: '#b8860b' }} />
+          <Search size={18} style={{ color: '#b8860b', flexShrink: 0 }} />
           <input
             type="text"
             autoFocus
-            placeholder="Search platform companies, vacancies, assessments, users, disputes, incidents..."
+            placeholder="Search platform companies, vacancies, users..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             style={{
               flex: 1,
               border: 'none',
               outline: 'none',
-              fontSize: '14px',
+              fontSize: '16px',
               color: 'var(--text-primary)',
               background: 'transparent',
+              minWidth: 0,
             }}
           />
           <button

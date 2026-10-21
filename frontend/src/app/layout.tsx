@@ -8,6 +8,12 @@ export const metadata: Metadata = {
   description: 'GenuAI Technologies — Requirement-centered recruitment platform for companies and candidates',
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">

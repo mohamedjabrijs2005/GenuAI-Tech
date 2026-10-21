@@ -130,7 +130,7 @@ export default function ReportsPage() {
       </div>
 
       {/* KPI STATS */}
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
+      <div className="stats-grid" style={{ marginBottom: 24 }}>
         <div className="stat-card stat-card-gold">
           <div className="stat-icon stat-icon-gold"><Briefcase size={20} /></div>
           <div className="stat-label">Total Vacancies</div>
@@ -181,7 +181,7 @@ export default function ReportsPage() {
 
       {/* ── OVERVIEW TAB ── */}
       {activeTab === 'overview' && (
-        <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div className="grid-2" style={{ gap: 20 }}>
           {/* Pipeline Funnel */}
           <div className="card" style={{ padding: 24 }}>
             <div className="card-header" style={{ marginBottom: 20 }}>
@@ -331,7 +331,7 @@ export default function ReportsPage() {
       {/* ── INTEGRITY TAB ── */}
       {activeTab === 'integrity' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+          <div className="stats-grid">
             {[
               { label: 'Total Signals', value: ig.total_signals, color: 'var(--text-primary)' },
               { label: 'New', value: ig.new_signals, color: 'var(--warning)' },

@@ -168,7 +168,7 @@ export default function CandidateTargetPage() {
       </div>
 
       {/* Two Column Layout: Left Vacancies List, Right Requirement Detail */}
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 18, alignItems: 'start' }}>
+      <div className="grid-2" style={{ gap: 18, alignItems: 'start' }}>
         {/* Left Column: Vacancy List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', padding: '0 4px' }}>
