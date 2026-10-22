@@ -133,7 +133,7 @@ export default function Sidebar({ isMobileOpen = false, onCloseMobile }: Sidebar
             </span>
           ) : (
             <span className="badge badge-gray" style={{ fontSize: 9.5, padding: '1px 6px', flexShrink: 0 }}>
-              {company?.verificationStatus || 'Unverified'}
+              {company?.verificationStatus?.replace(/_/g, ' ') || 'Pending'}
             </span>
           )}
         </div>

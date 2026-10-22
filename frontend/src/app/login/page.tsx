@@ -39,8 +39,6 @@ interface PersonaConfig {
   emailLabel: string;
   emailPlaceholder: string;
   submitText: string;
-  ssoText: string;
-  ssoIcon: 'google' | 'sso';
   allowRegister: boolean;
   demoCredentials: { email: string; pass: string; name?: string; company?: string };
 }
@@ -65,8 +63,8 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
         icon: Lock,
       },
       {
-        title: 'Verifiable Evidence Hashes',
-        desc: 'Submitted files generate cryptographic SHA-256 hashes to guarantee data integrity.',
+        title: 'Direct Evidence Mapping',
+        desc: 'Connect portfolio work, code repositories, and work samples directly to role rubrics.',
         icon: ShieldCheck,
       },
     ],
@@ -86,8 +84,6 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
     emailLabel: 'Email Address',
     emailPlaceholder: 'you@example.com',
     submitText: 'Sign In to Workspace',
-    ssoText: 'Continue with Google',
-    ssoIcon: 'google',
     allowRegister: true,
     demoCredentials: { email: 'candidate@genuai.test', pass: 'Candidate123!', name: 'Alex Rivera' },
   },
@@ -131,8 +127,6 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
     emailLabel: 'Work Email Address',
     emailPlaceholder: 'you@company.com',
     submitText: 'Sign In to Workspace',
-    ssoText: 'Continue with Enterprise SSO',
-    ssoIcon: 'sso',
     allowRegister: true,
     demoCredentials: { email: 'companya@genuai.test', pass: 'CompanyA123!', name: 'Alice Owner', company: 'Alpha Technologies' },
   },
@@ -176,8 +170,6 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
     emailLabel: 'Admin Email Address',
     emailPlaceholder: 'admin@genuai.test',
     submitText: 'Sign In to Console',
-    ssoText: 'Sign In with Admin SSO',
-    ssoIcon: 'sso',
     allowRegister: false,
     demoCredentials: { email: 'admin@genuai.test', pass: 'Admin12345!', name: 'Platform Admin' },
   },
@@ -344,12 +336,6 @@ export default function AuthPage() {
     }
   };
 
-  const handleOAuth = (provider: string) => {
-    toast.loading(`Connecting with ${provider}...`, { duration: 1000 });
-    setTimeout(() => {
-      setError(`${provider.toUpperCase()} single-sign-on is provisioned for verified organizations.`);
-    }, 1000);
-  };
 
   const handleForgotSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -441,8 +427,8 @@ export default function AuthPage() {
                 <span className="auth-ledger-label">Candidate Evidence:</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 12, color: '#e2e8f0', fontWeight: 600 }}>{ledger.evidenceTitle}</span>
-                  <span style={{ fontSize: 10, background: 'rgba(255,255,255,0.08)', padding: '2px 6px', borderRadius: 4, color: '#cbd5e1', fontFamily: 'monospace' }}>
-                    SHA-256 Verified
+                  <span style={{ fontSize: 10, background: 'rgba(212, 175, 55, 0.15)', padding: '2px 7px', borderRadius: 4, color: '#fbbf24', fontWeight: 600 }}>
+                    Evidence Attached
                   </span>
                 </div>
               </div>
@@ -499,6 +485,17 @@ export default function AuthPage() {
       {/* ================= RIGHT SIDE: COMPACT, MODERN AUTH CARD ================= */}
       <div className="auth-fullscreen-right">
         <div className="auth-fullscreen-form-card">
+          {/* Mobile-only logo */}
+          <div className="auth-mobile-logo">
+            <div>
+              <div className="sidebar-logo-text gold-gradient-text" style={{ fontSize: 16, fontWeight: 900, letterSpacing: '-0.3px', textAlign: 'center' }}>
+                GenuAI Technologies
+              </div>
+              <span style={{ fontSize: 9.5, color: '#b8860b', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', display: 'block', textAlign: 'center' }}>
+                Recruitment Intelligence
+              </span>
+            </div>
+          </div>
           {/* Persona Switcher: Candidate | Company | Admin */}
           <div className="auth-persona-tabs">
             <button
@@ -568,7 +565,7 @@ export default function AuthPage() {
               style={{
                 background: '#fef2f2',
                 border: '1px solid #fecaca',
-                color: '#991b1b',
+                color: '#b91c1c',
                 fontSize: 12,
                 fontWeight: 600,
                 padding: '10px 14px',
@@ -579,7 +576,7 @@ export default function AuthPage() {
                 gap: 8,
               }}
             >
-              <AlertCircle size={15} style={{ flexShrink: 0, color: '#dc2626' }} />
+              <AlertCircle size={15} style={{ flexShrink: 0, color: '#ef4444' }} />
               <span>{error}</span>
             </div>
           )}
@@ -797,35 +794,6 @@ export default function AuthPage() {
             </button>
           </form>
 
-          {/* Social SSO Section */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '18px 0 12px' }}>
-            <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.8px' }}>
-              or continue with
-            </span>
-            <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
-          </div>
-
-          <div className="auth-sso-grid">
-            <button
-              type="button"
-              onClick={() => handleOAuth(config.ssoText)}
-              className="auth-sso-btn"
-            >
-              {config.ssoIcon === 'google' ? (
-                <svg width="15" height="15" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                </svg>
-              ) : (
-                <CheckCircle2 size={15} style={{ color: '#b8860b' }} />
-              )}
-              <span>{config.ssoText}</span>
-            </button>
-          </div>
-
           {/* Discreet Quick-Demo Access Chip */}
           <div className="auth-demo-chip-box">
             <button
@@ -840,7 +808,7 @@ export default function AuthPage() {
 
           {/* Admin Restricted Notice */}
           {persona === 'admin' && (
-            <div style={{ marginTop: 12, textAlign: 'center' }}>
+            <div style={{ marginTop: 14, textAlign: 'center' }}>
               <p style={{ fontSize: 11, color: '#64748b', margin: 0 }}>
                 Restricted to authorized <strong style={{ color: '#854d0e' }}>@genuai.test</strong> accounts.
               </p>
@@ -883,7 +851,7 @@ export default function AuthPage() {
                 <X size={18} />
               </button>
             </div>
-            <p style={{ fontSize: 12.5, color: '#64748b', marginBottom: 16, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 12.5, color: '#475569', marginBottom: 16, lineHeight: 1.5 }}>
               Enter your registered email address and we will dispatch secure instructions to reset your workspace access.
             </p>
             <form onSubmit={handleForgotSubmit}>
