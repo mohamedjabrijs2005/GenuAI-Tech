@@ -10,6 +10,8 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [isMobileOpen, setIsMobileOpen] = React.useState(false);
+
   const isOnboarding = pathname?.includes('/onboarding');
 
   useEffect(() => {
@@ -50,8 +52,6 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-
-  const [isMobileOpen, setIsMobileOpen] = React.useState(false);
 
   if (!user) return null;
 

@@ -10,6 +10,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = React.useState(false);
+
   const isOnboarding = pathname?.includes('/onboarding');
   const isVerificationStatus = pathname?.includes('/verification-status');
 
@@ -51,8 +53,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
     );
   }
-
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = React.useState(false);
 
   if (!user) return null;
 
