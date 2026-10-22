@@ -16,6 +16,7 @@ interface Company {
   id: string;
   name: string;
   verificationStatus: string;
+  onboardingSubmitted?: boolean;
 }
 
 interface AuthContextType {
@@ -164,11 +165,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push(onboardingDone ? '/candidate' : '/candidate/onboarding');
       }
     } else {
-      // Company: determine if onboarding completed
-      const onboardingDone = isCompanyOnboardingDone(userId);
-      if (!onboardingDone) {
+      // Company: use backend onboardingSubmitted flag as source of truth
+      const onboardingSubmitted = data.company?.onboardingSubmitted === true;
+      if (!onboardingSubmitted) {
+        localStorage.removeItem(`genuai_onboarding_done_${userId}`);
         router.push('/dashboard/onboarding');
       } else {
+        localStorage.setItem(`genuai_onboarding_done_${userId}`, 'true');
         router.push('/dashboard');
       }
     }

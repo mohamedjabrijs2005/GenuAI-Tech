@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const INDUSTRY_OPTIONS = [
   'Technology & Software',
@@ -30,6 +31,7 @@ const SIZE_OPTIONS = ['1–10', '11–50', '51–200', '201–500', '501–1000'
 
 export default function CompanyOnboardingPage() {
   const router = useRouter();
+  const { refreshAuth } = useAuth();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
 
@@ -49,7 +51,7 @@ export default function CompanyOnboardingPage() {
     isAuthorizedRepresentative: false,
     registrationNumber: '',
     verificationDocumentUrl: '',
-    agreedVerificationPolicy: false,
+    agreedVerificationPolicy: true,
   });
 
   // Prepopulate company name from auth if available
@@ -86,19 +88,11 @@ export default function CompanyOnboardingPage() {
   const handleSubmitVerification = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!form.isAuthorizedRepresentative) {
-      toast.error('Please confirm authorization to represent this organization.');
+      toast.error('Please confirm authorization to represent this organization in Step 2.');
+      setStep(2);
       return;
     }
     setSaving(true);
-
-    const userId = (() => {
-      try {
-        const u = JSON.parse(localStorage.getItem('genuai_user') || '{}');
-        return u?.id || 'default';
-      } catch {
-        return 'default';
-      }
-    })();
 
     const payload = {
       name: form.companyName,
@@ -119,26 +113,39 @@ export default function CompanyOnboardingPage() {
     };
 
     try {
-      localStorage.setItem('genuai_company_profile', JSON.stringify(payload));
-      localStorage.setItem(`genuai_onboarding_done_${userId}`, 'true');
-
-      // Update stored company object status
-      const existingComp = localStorage.getItem('genuai_company');
-      if (existingComp) {
-        const parsed = JSON.parse(existingComp);
-        parsed.verificationStatus = 'PENDING_VERIFICATION';
-        parsed.name = form.companyName;
-        localStorage.setItem('genuai_company', JSON.stringify(parsed));
-      }
-    } catch {}
-
-    try {
+      // 1. Save company profile details
       await api.patch('/company/profile', payload).catch(() => null);
-    } catch {}
+      // 2. Mark onboarding as submitted in database
+      await api.post('/company/submit-onboarding').catch(() => null);
 
-    toast.success('Company onboarding submitted for platform review! Welcome to your workspace.');
-    router.push('/dashboard');
-    setSaving(false);
+      // 3. Update localStorage cache
+      try {
+        const u = JSON.parse(localStorage.getItem('genuai_user') || '{}');
+        if (u?.id) {
+          localStorage.setItem(`genuai_onboarding_done_${u.id}`, 'true');
+        }
+        localStorage.setItem('genuai_company_profile', JSON.stringify(payload));
+        const existingComp = localStorage.getItem('genuai_company');
+        if (existingComp) {
+          const parsed = JSON.parse(existingComp);
+          parsed.verificationStatus = 'PENDING_VERIFICATION';
+          parsed.name = form.companyName;
+          parsed.onboardingSubmitted = true;
+          localStorage.setItem('genuai_company', JSON.stringify(parsed));
+        }
+      } catch {}
+
+      // 4. Refresh auth state so DashboardLayout unblocks
+      await refreshAuth().catch(() => null);
+
+      toast.success('Onboarding submitted for Admin Review! Welcome to your dashboard.');
+      router.push('/dashboard');
+    } catch (err: any) {
+      console.error('Onboarding submit error:', err);
+      toast.error('Failed to submit onboarding. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const inputStyle: React.CSSProperties = {
@@ -180,30 +187,27 @@ export default function CompanyOnboardingPage() {
               GenuAI Technologies
             </div>
             <span style={{ fontSize: 10, color: '#854d0e', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', display: 'block', marginTop: 2 }}>
-              Enterprise Workspace Setup
+              Enterprise Compliance Setup
             </span>
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: '0 0 6px', letterSpacing: '-0.4px' }}>
             {step === 1 && 'Step 1: Company Profile'}
             {step === 2 && 'Step 2: Authorized Contact & Governance'}
-            {step === 3 && 'Step 3: Verification Information'}
-            {step === 4 && 'Step 4: Review & Platform Submission'}
+            {step === 3 && 'Step 3: Official Verification Details & Documents'}
           </h1>
           <p style={{ fontSize: 13.5, color: '#64748b', margin: 0 }}>
             {step === 1 && 'Establish your organization details for company vacancy listings.'}
             {step === 2 && 'Designate the official contact authorized to represent this workspace.'}
-            {step === 3 && 'Submit corporate verification details required by platform policy.'}
-            {step === 4 && 'Review all details before submitting for Platform Administration audit.'}
+            {step === 3 && 'Submit corporate verification details & documents for platform admin review.'}
           </p>
         </div>
 
-        {/* Step Progress Bar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 24 }}>
+        {/* Step Progress Bar (3-Step Flow) */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 24 }}>
           {[
-            { num: 1, label: 'Profile' },
-            { num: 2, label: 'Contact' },
-            { num: 3, label: 'Verification' },
-            { num: 4, label: 'Submit' },
+            { num: 1, label: 'Company Profile' },
+            { num: 2, label: 'Authorized Contact' },
+            { num: 3, label: 'Verification & Docs' },
           ].map((s, idx) => (
             <React.Fragment key={s.num}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -229,7 +233,7 @@ export default function CompanyOnboardingPage() {
                   {s.label}
                 </span>
               </div>
-              {idx < 3 && <div style={{ width: 24, height: 2, background: step > s.num ? '#b8860b' : '#e2e8f0' }} />}
+              {idx < 2 && <div style={{ width: 36, height: 2, background: step > s.num ? '#b8860b' : '#e2e8f0' }} />}
             </React.Fragment>
           ))}
         </div>
@@ -511,7 +515,7 @@ export default function CompanyOnboardingPage() {
             </div>
           )}
 
-          {/* ================= STEP 3: VERIFICATION INFORMATION ================= */}
+          {/* ================= STEP 3: OFFICIAL VERIFICATION DETAILS & DOCUMENTS ================= */}
           {step === 3 && (
             <div>
               {/* Privacy & Purpose Explanation */}
@@ -551,88 +555,23 @@ export default function CompanyOnboardingPage() {
                 </span>
               </div>
 
-              <div style={{ marginBottom: 24 }}>
+              <div style={{ marginBottom: 20 }}>
                 <label style={labelStyle}>
-                  Corporate Domain Verification or Business Document Link (Optional)
+                  Official Verification Document URL / Certificate Link (Optional)
                 </label>
                 <input
                   type="url"
                   value={form.verificationDocumentUrl}
                   onChange={e => set('verificationDocumentUrl', e.target.value)}
-                  placeholder="https://drive.google.com/... or official business registry certificate link"
+                  placeholder="https://drive.google.com/... or company registration certificate URL"
                   style={inputStyle}
                 />
                 <span style={{ fontSize: 11.5, color: '#94a3b8', display: 'block', marginTop: 4 }}>
-                  You may provide a link to corporate registration documents or verify via corporate domain email.
+                  Link to Certificate of Incorporation, GST/Tax document, or corporate domain record.
                 </span>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid #f1f5f9' }}>
-                <button
-                  type="button"
-                  onClick={() => setStep(2)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#64748b',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  &larr; Back
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStep(4)}
-                  style={{
-                    padding: '11px 24px',
-                    borderRadius: 9,
-                    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-                    color: '#ffffff',
-                    fontSize: 13.5,
-                    fontWeight: 800,
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                  }}
-                >
-                  <span>Review Details</span>
-                  <ArrowRight size={15} />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ================= STEP 4: REVIEW & SUBMIT ================= */}
-          {step === 4 && (
-            <div>
-              <div style={{
-                background: '#f8fafc',
-                border: '1px solid #cbd5e1',
-                borderRadius: 12,
-                padding: '20px',
-                marginBottom: 20,
-              }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Building2 size={16} style={{ color: '#b8860b' }} />
-                  Workspace Summary
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, fontSize: 12.5, color: '#475569' }}>
-                  <div><strong>Company Name:</strong> {form.companyName}</div>
-                  <div><strong>Legal Entity:</strong> {form.legalName || form.companyName}</div>
-                  <div><strong>Industry:</strong> {form.industry}</div>
-                  <div><strong>Size:</strong> {form.size} employees</div>
-                  <div><strong>Location:</strong> {form.location}</div>
-                  <div><strong>Website:</strong> {form.website || 'Not provided'}</div>
-                  <div><strong>Authorized Contact:</strong> {form.hiringContactName} ({form.hiringContactRole})</div>
-                  <div><strong>Official Email:</strong> {form.officialEmail}</div>
-                </div>
-              </div>
-
-              {/* What happens next note */}
+              {/* Notice of Admin Review */}
               <div style={{
                 background: 'rgba(184, 134, 11, 0.06)',
                 border: '1px solid rgba(184, 134, 11, 0.25)',
@@ -644,14 +583,14 @@ export default function CompanyOnboardingPage() {
               }}>
                 <Sparkles size={18} style={{ color: '#b8860b', flexShrink: 0, marginTop: 2 }} />
                 <div style={{ fontSize: 12.5, color: '#854d0e', lineHeight: 1.5 }}>
-                  <strong>Next Step:</strong> Once submitted, your organization will be in <em>Pending Verification</em>. You can immediately create departments, define role rubrics, and prepare draft vacancies. Public publication is activated upon admin review.
+                  <strong>Next Step: Submitting to Admin Review:</strong> Your organization will be submitted for platform verification. You will be routed immediately to your company workspace to prepare vacancies, rubrics, and departments.
                 </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid #f1f5f9' }}>
                 <button
                   type="button"
-                  onClick={() => setStep(3)}
+                  onClick={() => setStep(2)}
                   style={{
                     background: 'none',
                     border: 'none',
@@ -682,7 +621,7 @@ export default function CompanyOnboardingPage() {
                     boxShadow: '0 2px 8px rgba(184, 134, 11, 0.25)',
                   }}
                 >
-                  <span>{saving ? 'Submitting...' : 'Submit for Platform Verification'}</span>
+                  <span>{saving ? 'Submitting...' : 'Submit to Admin Review & Open Dashboard'}</span>
                   <ArrowRight size={16} />
                 </button>
               </div>

@@ -7,13 +7,17 @@ import Topbar from '@/components/Topbar';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, company, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = React.useState(false);
 
   const isOnboarding = pathname?.includes('/onboarding');
   const isVerificationStatus = pathname?.includes('/verification-status');
+
+  const isAdmin = user ? ['PLATFORM_ADMIN', 'SUPER_ADMIN'].includes((user.role || '').toUpperCase()) : false;
+  const localDone = typeof window !== 'undefined' && user?.id ? localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true' : false;
+  const onboardingSubmitted = isAdmin || isVerificationStatus || company?.onboardingSubmitted === true || localDone;
 
   useEffect(() => {
     if (!isLoading) {
@@ -26,22 +30,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         router.replace('/candidate');
         return;
       }
-      if (role !== 'PLATFORM_ADMIN' && role !== 'SUPER_ADMIN' && !isOnboarding && !isVerificationStatus) {
-        const done = typeof window !== 'undefined' && localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true';
-        if (!done) {
-          router.replace('/dashboard/onboarding');
-        }
+      if (!isOnboarding && !onboardingSubmitted) {
+        router.replace('/dashboard/onboarding');
       }
     }
-  }, [user, isLoading, router, isOnboarding, isVerificationStatus]);
+  }, [user, company, isLoading, router, isOnboarding, onboardingSubmitted]);
 
   if (isOnboarding) {
     return <>{children}</>;
   }
 
-  const onboardingDone = typeof window !== 'undefined' && user?.id ? (user.role === 'PLATFORM_ADMIN' || user.role === 'SUPER_ADMIN' || isVerificationStatus || localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true') : false;
-
-  if (isLoading || (user && !onboardingDone)) {
+  if (isLoading || (user && !onboardingSubmitted)) {
     return (
       <div style={{
         minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',

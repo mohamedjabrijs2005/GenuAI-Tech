@@ -208,7 +208,7 @@ router.post(
 
       // Get company membership
       const memberResult = await pool.query(
-        `SELECT cm.company_id, cm.member_role, c.name as company_name, c.verification_status, c.suspended_at
+        `SELECT cm.company_id, cm.member_role, c.name as company_name, c.verification_status, c.suspended_at, c.onboarding_submitted
          FROM company_members cm
          JOIN companies c ON c.id = cm.company_id
          WHERE cm.user_id = $1
@@ -227,6 +227,7 @@ router.post(
         name: memberResult.rows[0].company_name,
         verificationStatus: memberResult.rows[0].verification_status,
         isSuspended: memberResult.rows[0].verification_status === 'SUSPENDED' || !!memberResult.rows[0].suspended_at,
+        onboardingSubmitted: memberResult.rows[0].onboarding_submitted === true,
       } : null;
 
       // Log login event in audit_logs
@@ -278,7 +279,7 @@ router.get('/me', authenticate, async (req, res) => {
     let memberResult;
     try {
       memberResult = await pool.query(
-        `SELECT cm.company_id, cm.member_role, c.name as company_name, c.verification_status, c.suspended_at
+        `SELECT cm.company_id, cm.member_role, c.name as company_name, c.verification_status, c.suspended_at, c.onboarding_submitted
          FROM company_members cm
          JOIN companies c ON c.id = cm.company_id
          WHERE cm.user_id = $1
@@ -303,6 +304,7 @@ router.get('/me', authenticate, async (req, res) => {
         name: memberResult.rows[0].company_name,
         verificationStatus: memberResult.rows[0].verification_status,
         isSuspended: memberResult.rows[0].verification_status === 'SUSPENDED' || !!memberResult.rows[0].suspended_at,
+        onboardingSubmitted: memberResult.rows[0].onboarding_submitted === true,
       } : null,
     });
   } catch (err) {

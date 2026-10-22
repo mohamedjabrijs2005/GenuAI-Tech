@@ -217,5 +217,23 @@ router.get('/activity', async (req, res) => {
   }
 });
 
-module.exports = router;
+// POST /api/company/submit-onboarding
+// Mark company onboarding as submitted (triggers gating unlock)
+router.post('/submit-onboarding', async (req, res) => {
+  try {
+    const companyId = req.companyMembership?.company_id;
+    if (!companyId) {
+      return res.status(404).json({ error: 'No company associated with user' });
+    }
+    await pool.query(
+      `UPDATE companies SET onboarding_submitted = TRUE, updated_at = NOW() WHERE id = $1`,
+      [companyId]
+    );
+    return res.json({ success: true, onboardingSubmitted: true });
+  } catch (err) {
+    console.error('Submit onboarding error:', err);
+    return res.status(500).json({ error: 'Failed to submit onboarding' });
+  }
+});
 
+module.exports = router;

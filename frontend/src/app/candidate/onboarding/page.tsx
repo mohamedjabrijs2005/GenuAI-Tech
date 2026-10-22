@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const WORK_MODE_OPTIONS = ['Flexible', 'Remote', 'Hybrid', 'On-site'];
 const AVAILABILITY_OPTIONS = ['Immediate', 'Within 2 weeks', 'Within 1 month', 'Within 3 months', 'Not actively looking'];
@@ -17,6 +18,7 @@ const POPULAR_SKILLS = ['JavaScript', 'TypeScript', 'React', 'Python', 'Java', '
 
 export default function CandidateOnboardingPage() {
   const router = useRouter();
+  const { refreshAuth } = useAuth();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
 
@@ -25,18 +27,16 @@ export default function CandidateOnboardingPage() {
     location: '',
     workMode: 'Flexible',
     availability: 'Immediate',
-    githubUrl: '',
-    portfolioUrl: '',
-    linkedinUrl: '',
     degree: '',
     institution: '',
     graduationYear: '',
     experienceSummary: '',
     skillInput: '',
     skills: [] as string[],
+    githubUrl: '',
+    portfolioUrl: '',
+    linkedinUrl: '',
     resumeUrl: '',
-    resumeFileName: '',
-    consentParsing: true,
   });
 
   // Pre-load if existing profile
@@ -49,14 +49,14 @@ export default function CandidateOnboardingPage() {
           ...prev,
           phone: p.phone || '',
           location: p.location || '',
-          githubUrl: p.github_url || p.githubUrl || '',
-          portfolioUrl: p.portfolio_url || p.portfolioUrl || '',
-          linkedinUrl: p.linkedin_url || p.linkedinUrl || '',
-          experienceSummary: p.experience_summary || p.experienceSummary || '',
-          skills: p.general_skills || p.generalSkills || [],
           degree: p.education?.[0]?.degree || '',
           institution: p.education?.[0]?.institution || '',
           graduationYear: p.education?.[0]?.year || '',
+          experienceSummary: p.experience_summary || p.experienceSummary || '',
+          skills: p.general_skills || p.generalSkills || [],
+          githubUrl: p.github_url || p.githubUrl || '',
+          portfolioUrl: p.portfolio_url || p.portfolioUrl || '',
+          linkedinUrl: p.linkedin_url || p.linkedinUrl || '',
           workMode: p.work_preferences?.workMode || p.workPreferences?.workMode || 'Flexible',
           availability: p.work_preferences?.availability || p.workPreferences?.availability || 'Immediate',
           resumeUrl: p.resume_url || p.resumeUrl || '',
@@ -92,19 +92,22 @@ export default function CandidateOnboardingPage() {
     const profilePayload = {
       phone: form.phone || (skipOptional ? '' : '—'),
       location: form.location || (skipOptional ? 'Open to Remote' : ''),
-      resumeUrl: form.resumeUrl,
-      resume_url: form.resumeUrl,
+      degree: form.degree,
+      institution: form.institution,
+      graduationYear: form.graduationYear,
+      education: form.degree ? [{ degree: form.degree, institution: form.institution, year: form.graduationYear }] : [],
+      experienceSummary: form.experienceSummary,
+      experience_summary: form.experienceSummary,
+      generalSkills: form.skills,
+      general_skills: form.skills,
       githubUrl: form.githubUrl,
       github_url: form.githubUrl,
       portfolioUrl: form.portfolioUrl,
       portfolio_url: form.portfolioUrl,
       linkedinUrl: form.linkedinUrl,
       linkedin_url: form.linkedinUrl,
-      experienceSummary: form.experienceSummary,
-      experience_summary: form.experienceSummary,
-      generalSkills: form.skills,
-      general_skills: form.skills,
-      education: form.degree ? [{ degree: form.degree, institution: form.institution, year: form.graduationYear }] : [],
+      resumeUrl: form.resumeUrl,
+      resume_url: form.resumeUrl,
       workPreferences: { workMode: form.workMode, availability: form.availability },
       work_preferences: { workMode: form.workMode, availability: form.availability },
     };
@@ -116,6 +119,10 @@ export default function CandidateOnboardingPage() {
 
     try {
       await api.put('/candidate-portal/profile', profilePayload).catch(() => null);
+    } catch {}
+
+    try {
+      await refreshAuth().catch(() => null);
     } catch {}
 
     toast.success('Onboarding complete! Welcome to your candidate workspace.');
@@ -166,14 +173,14 @@ export default function CandidateOnboardingPage() {
             </span>
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: '0 0 6px', letterSpacing: '-0.4px' }}>
-            {step === 1 && 'Step 1: Basic Profile & Preferences'}
+            {step === 1 && 'Step 1: Basic Profile'}
             {step === 2 && 'Step 2: Education & Experience'}
-            {step === 3 && 'Step 3: Optional Resume Import'}
+            {step === 3 && 'Step 3: Skills, Portfolio & Optional Resume'}
           </h1>
           <p style={{ fontSize: 13.5, color: '#64748b', margin: 0 }}>
             {step === 1 && 'Add your location and work preferences to discover matching verified opportunities.'}
-            {step === 2 && 'Highlight your core education, background, and skills for recruiter visibility.'}
-            {step === 3 && 'Optionally import a resume to pre-fill evidence rubrics. You stay in full control.'}
+            {step === 2 && 'Highlight your education history and background for recruiter visibility.'}
+            {step === 3 && 'Add your verified skills, portfolio links, and optional resume. Skip any non-essential fields.'}
           </p>
         </div>
 
@@ -181,8 +188,8 @@ export default function CandidateOnboardingPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 24 }}>
           {[
             { num: 1, label: 'Basic Profile' },
-            { num: 2, label: 'Education & Skills' },
-            { num: 3, label: 'Resume & Review' },
+            { num: 2, label: 'Education & Experience' },
+            { num: 3, label: 'Skills & Portfolio' },
           ].map((s, idx) => (
             <React.Fragment key={s.num}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -253,7 +260,7 @@ export default function CandidateOnboardingPage() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 24 }}>
                 <div>
                   <label style={labelStyle}>Work Mode Preference</label>
                   <select
@@ -273,49 +280,6 @@ export default function CandidateOnboardingPage() {
                   >
                     {AVAILABILITY_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                   </select>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 16 }}>
-                <label style={labelStyle}>
-                  <Link2 size={13} style={{ display: 'inline', marginRight: 4, color: '#b8860b' }} />
-                  LinkedIn Profile (Optional)
-                </label>
-                <input
-                  type="url"
-                  value={form.linkedinUrl}
-                  onChange={e => set('linkedinUrl', e.target.value)}
-                  placeholder="https://linkedin.com/in/yourprofile"
-                  style={inputStyle}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 24 }}>
-                <div>
-                  <label style={labelStyle}>
-                    <Globe size={13} style={{ display: 'inline', marginRight: 4, color: '#b8860b' }} />
-                    GitHub URL (Optional)
-                  </label>
-                  <input
-                    type="url"
-                    value={form.githubUrl}
-                    onChange={e => set('githubUrl', e.target.value)}
-                    placeholder="https://github.com/username"
-                    style={inputStyle}
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>
-                    <Globe size={13} style={{ display: 'inline', marginRight: 4, color: '#b8860b' }} />
-                    Portfolio / Website (Optional)
-                  </label>
-                  <input
-                    type="url"
-                    value={form.portfolioUrl}
-                    onChange={e => set('portfolioUrl', e.target.value)}
-                    placeholder="https://yourportfolio.dev"
-                    style={inputStyle}
-                  />
                 </div>
               </div>
 
@@ -365,7 +329,7 @@ export default function CandidateOnboardingPage() {
                 <div>
                   <label style={labelStyle}>
                     <GraduationCap size={13} style={{ display: 'inline', marginRight: 4, color: '#b8860b' }} />
-                    Highest Degree / Field of Study
+                    Highest Degree / Field of Study (Optional)
                   </label>
                   <input
                     type="text"
@@ -376,7 +340,7 @@ export default function CandidateOnboardingPage() {
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>Institution / University</label>
+                  <label style={labelStyle}>Institution / University (Optional)</label>
                   <input
                     type="text"
                     value={form.institution}
@@ -388,6 +352,17 @@ export default function CandidateOnboardingPage() {
               </div>
 
               <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>Graduation Year (Optional)</label>
+                <input
+                  type="text"
+                  value={form.graduationYear}
+                  onChange={e => set('graduationYear', e.target.value)}
+                  placeholder="e.g. 2024"
+                  style={inputStyle}
+                />
+              </div>
+
+              <div style={{ marginBottom: 24 }}>
                 <label style={labelStyle}>
                   <Briefcase size={13} style={{ display: 'inline', marginRight: 4, color: '#b8860b' }} />
                   Experience Summary (Optional)
@@ -395,16 +370,75 @@ export default function CandidateOnboardingPage() {
                 <textarea
                   value={form.experienceSummary}
                   onChange={e => set('experienceSummary', e.target.value)}
-                  placeholder="e.g. 4+ years developing scalable backend APIs with Java and PostgreSQL..."
+                  placeholder="e.g. 4+ years developing scalable backend APIs with Java, Go, and PostgreSQL..."
                   rows={3}
                   style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }}
                 />
               </div>
 
-              <div style={{ marginBottom: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid #f1f5f9' }}>
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#64748b',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  &larr; Back
+                </button>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button
+                    type="button"
+                    onClick={() => setStep(3)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#64748b',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Skip for now
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStep(3)}
+                    style={{
+                      padding: '11px 22px',
+                      borderRadius: 9,
+                      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                      color: '#ffffff',
+                      fontSize: 13.5,
+                      fontWeight: 800,
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    <span>Continue to Step 3</span>
+                    <ArrowRight size={15} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ================= STEP 3: SKILLS, PORTFOLIO & OPTIONAL RESUME ================= */}
+          {step === 3 && (
+            <div>
+              {/* Skills Section */}
+              <div style={{ marginBottom: 20 }}>
                 <label style={labelStyle}>
                   <Code size={13} style={{ display: 'inline', marginRight: 4, color: '#b8860b' }} />
-                  General Skills (Press Enter to add)
+                  Technical & Domain Skills (Optional)
                 </label>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                   <input
@@ -497,120 +531,66 @@ export default function CandidateOnboardingPage() {
                 )}
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid #f1f5f9' }}>
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#64748b',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  &larr; Back
-                </button>
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <button
-                    type="button"
-                    onClick={() => setStep(3)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#64748b',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Skip to Step 3
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStep(3)}
-                    style={{
-                      padding: '11px 22px',
-                      borderRadius: 9,
-                      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-                      color: '#ffffff',
-                      fontSize: 13.5,
-                      fontWeight: 800,
-                      border: 'none',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                    }}
-                  >
-                    <span>Continue to Step 3</span>
-                    <ArrowRight size={15} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ================= STEP 3: OPTIONAL RESUME IMPORT & REVIEW ================= */}
-          {step === 3 && (
-            <div>
-              {/* Progressive Profiling & Privacy Notice */}
-              <div style={{
-                background: '#f8fafc',
-                borderRadius: 10,
-                border: '1px solid #e2e8f0',
-                padding: '14px 16px',
-                marginBottom: 20,
-                display: 'flex',
-                gap: 12,
-              }}>
-                <Shield size={20} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+              {/* Portfolio & Profiles */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, marginBottom: 16 }}>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', marginBottom: 2 }}>
-                    Transparent &amp; Optional Resume Import
-                  </div>
-                  <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
-                    Your resume is solely used to assist in organizing your profile and targeting matching vacancies. We do not use automated black-box screening to reject applicants. You can skip this step and add specific work evidence inside vacancy Targets later.
-                  </div>
+                  <label style={labelStyle}>
+                    <Globe size={13} style={{ display: 'inline', marginRight: 4, color: '#b8860b' }} />
+                    GitHub Profile (Optional)
+                  </label>
+                  <input
+                    type="url"
+                    value={form.githubUrl}
+                    onChange={e => set('githubUrl', e.target.value)}
+                    placeholder="https://github.com/username"
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>
+                    <Link2 size={13} style={{ display: 'inline', marginRight: 4, color: '#b8860b' }} />
+                    LinkedIn Profile (Optional)
+                  </label>
+                  <input
+                    type="url"
+                    value={form.linkedinUrl}
+                    onChange={e => set('linkedinUrl', e.target.value)}
+                    placeholder="https://linkedin.com/in/username"
+                    style={inputStyle}
+                  />
                 </div>
               </div>
 
+              <div style={{ marginBottom: 18 }}>
+                <label style={labelStyle}>
+                  <Globe size={13} style={{ display: 'inline', marginRight: 4, color: '#b8860b' }} />
+                  Portfolio / Personal Website (Optional)
+                </label>
+                <input
+                  type="url"
+                  value={form.portfolioUrl}
+                  onChange={e => set('portfolioUrl', e.target.value)}
+                  placeholder="https://yourportfolio.dev"
+                  style={inputStyle}
+                />
+              </div>
+
+              {/* Resume Document URL */}
               <div style={{ marginBottom: 20 }}>
                 <label style={labelStyle}>
                   <FileText size={13} style={{ display: 'inline', marginRight: 4, color: '#b8860b' }} />
-                  Resume Document URL (Google Drive, Dropbox, or Portfolio Link)
+                  Resume Document URL (Optional)
                 </label>
                 <input
                   type="url"
                   value={form.resumeUrl}
                   onChange={e => set('resumeUrl', e.target.value)}
-                  placeholder="https://drive.google.com/file/d/..."
+                  placeholder="https://drive.google.com/file/d/... or Dropbox link"
                   style={inputStyle}
                 />
                 <span style={{ fontSize: 11.5, color: '#94a3b8', display: 'block', marginTop: 4 }}>
                   Ensure sharing permissions are set to viewable by anyone with the link.
                 </span>
-              </div>
-
-              {/* Profile Summary Confirmation */}
-              <div style={{
-                background: '#ffffff',
-                border: '1px solid #cbd5e1',
-                borderRadius: 10,
-                padding: '16px',
-                marginBottom: 24,
-              }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <CheckCircle2 size={15} style={{ color: '#10b981' }} />
-                  Profile Summary Review
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8, fontSize: 12.5, color: '#475569' }}>
-                  <div><strong>Location:</strong> {form.location || 'Flexible / Remote'}</div>
-                  <div><strong>Work Mode:</strong> {form.workMode}</div>
-                  <div><strong>Availability:</strong> {form.availability}</div>
-                  <div><strong>Skills Added:</strong> {form.skills.length > 0 ? form.skills.join(', ') : 'None yet (can add later)'}</div>
-                </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid #f1f5f9' }}>
@@ -663,7 +643,7 @@ export default function CandidateOnboardingPage() {
                       boxShadow: '0 2px 8px rgba(184, 134, 11, 0.25)',
                     }}
                   >
-                    <span>{saving ? 'Completing...' : 'Explore Vacancies'}</span>
+                    <span>{saving ? 'Completing...' : 'Finish & Go to Workspace'}</span>
                     <ArrowRight size={15} />
                   </button>
                 </div>
