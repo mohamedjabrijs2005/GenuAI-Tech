@@ -116,7 +116,27 @@ const PORT = process.env.PORT || 4000;
 app.listen(PORT, '0.0.0.0', async () => {
   console.log(`🚀 GenuAI API v2.0 running on http://127.0.0.1:${PORT} and http://localhost:${PORT}`);
   console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`   Routes: auth, company, departments, roles, vacancies, candidates, assessments, integrity, interviews, reports`);
+
+  // Auto-apply all migrations on startup (idempotent IF NOT EXISTS)
+  const migrations = [
+    './database/migrate',
+    './database/migrate_v2',
+    './database/migrate_v3',
+    './database/migrate_v4',
+    './database/migrate_v5',
+    './database/migrate_v6',
+    './database/migrate_v7',
+    './database/migrate_v8',
+  ];
+  for (const m of migrations) {
+    try {
+      const { run } = require(m);
+      if (typeof run === 'function') await run();
+    } catch (e) {
+      console.warn(`⚠️ Migration ${m} note:`, e.message);
+    }
+  }
+  console.log('✅ Database schema up to date.');
 
   // Auto-seed default credentials in production and development
   try {

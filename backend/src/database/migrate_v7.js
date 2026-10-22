@@ -32,7 +32,7 @@ async function run() {
     throw err;
   } finally {
     client.release();
-    await pool.end();
+    if (require.main === module) await pool.end();
   }
 }
 
