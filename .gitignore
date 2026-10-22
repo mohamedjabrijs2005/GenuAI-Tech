@@ -40,3 +40,8 @@ Thumbs.db
 # Submodules / Duplicate clones
 GenuAI-Tech/
 
+# Generated build mirror at root
+/public/
+!frontend/public/
+
+

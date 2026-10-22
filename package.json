@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "npm run build --prefix frontend",
+    "build": "node build.js",
     "start": "npm start --prefix frontend",
     "start:backend": "npm start --prefix backend",
     "start:frontend": "npm start --prefix frontend",
