@@ -75,11 +75,19 @@ export default function Sidebar({ isMobileOpen = false, onCloseMobile }: Sidebar
   const pathname = usePathname();
   const { user, company, logout } = useAuth();
 
-  const isActive = (href: string) => {
-    if (href === '/dashboard') return pathname === '/dashboard';
-    if (href === '/dashboard/intelligence') return pathname === '/dashboard/intelligence';
-    return pathname === href || (pathname.startsWith(href + '/') && href !== '/dashboard');
-  };
+  const currentPath = (pathname || '/dashboard').replace(/\/$/, '') || '/';
+
+  // Compute all navigation item hrefs across sections
+  const allHrefs = NAV.flatMap((section) => section.items.map((item) => item.href));
+
+  // Determine the single most specific matching href for currentPath
+  const activeHref = currentPath === '/dashboard'
+    ? '/dashboard'
+    : allHrefs
+        .filter((h) => currentPath === h || (currentPath.startsWith(h + '/') && h !== '/dashboard'))
+        .sort((a, b) => b.length - a.length)[0] || '';
+
+  const isActive = (href: string) => href === activeHref;
 
   const displayName = user ? `${user.firstName} ${user.lastName}`.trim() : 'User';
   const displayEmail = user?.email || '';

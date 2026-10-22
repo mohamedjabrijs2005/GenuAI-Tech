@@ -580,6 +580,13 @@ img { display: block; max-width: 100%; }
   background: var(--surface-2);
   color: var(--text-primary);
 }
+.sidebar-nav-item:focus {
+  outline: none;
+}
+.sidebar-nav-item:focus-visible {
+  outline: 2px solid rgba(212, 175, 55, 0.45);
+  outline-offset: 1px;
+}
 .sidebar-nav-item.active {
   background: #fefce8;
   color: #a16207;
