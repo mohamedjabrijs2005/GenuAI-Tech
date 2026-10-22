@@ -248,6 +248,29 @@ router.post(
         console.warn('Audit log write error on login:', logErr.message);
       }
 
+      // Get candidate onboarding status if this is a candidate
+      let candidateOnboardingSubmitted = false;
+      const roleUpper = (user.role || '').toUpperCase();
+      if (roleUpper === 'CANDIDATE' || roleUpper === 'APPLICANT' || roleUpper === 'USER') {
+        try {
+          const candRes = await pool.query(
+            'SELECT onboarding_submitted FROM candidates WHERE LOWER(email) = LOWER($1)',
+            [user.email]
+          );
+          if (candRes.rowCount > 0) {
+            candidateOnboardingSubmitted = candRes.rows[0].onboarding_submitted === true;
+          } else {
+            await pool.query(
+              `INSERT INTO candidates (first_name, last_name, email, phone, location)
+               VALUES ($1, $2, $3, '—', 'Global')
+               ON CONFLICT (email) DO NOTHING`,
+              [user.first_name || 'Candidate', user.last_name || 'User', user.email]
+            );
+            candidateOnboardingSubmitted = false;
+          }
+        } catch (_) {}
+      }
+
       return res.json({
         token,
         user: {
@@ -258,6 +281,7 @@ router.post(
           role: user.role,
         },
         company: companyData,
+        candidateOnboardingSubmitted,
       });
     } catch (err) {
       console.error('Login error:', err);
@@ -291,6 +315,29 @@ router.get('/me', authenticate, async (req, res) => {
       return res.status(503).json({ error: 'Database unavailable.' });
     }
 
+    // Get candidate onboarding status
+    let candidateOnboardingSubmitted = false;
+    const roleUpper = (req.user?.role || '').toUpperCase();
+    if (roleUpper === 'CANDIDATE' || roleUpper === 'APPLICANT' || roleUpper === 'USER') {
+      try {
+        const candRes = await pool.query(
+          'SELECT onboarding_submitted FROM candidates WHERE LOWER(email) = LOWER($1)',
+          [req.user.email]
+        );
+        if (candRes.rowCount > 0) {
+          candidateOnboardingSubmitted = candRes.rows[0].onboarding_submitted === true;
+        } else {
+          await pool.query(
+            `INSERT INTO candidates (first_name, last_name, email, phone, location)
+             VALUES ($1, $2, $3, '—', 'Global')
+             ON CONFLICT (email) DO NOTHING`,
+            [req.user.first_name || 'Candidate', req.user.last_name || 'User', req.user.email]
+          );
+          candidateOnboardingSubmitted = false;
+        }
+      } catch (_) {}
+    }
+
     return res.json({
       user: {
         id: req.user.id,
@@ -306,6 +353,7 @@ router.get('/me', authenticate, async (req, res) => {
         isSuspended: memberResult.rows[0].verification_status === 'SUSPENDED' || !!memberResult.rows[0].suspended_at,
         onboardingSubmitted: memberResult.rows[0].onboarding_submitted === true,
       } : null,
+      candidateOnboardingSubmitted,
     });
   } catch (err) {
     console.error('Me error:', err);

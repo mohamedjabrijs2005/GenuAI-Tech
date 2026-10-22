@@ -7,12 +7,19 @@ import { CandidateTopbar } from './CandidateTopbar';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function CandidateShell({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, candidateOnboardingSubmitted } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = React.useState(false);
 
   const isOnboarding = pathname?.includes('/onboarding');
+
+  // localDone as fallback for clients where refreshAuth hasn't returned yet
+  const localDone = typeof window !== 'undefined' && user?.id
+    ? localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true'
+    : false;
+
+  const onboardingDone = candidateOnboardingSubmitted || localDone;
 
   useEffect(() => {
     if (!isLoading) {
@@ -25,20 +32,15 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
         router.replace('/dashboard');
         return;
       }
-      if (!isOnboarding) {
-        const done = typeof window !== 'undefined' && localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true';
-        if (!done) {
-          router.replace('/candidate/onboarding');
-        }
+      if (!isOnboarding && !onboardingDone) {
+        router.replace('/candidate/onboarding');
       }
     }
-  }, [user, isLoading, router, isOnboarding]);
+  }, [user, isLoading, router, isOnboarding, onboardingDone]);
 
   if (isOnboarding) {
     return <>{children}</>;
   }
-
-  const onboardingDone = typeof window !== 'undefined' && user?.id ? localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true' : false;
 
   if (isLoading || (user && !onboardingDone)) {
     return (
@@ -62,7 +64,6 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-layout">
-      {/* Mobile Drawer Backdrop */}
       {isMobileOpen && (
         <div
           onClick={() => setIsMobileOpen(false)}

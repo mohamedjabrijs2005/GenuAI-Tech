@@ -210,9 +210,13 @@ async function seedDev() {
     let candRecord = (await client.query('SELECT id FROM candidates WHERE email = $1', ['candidate@genuai.test'])).rows[0];
     if (!candRecord) {
       await client.query(
-        `INSERT INTO candidates (first_name, last_name, email, phone, location)
-         VALUES ('Alex', 'Rivera', 'candidate@genuai.test', '+1 (555) 234-5678', 'San Francisco, CA')`,
+        `INSERT INTO candidates (first_name, last_name, email, phone, location, onboarding_submitted)
+         VALUES ('Alex', 'Rivera', 'candidate@genuai.test', '+1 (555) 234-5678', 'San Francisco, CA', TRUE)`,
         []
+      );
+    } else {
+      await client.query(
+        `UPDATE candidates SET onboarding_submitted = TRUE WHERE email = 'candidate@genuai.test'`
       );
     }
 

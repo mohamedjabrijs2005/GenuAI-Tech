@@ -18,7 +18,7 @@ const POPULAR_SKILLS = ['JavaScript', 'TypeScript', 'React', 'Python', 'Java', '
 
 export default function CandidateOnboardingPage() {
   const router = useRouter();
-  const { refreshAuth } = useAuth();
+  const { refreshAuth, user, candidateOnboardingSubmitted } = useAuth();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
 
@@ -80,12 +80,12 @@ export default function CandidateOnboardingPage() {
 
   const handleFinish = async (skipOptional = false) => {
     setSaving(true);
-    const userId = (() => {
+    const currentUserId = user?.id || (() => {
       try {
         const u = JSON.parse(localStorage.getItem('genuai_user') || '{}');
-        return u?.id || 'default';
+        return u?.id || '';
       } catch {
-        return 'default';
+        return '';
       }
     })();
 
@@ -110,23 +110,36 @@ export default function CandidateOnboardingPage() {
       resume_url: form.resumeUrl,
       workPreferences: { workMode: form.workMode, availability: form.availability },
       work_preferences: { workMode: form.workMode, availability: form.availability },
+      onboardingSubmitted: true,
     };
 
     try {
       localStorage.setItem('genuai_candidate_profile', JSON.stringify(profilePayload));
-      localStorage.setItem(`genuai_onboarding_done_${userId}`, 'true');
+      if (currentUserId) {
+        localStorage.setItem(`genuai_onboarding_done_${currentUserId}`, 'true');
+      }
     } catch {}
 
     try {
-      await api.put('/candidate-portal/profile', profilePayload).catch(() => null);
-    } catch {}
+      await api.put('/candidate-portal/profile', profilePayload);
+    } catch (e) {
+      console.warn('Candidate profile save note:', e);
+    }
 
     try {
-      await refreshAuth().catch(() => null);
-    } catch {}
+      await api.post('/candidate-portal/submit-onboarding');
+    } catch (e) {
+      console.warn('Candidate submit onboarding note:', e);
+    }
+
+    try {
+      await refreshAuth();
+    } catch (e) {
+      console.warn('Refresh auth note:', e);
+    }
 
     toast.success('Onboarding complete! Welcome to your candidate workspace.');
-    router.push('/candidate');
+    router.replace('/candidate');
     setSaving(false);
   };
 
@@ -219,6 +232,42 @@ export default function CandidateOnboardingPage() {
             </React.Fragment>
           ))}
         </div>
+
+        {candidateOnboardingSubmitted && (
+          <div style={{
+            background: '#ecfdf5',
+            border: '1px solid #a7f3d0',
+            borderRadius: 10,
+            padding: '12px 18px',
+            marginBottom: 20,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <CheckCircle2 size={18} style={{ color: '#059669', flexShrink: 0 }} />
+              <span style={{ fontSize: 13, color: '#065f46', fontWeight: 600 }}>
+                Onboarding completed. You can update your details here or go straight to your workspace.
+              </span>
+            </div>
+            <Link
+              href="/candidate"
+              style={{
+                fontSize: 12.5,
+                fontWeight: 700,
+                color: '#ffffff',
+                background: '#059669',
+                padding: '6px 14px',
+                borderRadius: 7,
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Go to Workspace →
+            </Link>
+          </div>
+        )}
 
         {/* Card Container */}
         <div style={{

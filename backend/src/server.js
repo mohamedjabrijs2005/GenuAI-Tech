@@ -117,16 +117,11 @@ app.listen(PORT, '0.0.0.0', async () => {
   console.log(`🚀 GenuAI API v2.0 running on http://127.0.0.1:${PORT} and http://localhost:${PORT}`);
   console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
 
-  // Auto-apply all migrations on startup (idempotent IF NOT EXISTS)
+  // Auto-apply all safe migrations on startup (idempotent IF NOT EXISTS)
   const migrations = [
-    './database/migrate',
-    './database/migrate_v2',
-    './database/migrate_v3',
-    './database/migrate_v4',
-    './database/migrate_v5',
-    './database/migrate_v6',
     './database/migrate_v7',
     './database/migrate_v8',
+    './database/migrate_v9',
   ];
   for (const m of migrations) {
     try {

@@ -10,7 +10,7 @@ const router = express.Router();
  */
 function requireCandidate(req, res, next) {
   const role = (req.user?.role || '').toUpperCase();
-  if (role !== 'CANDIDATE' && role !== 'APPLICANT') {
+  if (role !== 'CANDIDATE' && role !== 'APPLICANT' && role !== 'USER') {
     return res.status(403).json({ error: 'Forbidden: Requires Candidate account.' });
   }
   next();
@@ -411,6 +411,8 @@ const handleProfileUpdate = async (req, res) => {
   const accessibilityNeeds = req.body.accessibilityNeeds !== undefined ? req.body.accessibilityNeeds : req.body.accessibility_needs;
   const privacySettings = req.body.privacySettings !== undefined ? req.body.privacySettings : req.body.privacy_settings;
 
+  const onboardingSubmitted = req.body.onboardingSubmitted === true || req.body.onboarding_submitted === true;
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -454,12 +456,13 @@ const handleProfileUpdate = async (req, res) => {
            work_preferences = COALESCE($14, work_preferences),
            accessibility_needs = COALESCE($15, accessibility_needs),
            privacy_settings = COALESCE($16, privacy_settings),
+           onboarding_submitted = CASE WHEN $18 = TRUE THEN TRUE ELSE onboarding_submitted END,
            updated_at = NOW()
        WHERE LOWER(email) = LOWER($17)
        RETURNING id, email, first_name, last_name, phone, location, resume_url, education,
                  general_skills, experience_summary, employment_history, github_url, portfolio_url,
                  linkedin_url, languages, work_preferences, accessibility_needs, privacy_settings,
-                 created_at, updated_at`,
+                 onboarding_submitted, created_at, updated_at`,
       [
         firstName || null,
         lastName || null,
@@ -478,6 +481,7 @@ const handleProfileUpdate = async (req, res) => {
         accessibilityNeeds !== undefined ? accessibilityNeeds : null,
         privacySettings ? JSON.stringify(privacySettings) : null,
         req.user.email,
+        onboardingSubmitted,
       ]
     );
 
@@ -1398,6 +1402,28 @@ router.post('/accommodations', authenticate, requireCandidate, async (req, res) 
     return res.status(500).json({ error: 'Failed to submit accommodation request' });
   } finally {
     client.release();
+  }
+});
+
+// POST /api/candidate-portal/submit-onboarding
+// Mark candidate onboarding as completed in DB (source of truth for gating)
+router.post('/submit-onboarding', authenticate, requireCandidate, async (req, res) => {
+  try {
+    // Ensure candidate row exists
+    await pool.query(
+      `INSERT INTO candidates (first_name, last_name, email, phone, location)
+       VALUES ($1, $2, $3, '—', 'Global')
+       ON CONFLICT (email) DO NOTHING`,
+      [req.user.first_name, req.user.last_name, req.user.email]
+    );
+    await pool.query(
+      `UPDATE candidates SET onboarding_submitted = TRUE, updated_at = NOW() WHERE LOWER(email) = LOWER($1)`,
+      [req.user.email]
+    );
+    return res.json({ success: true, onboardingSubmitted: true });
+  } catch (err) {
+    console.error('Candidate submit-onboarding error:', err);
+    return res.status(500).json({ error: 'Failed to submit onboarding' });
   }
 });
 
