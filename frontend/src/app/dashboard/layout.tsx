@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +9,9 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const isOnboarding = pathname?.includes('/onboarding');
+  const isVerificationStatus = pathname?.includes('/verification-status');
 
   useEffect(() => {
     if (!isLoading) {
@@ -16,16 +19,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         router.replace('/login?role=company');
         return;
       }
-      if (user.role !== 'PLATFORM_ADMIN') {
+      if (user.role !== 'PLATFORM_ADMIN' && !isOnboarding && !isVerificationStatus) {
         const done = typeof window !== 'undefined' && localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true';
         if (!done) {
-          router.replace('/onboarding/company');
+          router.replace('/dashboard/onboarding');
         }
       }
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, isOnboarding, isVerificationStatus]);
 
-  const onboardingDone = typeof window !== 'undefined' && user?.id ? (user.role === 'PLATFORM_ADMIN' || localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true') : true;
+  if (isOnboarding) {
+    return <>{children}</>;
+  }
+
+  const onboardingDone = typeof window !== 'undefined' && user?.id ? (user.role === 'PLATFORM_ADMIN' || isVerificationStatus || localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true') : true;
 
   if (isLoading || (user && !onboardingDone)) {
     return (

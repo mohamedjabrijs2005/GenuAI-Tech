@@ -496,7 +496,7 @@ export default function AuthPage() {
               </span>
             </div>
           </div>
-          {/* Persona Switcher: Candidate | Company | Admin */}
+          {/* Persona Switcher: Candidate | Company | Admin (Admin only for Sign In) */}
           <div className="auth-persona-tabs">
             <button
               type="button"
@@ -514,14 +514,16 @@ export default function AuthPage() {
               <Building2 size={13} />
               <span>Company</span>
             </button>
-            <button
-              type="button"
-              onClick={() => handlePersonaChange('admin')}
-              className={`auth-persona-tab ${persona === 'admin' ? 'active' : ''}`}
-            >
-              <ShieldCheck size={13} />
-              <span>Admin</span>
-            </button>
+            {isLogin && (
+              <button
+                type="button"
+                onClick={() => handlePersonaChange('admin')}
+                className={`auth-persona-tab ${persona === 'admin' ? 'active' : ''}`}
+              >
+                <ShieldCheck size={13} />
+                <span>Admin</span>
+              </button>
+            )}
           </div>
 
           {/* Mode Switcher (Sign In vs Create Account) */}

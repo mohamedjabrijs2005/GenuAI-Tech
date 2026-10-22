@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { CandidateSidebar } from './CandidateSidebar';
 import { CandidateTopbar } from './CandidateTopbar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +9,8 @@ import { useAuth } from '@/contexts/AuthContext';
 export function CandidateShell({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const isOnboarding = pathname?.includes('/onboarding');
 
   useEffect(() => {
     if (!isLoading) {
@@ -16,12 +18,18 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
         router.replace('/login?role=candidate');
         return;
       }
-      const done = typeof window !== 'undefined' && localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true';
-      if (!done) {
-        router.replace('/onboarding/candidate');
+      if (!isOnboarding) {
+        const done = typeof window !== 'undefined' && localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true';
+        if (!done) {
+          router.replace('/candidate/onboarding');
+        }
       }
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, isOnboarding]);
+
+  if (isOnboarding) {
+    return <>{children}</>;
+  }
 
   const onboardingDone = typeof window !== 'undefined' && user?.id ? localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true' : true;
 

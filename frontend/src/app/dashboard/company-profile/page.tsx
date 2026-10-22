@@ -159,7 +159,7 @@ export default function CompanyProfilePage() {
               Verified Enterprise Workspace
             </div>
             <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 2 }}>
-              Your organization is verified for cryptographic competency assessments and uninhibited candidate evaluations.
+              Your organization is verified for structured competency evaluations and transparent candidate assessment.
             </div>
           </div>
         </div>

@@ -156,17 +156,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           router.push('/candidate');
         } else {
           localStorage.removeItem(`genuai_onboarding_done_${userId}`);
-          router.push('/onboarding/candidate');
+          router.push('/candidate/onboarding');
         }
       } catch {
         // Fallback to localStorage flag if API fails
         const onboardingDone = isCandidateOnboardingDone(userId);
-        router.push(onboardingDone ? '/candidate' : '/onboarding/candidate');
+        router.push(onboardingDone ? '/candidate' : '/candidate/onboarding');
       }
     } else {
-      // Company: require onboarding before accessing dashboard (keyed to user ID)
+      // Company: determine if onboarding completed and verification status
       const onboardingDone = isCompanyOnboardingDone(userId);
-      router.push(onboardingDone ? '/dashboard' : '/onboarding/company');
+      if (!onboardingDone) {
+        router.push('/dashboard/onboarding');
+      } else {
+        const vStatus = (data.company?.verificationStatus || '').toUpperCase();
+        if (vStatus === 'APPROVED' || vStatus === 'VERIFIED') {
+          router.push('/dashboard');
+        } else {
+          router.push('/dashboard/verification-status');
+        }
+      }
     }
   };
 
@@ -190,11 +199,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const role = (data.user?.role || '').toUpperCase();
     const isCandidate = role === 'CANDIDATE' || role === 'APPLICANT';
 
-    // New registration: always go to onboarding
+    // New registration: always go to progressive onboarding
     if (isCandidate) {
-      router.push('/onboarding/candidate');
+      router.push('/candidate/onboarding');
     } else {
-      router.push('/onboarding/company');
+      router.push('/dashboard/onboarding');
     }
   };
 
