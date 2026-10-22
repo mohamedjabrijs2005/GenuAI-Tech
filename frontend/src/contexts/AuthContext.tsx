@@ -164,17 +164,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push(onboardingDone ? '/candidate' : '/candidate/onboarding');
       }
     } else {
-      // Company: determine if onboarding completed and verification status
+      // Company: determine if onboarding completed
       const onboardingDone = isCompanyOnboardingDone(userId);
       if (!onboardingDone) {
         router.push('/dashboard/onboarding');
       } else {
-        const vStatus = (data.company?.verificationStatus || '').toUpperCase();
-        if (vStatus === 'APPROVED' || vStatus === 'VERIFIED') {
-          router.push('/dashboard');
-        } else {
-          router.push('/dashboard/verification-status');
-        }
+        router.push('/dashboard');
       }
     }
   };

@@ -136,8 +136,8 @@ export default function CompanyOnboardingPage() {
       await api.patch('/company/profile', payload).catch(() => null);
     } catch {}
 
-    toast.success('Company onboarding submitted for platform verification!');
-    router.push('/dashboard/verification-status');
+    toast.success('Company onboarding submitted for platform review! Welcome to your workspace.');
+    router.push('/dashboard');
     setSaving(false);
   };
 

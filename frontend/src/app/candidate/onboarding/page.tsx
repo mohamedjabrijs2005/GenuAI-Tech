@@ -118,8 +118,8 @@ export default function CandidateOnboardingPage() {
       await api.put('/candidate-portal/profile', profilePayload).catch(() => null);
     } catch {}
 
-    toast.success('Onboarding complete! Welcome to your workspace.');
-    router.push('/candidate/vacancies');
+    toast.success('Onboarding complete! Welcome to your candidate workspace.');
+    router.push('/candidate');
     setSaving(false);
   };
 

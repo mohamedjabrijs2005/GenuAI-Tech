@@ -20,6 +20,11 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
         router.replace('/login?role=candidate');
         return;
       }
+      const role = (user.role || '').toUpperCase();
+      if (role !== 'CANDIDATE' && role !== 'APPLICANT' && role !== 'USER') {
+        router.replace('/dashboard');
+        return;
+      }
       if (!isOnboarding) {
         const done = typeof window !== 'undefined' && localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true';
         if (!done) {
@@ -33,7 +38,7 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  const onboardingDone = typeof window !== 'undefined' && user?.id ? localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true' : true;
+  const onboardingDone = typeof window !== 'undefined' && user?.id ? localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true' : false;
 
   if (isLoading || (user && !onboardingDone)) {
     return (

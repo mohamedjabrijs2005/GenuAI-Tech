@@ -21,7 +21,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         router.replace('/login?role=company');
         return;
       }
-      if (user.role !== 'PLATFORM_ADMIN' && !isOnboarding && !isVerificationStatus) {
+      const role = (user.role || '').toUpperCase();
+      if (role === 'CANDIDATE' || role === 'APPLICANT') {
+        router.replace('/candidate');
+        return;
+      }
+      if (role !== 'PLATFORM_ADMIN' && role !== 'SUPER_ADMIN' && !isOnboarding && !isVerificationStatus) {
         const done = typeof window !== 'undefined' && localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true';
         if (!done) {
           router.replace('/dashboard/onboarding');
@@ -34,7 +39,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return <>{children}</>;
   }
 
-  const onboardingDone = typeof window !== 'undefined' && user?.id ? (user.role === 'PLATFORM_ADMIN' || isVerificationStatus || localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true') : true;
+  const onboardingDone = typeof window !== 'undefined' && user?.id ? (user.role === 'PLATFORM_ADMIN' || user.role === 'SUPER_ADMIN' || isVerificationStatus || localStorage.getItem(`genuai_onboarding_done_${user.id}`) === 'true') : false;
 
   if (isLoading || (user && !onboardingDone)) {
     return (
