@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   CheckCircle2, AlertCircle, Clock, XCircle, MinusCircle,
   RefreshCw, ChevronDown, ChevronUp, Info, Shield
@@ -184,8 +185,13 @@ function CoverageGapsContent() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
   useEffect(() => {
-    DataService.getCandidates().then(setCandidates);
-  }, []);
+    DataService.getCandidates().then((data) => {
+      setCandidates(data);
+      if (data.length > 0 && !appId) {
+        setSelectedAppId(data[0].id);
+      }
+    });
+  }, [appId]);
 
   const loadMatrix = useCallback(async (id: string) => {
     if (!id) return;
@@ -245,7 +251,7 @@ function CoverageGapsContent() {
             onChange={e => setSelectedAppId(e.target.value)}
             style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13.5, color: '#1e293b', background: '#fff', outline: 'none' }}
           >
-            <option value="">Select a candidate…</option>
+            <option value="">{candidates.length === 0 ? 'No candidates in pipeline' : 'Select a candidate…'}</option>
             {candidates.map(c => (
               <option key={c.id} value={c.id}>{c.name} — {c.vacancy}</option>
             ))}
@@ -321,6 +327,24 @@ function CoverageGapsContent() {
         <div style={{ textAlign: 'center', padding: 48, color: '#94a3b8' }}>
           <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite', marginBottom: 8 }} />
           <div style={{ fontSize: 13 }}>Loading evidence matrix…</div>
+        </div>
+      ) : candidates.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '56px 24px', background: '#ffffff', borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#b45309' }}>
+            <Shield size={24} />
+          </div>
+          <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', margin: '0 0 6px' }}>No candidate applications in pipeline yet</h3>
+          <p style={{ fontSize: 13, color: '#64748b', margin: '0 auto 20px', maxWidth: 460, lineHeight: 1.5 }}>
+            Requirement-linked evidence mapping and coverage gap tracking become available once candidates apply or submit evidence for your active vacancies.
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+            <Link href="/dashboard/vacancies" className="btn btn-secondary btn-sm" style={{ textDecoration: 'none' }}>
+              Manage Vacancies
+            </Link>
+            <Link href="/dashboard/candidates" className="btn btn-gold btn-sm" style={{ textDecoration: 'none' }}>
+              Candidates Pipeline &rarr;
+            </Link>
+          </div>
         </div>
       ) : !selectedAppId ? (
         <div style={{ textAlign: 'center', padding: 64, background: '#f8fafc', borderRadius: 12, border: '1px dashed #e2e8f0' }}>

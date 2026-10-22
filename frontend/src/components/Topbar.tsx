@@ -44,18 +44,8 @@ export default function Topbar({ onToggleMobileSidebar }: TopbarProps) {
     ? `Vacancy Details`
     : BREADCRUMB_MAP[pathname] || 'Dashboard';
 
-  const [time, setTime] = useState<string>('');
-  const isVerified = company?.verificationStatus === 'VERIFIED';
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const rawStatus = (company?.verificationStatus || '').toUpperCase();
+  const isVerified = rawStatus === 'VERIFIED' || rawStatus === 'APPROVED';
 
   return (
     <header className="topbar">
@@ -100,7 +90,7 @@ export default function Topbar({ onToggleMobileSidebar }: TopbarProps) {
 
       {/* Utilities (Right) */}
       <div className="flex items-center gap-3" style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
-        {/* Live Real-time Sync Indicator */}
+        {/* Connected Sync Indicator */}
         <div
           className="flex items-center gap-1.5"
           style={{
@@ -115,22 +105,20 @@ export default function Topbar({ onToggleMobileSidebar }: TopbarProps) {
             flexShrink: 0,
           }}
         >
-          <span className="badge-dot-live" />
-          <span style={{ color: 'var(--success)', fontWeight: 700 }}>LIVE</span>
-          <span style={{ opacity: 0.4 }}>|</span>
-          <span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{time || 'Syncing...'}</span>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+          <span style={{ color: '#059669', fontWeight: 700 }}>Connected</span>
         </div>
 
         {/* Company Verification Status Pill */}
         {isVerified ? (
-          <span className="badge badge-green" style={{ fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+          <span className="badge badge-green" style={{ fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
             <ShieldCheck size={13} style={{ color: 'var(--success)' }} />
-            Verified Entity
+            Approved
           </span>
         ) : (
-          <span className="badge badge-yellow" style={{ fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+          <span className="badge badge-yellow" style={{ fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
             <ShieldCheck size={13} style={{ color: 'var(--warning)' }} />
-            {company?.verificationStatus || 'Pending Verification'}
+            {rawStatus === 'PENDING_VERIFICATION' ? 'Pending Verification' : rawStatus.replace(/_/g, ' ') || 'Pending Verification'}
           </span>
         )}
       </div>
