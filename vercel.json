@@ -1,37 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "services": {
-    "genuai-backend": {
-      "root": "backend",
-      "framework": "express",
-      "buildCommand": "npm install && (node src/database/migrate.js && node src/database/migrate_v2.js && node src/database/migrate_v3.js && node src/database/migrate_v4.js && node src/database/migrate_v5.js && node src/database/migrate_v6.js && node src/database/migrate_v7.js && node src/database/seed_dev.js || true)"
-    },
-    "genuai-frontend": {
-      "root": "frontend",
-      "framework": "nextjs",
-      "buildCommand": "npm install --include=dev && npm run build",
-      "bindings": [
-        {
-          "type": "service",
-          "service": "genuai-backend",
-          "format": "url",
-          "env": "GENUAI_BACKEND_URL"
-        }
-      ]
-    }
-  },
+  "framework": "nextjs",
+  "buildCommand": "npm run build --prefix frontend",
+  "outputDirectory": "frontend/.next",
+  "installCommand": "npm install --prefix frontend",
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": {
-        "service": "genuai-backend"
-      }
-    },
-    {
-      "source": "/(.*)",
-      "destination": {
-        "service": "genuai-frontend"
-      }
+      "destination": "/api/$1"
     }
   ]
 }
