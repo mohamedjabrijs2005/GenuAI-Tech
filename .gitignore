@@ -33,8 +33,9 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 
-# Testing
-coverage/
+# Testing (root only)
+/coverage/
+!frontend/src/app/**/coverage/
 
 # Submodules / Duplicate clones
 GenuAI-Tech/

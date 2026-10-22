@@ -368,7 +368,7 @@ router.get('/profile', authenticate, requireCandidate, async (req, res) => {
               linkedin_url, languages, work_preferences, accessibility_needs, privacy_settings,
               created_at, updated_at
        FROM candidates
-       WHERE email = $1`,
+       WHERE LOWER(email) = LOWER($1)`,
       [req.user.email]
     );
 
@@ -422,7 +422,7 @@ const handleProfileUpdate = async (req, res) => {
          SET first_name = COALESCE($1, first_name),
              last_name = COALESCE($2, last_name),
              updated_at = NOW()
-         WHERE email = $3`,
+         WHERE LOWER(email) = LOWER($3)`,
         [firstName || null, lastName || null, req.user.email]
       );
     }
@@ -455,7 +455,7 @@ const handleProfileUpdate = async (req, res) => {
            accessibility_needs = COALESCE($15, accessibility_needs),
            privacy_settings = COALESCE($16, privacy_settings),
            updated_at = NOW()
-       WHERE email = $17
+       WHERE LOWER(email) = LOWER($17)
        RETURNING id, email, first_name, last_name, phone, location, resume_url, education,
                  general_skills, experience_summary, employment_history, github_url, portfolio_url,
                  linkedin_url, languages, work_preferences, accessibility_needs, privacy_settings,
