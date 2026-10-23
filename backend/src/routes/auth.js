@@ -17,9 +17,16 @@ if (!JWT_SECRET || JWT_SECRET === 'genuai-super-secret-jwt-key-change-in-product
   console.error('FATAL: JWT_SECRET is missing or using the insecure default. Set a strong secret in .env');
 }
 
-function signToken(userId) {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
+function hashToken(raw) {
+  return crypto.createHash('sha256').update(String(raw)).digest('hex');
 }
+
+function signToken(user) {
+  const userId = typeof user === 'object' && user ? user.id : user;
+  const tokenVersion = typeof user === 'object' && user ? (user.token_version || 1) : 1;
+  return jwt.sign({ userId, tokenVersion }, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
+}
+
 
 // ============================================================
 // POST /api/auth/register
@@ -84,16 +91,17 @@ router.post(
       const isCandidate = requestedRole === 'CANDIDATE' || companyName === 'Candidate Workspace' || !companyName;
       const userRole = isCandidate ? 'CANDIDATE' : 'COMPANY_OWNER';
 
-      // Generate email verification token
-      const verificationToken = crypto.randomBytes(32).toString('hex');
+      // Generate email verification token (store hash in DB, send raw token in email)
+      const rawVerificationToken = crypto.randomBytes(32).toString('hex');
+      const hashedVerificationToken = hashToken(rawVerificationToken);
       const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
       // Create user
       const userResult = await client.query(
         `INSERT INTO users (email, password_hash, first_name, last_name, role, email_verified, email_verification_token, email_verification_expires)
          VALUES ($1, $2, $3, $4, $5, FALSE, $6, $7)
-         RETURNING id, email, first_name, last_name, role`,
-        [email, passwordHash, firstName, lastName, userRole, verificationToken, verificationExpires]
+         RETURNING id, email, first_name, last_name, role, token_version`,
+        [email, passwordHash, firstName, lastName, userRole, hashedVerificationToken, verificationExpires]
       );
       const user = userResult.rows[0];
 
@@ -165,7 +173,7 @@ router.post(
 
       // Send verification email (async, don't block response)
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+      const verifyUrl = `${frontendUrl}/verify-email?token=${rawVerificationToken}`;
       sendEmail({
         to: email,
         toName: `${firstName} ${lastName}`,
@@ -175,7 +183,7 @@ router.post(
       }).catch(err => console.warn('Verification email send note:', err.message));
 
       // Issue JWT
-      const token = signToken(user.id);
+      const token = signToken(user);
 
       return res.status(201).json({
         token,
@@ -219,7 +227,7 @@ router.post(
 
     try {
       const userResult = await pool.query(
-        'SELECT id, email, password_hash, first_name, last_name, role, is_active, email_verified FROM users WHERE email = $1',
+        'SELECT id, email, password_hash, first_name, last_name, role, is_active, email_verified, token_version FROM users WHERE email = $1',
         [email]
       );
 
@@ -249,7 +257,7 @@ router.post(
         [user.id]
       );
 
-      const token = signToken(user.id);
+      const token = signToken(user);
 
       const companyData = memberResult.rowCount > 0 ? {
         id: memberResult.rows[0].company_id,
@@ -389,8 +397,9 @@ router.get('/me', authenticate, async (req, res) => {
 });
 
 // ============================================================
+// ============================================================
 // POST /api/auth/verify-email
-// Verify user email via token
+// Verify user email via token (compares against sha256 hash or legacy raw)
 // ============================================================
 router.post('/verify-email', async (req, res) => {
   const { token } = req.body;
@@ -399,12 +408,13 @@ router.post('/verify-email', async (req, res) => {
   }
 
   try {
+    const hashedToken = hashToken(token);
     const result = await pool.query(
       `UPDATE users
        SET email_verified = TRUE, email_verification_token = NULL, email_verification_expires = NULL
-       WHERE email_verification_token = $1 AND email_verification_expires > NOW() AND email_verified = FALSE
+       WHERE (email_verification_token = $1 OR email_verification_token = $2) AND email_verification_expires > NOW() AND email_verified = FALSE
        RETURNING id, email, first_name`,
-      [token]
+      [hashedToken, token]
     );
 
     if (result.rowCount === 0) {
@@ -428,16 +438,17 @@ router.post('/resend-verification', authenticate, async (req, res) => {
       return res.json({ message: 'Email is already verified' });
     }
 
-    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const rawVerificationToken = crypto.randomBytes(32).toString('hex');
+    const hashedVerificationToken = hashToken(rawVerificationToken);
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     await pool.query(
       `UPDATE users SET email_verification_token = $1, email_verification_expires = $2 WHERE id = $3`,
-      [verificationToken, verificationExpires, req.user.id]
+      [hashedVerificationToken, verificationExpires, req.user.id]
     );
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+    const verifyUrl = `${frontendUrl}/verify-email?token=${rawVerificationToken}`;
 
     await sendEmail({
       to: req.user.email,
@@ -456,7 +467,7 @@ router.post('/resend-verification', authenticate, async (req, res) => {
 
 // ============================================================
 // POST /api/auth/forgot-password
-// Generate password reset token and send email
+// Generate password reset token (stored as SHA-256 hash) and send email
 // ============================================================
 router.post(
   '/forgot-password',
@@ -481,16 +492,17 @@ router.post(
 
       if (userResult.rowCount > 0 && userResult.rows[0].is_active !== false) {
         const user = userResult.rows[0];
-        const resetToken = crypto.randomBytes(32).toString('hex');
+        const rawResetToken = crypto.randomBytes(32).toString('hex');
+        const hashedResetToken = hashToken(rawResetToken);
         const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
         await pool.query(
           `UPDATE users SET password_reset_token = $1, password_reset_expires = $2 WHERE id = $3`,
-          [resetToken, resetExpires, user.id]
+          [hashedResetToken, resetExpires, user.id]
         );
 
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-        const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+        const resetUrl = `${frontendUrl}/reset-password?token=${rawResetToken}`;
 
         sendEmail({
           to: user.email,
@@ -501,7 +513,7 @@ router.post(
         }).catch(err => console.warn('Password reset email note:', err.message));
       }
 
-      // Always return success (prevents email enumeration)
+      // Always return generic success (prevents email enumeration)
       return res.json({ success: true, message: 'If an account with that email exists, a password reset link has been sent.' });
     } catch (err) {
       console.error('Forgot password error:', err);
@@ -512,7 +524,7 @@ router.post(
 
 // ============================================================
 // POST /api/auth/reset-password
-// Validate reset token and update password
+// Validate reset token, update password, and invalidate existing sessions
 // ============================================================
 router.post(
   '/reset-password',
@@ -530,13 +542,15 @@ router.post(
 
     try {
       const passwordHash = await bcrypt.hash(password, 12);
+      const hashedToken = hashToken(token);
 
+      // Invalidate existing sessions by incrementing token_version
       const result = await pool.query(
         `UPDATE users
-         SET password_hash = $1, password_reset_token = NULL, password_reset_expires = NULL
-         WHERE password_reset_token = $2 AND password_reset_expires > NOW() AND is_active = TRUE
+         SET password_hash = $1, password_reset_token = NULL, password_reset_expires = NULL, token_version = token_version + 1
+         WHERE (password_reset_token = $2 OR password_reset_token = $3) AND password_reset_expires > NOW() AND is_active = TRUE
          RETURNING id, email`,
-        [passwordHash, token]
+        [passwordHash, hashedToken, token]
       );
 
       if (result.rowCount === 0) {
@@ -553,7 +567,7 @@ router.post(
 
 // ============================================================
 // POST /api/auth/change-password
-// Authenticated user changes their own password
+// Authenticated user changes their own password and invalidates other sessions
 // ============================================================
 router.post(
   '/change-password',
@@ -586,14 +600,15 @@ router.post(
       }
 
       const newHash = await bcrypt.hash(newPassword, 12);
-      await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, req.user.id]);
+      await pool.query('UPDATE users SET password_hash = $1, token_version = token_version + 1 WHERE id = $2', [newHash, req.user.id]);
 
-      return res.json({ success: true, message: 'Password changed successfully' });
+      return res.json({ success: true, message: 'Password changed successfully. All other sessions have been logged out.' });
     } catch (err) {
       console.error('Change password error:', err);
       return res.status(500).json({ error: 'Password change failed' });
     }
   }
+);
 // ============================================================
 // POST /api/auth/google
 // Verify Google ID token, find-or-create user, link account, issue JWT
@@ -618,7 +633,18 @@ router.post('/google', loginLimiter, async (req, res) => {
     }
 
     if (!payload || !payload.email) {
-      return res.status(400).json({ error: 'Google token does not contain a verified email' });
+      return res.status(400).json({ error: 'Google token does not contain an email address' });
+    }
+
+    // 1. Enforce issuer validation
+    const validIssuers = ['accounts.google.com', 'https://accounts.google.com'];
+    if (!validIssuers.includes(payload.iss)) {
+      return res.status(401).json({ error: 'Untrusted Google identity token issuer.' });
+    }
+
+    // 2. Enforce verified email claim
+    if (payload.email_verified !== true) {
+      return res.status(403).json({ error: 'Google account email has not been verified by Google.' });
     }
 
     const { email, sub: googleId, given_name: firstName = 'Google', family_name: lastName = 'User' } = payload;
@@ -626,7 +652,7 @@ router.post('/google', loginLimiter, async (req, res) => {
 
     // Check if user exists by email or provider_id
     let userResult = await pool.query(
-      'SELECT id, email, first_name, last_name, role, is_active, email_verified, auth_provider, provider_id FROM users WHERE LOWER(email) = $1',
+      'SELECT id, email, first_name, last_name, role, is_active, email_verified, auth_provider, provider_id, token_version FROM users WHERE LOWER(email) = $1',
       [normalizedEmail]
     );
 
@@ -638,6 +664,13 @@ router.post('/google', loginLimiter, async (req, res) => {
 
       if (user.is_active === false) {
         return res.status(403).json({ error: 'Account has been disabled. Please contact support.' });
+      }
+
+      // 3. Admin privilege protection: prevent administrative account takeover via public Google OAuth
+      const roleUpper = (user.role || '').toUpperCase();
+      const isAdminRole = ['SUPER_ADMIN', 'VERIFICATION_ADMIN', 'SUPPORT_ADMIN', 'GENUAI_ADMIN'].includes(roleUpper);
+      if (isAdminRole && user.auth_provider !== 'google') {
+        return res.status(403).json({ error: 'Platform administrative accounts must authenticate via dedicated governance credentials.' });
       }
 
       // Link Google credentials if not already linked
@@ -659,7 +692,7 @@ router.post('/google', loginLimiter, async (req, res) => {
         const insertUser = await client.query(
           `INSERT INTO users (email, password_hash, first_name, last_name, role, email_verified, auth_provider, provider_id)
            VALUES ($1, 'OAUTH_GOOGLE_USER', $2, $3, $4, TRUE, 'google', $5)
-           RETURNING id, email, first_name, last_name, role`,
+           RETURNING id, email, first_name, last_name, role, token_version`,
           [normalizedEmail, firstName, lastName, safeRole, googleId]
         );
         user = insertUser.rows[0];
@@ -721,7 +754,7 @@ router.post('/google', loginLimiter, async (req, res) => {
       }
     }
 
-    const token = signToken(user.id);
+    const token = signToken(user);
 
     return res.json({
       token,

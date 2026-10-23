@@ -876,39 +876,41 @@ router.post('/targets/:id/assessment/submit', authenticate, requireCandidate, as
         const chosenMcq = candidateAnswer.mcq;
         const textExplanation = candidateAnswer.text || '';
 
-        let qScore = 0;
+        // Objective scoring only: 50% max score allocated to objective MCQ
+        const objectiveMax = q.maxScore * 0.5;
+        const scenarioMax = q.maxScore * 0.5;
+
+        let qObjectiveEarned = 0;
         if (chosenMcq && chosenMcq === q.correctOption) {
-          qScore += q.maxScore * 0.6;
-        }
-        if (textExplanation.trim().length >= 30) {
-          qScore += q.maxScore * 0.4;
-        } else if (textExplanation.trim().length >= 10) {
-          qScore += q.maxScore * 0.2;
+          qObjectiveEarned = objectiveMax;
         }
 
-        totalEarnedScore += qScore;
+        totalEarnedScore += qObjectiveEarned;
 
+        // Free-text scenario answers are stored for human rubric evaluation, NOT auto-scored
         await client.query(
           `INSERT INTO assessment_requirement_scores
-             (attempt_id, requirement_id, score, max_score, assessment_notes)
-           VALUES ($1, $2, $3, $4, $5)`,
+             (attempt_id, requirement_id, score, max_score, assessment_notes, scoring_source, rubric_criteria, evaluation_status)
+           VALUES ($1, $2, $3, $4, $5, 'OBJECTIVE_MCQ', $6, 'PENDING_REVIEW')`,
           [
             attemptId,
             q.requirementId,
-            Math.round(qScore * 10) / 10,
+            Math.round(qObjectiveEarned * 10) / 10,
             q.maxScore,
-            `MCQ: ${chosenMcq === q.correctOption ? 'Correct' : 'Incorrect'}, Notes length: ${textExplanation.length}`,
+            `MCQ: ${chosenMcq === q.correctOption ? 'Correct' : 'Incorrect'}; Scenario evaluation pending recruiter review.`,
+            JSON.stringify({ textExplanation, scenarioMax, submittedAt: new Date().toISOString() }),
           ]
         );
       }
 
-      const finalScore = Math.min(100, Math.round(totalEarnedScore));
+      const objectiveTotal = Math.min(100, Math.round(totalEarnedScore));
 
       await client.query(
         `UPDATE assessment_attempts
-         SET status = 'SUBMITTED', submitted_at = NOW(), score = $1, answers = $2, updated_at = NOW()
+         SET status = 'SUBMITTED', submitted_at = NOW(), score = $1, objective_score = $1, scenario_score = 0,
+             grading_status = 'PENDING_REVIEW', answers = $2, updated_at = NOW()
          WHERE id = $3`,
-        [finalScore, JSON.stringify(finalAnswers), attemptId]
+        [objectiveTotal, JSON.stringify(finalAnswers), attemptId]
       );
 
       // Recompute Target Coverage in same transaction
@@ -916,20 +918,20 @@ router.post('/targets/:id/assessment/submit', authenticate, requireCandidate, as
 
       await client.query('COMMIT');
 
-      // Send confirmation email
+      // Send confirmation email (async outside transaction)
       sendEmail({
         to: candidate.email,
         toName: `${candidate.first_name} ${candidate.last_name}`,
         subject: `Assessment Completed: ${target.vacancy_title} (${target.company_name})`,
-        html: `<p>Hi ${candidate.first_name},</p><p>You have successfully submitted your technical assessment for <strong>${target.vacancy_title}</strong> at <strong>${target.company_name}</strong>.</p><p>Score recorded: <strong>${finalScore}/100</strong>. Your requirement coverage ledger has been updated.</p>`,
+        html: `<p>Hi ${candidate.first_name},</p><p>You have successfully submitted your assessment for <strong>${target.vacancy_title}</strong> at <strong>${target.company_name}</strong>.</p><p>Objective score recorded: <strong>${objectiveTotal} pts</strong>. Written scenarios have been queued for recruiter rubric review.</p>`,
         templateName: 'assessment_submitted',
       }).catch(err => console.warn('Assessment completion email note:', err.message));
 
       return res.json({
         success: true,
-        score: finalScore,
-        maxScore: 100,
-        message: 'Assessment submitted and requirement coverage updated.',
+        objectiveScore: objectiveTotal,
+        gradingStatus: 'PENDING_REVIEW',
+        message: 'Objective portion scored. Scenario responses queued for recruiter rubric evaluation.',
       });
     } catch (txErr) {
       await client.query('ROLLBACK');
@@ -940,6 +942,82 @@ router.post('/targets/:id/assessment/submit', authenticate, requireCandidate, as
   } catch (err) {
     console.error('Submit assessment error:', err);
     return res.status(500).json({ error: 'Failed to submit assessment' });
+  }
+});
+
+// POST /api/candidate-portal/targets/:id/assessment/attempts/:attemptId/evaluate
+// Recruiter rubric evaluation for scenario/free-text responses
+router.post('/targets/:id/assessment/attempts/:attemptId/evaluate', authenticate, async (req, res) => {
+  const { id, attemptId } = req.params;
+  const { evaluations } = req.body; // Array of { requirementId, scenarioScore, feedback }
+
+  if (!Array.isArray(evaluations)) {
+    return res.status(400).json({ error: 'Evaluations array is required' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Verify target and attempt belong to recruiter's authorized company
+    const attemptRes = await client.query(
+      `SELECT aa.id, aa.target_id, aa.company_id, aa.objective_score, aa.status
+       FROM assessment_attempts aa
+       WHERE aa.id = $1 AND aa.target_id = $2`,
+      [attemptId, id]
+    );
+    if (attemptRes.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Assessment attempt not found' });
+    }
+    const attempt = attemptRes.rows[0];
+
+    // Check recruiter authorization
+    if (req.companyMembership?.company_id !== attempt.company_id && !['SUPER_ADMIN', 'GENUAI_ADMIN'].includes((req.user.role || '').toUpperCase())) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ error: 'Unauthorized to evaluate assessments for this company' });
+    }
+
+    let totalScenarioEarned = 0;
+
+    for (const ev of evaluations) {
+      const scoreNum = Math.max(0, Number(ev.scenarioScore) || 0);
+      totalScenarioEarned += scoreNum;
+
+      await client.query(
+        `UPDATE assessment_requirement_scores
+         SET score = score + $1, evaluation_status = 'EVALUATED', assessment_notes = assessment_notes || ' | ' || $2
+         WHERE attempt_id = $3 AND requirement_id = $4`,
+        [scoreNum, ev.feedback || 'Recruiter rubric applied', attemptId, ev.requirementId]
+      );
+    }
+
+    const finalScore = Math.min(100, Math.round((Number(attempt.objective_score) || 0) + totalScenarioEarned));
+
+    await client.query(
+      `UPDATE assessment_attempts
+       SET scenario_score = $1, score = $2, grading_status = 'FULLY_GRADED', evaluator_id = $3, evaluated_at = NOW(), updated_at = NOW()
+       WHERE id = $4`,
+      [totalScenarioEarned, finalScore, req.user.id, attemptId]
+    );
+
+    // Recompute target coverage with fully evaluated results
+    await recomputeTargetCoverage(client, id);
+
+    await client.query('COMMIT');
+
+    return res.json({
+      success: true,
+      finalScore,
+      gradingStatus: 'FULLY_GRADED',
+      message: 'Scenario evaluation saved and requirement coverage updated.',
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Evaluate assessment error:', err);
+    return res.status(500).json({ error: 'Failed to evaluate assessment scenarios' });
+  } finally {
+    client.release();
   }
 });
 

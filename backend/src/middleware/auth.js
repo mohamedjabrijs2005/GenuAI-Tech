@@ -34,7 +34,7 @@ async function authenticate(req, res, next) {
 
     try {
       const userResult = await pool.query(
-        'SELECT id, email, first_name, last_name, role, is_active, email_verified, created_at FROM users WHERE id = $1',
+        'SELECT id, email, first_name, last_name, role, is_active, email_verified, token_version, created_at FROM users WHERE id = $1',
         [payload.userId]
       );
       if (userResult.rowCount > 0) {
@@ -61,6 +61,11 @@ async function authenticate(req, res, next) {
     // Enforce account active status
     if (user.is_active === false) {
       return res.status(403).json({ error: 'Account has been disabled. Please contact support.' });
+    }
+
+    // Enforce session invalidation if token_version mismatch
+    if (payload.tokenVersion && user.token_version && payload.tokenVersion !== user.token_version) {
+      return res.status(401).json({ error: 'Session expired due to a recent password or security update. Please sign in again.' });
     }
 
     req.user = user;

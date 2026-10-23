@@ -47,9 +47,9 @@ async function recomputeTargetCoverage(clientOrPool, targetId) {
 
   const evidenceList = evidenceRes.rows;
 
-  // 3b. Fetch latest completed assessment scores for this target
+  // 3b. Fetch latest completed assessment scores for this target with grading status
   const assessmentScoresRes = await db.query(
-    `SELECT ars.requirement_id, ars.score, ars.max_score
+    `SELECT ars.requirement_id, ars.score, ars.max_score, ars.evaluation_status, aa.grading_status
      FROM assessment_requirement_scores ars
      JOIN assessment_attempts aa ON aa.id = ars.attempt_id
      WHERE aa.target_id = $1 AND aa.status IN ('SUBMITTED', 'GRADED')
@@ -66,18 +66,26 @@ async function recomputeTargetCoverage(clientOrPool, targetId) {
   const requirementBreakdown = requirements.map((req) => {
     const reqEvidence = evidenceList.filter((e) => e.requirement_id === req.id);
     const reqAssessments = assessmentScores.filter((a) => a.requirement_id === req.id);
-    const bestAssessment = reqAssessments.length > 0
+
+    const hasFullyGradedPassingAssessment = reqAssessments.some(
+      (a) => a.grading_status === 'FULLY_GRADED' && (Number(a.score) / (Number(a.max_score) || 100)) >= 0.70
+    );
+    const hasProvisionalAssessment = reqAssessments.some(
+      (a) => (Number(a.score) / (Number(a.max_score) || 100)) >= 0.40
+    );
+
+    const bestScoreRatio = reqAssessments.length > 0
       ? Math.max(...reqAssessments.map(a => Number(a.score) / (Number(a.max_score) || 100)))
       : null;
 
     let status = 'EVIDENCE_GAP';
-    if (reqEvidence.some((e) => e.review_status === 'ACCEPTED') || (bestAssessment !== null && bestAssessment >= 0.70)) {
+    if (reqEvidence.some((e) => e.review_status === 'ACCEPTED') || hasFullyGradedPassingAssessment) {
       status = 'SUPPORTED';
       supportedCount++;
-    } else if (reqEvidence.some((e) => e.review_status === 'LIMITED') || (bestAssessment !== null && bestAssessment >= 0.40)) {
+    } else if (reqEvidence.some((e) => e.review_status === 'LIMITED') || hasProvisionalAssessment) {
       status = 'LIMITED';
       limitedCount++;
-    } else if (reqEvidence.some((e) => ['SUBMITTED', 'UNDER_REVIEW', 'MORE_INFORMATION_REQUESTED'].includes(e.review_status))) {
+    } else if (reqEvidence.some((e) => ['SUBMITTED', 'UNDER_REVIEW', 'MORE_INFORMATION_REQUESTED'].includes(e.review_status)) || reqAssessments.some(a => a.grading_status === 'PENDING_REVIEW')) {
       status = 'PENDING';
       pendingCount++;
     } else {
@@ -91,7 +99,14 @@ async function recomputeTargetCoverage(clientOrPool, targetId) {
       importance: req.importance || req.requirement_type || 'REQUIRED',
       status,
       evidenceItems: reqEvidence,
-      assessmentScore: bestAssessment !== null ? Math.round(bestAssessment * 100) : null,
+      assessmentDetails: reqAssessments.length > 0 ? {
+        scoreRatio: bestScoreRatio,
+        thresholdMet: bestScoreRatio !== null && bestScoreRatio >= 0.70,
+        gradingStatus: reqAssessments[0].grading_status,
+        evaluationStatus: reqAssessments[0].evaluation_status,
+        source: 'OFFICIAL_ASSESSMENT_V1',
+        recruiterEvaluationPending: reqAssessments.some(a => a.grading_status === 'PENDING_REVIEW'),
+      } : null,
     };
   });
 
