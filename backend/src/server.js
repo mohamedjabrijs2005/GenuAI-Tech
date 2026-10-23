@@ -128,6 +128,7 @@ app.listen(PORT, '0.0.0.0', async () => {
     './database/migrate_v13',
     './database/migrate_v14',
     './database/migrate_v15',
+    './database/migrate_v16',
   ];
   for (const m of migrations) {
     try {

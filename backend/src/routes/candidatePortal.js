@@ -1614,16 +1614,24 @@ router.post('/targets/:id/assessment/submit', authenticate, requireCandidate, as
           submittedAt: new Date().toISOString(),
         };
 
-        // Free-text scenario answers are stored separately from rubric criteria
+        // Store objective component separately — never modify after submission
         await client.query(
           `INSERT INTO assessment_requirement_scores
-             (attempt_id, requirement_id, score, max_score, assessment_notes, scoring_source, rubric_criteria, candidate_answers, evaluation_status)
-           VALUES ($1, $2, $3, $4, $5, 'OBJECTIVE_MCQ', $6, $7, 'PENDING_REVIEW')`,
+             (attempt_id, requirement_id,
+              score, max_score,
+              objective_score, objective_max_score,
+              scenario_score, scenario_max_score,
+              required_scenario_evaluation,
+              assessment_notes, scoring_source, rubric_criteria, candidate_answers, evaluation_status)
+           VALUES ($1, $2, $3, $4, $5, $6, 0, $7, TRUE, $8, 'OBJECTIVE_MCQ', $9, $10, 'PENDING_REVIEW')`,
           [
             attemptId,
             q.requirementId,
-            Math.round(qObjectiveEarned * 10) / 10,
+            Math.round(qObjectiveEarned * 10) / 10,  // score = objective only at this stage
             q.maxScore,
+            Math.round(qObjectiveEarned * 10) / 10,  // objective_score (immutable after submit)
+            objectiveMax,                             // objective_max_score
+            scenarioMax,                              // scenario_max_score (from rubric)
             `MCQ: ${chosenMcq === q.correctOption ? 'Correct' : 'Incorrect'}; Scenario evaluation pending recruiter review.`,
             JSON.stringify(rubricDefinition),
             JSON.stringify(candidateSubmission),

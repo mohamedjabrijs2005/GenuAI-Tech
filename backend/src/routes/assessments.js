@@ -252,45 +252,41 @@ router.get('/company/attempts/:attemptId', async (req, res) => {
 
 // ============================================================
 // POST /api/assessments/company/attempts/:attemptId/evaluate
-// Recruiter saves rubric marks & rationale with tenant & bound checks
+// Recruiter saves rubric marks — stores objective/scenario separately
+// Fixes: score inflation on regrade, mandatory scenarioMax, explicit FULLY_GRADED
 // ============================================================
 router.post('/company/attempts/:attemptId/evaluate', async (req, res) => {
   const companyId = req.companyMembership.company_id;
   const { attemptId } = req.params;
-  const { evaluations } = req.body; // Array of { requirementId, scenarioScore, feedback }
+  const { evaluations } = req.body; // [{ requirementId, scenarioScore, feedback }]
 
   if (!Array.isArray(evaluations) || evaluations.length === 0) {
-    return res.status(400).json({ error: 'Evaluations array is required' });
+    return res.status(400).json({ error: 'evaluations array is required' });
   }
 
-  // Evaluator permission check
   const memberRole = (req.companyMembership.member_role || '').toUpperCase();
-  const allowedRoles = ['COMPANY_OWNER', 'HIRING_MANAGER', 'RECRUITER', 'ADMIN'];
-  if (!allowedRoles.includes(memberRole)) {
-    return res.status(403).json({ error: 'Forbidden: Insufficient permissions to evaluate candidate assessments' });
+  if (!['COMPANY_OWNER', 'HIRING_MANAGER', 'RECRUITER', 'ADMIN'].includes(memberRole)) {
+    return res.status(403).json({ error: 'Forbidden: Insufficient permissions to evaluate assessments' });
   }
 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    // Tenant boundary check with row locking
+    // Tenant boundary + row lock
     const attemptRes = await client.query(
-      `SELECT aa.id, aa.target_id, aa.company_id, aa.objective_score, aa.status
+      `SELECT aa.id, aa.target_id, aa.company_id, aa.objective_score, aa.score, aa.status
        FROM assessment_attempts aa
-       WHERE aa.id = $1 AND aa.company_id = $2
-       FOR UPDATE`,
+       WHERE aa.id = $1 AND aa.company_id = $2 FOR UPDATE`,
       [attemptId, companyId]
     );
-
     if (attemptRes.rowCount === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Assessment attempt not found for this company' });
     }
-
     const attempt = attemptRes.rows[0];
 
-    // Check for duplicate requirement IDs in request
+    // Duplicate requirementId check
     const seenReqIds = new Set();
     for (const ev of evaluations) {
       if (!ev.requirementId) {
@@ -304,106 +300,161 @@ router.post('/company/attempts/:attemptId/evaluate', async (req, res) => {
       seenReqIds.add(ev.requirementId);
     }
 
-    // Fetch existing requirement scores for bounds verification
+    // Fetch ALL requirement score rows for this attempt
     const existingScoresRes = await client.query(
-      `SELECT requirement_id, score, max_score, rubric_criteria
+      `SELECT requirement_id, objective_score, objective_max_score,
+              scenario_score, scenario_max_score, score, max_score,
+              rubric_criteria, required_scenario_evaluation
        FROM assessment_requirement_scores
        WHERE attempt_id = $1`,
       [attemptId]
     );
-
     const scoreMap = new Map();
     for (const row of existingScoresRes.rows) {
       scoreMap.set(row.requirement_id, row);
     }
 
-    let totalScenarioEarned = 0;
+    // Compute explicit required_scenario_requirement_ids
+    const requiredScenarioReqIds = new Set(
+      existingScoresRes.rows
+        .filter(r => r.required_scenario_evaluation !== false)
+        .map(r => r.requirement_id)
+    );
 
+    // Validate + apply each evaluation
+    const auditDetails = [];
     for (const ev of evaluations) {
       const existing = scoreMap.get(ev.requirementId);
       if (!existing) {
         await client.query('ROLLBACK');
-        return res.status(400).json({ error: `Requirement ${ev.requirementId} is not part of this assessment attempt.` });
-      }
-
-      if (ev.scenarioScore === null || ev.scenarioScore === undefined || ev.scenarioScore === '') {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: `Scenario score for requirement ${ev.requirementId} is required.` });
+        return res.status(400).json({ error: `Requirement ${ev.requirementId} is not part of this attempt.` });
       }
 
       const scoreNum = Number(ev.scenarioScore);
+      if (ev.scenarioScore === null || ev.scenarioScore === undefined || ev.scenarioScore === '') {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: `scenarioScore for requirement ${ev.requirementId} is required.` });
+      }
       if (isNaN(scoreNum) || !isFinite(scoreNum) || scoreNum < 0) {
         await client.query('ROLLBACK');
-        return res.status(400).json({ error: `Scenario score for requirement ${ev.requirementId} must be a valid non-negative number.` });
+        return res.status(400).json({ error: `scenarioScore for ${ev.requirementId} must be a valid non-negative number.` });
       }
 
-      // Allowable scenario marks according to rubric definition
-      let maxAllowedScenario = 0;
+      // Parse rubric to get scenarioMax — MANDATORY for graded requirements
       let rubric = existing.rubric_criteria;
-      if (typeof rubric === 'string') {
-        try { rubric = JSON.parse(rubric); } catch (e) {}
-      }
+      if (typeof rubric === 'string') { try { rubric = JSON.parse(rubric); } catch (_) {} }
 
+      let scenarioMax = null;
       if (rubric && typeof rubric === 'object' && rubric.scenarioMax != null) {
-        maxAllowedScenario = Number(rubric.scenarioMax);
-      } else {
-        maxAllowedScenario = Math.max(0, Number(existing.max_score) - Number(existing.score));
+        scenarioMax = Number(rubric.scenarioMax);
+      }
+      // Also check new column
+      if (scenarioMax === null && existing.scenario_max_score != null) {
+        scenarioMax = Number(existing.scenario_max_score);
       }
 
-      if (scoreNum > maxAllowedScenario) {
+      // REJECT grading if scenarioMax is not defined in rubric (mandatory for pilot)
+      if (scenarioMax === null || isNaN(scenarioMax)) {
         await client.query('ROLLBACK');
         return res.status(400).json({
-          error: `Score ${scoreNum} exceeds maximum allowable rubric mark of ${maxAllowedScenario} for requirement.`
+          error: `scenarioMax is missing from rubric for requirement ${ev.requirementId}. ` +
+                 `Define scenario_max_score in the assessment rubric before grading.`
         });
       }
 
-      totalScenarioEarned += scoreNum;
+      if (scoreNum > scenarioMax) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          error: `Score ${scoreNum} exceeds rubric scenarioMax of ${scenarioMax} for requirement ${ev.requirementId}.`
+        });
+      }
 
-      const baseScore = Math.max(0, Number(existing.score) || 0);
-      const totalReqScore = Math.min(Number(existing.max_score), baseScore + scoreNum);
-      const feedbackText = (ev.feedback || '').trim() || 'Recruiter rubric evaluated';
+      const oldScenarioScore = Number(existing.scenario_score) || 0;
+      const objectiveScore   = Number(existing.objective_score) || 0;
+      const objectiveMax     = Number(existing.objective_max_score) || 0;
+      const feedbackText     = (ev.feedback || '').trim() || 'Recruiter rubric evaluated';
+
+      // Total per-requirement = objective (immutable) + new scenario score
+      const newTotalReqScore = Math.min(
+        Number(existing.max_score),
+        objectiveScore + scoreNum
+      );
+
+      auditDetails.push({
+        requirementId: ev.requirementId,
+        oldScenarioScore,
+        newScenarioScore: scoreNum,
+        objectiveScore,
+        newTotalReqScore,
+      });
 
       await client.query(
         `UPDATE assessment_requirement_scores
-         SET score = $1, evaluation_status = 'EVALUATED',
-             assessment_notes = assessment_notes || ' | [Recruiter Evaluation]: ' || $2
-         WHERE attempt_id = $3 AND requirement_id = $4`,
-        [totalReqScore, feedbackText, attemptId, ev.requirementId]
+         SET scenario_score      = $1,
+             scenario_max_score  = $2,
+             score               = $3,
+             evaluation_status   = 'EVALUATED',
+             grading_revision_count = COALESCE(grading_revision_count, 0) + 1,
+             last_graded_at      = NOW(),
+             assessment_notes    = assessment_notes || ' | [Recruiter ' || NOW()::text || ']: ' || $4
+         WHERE attempt_id = $5 AND requirement_id = $6`,
+        [scoreNum, scenarioMax, newTotalReqScore, feedbackText, attemptId, ev.requirementId]
       );
     }
 
-    const finalTotalScore = Math.min(100, Math.round((Number(attempt.objective_score) || 0) + totalScenarioEarned));
-    const isFullyGraded = seenReqIds.size === scoreMap.size;
+    // FULLY_GRADED only when ALL required-scenario requirements have been evaluated
+    const evaluatedReqIds = new Set(evaluations.map(e => e.requirementId));
+    // Check if every required requirement now has evaluation_status = EVALUATED
+    const postEvalRes = await client.query(
+      `SELECT requirement_id, evaluation_status
+       FROM assessment_requirement_scores
+       WHERE attempt_id = $1 AND required_scenario_evaluation = TRUE`,
+      [attemptId]
+    );
+    const allRequired = postEvalRes.rows;
+    const isFullyGraded = allRequired.length > 0 &&
+      allRequired.every(r => r.evaluation_status === 'EVALUATED');
     const finalGradingStatus = isFullyGraded ? 'FULLY_GRADED' : 'PARTIALLY_GRADED';
+
+    // Recalculate total attempt score from component columns (never from combined field)
+    const totalScoreRes = await client.query(
+      `SELECT COALESCE(SUM(objective_score), 0) AS total_obj,
+              COALESCE(SUM(scenario_score), 0)  AS total_scen,
+              COALESCE(MAX(aa.objective_score), 0) AS attempt_obj
+       FROM assessment_requirement_scores ars
+       JOIN assessment_attempts aa ON aa.id = ars.attempt_id
+       WHERE ars.attempt_id = $1`,
+      [attemptId]
+    );
+    const totalScen = Number(totalScoreRes.rows[0]?.total_scen) || 0;
+    const attemptObj = Number(totalScoreRes.rows[0]?.attempt_obj) || 0;
+    const finalTotalScore = Math.min(100, Math.round(attemptObj + totalScen));
 
     await client.query(
       `UPDATE assessment_attempts
-       SET scenario_score = $1, score = $2, grading_status = $3, evaluator_id = $4, evaluated_at = NOW(), updated_at = NOW()
+       SET scenario_score  = $1,
+           score           = $2,
+           grading_status  = $3,
+           evaluator_id    = $4,
+           evaluated_at    = NOW(),
+           updated_at      = NOW()
        WHERE id = $5`,
-      [totalScenarioEarned, finalTotalScore, finalGradingStatus, req.user.id, attemptId]
+      [totalScen, finalTotalScore, finalGradingStatus, req.user.id, attemptId]
     );
 
-    // Audit log event
+    // Audit log with old/new marks
     await client.query(
       `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, new_status, reason, metadata)
-       VALUES ($1, $2, $3, 'ASSESSMENT_EVALUATION_RECORDED', 'assessment_attempts', $4, $5, 'Recruiter scenario rubric evaluation recorded', $6)`,
+       VALUES ($1, $2, $3, 'ASSESSMENT_EVALUATION_RECORDED', 'assessment_attempts', $4, $5,
+               'Recruiter scenario rubric evaluation recorded', $6)`,
       [
-        companyId,
-        req.user.id,
-        memberRole,
-        attemptId,
-        finalGradingStatus,
-        JSON.stringify({
-          attemptId,
-          scenarioScore: totalScenarioEarned,
-          finalScore: finalTotalScore,
-          evaluationsCount: evaluations.length,
-          gradingStatus: finalGradingStatus,
-        }),
+        companyId, req.user.id, memberRole, attemptId, finalGradingStatus,
+        JSON.stringify({ attemptId, scenarioScore: totalScen, finalScore: finalTotalScore,
+          gradingStatus: finalGradingStatus, evaluationsCount: evaluations.length, details: auditDetails }),
       ]
     );
 
-    // Recompute target requirement coverage with explicit threshold policy
+    // Recompute target requirement coverage with final committed grading state
     const { recomputeTargetCoverage } = require('./evidenceService');
     await recomputeTargetCoverage(client, attempt.target_id);
 
@@ -412,10 +463,12 @@ router.post('/company/attempts/:attemptId/evaluate', async (req, res) => {
     return res.json({
       success: true,
       finalScore: finalTotalScore,
-      scenarioScore: totalScenarioEarned,
-      objectiveScore: attempt.objective_score,
+      scenarioScore: totalScen,
+      objectiveScore: attemptObj,
       gradingStatus: finalGradingStatus,
-      message: `Assessment evaluation saved as ${finalGradingStatus}. Requirement coverage recalculated.`,
+      fullyGradedRequirements: allRequired.filter(r => r.evaluation_status === 'EVALUATED').length,
+      totalRequiredEvaluations: allRequired.length,
+      message: `Evaluation saved as ${finalGradingStatus}. Coverage recalculated.`,
     });
   } catch (err) {
     await client.query('ROLLBACK');
@@ -426,5 +479,5 @@ router.post('/company/attempts/:attemptId/evaluate', async (req, res) => {
   }
 });
 
-module.exports = router;
 
+module.exports = router;
