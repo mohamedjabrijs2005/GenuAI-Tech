@@ -628,22 +628,33 @@ router.get('/targets/:id', authenticate, requireCandidate, async (req, res) => {
 
     // Compute separate module progress states
     const reqNames = reqRes.rows.map(r => r.name);
+    const reqIds = reqRes.rows.map(r => r.id);
 
-    // 1. Learning progress
+    // 1. Learning progress via versioned requirement mapping with fallback
     let totalLearnCount = 0;
     let completedLearnCount = 0;
-    if (reqNames.length > 0) {
+    if (reqIds.length > 0) {
       const totalLearnRes = await pool.query(
-        `SELECT COUNT(*) FROM learning_resources WHERE requirement_name = ANY($1)`,
-        [reqNames]
+        `SELECT COUNT(DISTINCT lr.id)
+         FROM learning_resources lr
+         LEFT JOIN learning_resource_requirement_map lrrm ON lrrm.resource_id = lr.id AND lrrm.requirement_id = ANY($1)
+         LEFT JOIN requirements r ON LOWER(TRIM(r.name)) = LOWER(TRIM(lr.requirement_name)) AND r.id = ANY($1)
+         WHERE (lrrm.requirement_id IS NOT NULL OR r.id IS NOT NULL)
+           AND (lr.status IS NULL OR lr.status = 'PUBLISHED')`,
+        [reqIds]
       );
       totalLearnCount = parseInt(totalLearnRes.rows[0].count, 10);
 
       const compLearnRes = await pool.query(
-        `SELECT COUNT(*) FROM target_learning_progress tlp
+        `SELECT COUNT(DISTINCT tlp.resource_id)
+         FROM target_learning_progress tlp
          JOIN learning_resources lr ON lr.id = tlp.resource_id
-         WHERE tlp.target_id = $1 AND tlp.candidate_id = $2 AND tlp.status = 'COMPLETED' AND lr.requirement_name = ANY($3)`,
-        [id, candidateId, reqNames]
+         LEFT JOIN learning_resource_requirement_map lrrm ON lrrm.resource_id = lr.id AND lrrm.requirement_id = ANY($3)
+         LEFT JOIN requirements r ON LOWER(TRIM(r.name)) = LOWER(TRIM(lr.requirement_name)) AND r.id = ANY($3)
+         WHERE tlp.target_id = $1 AND tlp.candidate_id = $2 AND tlp.status = 'COMPLETED'
+           AND (lrrm.requirement_id IS NOT NULL OR r.id IS NOT NULL)
+           AND (lr.status IS NULL OR lr.status = 'PUBLISHED')`,
+        [id, candidateId, reqIds]
       );
       completedLearnCount = parseInt(compLearnRes.rows[0].count, 10);
     }
@@ -651,20 +662,22 @@ router.get('/targets/:id', authenticate, requireCandidate, async (req, res) => {
       ? 'NOT_STARTED'
       : (completedLearnCount === totalLearnCount ? 'COMPLETED' : (completedLearnCount > 0 ? 'IN_PROGRESS' : 'NOT_STARTED'));
 
-    // 2. Practice progress
+    // 2. Practice progress via versioned requirement mapping with fallback
     const practiceAttemptsRes = await pool.query(
-      `SELECT COUNT(DISTINCT requirement_name) as completed_sets, COUNT(*) as total_attempts
-       FROM practice_attempts
-       WHERE target_id = $1 AND candidate_id = $2 AND status = 'COMPLETED'`,
-      [id, candidateId]
+      `SELECT COUNT(DISTINCT COALESCE(pa.requirement_id, r.id)) as completed_sets, COUNT(*) as total_attempts
+       FROM practice_attempts pa
+       LEFT JOIN requirements r ON LOWER(TRIM(r.name)) = LOWER(TRIM(pa.requirement_name)) AND r.id = ANY($3)
+       WHERE pa.target_id = $1 AND pa.candidate_id = $2 AND pa.status = 'COMPLETED'
+         AND (pa.requirement_id = ANY($3) OR r.id IS NOT NULL)`,
+      [id, candidateId, reqIds]
     );
     const completedPracticeSets = parseInt(practiceAttemptsRes.rows[0]?.completed_sets || 0, 10);
     const totalPracticeAttempts = parseInt(practiceAttemptsRes.rows[0]?.total_attempts || 0, 10);
     const practiceStatus = completedPracticeSets === 0
       ? 'NOT_STARTED'
-      : (completedPracticeSets >= reqNames.length ? 'COMPLETED' : 'IN_PROGRESS');
+      : (completedPracticeSets >= reqIds.length ? 'COMPLETED' : 'IN_PROGRESS');
 
-    // 3. Official assessment status
+    // 3. Official assessment status (Honest states: NOT_REQUIRED, NOT_ASSIGNED, AVAILABLE, IN_PROGRESS, SUBMITTED, PARTIALLY_GRADED, FULLY_GRADED)
     const attemptRes = await pool.query(
       `SELECT id, status, score, objective_score, scenario_score, grading_status, submitted_at, expires_at
        FROM assessment_attempts
@@ -674,10 +687,14 @@ router.get('/targets/:id', authenticate, requireCandidate, async (req, res) => {
     );
     let assessmentState = 'AVAILABLE';
     let latestAttempt = null;
-    if (attemptRes.rowCount > 0) {
+    if (reqRes.rows.length === 0) {
+      assessmentState = 'NOT_REQUIRED';
+    } else if (attemptRes.rowCount > 0) {
       latestAttempt = attemptRes.rows[0];
-      if (latestAttempt.status === 'SUBMITTED') {
-        assessmentState = latestAttempt.grading_status === 'FULLY_GRADED' ? 'FULLY_GRADED' : (latestAttempt.grading_status === 'PARTIALLY_GRADED' ? 'PARTIALLY_GRADED' : 'SUBMITTED');
+      if (latestAttempt.status === 'SUBMITTED' || latestAttempt.status === 'GRADED') {
+        assessmentState = latestAttempt.grading_status === 'FULLY_GRADED'
+          ? 'FULLY_GRADED'
+          : (latestAttempt.grading_status === 'PARTIALLY_GRADED' ? 'PARTIALLY_GRADED' : 'SUBMITTED');
       } else if (latestAttempt.status === 'IN_PROGRESS') {
         assessmentState = 'IN_PROGRESS';
       }
@@ -788,15 +805,19 @@ router.get('/targets/:id/learn', authenticate, requireCandidate, async (req, res
     );
 
     const requirements = reqRes.rows;
+    const reqIds = requirements.map(r => r.id);
     const reqNames = requirements.map(r => r.name);
 
-    // Fetch learning resources matching these requirements
-    const resourcesRes = reqNames.length > 0 ? await pool.query(
-      `SELECT id, requirement_name, title, description, source, resource_type, language, estimated_duration_mins, url
-       FROM learning_resources
-       WHERE requirement_name = ANY($1)
-       ORDER BY title ASC`,
-      [reqNames]
+    // Fetch learning resources matching these requirements via versioned requirement mapping, with fallback to requirement_name
+    const resourcesRes = reqIds.length > 0 ? await pool.query(
+      `SELECT DISTINCT lr.id, lr.requirement_name, lr.title, lr.description, lr.source, lr.resource_type, lr.language, lr.estimated_duration_mins, lr.url,
+              COALESCE(lrrm.requirement_id, r.id) as mapped_requirement_id
+       FROM learning_resources lr
+       LEFT JOIN learning_resource_requirement_map lrrm ON lrrm.resource_id = lr.id AND lrrm.requirement_id = ANY($1)
+       LEFT JOIN requirements r ON LOWER(TRIM(r.name)) = LOWER(TRIM(lr.requirement_name)) AND r.id = ANY($1)
+       WHERE lrrm.requirement_id IS NOT NULL OR r.id IS NOT NULL
+       ORDER BY lr.title ASC`,
+      [reqIds]
     ) : { rows: [] };
 
     // Fetch candidate's saved progress for this target
@@ -817,7 +838,7 @@ router.get('/targets/:id/learn', authenticate, requireCandidate, async (req, res
 
     const requirementsWithResources = requirements.map(reqItem => {
       const matchedResources = resourcesRes.rows
-        .filter(r => r.requirement_name.toLowerCase() === reqItem.name.toLowerCase())
+        .filter(r => r.mapped_requirement_id === reqItem.id || r.requirement_name?.toLowerCase() === reqItem.name?.toLowerCase())
         .map(r => {
           totalResources++;
           const p = progressMap.get(r.id);
@@ -826,7 +847,7 @@ router.get('/targets/:id/learn', authenticate, requireCandidate, async (req, res
 
           return {
             id: r.id,
-            requirementName: r.requirement_name,
+            requirementName: reqItem.name,
             title: r.title,
             description: r.description,
             source: r.source,
@@ -987,20 +1008,23 @@ router.get('/targets/:id/practice', authenticate, requireCandidate, async (req, 
     );
 
     const requirements = reqRes.rows;
+    const reqIds = requirements.map(r => r.id);
     const reqNames = requirements.map(r => r.name);
 
-    // Fetch question counts per requirement
-    const qCountRes = reqNames.length > 0 ? await pool.query(
-      `SELECT requirement_name, COUNT(*) as question_count
-       FROM practice_questions
-       WHERE requirement_name = ANY($1)
-       GROUP BY requirement_name`,
-      [reqNames]
+    // Fetch question counts per requirement via versioned mapping table with fallback
+    const qCountRes = reqIds.length > 0 ? await pool.query(
+      `SELECT COALESCE(pqrm.requirement_id, r.id) as requirement_id, COUNT(DISTINCT pq.id) as question_count
+       FROM practice_questions pq
+       LEFT JOIN practice_question_requirement_map pqrm ON pqrm.question_id = pq.id AND pqrm.requirement_id = ANY($1)
+       LEFT JOIN requirements r ON LOWER(TRIM(r.name)) = LOWER(TRIM(pq.requirement_name)) AND r.id = ANY($1)
+       WHERE pqrm.requirement_id IS NOT NULL OR r.id IS NOT NULL
+       GROUP BY COALESCE(pqrm.requirement_id, r.id)`,
+      [reqIds]
     ) : { rows: [] };
 
     const qCountMap = new Map();
     for (const r of qCountRes.rows) {
-      qCountMap.set(r.requirement_name.toLowerCase(), parseInt(r.question_count, 10));
+      qCountMap.set(r.requirement_id, parseInt(r.question_count, 10));
     }
 
     // Fetch candidate's past practice attempts for this target
@@ -1018,7 +1042,7 @@ router.get('/targets/:id/practice', authenticate, requireCandidate, async (req, 
     );
 
     const requirementSets = requirements.map(r => {
-      const qCount = qCountMap.get(r.name.toLowerCase()) || 0;
+      const qCount = qCountMap.get(r.id) || 0;
       const reqAttempts = attempts.filter(a => a.requirement_name.toLowerCase() === r.name.toLowerCase());
       const bestScore = reqAttempts.reduce((max, a) => Math.max(max, Number(a.score) || 0), 0);
       const isCompleted = completedSetNames.has(r.name.toLowerCase());
@@ -1058,10 +1082,10 @@ router.post('/targets/:id/practice/start', authenticate, requireCandidate, async
   try {
     const candidateId = req.candidateId;
     const { id } = req.params;
-    const { requirementName } = req.body;
+    const { requirementName, requirementId } = req.body;
 
-    if (!requirementName) {
-      return res.status(400).json({ error: 'requirementName is required' });
+    if (!requirementName && !requirementId) {
+      return res.status(400).json({ error: 'requirementName or requirementId is required' });
     }
 
     // Validate ownership
@@ -1074,31 +1098,36 @@ router.post('/targets/:id/practice/start', authenticate, requireCandidate, async
       return res.status(404).json({ error: 'Target workspace not found or access denied.' });
     }
 
-    // Fetch practice questions for this requirement
-    // NEVER return correct_option or explanation here (prevent cheating before submission)
+    // Fetch practice questions for this requirement via versioned mapping or name fallback
+    // CRITICAL SECURITY: Never return correct_option or explanation (decoupled answer keys)
     const questionsRes = await pool.query(
-      `SELECT id, requirement_name, title, prompt, question_type, options, topic_area, difficulty
-       FROM practice_questions
-       WHERE LOWER(requirement_name) = LOWER($1)
-       ORDER BY created_at ASC`,
-      [requirementName]
+      `SELECT DISTINCT pq.id, pq.requirement_name, pq.title, pq.prompt, pq.question_type, pq.options, pq.topic_area, pq.difficulty
+       FROM practice_questions pq
+       LEFT JOIN practice_question_requirement_map pqrm ON pqrm.question_id = pq.id
+       WHERE ((pqrm.requirement_id = $1) OR (LOWER(TRIM(pq.requirement_name)) = LOWER(TRIM($2))))
+         AND (pq.status IS NULL OR pq.status = 'PUBLISHED')
+       ORDER BY pq.title ASC`,
+      [requirementId || null, requirementName || '']
     );
 
     if (questionsRes.rowCount === 0) {
-      return res.status(404).json({ error: `No practice questions available for ${requirementName}` });
+      return res.status(404).json({ error: `No practice questions available for ${requirementName || requirementId}` });
     }
 
-    // Create a new practice attempt
+    const deliveredIds = questionsRes.rows.map(q => q.id);
+
+    // Create a new practice attempt with recorded delivered_question_ids and requirement_id
     const attemptRes = await pool.query(
-      `INSERT INTO practice_attempts (target_id, candidate_id, requirement_name, status, max_score)
-       VALUES ($1, $2, $3, 'IN_PROGRESS', $4)
-       RETURNING id, requirement_name, started_at`,
-      [id, candidateId, requirementName, questionsRes.rowCount]
+      `INSERT INTO practice_attempts (target_id, candidate_id, requirement_name, requirement_id, status, max_score, delivered_question_ids)
+       VALUES ($1, $2, $3, $4, 'IN_PROGRESS', $5, $6)
+       RETURNING id, requirement_name, requirement_id, started_at`,
+      [id, candidateId, requirementName || questionsRes.rows[0].requirement_name, requirementId || null, questionsRes.rowCount, JSON.stringify(deliveredIds)]
     );
 
     return res.json({
       attemptId: attemptRes.rows[0].id,
-      requirementName,
+      requirementName: attemptRes.rows[0].requirement_name,
+      requirementId: attemptRes.rows[0].requirement_id,
       startedAt: attemptRes.rows[0].started_at,
       questions: questionsRes.rows,
     });
@@ -1113,7 +1142,7 @@ router.post('/targets/:id/practice/submit', authenticate, requireCandidate, asyn
   try {
     const candidateId = req.candidateId;
     const { id } = req.params;
-    const { attemptId, answers } = req.body; // answers is { [questionId]: chosenKey }
+    const { attemptId, answers } = req.body; // answers is { [questionId]: chosenKey } or array of { questionId, chosenOption }
 
     if (!attemptId || !answers) {
       return res.status(400).json({ error: 'attemptId and answers are required' });
@@ -1121,7 +1150,7 @@ router.post('/targets/:id/practice/submit', authenticate, requireCandidate, asyn
 
     // Validate ownership of attempt
     const attemptRes = await pool.query(
-      `SELECT id, target_id, requirement_name, status
+      `SELECT id, target_id, requirement_name, status, score, max_score, topics_to_revisit, delivered_question_ids
        FROM practice_attempts
        WHERE id = $1 AND target_id = $2 AND candidate_id = $3`,
       [attemptId, id, candidateId]
@@ -1133,21 +1162,70 @@ router.post('/targets/:id/practice/submit', authenticate, requireCandidate, asyn
 
     const attempt = attemptRes.rows[0];
 
-    // Fetch questions with correct answers to grade
-    const questionsRes = await pool.query(
-      `SELECT id, requirement_name, title, prompt, options, correct_option, explanation, topic_area
-       FROM practice_questions
-       WHERE LOWER(requirement_name) = LOWER($1)`,
-      [attempt.requirement_name]
+    // Idempotent submission: if already completed, return existing result without re-scoring
+    if (attempt.status === 'COMPLETED') {
+      return res.json({
+        success: true,
+        attemptId,
+        requirementName: attempt.requirement_name,
+        score: Number(attempt.score),
+        maxScore: Number(attempt.max_score),
+        topicsToRevisit: attempt.topics_to_revisit || [],
+        message: 'Practice attempt already submitted. Returning cached evaluation.',
+      });
+    }
+
+    // Support both dictionary and array submission with duplicate checks
+    let answerMap = {};
+    if (Array.isArray(answers)) {
+      const seen = new Set();
+      for (const item of answers) {
+        if (!item || !item.questionId) {
+          return res.status(400).json({ error: 'Invalid answer item: missing questionId.' });
+        }
+        if (seen.has(item.questionId)) {
+          return res.status(400).json({ error: `Duplicate answer for question ${item.questionId} rejected.` });
+        }
+        seen.add(item.questionId);
+        answerMap[item.questionId] = item.chosenOption || item.answer;
+      }
+    } else if (typeof answers === 'object' && answers !== null) {
+      answerMap = answers;
+    } else {
+      return res.status(400).json({ error: 'answers must be an object or array.' });
+    }
+
+    // Validate submitted questions belong to delivered_question_ids
+    const deliveredSet = new Set(Array.isArray(attempt.delivered_question_ids) ? attempt.delivered_question_ids : []);
+    const submittedIds = Object.keys(answerMap);
+
+    if (submittedIds.length === 0) {
+      return res.status(400).json({ error: 'At least one question must be answered.' });
+    }
+
+    for (const qId of submittedIds) {
+      if (deliveredSet.size > 0 && !deliveredSet.has(qId)) {
+        return res.status(400).json({ error: `Question ${qId} was not part of this practice attempt.` });
+      }
+    }
+
+    // Query decoupled answer keys from practice_question_answers table
+    const answersRes = await pool.query(
+      `SELECT pqa.question_id, pqa.correct_option, pqa.explanation,
+              pq.title, pq.prompt, pq.options, pq.topic_area
+       FROM practice_question_answers pqa
+       JOIN practice_questions pq ON pq.id = pqa.question_id
+       WHERE pqa.question_id = ANY($1)`,
+      [Array.from(deliveredSet.size > 0 ? deliveredSet : new Set(submittedIds))]
     );
 
     let earnedScore = 0;
-    const totalMax = questionsRes.rowCount;
+    const totalMax = answersRes.rowCount;
     const topicsToRevisit = [];
     const questionResults = [];
 
-    for (const q of questionsRes.rows) {
-      const chosenKey = (answers[q.id] || '').trim().toUpperCase();
+    for (const q of answersRes.rows) {
+      const chosenKey = (answerMap[q.question_id] || '').trim().toUpperCase();
       const isCorrect = chosenKey === q.correct_option;
 
       if (isCorrect) {
@@ -1159,7 +1237,7 @@ router.post('/targets/:id/practice/submit', authenticate, requireCandidate, asyn
       }
 
       questionResults.push({
-        questionId: q.id,
+        questionId: q.question_id,
         title: q.title,
         prompt: q.prompt,
         options: q.options,
@@ -1177,7 +1255,7 @@ router.post('/targets/:id/practice/submit', authenticate, requireCandidate, asyn
        SET answers = $1, score = $2, max_score = $3, explanations_released = TRUE,
            status = 'COMPLETED', topics_to_revisit = $4, submitted_at = NOW()
        WHERE id = $5`,
-      [JSON.stringify(answers), earnedScore, totalMax, JSON.stringify(topicsToRevisit), attemptId]
+      [JSON.stringify(answerMap), earnedScore, totalMax, JSON.stringify(topicsToRevisit), attemptId]
     );
 
     return res.json({
@@ -1205,7 +1283,7 @@ router.get('/targets/:id/practice/attempts/:attemptId', authenticate, requireCan
 
     const attemptRes = await pool.query(
       `SELECT pa.id, pa.target_id, pa.requirement_name, pa.status, pa.answers, pa.score, pa.max_score,
-              pa.explanations_released, pa.topics_to_revisit, pa.started_at, pa.submitted_at
+              pa.explanations_released, pa.topics_to_revisit, pa.started_at, pa.submitted_at, pa.delivered_question_ids
        FROM practice_attempts pa
        WHERE pa.id = $1 AND pa.target_id = $2 AND pa.candidate_id = $3`,
       [attemptId, id, candidateId]
@@ -1217,21 +1295,24 @@ router.get('/targets/:id/practice/attempts/:attemptId', authenticate, requireCan
 
     const attempt = attemptRes.rows[0];
 
-    // If submitted, attach explanations and question breakdown
+    // If submitted, attach explanations from practice_question_answers
     let questionResults = [];
     if (attempt.explanations_released) {
+      const deliveredIds = Array.isArray(attempt.delivered_question_ids) ? attempt.delivered_question_ids : [];
       const qRes = await pool.query(
-        `SELECT id, requirement_name, title, prompt, options, correct_option, explanation, topic_area
-         FROM practice_questions
-         WHERE LOWER(requirement_name) = LOWER($1)`,
-        [attempt.requirement_name]
+        `SELECT pqa.question_id, pqa.correct_option, pqa.explanation,
+                pq.title, pq.prompt, pq.options, pq.topic_area
+         FROM practice_question_answers pqa
+         JOIN practice_questions pq ON pq.id = pqa.question_id
+         WHERE pqa.question_id = ANY($1)`,
+        [deliveredIds.length > 0 ? deliveredIds : [attempt.id]]
       );
 
       const answersObj = attempt.answers || {};
       questionResults = qRes.rows.map(q => {
-        const chosenKey = (answersObj[q.id] || '').trim().toUpperCase();
+        const chosenKey = (answersObj[q.question_id] || '').trim().toUpperCase();
         return {
-          questionId: q.id,
+          questionId: q.question_id,
           title: q.title,
           prompt: q.prompt,
           options: q.options,
@@ -1363,7 +1444,7 @@ router.post('/targets/:id/assessment/start', authenticate, requireCandidate, asy
     const candidateId = candRes.rows[0].id;
 
     const targetRes = await pool.query(
-      `SELECT t.id, t.vacancy_id, t.company_id, cr.title AS vacancy_title, c.name AS company_name
+      `SELECT t.id, t.status, t.vacancy_id, t.company_id, cr.title AS vacancy_title, c.name AS company_name
        FROM targets t
        JOIN company_roles cr ON cr.id = t.vacancy_id
        JOIN companies c ON c.id = t.company_id
@@ -1372,6 +1453,11 @@ router.post('/targets/:id/assessment/start', authenticate, requireCandidate, asy
     );
     if (targetRes.rowCount === 0) return res.status(404).json({ error: 'Target not found' });
     const target = targetRes.rows[0];
+
+    // Enforce target assignment eligibility
+    if (['WITHDRAWN', 'DECIDED', 'REJECTED'].includes(target.status)) {
+      return res.status(403).json({ error: `Cannot start assessment: Target is ${target.status}.` });
+    }
 
     // Check for existing active in-progress attempt
     const activeRes = await pool.query(
@@ -1414,16 +1500,18 @@ router.post('/targets/:id/assessment/save-draft', authenticate, requireCandidate
     if (candRes.rowCount === 0) return res.status(404).json({ error: 'Candidate profile not found' });
     const candidateId = candRes.rows[0].id;
 
+    // Server deadline enforcement: cannot extend deadline or save draft if attempt has expired
     const updateRes = await pool.query(
       `UPDATE assessment_attempts
        SET answers = $1, updated_at = NOW()
        WHERE id = $2 AND target_id = $3 AND candidate_id = $4 AND status = 'IN_PROGRESS'
+         AND (expires_at IS NULL OR expires_at > NOW())
        RETURNING id`,
       [JSON.stringify(answers || {}), attemptId, id, candidateId]
     );
 
     if (updateRes.rowCount === 0) {
-      return res.status(400).json({ error: 'Cannot save draft. Session may have expired or ended.' });
+      return res.status(400).json({ error: 'Cannot save draft. Assessment session has expired or ended.' });
     }
 
     return res.json({ success: true, savedAt: new Date().toISOString() });
@@ -1456,7 +1544,7 @@ router.post('/targets/:id/assessment/submit', authenticate, requireCandidate, as
     const target = targetRes.rows[0];
 
     const attemptRes = await pool.query(
-      `SELECT id, started_at, expires_at, status
+      `SELECT id, started_at, expires_at, status, score, grading_status
        FROM assessment_attempts
        WHERE id = $1 AND target_id = $2 AND candidate_id = $3`,
       [attemptId, id, candidate.id]
@@ -1464,8 +1552,21 @@ router.post('/targets/:id/assessment/submit', authenticate, requireCandidate, as
     if (attemptRes.rowCount === 0) return res.status(404).json({ error: 'Attempt not found' });
     const attempt = attemptRes.rows[0];
 
+    // Idempotent submission: if already submitted, return the existing recorded submission without re-evaluating
     if (attempt.status === 'SUBMITTED' || attempt.status === 'GRADED') {
-      return res.status(400).json({ error: 'This assessment attempt has already been submitted.' });
+      return res.json({
+        success: true,
+        attemptId: attempt.id,
+        score: attempt.score,
+        status: attempt.status,
+        gradingStatus: attempt.grading_status,
+        message: 'Assessment already submitted. Returning recorded evaluation.',
+      });
+    }
+
+    // Server deadline enforcement: reject answers submitted after deadline (+ 60s network grace period)
+    if (attempt.expires_at && new Date() > new Date(new Date(attempt.expires_at).getTime() + 60000)) {
+      return res.status(400).json({ error: 'Assessment deadline has expired. Submissions are no longer accepted.' });
     }
 
     const reqRes = await pool.query(

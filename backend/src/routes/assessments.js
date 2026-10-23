@@ -274,11 +274,12 @@ router.post('/company/attempts/:attemptId/evaluate', async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // Tenant boundary check
+    // Tenant boundary check with row locking
     const attemptRes = await client.query(
       `SELECT aa.id, aa.target_id, aa.company_id, aa.objective_score, aa.status
        FROM assessment_attempts aa
-       WHERE aa.id = $1 AND aa.company_id = $2`,
+       WHERE aa.id = $1 AND aa.company_id = $2
+       FOR UPDATE`,
       [attemptId, companyId]
     );
 
@@ -288,6 +289,20 @@ router.post('/company/attempts/:attemptId/evaluate', async (req, res) => {
     }
 
     const attempt = attemptRes.rows[0];
+
+    // Check for duplicate requirement IDs in request
+    const seenReqIds = new Set();
+    for (const ev of evaluations) {
+      if (!ev.requirementId) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Each evaluation must include requirementId' });
+      }
+      if (seenReqIds.has(ev.requirementId)) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: `Duplicate evaluation for requirement ${ev.requirementId}` });
+      }
+      seenReqIds.add(ev.requirementId);
+    }
 
     // Fetch existing requirement scores for bounds verification
     const existingScoresRes = await client.query(
@@ -311,14 +326,30 @@ router.post('/company/attempts/:attemptId/evaluate', async (req, res) => {
         return res.status(400).json({ error: `Requirement ${ev.requirementId} is not part of this assessment attempt.` });
       }
 
-      const scoreNum = Number(ev.scenarioScore);
-      if (isNaN(scoreNum) || scoreNum < 0) {
+      if (ev.scenarioScore === null || ev.scenarioScore === undefined || ev.scenarioScore === '') {
         await client.query('ROLLBACK');
-        return res.status(400).json({ error: `Scenario score for requirement ${ev.requirementId} must be a non-negative number.` });
+        return res.status(400).json({ error: `Scenario score for requirement ${ev.requirementId} is required.` });
       }
 
-      // Max allowable scenario marks is 50% of the requirement max_score
-      const maxAllowedScenario = Math.round((Number(existing.max_score) * 0.5) * 10) / 10;
+      const scoreNum = Number(ev.scenarioScore);
+      if (isNaN(scoreNum) || !isFinite(scoreNum) || scoreNum < 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: `Scenario score for requirement ${ev.requirementId} must be a valid non-negative number.` });
+      }
+
+      // Allowable scenario marks according to rubric definition
+      let maxAllowedScenario = 0;
+      let rubric = existing.rubric_criteria;
+      if (typeof rubric === 'string') {
+        try { rubric = JSON.parse(rubric); } catch (e) {}
+      }
+
+      if (rubric && typeof rubric === 'object' && rubric.scenarioMax != null) {
+        maxAllowedScenario = Number(rubric.scenarioMax);
+      } else {
+        maxAllowedScenario = Math.max(0, Number(existing.max_score) - Number(existing.score));
+      }
+
       if (scoreNum > maxAllowedScenario) {
         await client.query('ROLLBACK');
         return res.status(400).json({
@@ -328,10 +359,8 @@ router.post('/company/attempts/:attemptId/evaluate', async (req, res) => {
 
       totalScenarioEarned += scoreNum;
 
-      // Base objective score was initially stored; add scenario score to obtain total requirement score
-      const objectiveBase = Math.round((Number(existing.score) > maxAllowedScenario ? maxAllowedScenario : Number(existing.score)) * 10) / 10;
-      const totalReqScore = Math.min(Number(existing.max_score), objectiveBase + scoreNum);
-
+      const baseScore = Math.max(0, Number(existing.score) || 0);
+      const totalReqScore = Math.min(Number(existing.max_score), baseScore + scoreNum);
       const feedbackText = (ev.feedback || '').trim() || 'Recruiter rubric evaluated';
 
       await client.query(
@@ -344,12 +373,34 @@ router.post('/company/attempts/:attemptId/evaluate', async (req, res) => {
     }
 
     const finalTotalScore = Math.min(100, Math.round((Number(attempt.objective_score) || 0) + totalScenarioEarned));
+    const isFullyGraded = seenReqIds.size === scoreMap.size;
+    const finalGradingStatus = isFullyGraded ? 'FULLY_GRADED' : 'PARTIALLY_GRADED';
 
     await client.query(
       `UPDATE assessment_attempts
-       SET scenario_score = $1, score = $2, grading_status = 'FULLY_GRADED', evaluator_id = $3, evaluated_at = NOW(), updated_at = NOW()
-       WHERE id = $4`,
-      [totalScenarioEarned, finalTotalScore, req.user.id, attemptId]
+       SET scenario_score = $1, score = $2, grading_status = $3, evaluator_id = $4, evaluated_at = NOW(), updated_at = NOW()
+       WHERE id = $5`,
+      [totalScenarioEarned, finalTotalScore, finalGradingStatus, req.user.id, attemptId]
+    );
+
+    // Audit log event
+    await client.query(
+      `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, new_status, reason, metadata)
+       VALUES ($1, $2, $3, 'ASSESSMENT_EVALUATION_RECORDED', 'assessment_attempts', $4, $5, 'Recruiter scenario rubric evaluation recorded', $6)`,
+      [
+        companyId,
+        req.user.id,
+        memberRole,
+        attemptId,
+        finalGradingStatus,
+        JSON.stringify({
+          attemptId,
+          scenarioScore: totalScenarioEarned,
+          finalScore: finalTotalScore,
+          evaluationsCount: evaluations.length,
+          gradingStatus: finalGradingStatus,
+        }),
+      ]
     );
 
     // Recompute target requirement coverage with explicit threshold policy
@@ -363,8 +414,8 @@ router.post('/company/attempts/:attemptId/evaluate', async (req, res) => {
       finalScore: finalTotalScore,
       scenarioScore: totalScenarioEarned,
       objectiveScore: attempt.objective_score,
-      gradingStatus: 'FULLY_GRADED',
-      message: 'Assessment rubric evaluation saved. Requirement coverage recalculated.',
+      gradingStatus: finalGradingStatus,
+      message: `Assessment evaluation saved as ${finalGradingStatus}. Requirement coverage recalculated.`,
     });
   } catch (err) {
     await client.query('ROLLBACK');

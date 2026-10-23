@@ -947,14 +947,101 @@ router.get('/assessments', async (req, res) => {
 
 // ============================================================
 // 12. GET /api/admin/disputes
-// Module status indicator for Reports & Disputes
 // ============================================================
 router.get('/disputes', async (req, res) => {
-  return res.json({
-    disputes: [],
-    moduleActive: false,
-    message: 'Governance case module not yet active',
-  });
+  return res.json({ disputes: [], moduleActive: false, message: 'Governance case module not yet active' });
+});
+
+// ============================================================
+// 13. CONTENT GOVERNANCE: Learning Resources & Practice Questions
+// Only SUPER_ADMIN may publish, retire, or manage content
+// ============================================================
+
+// GET /api/admin/content/learning-resources
+router.get('/content/learning-resources', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT lr.id, lr.requirement_name, lr.title, lr.source, lr.resource_type, lr.url,
+              lr.status, lr.created_at,
+              COUNT(DISTINCT lrrm.requirement_id) AS mapped_requirements
+       FROM learning_resources lr
+       LEFT JOIN learning_resource_requirement_map lrrm ON lrrm.resource_id = lr.id
+       GROUP BY lr.id
+       ORDER BY lr.created_at DESC`
+    );
+    return res.json({ resources: result.rows });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to fetch learning resources' });
+  }
+});
+
+// PATCH /api/admin/content/learning-resources/:id/status
+router.patch('/content/learning-resources/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const ALLOWED_STATUSES = ['DRAFT', 'UNDER_REVIEW', 'PUBLISHED', 'RETIRED'];
+  if (!ALLOWED_STATUSES.includes(status)) {
+    return res.status(400).json({ error: `Invalid status. Allowed: ${ALLOWED_STATUSES.join(', ')}` });
+  }
+  try {
+    const result = await pool.query(
+      `UPDATE learning_resources SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING id, status`,
+      [status, id]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Resource not found' });
+    await pool.query(
+      `INSERT INTO audit_logs (actor_user_id, actor_role, action, entity_type, entity_id, new_status, reason, metadata)
+       VALUES ($1, 'SUPER_ADMIN', 'CONTENT_STATUS_CHANGED', 'learning_resources', $2, $3, 'Admin updated content status', $4)`,
+      [req.user.id, id, status, JSON.stringify({ resourceId: id, newStatus: status })]
+    );
+    return res.json({ success: true, resource: result.rows[0] });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to update resource status' });
+  }
+});
+
+// GET /api/admin/content/practice-questions
+router.get('/content/practice-questions', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT pq.id, pq.requirement_name, pq.title, pq.prompt, pq.options, pq.question_type,
+              pq.topic_area, pq.difficulty, pq.status, pq.created_at,
+              COUNT(DISTINCT pqrm.requirement_id) AS mapped_requirements
+       FROM practice_questions pq
+       LEFT JOIN practice_question_requirement_map pqrm ON pqrm.question_id = pq.id
+       GROUP BY pq.id
+       ORDER BY pq.created_at DESC`
+    );
+    // NOTE: correct_option and explanation are intentionally excluded from this listing endpoint
+    return res.json({ questions: result.rows });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to fetch practice questions' });
+  }
+});
+
+// PATCH /api/admin/content/practice-questions/:id/status
+router.patch('/content/practice-questions/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const ALLOWED_STATUSES = ['DRAFT', 'UNDER_REVIEW', 'PUBLISHED', 'RETIRED'];
+  if (!ALLOWED_STATUSES.includes(status)) {
+    return res.status(400).json({ error: `Invalid status. Allowed: ${ALLOWED_STATUSES.join(', ')}` });
+  }
+  try {
+    const result = await pool.query(
+      `UPDATE practice_questions SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING id, status`,
+      [status, id]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Question not found' });
+    await pool.query(
+      `INSERT INTO audit_logs (actor_user_id, actor_role, action, entity_type, entity_id, new_status, reason, metadata)
+       VALUES ($1, 'SUPER_ADMIN', 'CONTENT_STATUS_CHANGED', 'practice_questions', $2, $3, 'Admin updated question status', $4)`,
+      [req.user.id, id, status, JSON.stringify({ questionId: id, newStatus: status })]
+    );
+    return res.json({ success: true, question: result.rows[0] });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to update question status' });
+  }
 });
 
 module.exports = router;
