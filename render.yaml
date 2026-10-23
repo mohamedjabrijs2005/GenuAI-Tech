@@ -6,7 +6,7 @@ services:
     region: oregon
     plan: free
     rootDir: backend
-    buildCommand: npm install && node src/database/migrate_all.js && node src/database/seed_dev.js
+    buildCommand: npm install && node src/database/migrate_all.js
     startCommand: node src/server.js
     envVars:
       - key: NODE_VERSION
@@ -17,6 +17,16 @@ services:
         generateValue: true
       - key: NODE_ENV
         value: production
+      - key: FRONTEND_URL
+        sync: false
+      - key: GMAIL_USER
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: ALLOW_DEVELOPMENT_SEED
+        value: "false"
 
   # 2. Frontend Web Service
   - type: web

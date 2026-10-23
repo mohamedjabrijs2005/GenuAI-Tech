@@ -9,7 +9,8 @@
     "migrate": "node src/database/migrate_all.js",
     "migrate:all": "node src/database/migrate_all.js",
     "migrate:v2": "node src/database/migrate_v2.js",
-    "seed": "node src/database/seed_dev.js"
+    "seed": "node src/database/seed_dev.js",
+    "verify": "node src/database/verify_schema.js"
   },
   "keywords": [],
   "author": "GenuAI Technologies",

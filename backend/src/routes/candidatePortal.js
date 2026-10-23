@@ -1580,6 +1580,27 @@ router.post('/targets/:id/assessment/submit', authenticate, requireCandidate, as
     try {
       await client.query('BEGIN');
 
+      // Row-level lock on attempt row to prevent concurrent submission race conditions
+      const lockedRes = await client.query(
+        `SELECT id, status, score, grading_status FROM assessment_attempts WHERE id = $1 FOR UPDATE NOWAIT`,
+        [attemptId]
+      );
+      if (lockedRes.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Attempt not found' });
+      }
+      if (lockedRes.rows[0].status === 'SUBMITTED' || lockedRes.rows[0].status === 'GRADED') {
+        await client.query('COMMIT');
+        return res.json({
+          success: true,
+          attemptId: lockedRes.rows[0].id,
+          score: lockedRes.rows[0].score,
+          status: lockedRes.rows[0].status,
+          gradingStatus: lockedRes.rows[0].grading_status,
+          message: 'Assessment already submitted. Returning recorded evaluation.',
+        });
+      }
+
       let totalEarnedScore = 0;
       const finalAnswers = answers || {};
 

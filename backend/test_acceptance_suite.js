@@ -1,5 +1,6 @@
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const pool = require('./src/database/pool');
+const bcrypt = require('bcryptjs');
 const app = require('./src/server');
 
 const BASE_URL = 'http://127.0.0.1:4000/api';
@@ -143,11 +144,20 @@ async function runTestSuite() {
     // TEST 3: Admin Approval Workflow for Company
     // -------------------------------------------------------------
     console.log('\n📋 STEP 3: Admin Company Verification');
+    const testAdminEmail = `suite_admin_${Date.now()}@genuai.test`;
+    const testAdminPass = `SuitePass_${Date.now()}!`;
+    const adminHash = await bcrypt.hash(testAdminPass, 10);
+    await pool.query(
+      `INSERT INTO users (email, password_hash, first_name, last_name, role)
+       VALUES ($1, $2, 'Suite', 'Admin', 'SUPER_ADMIN')`,
+      [testAdminEmail, adminHash]
+    );
+
     const adminLoginRes = await request('/auth/login', {
       method: 'POST',
       body: {
-        email: 'admin@genuai.test',
-        password: 'Admin12345!',
+        email: testAdminEmail,
+        password: testAdminPass,
       },
     });
     assert(adminLoginRes.status === 200, 'Admin login succeeds');
@@ -227,15 +237,22 @@ async function runTestSuite() {
     // TEST 5: Tenant Isolation & Security Verification
     // -------------------------------------------------------------
     console.log('\n📋 STEP 5: Multi-Tenant Isolation & Security');
-    // Login as Company B
-    const companyBLogin = await request('/auth/login', {
+    // Register isolated Company B
+    const uniqueEmailB = `isolated_b_${Date.now()}@genuai.test`;
+    const regBRes = await request('/auth/register', {
       method: 'POST',
       body: {
-        email: 'companyb@genuai.test',
-        password: 'CompanyB123!',
+        firstName: 'Bob',
+        lastName: 'Beta',
+        email: uniqueEmailB,
+        password: 'SecureCompanyPass123!',
+        companyName: 'Beta Isolated Corp',
+        industry: 'Fintech',
+        website: 'https://beta-isolated.io',
       },
     });
-    const companyBToken = companyBLogin.data?.token;
+    assert(regBRes.status === 201, 'Isolated Company B registered');
+    const companyBToken = regBRes.data?.token;
 
     // Company B attempts to read Company A's vacancy
     const isolationReadRes = await request(`/vacancies/${newVacId}`, {

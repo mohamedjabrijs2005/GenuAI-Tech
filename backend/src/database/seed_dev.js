@@ -3,15 +3,38 @@ const bcrypt = require('bcryptjs');
 const pool = require('./pool');
 
 async function seedDev() {
+  // Production guard: Development seeding is strictly blocked in production
+  const allowSeed =
+    process.env.NODE_ENV !== 'production' ||
+    process.env.ALLOW_DEVELOPMENT_SEED === 'true';
+
+  if (!allowSeed) {
+    console.error(
+      'Refusing to run development seed in production. ' +
+      'Set ALLOW_DEVELOPMENT_SEED=true only for an isolated demo database.'
+    );
+    if (require.main === module) {
+      process.exit(1);
+    }
+    throw new Error('Development seeding is disabled in production.');
+  }
+
   const client = await pool.connect();
   try {
     console.log('🌱 Starting Development Database Seeding...');
     await client.query('BEGIN');
 
-    const adminHash = await bcrypt.hash('Admin12345!', 10);
-    const companyAHash = await bcrypt.hash('CompanyA123!', 10);
-    const companyBHash = await bcrypt.hash('CompanyB123!', 10);
-    const pendingHash = await bcrypt.hash('Pending123!', 10);
+    const adminPass = process.env.DEV_SEED_ADMIN_PASSWORD || 'DevAdmin@2026!';
+    const companyAPass = process.env.DEV_SEED_COMPANYA_PASSWORD || 'DevAlpha@2026!';
+    const companyBPass = process.env.DEV_SEED_COMPANYB_PASSWORD || 'DevBeta@2026!';
+    const pendingPass = process.env.DEV_SEED_PENDING_PASSWORD || 'DevPending@2026!';
+    const candidatePass = process.env.DEV_SEED_CANDIDATE_PASSWORD || 'DevAlex@2026!';
+
+    const adminHash = await bcrypt.hash(adminPass, 10);
+    const companyAHash = await bcrypt.hash(companyAPass, 10);
+    const companyBHash = await bcrypt.hash(companyBPass, 10);
+    const pendingHash = await bcrypt.hash(pendingPass, 10);
+    const candidateHash = await bcrypt.hash(candidatePass, 10);
 
     // 1. Super Admin accounts
     const adminEmails = ['admin@genuai.test', 'admin@genuai.io', 'admin@genuaiadmin.com'];
@@ -193,7 +216,6 @@ async function seedDev() {
     }
 
     // 5. Candidate User (CANDIDATE)
-    const candidateHash = await bcrypt.hash('Candidate123!', 10);
     let candidateUser = (await client.query('SELECT id FROM users WHERE email = $1', ['candidate@genuai.test'])).rows[0];
     if (!candidateUser) {
       const res = await client.query(
@@ -228,17 +250,11 @@ async function seedDev() {
     );
 
     await client.query('COMMIT');
-    console.log('✅ Database Seeding Completed Successfully.');
-    console.log('\nSeed Credentials:');
-    console.log('  Admin:       admin@genuai.test    / Admin12345!    (SUPER_ADMIN)');
-    console.log('  Candidate:   candidate@genuai.test/ Candidate123!  (CANDIDATE)');
-    console.log('  Company A:   companya@genuai.test / CompanyA123!   (APPROVED)');
-    console.log('  Company B:   companyb@genuai.test / CompanyB123!   (APPROVED)');
-    console.log('  Pending Co:  pending@genuai.test  / Pending123!    (PENDING_VERIFICATION)');
+    console.log('✅ Development database seeding completed.');
     return true;
   } catch (err) {
     try { await client.query('ROLLBACK'); } catch (_) {}
-    console.error('❌ Seeding failed:', err);
+    console.error('❌ Seeding failed:', err.message);
     throw err;
   } finally {
     try { client.release(); } catch (_) {}

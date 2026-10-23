@@ -110,43 +110,26 @@ app.use((err, req, res, next) => {
 });
 
 // ============================================================
-// Start & Auto-Seed
+// Start Server with Schema Verification (No Auto-Seeding)
 // ============================================================
+const { verifySchema } = require('./database/verify_schema');
+
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, '0.0.0.0', async () => {
   console.log(`🚀 GenuAI API v2.0 running on http://127.0.0.1:${PORT} and http://localhost:${PORT}`);
   console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
 
-  // Auto-apply all safe migrations on startup (idempotent IF NOT EXISTS)
-  const migrations = [
-    './database/migrate_v7',
-    './database/migrate_v8',
-    './database/migrate_v9',
-    './database/migrate_v10',
-    './database/migrate_v11',
-    './database/migrate_v12',
-    './database/migrate_v13',
-    './database/migrate_v14',
-    './database/migrate_v15',
-    './database/migrate_v16',
-  ];
-  for (const m of migrations) {
-    try {
-      const { run } = require(m);
-      if (typeof run === 'function') await run();
-    } catch (e) {
-      console.warn(`⚠️ Migration ${m} note:`, e.message);
-    }
-  }
-  console.log('✅ Database schema up to date.');
-
-  // Auto-seed default credentials in production and development
   try {
-    const { seedDev } = require('./database/seed_dev');
-    await seedDev();
-    console.log('✅ Default accounts verified and ready for login.');
-  } catch (seedErr) {
-    console.warn('⚠️ Auto-seed check note:', seedErr.message);
+    await verifySchema();
+    console.log('✅ Deployment schema validated successfully.');
+  } catch (err) {
+    console.error('❌ Schema validation error on startup:', err.message);
+    if (process.env.NODE_ENV === 'production') {
+      console.error('FATAL: Production server refusing to operate with unverified schema. Run npm run migrate:all first.');
+      process.exit(1);
+    } else {
+      console.warn('⚠️ Non-production environment: continuing despite schema warning.');
+    }
   }
 });
 
