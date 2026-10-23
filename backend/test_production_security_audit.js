@@ -71,8 +71,8 @@ async function run() {
   console.log('\n📋 AUDIT 4: Migration Ledger Prevents Duplicate Execution');
   const ledgerRes = await pool.query('SELECT version, filename, applied_at FROM schema_migrations ORDER BY applied_at ASC');
   const ledgerVersions = new Set(ledgerRes.rows.map(r => r.version));
-  assert('4a. schema_migrations table exists with records', ledgerRes.rowCount >= 17);
-  assert('4b. Ledger contains v1 through v17', ledgerVersions.has('v1') && ledgerVersions.has('v16') && ledgerVersions.has('v17'));
+  assert('4a. schema_migrations table exists with records', ledgerRes.rowCount >= 18);
+  assert('4b. Ledger contains v1 through v18', ledgerVersions.has('v1') && ledgerVersions.has('v16') && ledgerVersions.has('v17') && ledgerVersions.has('v18'));
 
   // -------------------------------------------------------------
   // AUDIT 5: Missing Migration File Causes Deployment Failure
