@@ -243,6 +243,7 @@ export default function AuthPage() {
   };
 
   const handleQuickDemo = () => {
+    setIsLogin(true);
     const demo = config.demoCredentials;
     setForm({
       name: demo.name || '',
@@ -330,6 +331,13 @@ export default function AuthPage() {
         });
       }
     } catch (e: any) {
+      if (e.response?.status === 409) {
+        setIsLogin(true);
+        const msg = 'This email is already registered. Switched to Sign In mode — please enter your password.';
+        setError(msg);
+        toast(msg, { icon: 'ℹ️' });
+        return;
+      }
       const msg = e.response?.data?.error || e.message || 'Authentication failed. Please verify credentials.';
       setError(msg);
       toast.error(msg);
