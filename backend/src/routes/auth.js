@@ -1,11 +1,25 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
 const pool = require('../database/pool');
 const { authenticate } = require('../middleware/auth');
+const { loginLimiter, registerLimiter, forgotPasswordLimiter } = require('../middleware/rateLimiter');
+const { sendEmail, emailVerificationTemplate, passwordResetTemplate } = require('../services/email');
+const { OAuth2Client } = require('google-auth-library');
 
 const router = express.Router();
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET === 'genuai-super-secret-jwt-key-change-in-production') {
+  console.error('FATAL: JWT_SECRET is missing or using the insecure default. Set a strong secret in .env');
+}
+
+function signToken(userId) {
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
+}
 
 // ============================================================
 // POST /api/auth/register
@@ -13,6 +27,7 @@ const router = express.Router();
 // ============================================================
 router.post(
   '/register',
+  registerLimiter,
   [
     body('firstName').trim().notEmpty().withMessage('First name is required'),
     body('lastName').trim().notEmpty().withMessage('Last name is required'),
@@ -69,12 +84,16 @@ router.post(
       const isCandidate = requestedRole === 'CANDIDATE' || companyName === 'Candidate Workspace' || !companyName;
       const userRole = isCandidate ? 'CANDIDATE' : 'COMPANY_OWNER';
 
+      // Generate email verification token
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+
       // Create user
       const userResult = await client.query(
-        `INSERT INTO users (email, password_hash, first_name, last_name, role)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO users (email, password_hash, first_name, last_name, role, email_verified, email_verification_token, email_verification_expires)
+         VALUES ($1, $2, $3, $4, $5, FALSE, $6, $7)
          RETURNING id, email, first_name, last_name, role`,
-        [email, passwordHash, firstName, lastName, userRole]
+        [email, passwordHash, firstName, lastName, userRole, verificationToken, verificationExpires]
       );
       const user = userResult.rows[0];
 
@@ -144,12 +163,19 @@ router.post(
 
       await client.query('COMMIT');
 
+      // Send verification email (async, don't block response)
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+      sendEmail({
+        to: email,
+        toName: `${firstName} ${lastName}`,
+        subject: 'Verify your GenuAI Technologies account',
+        html: emailVerificationTemplate(`${firstName}`, verifyUrl),
+        templateName: 'email_verification',
+      }).catch(err => console.warn('Verification email send note:', err.message));
+
       // Issue JWT
-      const token = jwt.sign(
-        { userId: user.id },
-        process.env.JWT_SECRET || 'genuai-super-secret-jwt-key-change-in-production',
-        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-      );
+      const token = signToken(user.id);
 
       return res.status(201).json({
         token,
@@ -178,6 +204,7 @@ router.post(
 // ============================================================
 router.post(
   '/login',
+  loginLimiter,
   [
     body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
     body('password').notEmpty().withMessage('Password is required'),
@@ -192,7 +219,7 @@ router.post(
 
     try {
       const userResult = await pool.query(
-        'SELECT id, email, password_hash, first_name, last_name, role FROM users WHERE email = $1',
+        'SELECT id, email, password_hash, first_name, last_name, role, is_active, email_verified FROM users WHERE email = $1',
         [email]
       );
 
@@ -201,6 +228,12 @@ router.post(
       }
 
       const user = userResult.rows[0];
+
+      // Enforce account active status
+      if (user.is_active === false) {
+        return res.status(403).json({ error: 'Account has been disabled. Please contact support.' });
+      }
+
       const valid = await bcrypt.compare(password, user.password_hash);
       if (!valid) {
         return res.status(401).json({ error: 'Invalid email or password' });
@@ -216,11 +249,7 @@ router.post(
         [user.id]
       );
 
-      const token = jwt.sign(
-        { userId: user.id },
-        process.env.JWT_SECRET || 'genuai-super-secret-jwt-key-change-in-production',
-        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-      );
+      const token = signToken(user.id);
 
       const companyData = memberResult.rowCount > 0 ? {
         id: memberResult.rows[0].company_id,
@@ -279,17 +308,14 @@ router.post(
           firstName: user.first_name,
           lastName: user.last_name,
           role: user.role,
+          emailVerified: user.email_verified,
         },
         company: companyData,
         candidateOnboardingSubmitted,
       });
     } catch (err) {
       console.error('Login error:', err);
-      return res.status(500).json({
-        error: 'Login failed',
-        details: err.message,
-        dbConfigured: !!process.env.DATABASE_URL
-      });
+      return res.status(500).json({ error: 'Login failed. Please try again.' });
     }
   }
 );
@@ -345,6 +371,7 @@ router.get('/me', authenticate, async (req, res) => {
         firstName: req.user.first_name,
         lastName: req.user.last_name,
         role: req.user.role,
+        emailVerified: req.user.email_verified,
       },
       company: memberResult.rowCount > 0 ? {
         id: memberResult.rows[0].company_id,
@@ -361,4 +388,358 @@ router.get('/me', authenticate, async (req, res) => {
   }
 });
 
+// ============================================================
+// POST /api/auth/verify-email
+// Verify user email via token
+// ============================================================
+router.post('/verify-email', async (req, res) => {
+  const { token } = req.body;
+  if (!token) {
+    return res.status(400).json({ error: 'Verification token is required' });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE users
+       SET email_verified = TRUE, email_verification_token = NULL, email_verification_expires = NULL
+       WHERE email_verification_token = $1 AND email_verification_expires > NOW() AND email_verified = FALSE
+       RETURNING id, email, first_name`,
+      [token]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(400).json({ error: 'Invalid or expired verification token' });
+    }
+
+    return res.json({ success: true, message: 'Email verified successfully' });
+  } catch (err) {
+    console.error('Email verification error:', err);
+    return res.status(500).json({ error: 'Verification failed' });
+  }
+});
+
+// ============================================================
+// POST /api/auth/resend-verification
+// Resend email verification token
+// ============================================================
+router.post('/resend-verification', authenticate, async (req, res) => {
+  try {
+    if (req.user.email_verified) {
+      return res.json({ message: 'Email is already verified' });
+    }
+
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await pool.query(
+      `UPDATE users SET email_verification_token = $1, email_verification_expires = $2 WHERE id = $3`,
+      [verificationToken, verificationExpires, req.user.id]
+    );
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+    await sendEmail({
+      to: req.user.email,
+      toName: `${req.user.first_name} ${req.user.last_name}`,
+      subject: 'Verify your GenuAI Technologies account',
+      html: emailVerificationTemplate(req.user.first_name, verifyUrl),
+      templateName: 'email_verification',
+    });
+
+    return res.json({ success: true, message: 'Verification email sent' });
+  } catch (err) {
+    console.error('Resend verification error:', err);
+    return res.status(500).json({ error: 'Failed to resend verification email' });
+  }
+});
+
+// ============================================================
+// POST /api/auth/forgot-password
+// Generate password reset token and send email
+// ============================================================
+router.post(
+  '/forgot-password',
+  forgotPasswordLimiter,
+  [
+    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
+
+    const { email } = req.body;
+
+    try {
+      // Always return success to prevent email enumeration
+      const userResult = await pool.query(
+        'SELECT id, email, first_name, last_name, is_active FROM users WHERE email = $1',
+        [email]
+      );
+
+      if (userResult.rowCount > 0 && userResult.rows[0].is_active !== false) {
+        const user = userResult.rows[0];
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+        await pool.query(
+          `UPDATE users SET password_reset_token = $1, password_reset_expires = $2 WHERE id = $3`,
+          [resetToken, resetExpires, user.id]
+        );
+
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+
+        sendEmail({
+          to: user.email,
+          toName: `${user.first_name} ${user.last_name}`,
+          subject: 'Reset your GenuAI Technologies password',
+          html: passwordResetTemplate(user.first_name, resetUrl),
+          templateName: 'password_reset',
+        }).catch(err => console.warn('Password reset email note:', err.message));
+      }
+
+      // Always return success (prevents email enumeration)
+      return res.json({ success: true, message: 'If an account with that email exists, a password reset link has been sent.' });
+    } catch (err) {
+      console.error('Forgot password error:', err);
+      return res.status(500).json({ error: 'Failed to process password reset request' });
+    }
+  }
+);
+
+// ============================================================
+// POST /api/auth/reset-password
+// Validate reset token and update password
+// ============================================================
+router.post(
+  '/reset-password',
+  [
+    body('token').notEmpty().withMessage('Reset token is required'),
+    body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
+
+    const { token, password } = req.body;
+
+    try {
+      const passwordHash = await bcrypt.hash(password, 12);
+
+      const result = await pool.query(
+        `UPDATE users
+         SET password_hash = $1, password_reset_token = NULL, password_reset_expires = NULL
+         WHERE password_reset_token = $2 AND password_reset_expires > NOW() AND is_active = TRUE
+         RETURNING id, email`,
+        [passwordHash, token]
+      );
+
+      if (result.rowCount === 0) {
+        return res.status(400).json({ error: 'Invalid or expired reset token' });
+      }
+
+      return res.json({ success: true, message: 'Password has been reset successfully. Please log in with your new password.' });
+    } catch (err) {
+      console.error('Reset password error:', err);
+      return res.status(500).json({ error: 'Password reset failed' });
+    }
+  }
+);
+
+// ============================================================
+// POST /api/auth/change-password
+// Authenticated user changes their own password
+// ============================================================
+router.post(
+  '/change-password',
+  authenticate,
+  [
+    body('currentPassword').notEmpty().withMessage('Current password is required'),
+    body('newPassword').isLength({ min: 8 }).withMessage('New password must be at least 8 characters'),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    try {
+      const userResult = await pool.query(
+        'SELECT id, password_hash FROM users WHERE id = $1',
+        [req.user.id]
+      );
+
+      if (userResult.rowCount === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      const valid = await bcrypt.compare(currentPassword, userResult.rows[0].password_hash);
+      if (!valid) {
+        return res.status(401).json({ error: 'Current password is incorrect' });
+      }
+
+      const newHash = await bcrypt.hash(newPassword, 12);
+      await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, req.user.id]);
+
+      return res.json({ success: true, message: 'Password changed successfully' });
+    } catch (err) {
+      console.error('Change password error:', err);
+      return res.status(500).json({ error: 'Password change failed' });
+    }
+  }
+// ============================================================
+// POST /api/auth/google
+// Verify Google ID token, find-or-create user, link account, issue JWT
+// ============================================================
+router.post('/google', loginLimiter, async (req, res) => {
+  const { idToken, requestedRole, companyName } = req.body;
+  if (!idToken) {
+    return res.status(400).json({ error: 'Google ID token is required' });
+  }
+
+  try {
+    let payload;
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      payload = ticket.getPayload();
+    } catch (verifyErr) {
+      console.warn('Google ID token verification failed:', verifyErr.message);
+      return res.status(401).json({ error: 'Invalid Google identity token' });
+    }
+
+    if (!payload || !payload.email) {
+      return res.status(400).json({ error: 'Google token does not contain a verified email' });
+    }
+
+    const { email, sub: googleId, given_name: firstName = 'Google', family_name: lastName = 'User' } = payload;
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Check if user exists by email or provider_id
+    let userResult = await pool.query(
+      'SELECT id, email, first_name, last_name, role, is_active, email_verified, auth_provider, provider_id FROM users WHERE LOWER(email) = $1',
+      [normalizedEmail]
+    );
+
+    let user;
+    let companyData = null;
+
+    if (userResult.rowCount > 0) {
+      user = userResult.rows[0];
+
+      if (user.is_active === false) {
+        return res.status(403).json({ error: 'Account has been disabled. Please contact support.' });
+      }
+
+      // Link Google credentials if not already linked
+      if (user.auth_provider !== 'google' || !user.provider_id) {
+        await pool.query(
+          `UPDATE users SET auth_provider = 'google', provider_id = $1, email_verified = TRUE WHERE id = $2`,
+          [googleId, user.id]
+        );
+      }
+    } else {
+      // New user creation
+      const isCandidate = requestedRole === 'CANDIDATE' || !companyName || companyName === 'Candidate Workspace';
+      const userRole = isCandidate ? 'CANDIDATE' : 'COMPANY_OWNER';
+      const safeRole = ['CANDIDATE', 'COMPANY_OWNER'].includes(userRole) ? userRole : 'CANDIDATE';
+
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const insertUser = await client.query(
+          `INSERT INTO users (email, password_hash, first_name, last_name, role, email_verified, auth_provider, provider_id)
+           VALUES ($1, 'OAUTH_GOOGLE_USER', $2, $3, $4, TRUE, 'google', $5)
+           RETURNING id, email, first_name, last_name, role`,
+          [normalizedEmail, firstName, lastName, safeRole, googleId]
+        );
+        user = insertUser.rows[0];
+
+        if (safeRole === 'COMPANY_OWNER') {
+          const compResult = await client.query(
+            `INSERT INTO companies (name, official_email, verification_status)
+             VALUES ($1, $2, 'PENDING_VERIFICATION')
+             RETURNING id, name, verification_status, created_at`,
+            [companyName || `${firstName}'s Organization`, normalizedEmail]
+          );
+          const comp = compResult.rows[0];
+          await client.query(
+            `INSERT INTO company_members (company_id, user_id, member_role)
+             VALUES ($1, $2, 'COMPANY_OWNER')`,
+            [comp.id, user.id]
+          );
+          companyData = {
+            id: comp.id,
+            name: comp.name,
+            verificationStatus: comp.verification_status,
+            createdAt: comp.created_at,
+          };
+        } else {
+          await client.query(
+            `INSERT INTO candidates (first_name, last_name, email, phone, location)
+             VALUES ($1, $2, $3, '—', 'Global')
+             ON CONFLICT (email) DO NOTHING`,
+            [firstName, lastName, normalizedEmail]
+          );
+        }
+
+        await client.query('COMMIT');
+      } catch (insertErr) {
+        await client.query('ROLLBACK');
+        throw insertErr;
+      } finally {
+        client.release();
+      }
+    }
+
+    if (!companyData) {
+      const memberResult = await pool.query(
+        `SELECT cm.company_id, cm.member_role, c.name as company_name, c.verification_status, c.suspended_at, c.onboarding_submitted
+         FROM company_members cm
+         JOIN companies c ON c.id = cm.company_id
+         WHERE cm.user_id = $1
+         LIMIT 1`,
+        [user.id]
+      );
+      if (memberResult.rowCount > 0) {
+        companyData = {
+          id: memberResult.rows[0].company_id,
+          name: memberResult.rows[0].company_name,
+          verificationStatus: memberResult.rows[0].verification_status,
+          isSuspended: memberResult.rows[0].verification_status === 'SUSPENDED' || !!memberResult.rows[0].suspended_at,
+          onboardingSubmitted: memberResult.rows[0].onboarding_submitted === true,
+        };
+      }
+    }
+
+    const token = signToken(user.id);
+
+    return res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        role: user.role,
+        emailVerified: true,
+      },
+      company: companyData,
+    });
+  } catch (err) {
+    console.error('Google auth error:', err);
+    return res.status(500).json({ error: 'Google authentication failed' });
+  }
+});
+
 module.exports = router;
+

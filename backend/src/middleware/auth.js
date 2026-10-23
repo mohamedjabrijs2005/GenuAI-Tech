@@ -24,7 +24,7 @@ async function authenticate(req, res, next) {
     const token = authHeader.slice(7);
     let payload;
     try {
-      payload = jwt.verify(token, process.env.JWT_SECRET || 'genuai-super-secret-jwt-key-change-in-production');
+      payload = jwt.verify(token, process.env.JWT_SECRET);
     } catch {
       return res.status(401).json({ error: 'Unauthorized: Invalid or expired token' });
     }
@@ -34,7 +34,7 @@ async function authenticate(req, res, next) {
 
     try {
       const userResult = await pool.query(
-        'SELECT id, email, first_name, last_name, role, created_at FROM users WHERE id = $1',
+        'SELECT id, email, first_name, last_name, role, is_active, email_verified, created_at FROM users WHERE id = $1',
         [payload.userId]
       );
       if (userResult.rowCount > 0) {
@@ -56,6 +56,11 @@ async function authenticate(req, res, next) {
 
     if (!user) {
       return res.status(401).json({ error: 'Unauthorized: User not found' });
+    }
+
+    // Enforce account active status
+    if (user.is_active === false) {
+      return res.status(403).json({ error: 'Account has been disabled. Please contact support.' });
     }
 
     req.user = user;

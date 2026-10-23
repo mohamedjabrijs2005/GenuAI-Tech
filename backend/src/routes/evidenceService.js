@@ -47,6 +47,17 @@ async function recomputeTargetCoverage(clientOrPool, targetId) {
 
   const evidenceList = evidenceRes.rows;
 
+  // 3b. Fetch latest completed assessment scores for this target
+  const assessmentScoresRes = await db.query(
+    `SELECT ars.requirement_id, ars.score, ars.max_score
+     FROM assessment_requirement_scores ars
+     JOIN assessment_attempts aa ON aa.id = ars.attempt_id
+     WHERE aa.target_id = $1 AND aa.status IN ('SUBMITTED', 'GRADED')
+     ORDER BY aa.submitted_at DESC`,
+    [targetId]
+  );
+  const assessmentScores = assessmentScoresRes.rows;
+
   let supportedCount = 0;
   let limitedCount = 0;
   let pendingCount = 0;
@@ -54,12 +65,16 @@ async function recomputeTargetCoverage(clientOrPool, targetId) {
 
   const requirementBreakdown = requirements.map((req) => {
     const reqEvidence = evidenceList.filter((e) => e.requirement_id === req.id);
+    const reqAssessments = assessmentScores.filter((a) => a.requirement_id === req.id);
+    const bestAssessment = reqAssessments.length > 0
+      ? Math.max(...reqAssessments.map(a => Number(a.score) / (Number(a.max_score) || 100)))
+      : null;
 
     let status = 'EVIDENCE_GAP';
-    if (reqEvidence.some((e) => e.review_status === 'ACCEPTED')) {
+    if (reqEvidence.some((e) => e.review_status === 'ACCEPTED') || (bestAssessment !== null && bestAssessment >= 0.70)) {
       status = 'SUPPORTED';
       supportedCount++;
-    } else if (reqEvidence.some((e) => e.review_status === 'LIMITED')) {
+    } else if (reqEvidence.some((e) => e.review_status === 'LIMITED') || (bestAssessment !== null && bestAssessment >= 0.40)) {
       status = 'LIMITED';
       limitedCount++;
     } else if (reqEvidence.some((e) => ['SUBMITTED', 'UNDER_REVIEW', 'MORE_INFORMATION_REQUESTED'].includes(e.review_status))) {
@@ -76,6 +91,7 @@ async function recomputeTargetCoverage(clientOrPool, targetId) {
       importance: req.importance || req.requirement_type || 'REQUIRED',
       status,
       evidenceItems: reqEvidence,
+      assessmentScore: bestAssessment !== null ? Math.round(bestAssessment * 100) : null,
     };
   });
 

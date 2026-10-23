@@ -11,6 +11,7 @@ import {
   Layers, Award, Sparkles
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import api from '@/lib/api';
 import toast from 'react-hot-toast';
 
 type UserPersona = 'candidate' | 'company' | 'admin';
@@ -291,8 +292,8 @@ export default function AuthPage() {
       if (persona === 'company' && !form.companyName.trim()) {
         return 'Company or organization name is required.';
       }
-      if (form.password.length < 6) {
-        return 'Password must be at least 6 characters.';
+      if (form.password.length < 8) {
+        return 'Password must be at least 8 characters.';
       }
       if (form.password !== form.confirmPassword) {
         return 'Passwords do not match.';
@@ -337,15 +338,25 @@ export default function AuthPage() {
   };
 
 
-  const handleForgotSubmit = (e: React.FormEvent) => {
+  const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotEmail || !validateEmail(forgotEmail)) {
       toast.error('Please enter a valid email address');
       return;
     }
-    toast.error('Password reset via email is not yet available. Please contact support at admin@genuai.test.');
-    setShowForgotModal(false);
-    setForgotEmail('');
+    try {
+      await api.post('/auth/forgot-password', { email: forgotEmail.trim().toLowerCase() });
+      setForgotSent(true);
+      toast.success('Password reset instructions sent if an account exists.');
+      setTimeout(() => {
+        setShowForgotModal(false);
+        setForgotSent(false);
+        setForgotEmail('');
+      }, 3000);
+    } catch (err: any) {
+      const msg = err.response?.data?.error || 'Failed to submit reset request.';
+      toast.error(msg);
+    }
   };
 
   const passStrength = getPasswordStrength(form.password);

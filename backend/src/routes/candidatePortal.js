@@ -2,6 +2,7 @@ const express = require('express');
 const pool = require('../database/pool');
 const { authenticate } = require('../middleware/auth');
 const { recomputeTargetCoverage } = require('./evidenceService');
+const { sendEmail } = require('../services/email');
 
 const router = express.Router();
 
@@ -639,6 +640,306 @@ router.get('/targets/:id', authenticate, requireCandidate, async (req, res) => {
   } catch (err) {
     console.error('Get target workspace error:', err);
     return res.status(500).json({ error: 'Failed to fetch target workspace' });
+  }
+});
+
+// ============================================================
+// ASSESSMENT ENGINE: TARGET ASSESSMENT WORKSPACE
+// ============================================================
+
+function generateQuestionsForRequirements(requirements) {
+  return requirements.map((req) => {
+    return {
+      id: `q_${req.id}`,
+      requirementId: req.id,
+      requirementName: req.name,
+      importance: req.importance || 'REQUIRED',
+      title: `Capability Evaluation: ${req.name}`,
+      prompt: `In the context of production-grade engineering for this role, explain how you design and implement solutions satisfying "${req.name}". Address resilience, data integrity, and failure recovery.`,
+      mcqQuestion: `Which principle is most critical when verifying and implementing "${req.name}" under high throughput?`,
+      options: [
+        { key: 'A', text: 'Bypassing strict input schemas to optimize raw throughput latency' },
+        { key: 'B', text: 'Decoupled asynchronous processing with idempotent handlers and audit logging' },
+        { key: 'C', text: 'In-memory caching without invalidation triggers or database synchronization' },
+        { key: 'D', text: 'Relying exclusively on client-side state verification without backend enforcement' },
+      ],
+      correctOption: 'B',
+      maxScore: Math.round(100 / Math.max(requirements.length, 1)),
+    };
+  });
+}
+
+// GET /api/candidate-portal/targets/:id/assessment
+router.get('/targets/:id/assessment', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const candRes = await pool.query('SELECT id FROM candidates WHERE email = $1', [req.user.email]);
+    if (candRes.rowCount === 0) return res.status(404).json({ error: 'Candidate profile not found' });
+    const candidateId = candRes.rows[0].id;
+
+    // Fetch target
+    const targetRes = await pool.query(
+      `SELECT t.id, t.status AS target_status, t.targeted_at,
+              cr.id AS vacancy_id, cr.title AS vacancy_title,
+              c.id AS company_id, c.name AS company_name
+       FROM targets t
+       JOIN company_roles cr ON cr.id = t.vacancy_id
+       JOIN companies c ON c.id = t.company_id
+       WHERE t.id = $1 AND t.candidate_id = $2`,
+      [id, candidateId]
+    );
+
+    if (targetRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Target workspace not found or access denied.' });
+    }
+    const target = targetRes.rows[0];
+
+    // Fetch requirements
+    const reqRes = await pool.query(
+      `SELECT id, name, description, requirement_type, importance, weight
+       FROM requirements
+       WHERE role_id = $1
+       ORDER BY created_at ASC`,
+      [target.vacancy_id]
+    );
+    const requirements = reqRes.rows;
+
+    // Fetch active or latest attempt
+    const attemptRes = await pool.query(
+      `SELECT id, status, duration_minutes, started_at, expires_at, submitted_at, score, max_score, answers
+       FROM assessment_attempts
+       WHERE target_id = $1 AND candidate_id = $2
+       ORDER BY created_at DESC LIMIT 1`,
+      [id, candidateId]
+    );
+    const attempt = attemptRes.rowCount > 0 ? attemptRes.rows[0] : null;
+
+    let requirementScores = [];
+    if (attempt && attempt.id) {
+      const scoreRes = await pool.query(
+        `SELECT ars.requirement_id, ars.score, ars.max_score, ars.assessment_notes, r.name as requirement_name
+         FROM assessment_requirement_scores ars
+         JOIN requirements r ON r.id = ars.requirement_id
+         WHERE ars.attempt_id = $1`,
+        [attempt.id]
+      );
+      requirementScores = scoreRes.rows;
+    }
+
+    const rawQuestions = generateQuestionsForRequirements(requirements);
+    const sanitizedQuestions = rawQuestions.map(({ correctOption, ...q }) => q);
+
+    return res.json({
+      target,
+      isConfigured: requirements.length > 0,
+      attempt,
+      requirements,
+      requirementScores,
+      questions: sanitizedQuestions,
+    });
+  } catch (err) {
+    console.error('Get target assessment error:', err);
+    return res.status(500).json({ error: 'Failed to fetch assessment workspace' });
+  }
+});
+
+// POST /api/candidate-portal/targets/:id/assessment/start
+router.post('/targets/:id/assessment/start', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const candRes = await pool.query('SELECT id FROM candidates WHERE email = $1', [req.user.email]);
+    if (candRes.rowCount === 0) return res.status(404).json({ error: 'Candidate profile not found' });
+    const candidateId = candRes.rows[0].id;
+
+    const targetRes = await pool.query(
+      `SELECT t.id, t.vacancy_id, t.company_id, cr.title AS vacancy_title, c.name AS company_name
+       FROM targets t
+       JOIN company_roles cr ON cr.id = t.vacancy_id
+       JOIN companies c ON c.id = t.company_id
+       WHERE t.id = $1 AND t.candidate_id = $2`,
+      [id, candidateId]
+    );
+    if (targetRes.rowCount === 0) return res.status(404).json({ error: 'Target not found' });
+    const target = targetRes.rows[0];
+
+    // Check for existing active in-progress attempt
+    const activeRes = await pool.query(
+      `SELECT id, status, duration_minutes, started_at, expires_at, answers
+       FROM assessment_attempts
+       WHERE target_id = $1 AND candidate_id = $2 AND status = 'IN_PROGRESS' AND expires_at > NOW()
+       LIMIT 1`,
+      [id, candidateId]
+    );
+
+    if (activeRes.rowCount > 0) {
+      return res.json({ attempt: activeRes.rows[0], resumed: true });
+    }
+
+    // Fresh 45-minute attempt
+    const durationMinutes = 45;
+    const insertRes = await pool.query(
+      `INSERT INTO assessment_attempts
+        (target_id, candidate_id, role_id, company_id, status, duration_minutes, started_at, expires_at)
+       VALUES ($1, $2, $3, $4, 'IN_PROGRESS', $5, NOW(), NOW() + ($5 || ' minutes')::interval)
+       RETURNING id, status, duration_minutes, started_at, expires_at, answers`,
+      [id, candidateId, target.vacancy_id, target.company_id, durationMinutes]
+    );
+
+    return res.status(201).json({ attempt: insertRes.rows[0], resumed: false });
+  } catch (err) {
+    console.error('Start assessment error:', err);
+    return res.status(500).json({ error: 'Failed to start assessment session' });
+  }
+});
+
+// POST /api/candidate-portal/targets/:id/assessment/save-draft
+router.post('/targets/:id/assessment/save-draft', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { attemptId, answers } = req.body;
+    if (!attemptId) return res.status(400).json({ error: 'Attempt ID is required' });
+
+    const candRes = await pool.query('SELECT id FROM candidates WHERE email = $1', [req.user.email]);
+    if (candRes.rowCount === 0) return res.status(404).json({ error: 'Candidate profile not found' });
+    const candidateId = candRes.rows[0].id;
+
+    const updateRes = await pool.query(
+      `UPDATE assessment_attempts
+       SET answers = $1, updated_at = NOW()
+       WHERE id = $2 AND target_id = $3 AND candidate_id = $4 AND status = 'IN_PROGRESS'
+       RETURNING id`,
+      [JSON.stringify(answers || {}), attemptId, id, candidateId]
+    );
+
+    if (updateRes.rowCount === 0) {
+      return res.status(400).json({ error: 'Cannot save draft. Session may have expired or ended.' });
+    }
+
+    return res.json({ success: true, savedAt: new Date().toISOString() });
+  } catch (err) {
+    console.error('Save draft error:', err);
+    return res.status(500).json({ error: 'Failed to save draft answers' });
+  }
+});
+
+// POST /api/candidate-portal/targets/:id/assessment/submit
+router.post('/targets/:id/assessment/submit', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { attemptId, answers } = req.body;
+    if (!attemptId) return res.status(400).json({ error: 'Attempt ID is required' });
+
+    const candRes = await pool.query('SELECT id, first_name, last_name, email FROM candidates WHERE email = $1', [req.user.email]);
+    if (candRes.rowCount === 0) return res.status(404).json({ error: 'Candidate profile not found' });
+    const candidate = candRes.rows[0];
+
+    const targetRes = await pool.query(
+      `SELECT t.id, t.vacancy_id, t.company_id, cr.title AS vacancy_title, c.name AS company_name, c.official_email
+       FROM targets t
+       JOIN company_roles cr ON cr.id = t.vacancy_id
+       JOIN companies c ON c.id = t.company_id
+       WHERE t.id = $1 AND t.candidate_id = $2`,
+      [id, candidate.id]
+    );
+    if (targetRes.rowCount === 0) return res.status(404).json({ error: 'Target not found' });
+    const target = targetRes.rows[0];
+
+    const attemptRes = await pool.query(
+      `SELECT id, started_at, expires_at, status
+       FROM assessment_attempts
+       WHERE id = $1 AND target_id = $2 AND candidate_id = $3`,
+      [attemptId, id, candidate.id]
+    );
+    if (attemptRes.rowCount === 0) return res.status(404).json({ error: 'Attempt not found' });
+    const attempt = attemptRes.rows[0];
+
+    if (attempt.status === 'SUBMITTED' || attempt.status === 'GRADED') {
+      return res.status(400).json({ error: 'This assessment attempt has already been submitted.' });
+    }
+
+    const reqRes = await pool.query(
+      `SELECT id, name, importance, weight FROM requirements WHERE role_id = $1 ORDER BY created_at ASC`,
+      [target.vacancy_id]
+    );
+    const requirements = reqRes.rows;
+    const questions = generateQuestionsForRequirements(requirements);
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      let totalEarnedScore = 0;
+      const finalAnswers = answers || {};
+
+      for (const q of questions) {
+        const candidateAnswer = finalAnswers[q.id] || {};
+        const chosenMcq = candidateAnswer.mcq;
+        const textExplanation = candidateAnswer.text || '';
+
+        let qScore = 0;
+        if (chosenMcq && chosenMcq === q.correctOption) {
+          qScore += q.maxScore * 0.6;
+        }
+        if (textExplanation.trim().length >= 30) {
+          qScore += q.maxScore * 0.4;
+        } else if (textExplanation.trim().length >= 10) {
+          qScore += q.maxScore * 0.2;
+        }
+
+        totalEarnedScore += qScore;
+
+        await client.query(
+          `INSERT INTO assessment_requirement_scores
+             (attempt_id, requirement_id, score, max_score, assessment_notes)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            attemptId,
+            q.requirementId,
+            Math.round(qScore * 10) / 10,
+            q.maxScore,
+            `MCQ: ${chosenMcq === q.correctOption ? 'Correct' : 'Incorrect'}, Notes length: ${textExplanation.length}`,
+          ]
+        );
+      }
+
+      const finalScore = Math.min(100, Math.round(totalEarnedScore));
+
+      await client.query(
+        `UPDATE assessment_attempts
+         SET status = 'SUBMITTED', submitted_at = NOW(), score = $1, answers = $2, updated_at = NOW()
+         WHERE id = $3`,
+        [finalScore, JSON.stringify(finalAnswers), attemptId]
+      );
+
+      // Recompute Target Coverage in same transaction
+      await recomputeTargetCoverage(client, id);
+
+      await client.query('COMMIT');
+
+      // Send confirmation email
+      sendEmail({
+        to: candidate.email,
+        toName: `${candidate.first_name} ${candidate.last_name}`,
+        subject: `Assessment Completed: ${target.vacancy_title} (${target.company_name})`,
+        html: `<p>Hi ${candidate.first_name},</p><p>You have successfully submitted your technical assessment for <strong>${target.vacancy_title}</strong> at <strong>${target.company_name}</strong>.</p><p>Score recorded: <strong>${finalScore}/100</strong>. Your requirement coverage ledger has been updated.</p>`,
+        templateName: 'assessment_submitted',
+      }).catch(err => console.warn('Assessment completion email note:', err.message));
+
+      return res.json({
+        success: true,
+        score: finalScore,
+        maxScore: 100,
+        message: 'Assessment submitted and requirement coverage updated.',
+      });
+    } catch (txErr) {
+      await client.query('ROLLBACK');
+      throw txErr;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('Submit assessment error:', err);
+    return res.status(500).json({ error: 'Failed to submit assessment' });
   }
 });
 
