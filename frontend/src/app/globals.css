@@ -1747,11 +1747,7 @@ tbody tr:hover { background: #f1f5f9; }
 
 @media (max-width: 1024px) {
   .auth-fullscreen-left {
-    order: 2;
-    min-height: auto;
-    padding: 36px 20px;
-    border-right: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: none !important;
   }
 }
 
@@ -1968,20 +1964,17 @@ tbody tr:hover { background: #f1f5f9; }
     min-height: 100vh;
   }
   .auth-fullscreen-right {
-    order: 1;
-    min-height: auto !important;
+    flex: 1;
+    min-height: 100vh !important;
     padding: 32px 16px 28px !important;
     width: 100% !important;
     background: #f8fafc;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
   .auth-fullscreen-left {
-    order: 2;
-    min-height: auto !important;
-    padding: 36px 20px 48px !important;
-    border-right: none !important;
-    border-top: 1px solid rgba(212, 175, 55, 0.25) !important;
-    display: flex !important;
-    width: 100% !important;
+    display: none !important;
   }
 }
 
@@ -2504,21 +2497,8 @@ a.btn,
    AUTH FULLSCREEN MOBILE OPTIMIZATIONS
    ============================================================ */
 @media (max-width: 1024px) {
-  .auth-hero-top-nav {
+  .auth-fullscreen-left {
     display: none !important;
-  }
-  .auth-hero-headline {
-    font-size: 22px !important;
-    line-height: 1.28 !important;
-  }
-  .auth-hero-subtext {
-    font-size: 13px !important;
-    line-height: 1.5 !important;
-    margin-bottom: 20px !important;
-  }
-  .auth-ledger-card {
-    padding: 16px 14px !important;
-    border-radius: 14px !important;
   }
 }
 
@@ -2530,14 +2510,11 @@ a.btn,
   .auth-fullscreen-right {
     padding: 24px 14px 20px !important;
   }
-  .auth-fullscreen-left {
-    padding: 28px 16px 40px !important;
-  }
 }
 
 @media (max-width: 480px) {
   .auth-fullscreen-form-card {
-    padding: 22px 14px !important;
+    padding: 24px 16px !important;
     border-radius: 16px !important;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
   }
@@ -2556,16 +2533,6 @@ a.btn,
   }
   .auth-form-subtitle {
     font-size: 12px !important;
-  }
-  .auth-ledger-card {
-    padding: 12px 10px !important;
-  }
-  .auth-features-list {
-    display: flex !important;
-    gap: 12px !important;
-  }
-  .auth-feature-item {
-    padding: 8px !important;
   }
 }
 
