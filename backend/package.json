@@ -6,8 +6,10 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "migrate": "node src/database/migrate.js",
-    "migrate:v2": "node src/database/migrate_v2.js"
+    "migrate": "node src/database/migrate_all.js",
+    "migrate:all": "node src/database/migrate_all.js",
+    "migrate:v2": "node src/database/migrate_v2.js",
+    "seed": "node src/database/seed_dev.js"
   },
   "keywords": [],
   "author": "GenuAI Technologies",
