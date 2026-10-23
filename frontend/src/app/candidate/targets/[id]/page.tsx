@@ -21,6 +21,9 @@ import {
   AlertCircle,
   ArrowLeft,
   Info,
+  Check,
+  Play,
+  RotateCcw,
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -32,6 +35,7 @@ export default function TargetWorkspacePage() {
   const [target, setTarget] = useState<any>(null);
   const [requirements, setRequirements] = useState<any[]>([]);
   const [coverage, setCoverage] = useState<any>(null);
+  const [progress, setProgress] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -46,6 +50,7 @@ export default function TargetWorkspacePage() {
         setTarget(res.data?.target);
         setRequirements(res.data?.requirements || []);
         setCoverage(res.data?.coverage);
+        setProgress(res.data?.progress);
       })
       .catch((err) => {
         console.error('Failed to load target workspace:', err);
@@ -90,12 +95,12 @@ export default function TargetWorkspacePage() {
   const totalReqs = requirements.length;
 
   const JOURNEY_STEPS = [
-    { label: 'Profile', desc: 'Global background', status: 'COMPLETED' },
-    { label: 'Learn', desc: 'Preparation syllabus', status: 'ACTIVE' },
-    { label: 'Practice', desc: 'Self-check sandbox', status: 'PENDING' },
-    { label: 'Assessment', desc: 'Official evaluation', status: 'CONFIGURED' },
-    { label: 'Evidence', desc: 'Requirement lockers', status: pendingCount > 0 || supportedCount > 0 ? 'ACTIVE' : 'PENDING' },
-    { label: 'Review', desc: 'Recruiter human review', status: target.status === 'UNDER_REVIEW' || target.status === 'INTERVIEW' ? 'ACTIVE' : 'PENDING' },
+    { label: 'Requirements', desc: `${totalReqs} Target competencies`, status: 'COMPLETED' },
+    { label: 'Learn', desc: progress?.learning?.summary || 'Curriculum', status: progress?.learning?.status === 'COMPLETED' ? 'COMPLETED' : progress?.learning?.status === 'IN_PROGRESS' ? 'ACTIVE' : 'PENDING' },
+    { label: 'Practice', desc: progress?.practice?.summary || 'Sandbox', status: progress?.practice?.status === 'COMPLETED' ? 'COMPLETED' : progress?.practice?.status === 'IN_PROGRESS' ? 'ACTIVE' : 'PENDING' },
+    { label: 'Prove', desc: progress?.assessment?.summary || 'Official Test', status: progress?.assessment?.status === 'FULLY_GRADED' ? 'COMPLETED' : progress?.assessment?.status === 'SUBMITTED' || progress?.assessment?.status === 'IN_PROGRESS' ? 'ACTIVE' : 'CONFIGURED' },
+    { label: 'Evidence', desc: progress?.evidence?.summary || 'Evidence Locker', status: (progress?.evidence?.totalSubmitted || 0) > 0 ? 'ACTIVE' : 'PENDING' },
+    { label: 'Review', desc: 'Recruiter human review', status: target.status === 'UNDER_REVIEW' || target.status === 'INTERVIEW' ? 'ACTIVE' : target.status === 'DECIDED' ? 'COMPLETED' : 'PENDING' },
   ];
 
   return (
@@ -164,7 +169,9 @@ export default function TargetWorkspacePage() {
               )}
             </div>
 
-            <h1 style={{ fontSize: 26, fontWeight: 800, margin: '4px 0 10px', color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>{target.vacancy_title}</h1>
+            <h1 style={{ fontSize: 26, fontWeight: 800, margin: '4px 0 10px', color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>
+              {target.vacancy_title}
+            </h1>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, fontSize: 12.5, color: 'var(--text-secondary)' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -182,11 +189,11 @@ export default function TargetWorkspacePage() {
             </div>
           </div>
 
-          {/* Quick Stats Pill */}
+          {/* Quick Coverage Pill */}
           <div
             style={{
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
+              background: '#f8fafc',
+              border: '1px solid var(--border)',
               borderRadius: 12,
               padding: '16px 20px',
               minWidth: 220,
@@ -195,12 +202,191 @@ export default function TargetWorkspacePage() {
             <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 4 }}>
               Requirement Coverage
             </div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#fef08a', marginBottom: 4 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#16a34a', marginBottom: 4 }}>
               {supportedCount} of {totalReqs} Supported
             </div>
-            <div style={{ fontSize: 11.5, color: '#cbd5e1' }}>
+            <div style={{ fontSize: 11.5, color: '#64748b' }}>
               {pendingCount} Pending Review · {gapCount} Evidence Gaps
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Target Preparation Gating Policy Banner */}
+      <div
+        style={{
+          padding: '14px 18px',
+          background: '#f8fafc',
+          borderRadius: 10,
+          border: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 12,
+          fontSize: 12.5,
+          color: '#475569',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Info size={16} style={{ color: '#2563eb', flexShrink: 0 }} />
+          <span>
+            <strong>Target Flow Policy:</strong> Learn (Optional Preparation) → Practice (Recommended Private Self-Check) → Prove (Official Assessment) → Supporting Evidence → Recruiter Review.
+          </span>
+        </div>
+        <span style={{ fontSize: 11.5, color: '#64748b' }}>
+          Experienced candidates may take Prove directly without mandatory learning clicks.
+        </span>
+      </div>
+
+      {/* DISTINCT TARGET PROGRESS INDICATORS (SECTION 7 REQUIREMENT) */}
+      <div>
+        <h2 style={{ fontSize: 14, fontWeight: 800, margin: '0 0 14px', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          Target Module Progress (Independent Measurements)
+        </h2>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: 12,
+          }}
+        >
+          {/* 1. Learning Progress */}
+          <div className="card" style={{ padding: '14px 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#d97706', textTransform: 'uppercase' }}>Learn</span>
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  background: progress?.learning?.status === 'COMPLETED' ? '#dcfce7' : '#fef3c7',
+                  color: progress?.learning?.status === 'COMPLETED' ? '#166534' : '#b45309',
+                }}
+              >
+                {progress?.learning?.status || 'NOT_STARTED'}
+              </span>
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', marginBottom: 2 }}>
+              {progress?.learning?.summary || '0 of 0 completed'}
+            </div>
+            <div style={{ fontSize: 11, color: '#64748b' }}>Target syllabus</div>
+          </div>
+
+          {/* 2. Practice Progress */}
+          <div className="card" style={{ padding: '14px 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#16a34a', textTransform: 'uppercase' }}>Practice</span>
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  background: progress?.practice?.status === 'COMPLETED' ? '#dcfce7' : '#f1f5f9',
+                  color: progress?.practice?.status === 'COMPLETED' ? '#166534' : '#475569',
+                }}
+              >
+                {progress?.practice?.status || 'NOT_STARTED'}
+              </span>
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', marginBottom: 2 }}>
+              {progress?.practice?.summary || '0 completed'}
+            </div>
+            <div style={{ fontSize: 11, color: '#64748b' }}>Private sandbox</div>
+          </div>
+
+          {/* 3. Official Assessment */}
+          <div className="card" style={{ padding: '14px 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase' }}>Prove / Test</span>
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  background: progress?.assessment?.status === 'FULLY_GRADED' ? '#dcfce7' : progress?.assessment?.status === 'SUBMITTED' ? '#eff6ff' : '#f1f5f9',
+                  color: progress?.assessment?.status === 'FULLY_GRADED' ? '#166534' : progress?.assessment?.status === 'SUBMITTED' ? '#1e40af' : '#475569',
+                }}
+              >
+                {progress?.assessment?.status || 'AVAILABLE'}
+              </span>
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', marginBottom: 2 }}>
+              {progress?.assessment?.summary || 'Available'}
+            </div>
+            <div style={{ fontSize: 11, color: '#64748b' }}>Official session</div>
+          </div>
+
+          {/* 4. Evidence */}
+          <div className="card" style={{ padding: '14px 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#ea580c', textTransform: 'uppercase' }}>Evidence</span>
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  background: (progress?.evidence?.approved || 0) > 0 ? '#dcfce7' : '#f1f5f9',
+                  color: (progress?.evidence?.approved || 0) > 0 ? '#166534' : '#475569',
+                }}
+              >
+                {(progress?.evidence?.totalSubmitted || 0) > 0 ? 'SUBMITTED' : 'NOT_STARTED'}
+              </span>
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', marginBottom: 2 }}>
+              {progress?.evidence?.summary || '0 items submitted'}
+            </div>
+            <div style={{ fontSize: 11, color: '#64748b' }}>Work samples</div>
+          </div>
+
+          {/* 5. Requirement Coverage */}
+          <div className="card" style={{ padding: '14px 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#0284c7', textTransform: 'uppercase' }}>Coverage</span>
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  background: '#f1f5f9',
+                  color: '#475569',
+                }}
+              >
+                STATUS
+              </span>
+            </div>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1e293b', marginBottom: 2 }}>
+              {progress?.coverage?.summary || `${supportedCount} Supported`}
+            </div>
+            <div style={{ fontSize: 11, color: '#64748b' }}>Requirements supported</div>
+          </div>
+
+          {/* 6. Recruitment */}
+          <div className="card" style={{ padding: '14px 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Recruitment</span>
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  background: '#f1f5f9',
+                  color: '#475569',
+                }}
+              >
+                STAGE
+              </span>
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', marginBottom: 2 }}>
+              {progress?.recruitment?.label || 'Active Preparation'}
+            </div>
+            <div style={{ fontSize: 11, color: '#64748b' }}>Human review</div>
           </div>
         </div>
       </div>
@@ -208,7 +394,7 @@ export default function TargetWorkspacePage() {
       {/* Target Journey Stepper */}
       <div className="card" style={{ padding: '20px 24px' }}>
         <h2 style={{ fontSize: 14, fontWeight: 800, margin: '0 0 16px', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          Candidate Target Journey
+          Preparation & Evaluation Stepper
         </h2>
         <div
           style={{
@@ -280,7 +466,7 @@ export default function TargetWorkspacePage() {
             Curated preparation resources aligned strictly to this vacancy's competencies.
           </p>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span>Open Learning Modules</span>
+            <span>Open Learning Curriculum</span>
             <ArrowRight size={13} />
           </div>
         </Link>
@@ -303,7 +489,7 @@ export default function TargetWorkspacePage() {
             Self-check coding exercises and scenario checks. Results remain private to you.
           </p>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span>Start Practice</span>
+            <span>Start Practice Sandbox</span>
             <ArrowRight size={13} />
           </div>
         </Link>
@@ -319,14 +505,14 @@ export default function TargetWorkspacePage() {
               <BadgeCheck size={18} />
             </div>
             <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-              Official Assessment
+              Prove: Official Assessment
             </h3>
           </div>
           <p style={{ fontSize: 12.5, color: '#64748b', margin: '0 0 12px', lineHeight: 1.5 }}>
-            Company-configured evaluation sessions with transparent monitoring and human oversight.
+            Company-configured evaluation sessions with server timers and rubric evaluation.
           </p>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span>Assessment Details</span>
+            <span>Assessment Workspace</span>
             <ArrowRight size={13} />
           </div>
         </Link>
@@ -376,29 +562,6 @@ export default function TargetWorkspacePage() {
             <ArrowRight size={13} />
           </div>
         </Link>
-
-        {/* Module 7: Interview Workspace */}
-        <Link
-          href={`/candidate/targets/${targetId}/interview`}
-          style={{ textDecoration: 'none', color: 'inherit' }}
-          className="card dashboard-card"
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-            <div style={{ padding: 8, borderRadius: 8, background: 'rgba(37, 99, 235, 0.1)', color: '#2563eb' }}>
-              <Calendar size={18} />
-            </div>
-            <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-              Interview Workspace
-            </h3>
-          </div>
-          <p style={{ fontSize: 12.5, color: '#64748b', margin: '0 0 12px', lineHeight: 1.5 }}>
-            Interview details, meeting links, instructions, and accommodation requests.
-          </p>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span>Interview Schedule</span>
-            <ArrowRight size={13} />
-          </div>
-        </Link>
       </div>
 
       {/* Recruiter vs Candidate Control Boundaries */}
@@ -413,7 +576,7 @@ export default function TargetWorkspacePage() {
           lineHeight: 1.5,
         }}
       >
-        <strong>Privacy & Role Boundary Guarantee:</strong> Hiring recruiters at <strong>{target.company_name}</strong> can see only the evidence and details connected to this Target. They have no visibility into your other company targets, practice results, or unlinked profiles.
+        <strong>Privacy & Role Boundary Guarantee:</strong> Hiring recruiters at <strong>{target.company_name}</strong> can see only the official assessment results and evidence submitted for this Target. They have no visibility into your private practice attempts, unsubmitted tests, or other target workspaces.
       </div>
     </div>
   );

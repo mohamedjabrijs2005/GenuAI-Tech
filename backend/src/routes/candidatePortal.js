@@ -626,20 +626,631 @@ router.get('/targets/:id', authenticate, requireCandidate, async (req, res) => {
     // Fetch coverage snapshot
     const coverage = await recomputeTargetCoverage(pool, id);
 
+    // Compute separate module progress states
+    const reqNames = reqRes.rows.map(r => r.name);
+
+    // 1. Learning progress
+    let totalLearnCount = 0;
+    let completedLearnCount = 0;
+    if (reqNames.length > 0) {
+      const totalLearnRes = await pool.query(
+        `SELECT COUNT(*) FROM learning_resources WHERE requirement_name = ANY($1)`,
+        [reqNames]
+      );
+      totalLearnCount = parseInt(totalLearnRes.rows[0].count, 10);
+
+      const compLearnRes = await pool.query(
+        `SELECT COUNT(*) FROM target_learning_progress tlp
+         JOIN learning_resources lr ON lr.id = tlp.resource_id
+         WHERE tlp.target_id = $1 AND tlp.candidate_id = $2 AND tlp.status = 'COMPLETED' AND lr.requirement_name = ANY($3)`,
+        [id, candidateId, reqNames]
+      );
+      completedLearnCount = parseInt(compLearnRes.rows[0].count, 10);
+    }
+    const learningStatus = totalLearnCount === 0
+      ? 'NOT_STARTED'
+      : (completedLearnCount === totalLearnCount ? 'COMPLETED' : (completedLearnCount > 0 ? 'IN_PROGRESS' : 'NOT_STARTED'));
+
+    // 2. Practice progress
+    const practiceAttemptsRes = await pool.query(
+      `SELECT COUNT(DISTINCT requirement_name) as completed_sets, COUNT(*) as total_attempts
+       FROM practice_attempts
+       WHERE target_id = $1 AND candidate_id = $2 AND status = 'COMPLETED'`,
+      [id, candidateId]
+    );
+    const completedPracticeSets = parseInt(practiceAttemptsRes.rows[0]?.completed_sets || 0, 10);
+    const totalPracticeAttempts = parseInt(practiceAttemptsRes.rows[0]?.total_attempts || 0, 10);
+    const practiceStatus = completedPracticeSets === 0
+      ? 'NOT_STARTED'
+      : (completedPracticeSets >= reqNames.length ? 'COMPLETED' : 'IN_PROGRESS');
+
+    // 3. Official assessment status
+    const attemptRes = await pool.query(
+      `SELECT id, status, score, objective_score, scenario_score, grading_status, submitted_at, expires_at
+       FROM assessment_attempts
+       WHERE target_id = $1 AND candidate_id = $2
+       ORDER BY created_at DESC LIMIT 1`,
+      [id, candidateId]
+    );
+    let assessmentState = 'AVAILABLE';
+    let latestAttempt = null;
+    if (attemptRes.rowCount > 0) {
+      latestAttempt = attemptRes.rows[0];
+      if (latestAttempt.status === 'SUBMITTED') {
+        assessmentState = latestAttempt.grading_status === 'FULLY_GRADED' ? 'FULLY_GRADED' : (latestAttempt.grading_status === 'PARTIALLY_GRADED' ? 'PARTIALLY_GRADED' : 'SUBMITTED');
+      } else if (latestAttempt.status === 'IN_PROGRESS') {
+        assessmentState = 'IN_PROGRESS';
+      }
+    }
+
+    // 4. Evidence submissions
+    const evidenceRes = await pool.query(
+      `SELECT COUNT(*) as total_evidence,
+              COUNT(*) FILTER (WHERE review_status = 'APPROVED') as approved_evidence,
+              COUNT(*) FILTER (WHERE review_status = 'PENDING_REVIEW') as pending_evidence
+       FROM evidence
+       WHERE target_id = $1 AND candidate_id = $2`,
+      [id, candidateId]
+    );
+    const evidenceCount = parseInt(evidenceRes.rows[0]?.total_evidence || 0, 10);
+    const approvedEvidence = parseInt(evidenceRes.rows[0]?.approved_evidence || 0, 10);
+    const pendingEvidence = parseInt(evidenceRes.rows[0]?.pending_evidence || 0, 10);
+
     return res.json({
       target,
       requirements: reqRes.rows,
       coverage,
       modulesStatus: {
-        learn: 'PLANNED',
-        practice: 'PLANNED',
-        prove: 'PLANNED',
+        learn: 'LIVE',
+        practice: 'LIVE',
+        prove: 'LIVE',
         evidence: 'LIVE',
+      },
+      progress: {
+        learning: {
+          totalResources: totalLearnCount,
+          completedResources: completedLearnCount,
+          status: learningStatus,
+          summary: `${completedLearnCount} of ${totalLearnCount} resources completed`,
+        },
+        practice: {
+          completedSets: completedPracticeSets,
+          totalAttempts: totalPracticeAttempts,
+          status: practiceStatus,
+          summary: `${completedPracticeSets} practice sets completed`,
+        },
+        assessment: {
+          status: assessmentState,
+          attemptId: latestAttempt?.id || null,
+          score: latestAttempt?.score || null,
+          objectiveScore: latestAttempt?.objective_score || null,
+          scenarioScore: latestAttempt?.scenario_score || null,
+          gradingStatus: latestAttempt?.grading_status || null,
+          submittedAt: latestAttempt?.submitted_at || null,
+          summary: latestAttempt?.status === 'SUBMITTED' ? `Submitted — ${latestAttempt.grading_status || 'PENDING_REVIEW'}` : 'Available for target',
+        },
+        evidence: {
+          totalSubmitted: evidenceCount,
+          approved: approvedEvidence,
+          pending: pendingEvidence,
+          summary: `${evidenceCount} items submitted`,
+        },
+        coverage: {
+          supportedCount: coverage?.supportedCount || 0,
+          limitedCount: coverage?.limitedCount || 0,
+          pendingCount: coverage?.pendingCount || 0,
+          gapCount: coverage?.gapCount || 0,
+          summary: `${coverage?.supportedCount || 0} Supported · ${coverage?.limitedCount || 0} Limited · ${coverage?.pendingCount || 0} Pending`,
+        },
+        recruitment: {
+          status: target.status,
+          label: target.status === 'DECIDED' ? 'Decided' : (target.status === 'UNDER_REVIEW' || target.status === 'INTERVIEW' ? 'Under Recruiter Review' : 'Active Preparation'),
+        },
       },
     });
   } catch (err) {
     console.error('Get target workspace error:', err);
     return res.status(500).json({ error: 'Failed to fetch target workspace' });
+  }
+});
+
+// ============================================================
+// LEARN ENGINE: TARGET-LINKED PREPARATION CURRICULUM
+// ============================================================
+router.get('/targets/:id/learn', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const candidateId = req.candidateId;
+    const { id } = req.params;
+
+    // Validate ownership
+    const targetRes = await pool.query(
+      `SELECT t.id, t.company_id, t.vacancy_id, cr.title AS vacancy_title, c.name AS company_name
+       FROM targets t
+       JOIN company_roles cr ON cr.id = t.vacancy_id
+       JOIN companies c ON c.id = t.company_id
+       WHERE t.id = $1 AND t.candidate_id = $2`,
+      [id, candidateId]
+    );
+
+    if (targetRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Target workspace not found or access denied.' });
+    }
+
+    const target = targetRes.rows[0];
+
+    // Fetch requirements for target
+    const reqRes = await pool.query(
+      `SELECT id, name, description, requirement_type, importance, weight
+       FROM requirements
+       WHERE role_id = $1
+       ORDER BY created_at ASC`,
+      [target.vacancy_id]
+    );
+
+    const requirements = reqRes.rows;
+    const reqNames = requirements.map(r => r.name);
+
+    // Fetch learning resources matching these requirements
+    const resourcesRes = reqNames.length > 0 ? await pool.query(
+      `SELECT id, requirement_name, title, description, source, resource_type, language, estimated_duration_mins, url
+       FROM learning_resources
+       WHERE requirement_name = ANY($1)
+       ORDER BY title ASC`,
+      [reqNames]
+    ) : { rows: [] };
+
+    // Fetch candidate's saved progress for this target
+    const progressRes = await pool.query(
+      `SELECT resource_id, status, is_bookmarked, last_accessed_at, completed_at
+       FROM target_learning_progress
+       WHERE target_id = $1 AND candidate_id = $2`,
+      [id, candidateId]
+    );
+
+    const progressMap = new Map();
+    for (const p of progressRes.rows) {
+      progressMap.set(p.resource_id, p);
+    }
+
+    let totalResources = 0;
+    let completedResources = 0;
+
+    const requirementsWithResources = requirements.map(reqItem => {
+      const matchedResources = resourcesRes.rows
+        .filter(r => r.requirement_name.toLowerCase() === reqItem.name.toLowerCase())
+        .map(r => {
+          totalResources++;
+          const p = progressMap.get(r.id);
+          const isCompleted = p?.status === 'COMPLETED';
+          if (isCompleted) completedResources++;
+
+          return {
+            id: r.id,
+            requirementName: r.requirement_name,
+            title: r.title,
+            description: r.description,
+            source: r.source,
+            resourceType: r.resource_type,
+            language: r.language,
+            estimatedDurationMins: r.estimated_duration_mins,
+            url: r.url,
+            status: p?.status || 'NOT_STARTED',
+            isBookmarked: Boolean(p?.is_bookmarked),
+            lastAccessedAt: p?.last_accessed_at || null,
+            completedAt: p?.completed_at || null,
+          };
+        });
+
+      return {
+        id: reqItem.id,
+        name: reqItem.name,
+        description: reqItem.description,
+        importance: reqItem.importance,
+        weight: reqItem.weight,
+        resources: matchedResources,
+      };
+    });
+
+    const learningStatus = totalResources === 0
+      ? 'NOT_STARTED'
+      : (completedResources === totalResources ? 'COMPLETED' : (completedResources > 0 ? 'IN_PROGRESS' : 'NOT_STARTED'));
+
+    return res.json({
+      target,
+      requirements: requirementsWithResources,
+      summary: {
+        totalResources,
+        completedResources,
+        learningStatus,
+        summaryLabel: `${completedResources} of ${totalResources} resources completed`,
+      },
+    });
+  } catch (err) {
+    console.error('Get target learn error:', err);
+    return res.status(500).json({ error: 'Failed to fetch learning curriculum' });
+  }
+});
+
+// POST /api/candidate-portal/targets/:id/learn/progress
+router.post('/targets/:id/learn/progress', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const candidateId = req.candidateId;
+    const { id } = req.params;
+    const { resourceId, action } = req.body;
+
+    if (!resourceId) {
+      return res.status(400).json({ error: 'resourceId is required' });
+    }
+
+    // Validate ownership
+    const targetRes = await pool.query(
+      `SELECT id FROM targets WHERE id = $1 AND candidate_id = $2`,
+      [id, candidateId]
+    );
+
+    if (targetRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Target workspace not found or access denied.' });
+    }
+
+    // Check resource exists
+    const resourceRes = await pool.query(
+      `SELECT id, requirement_name FROM learning_resources WHERE id = $1`,
+      [resourceId]
+    );
+
+    if (resourceRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Learning resource not found' });
+    }
+
+    let query = '';
+    let params = [];
+
+    if (action === 'COMPLETE') {
+      query = `
+        INSERT INTO target_learning_progress (target_id, candidate_id, resource_id, status, last_accessed_at, completed_at)
+        VALUES ($1, $2, $3, 'COMPLETED', NOW(), NOW())
+        ON CONFLICT (target_id, resource_id)
+        DO UPDATE SET status = 'COMPLETED', completed_at = NOW(), last_accessed_at = NOW()
+        RETURNING *`;
+      params = [id, candidateId, resourceId];
+    } else if (action === 'START') {
+      query = `
+        INSERT INTO target_learning_progress (target_id, candidate_id, resource_id, status, last_accessed_at)
+        VALUES ($1, $2, $3, 'IN_PROGRESS', NOW())
+        ON CONFLICT (target_id, resource_id)
+        DO UPDATE SET status = CASE WHEN target_learning_progress.status = 'COMPLETED' THEN 'COMPLETED' ELSE 'IN_PROGRESS' END, last_accessed_at = NOW()
+        RETURNING *`;
+      params = [id, candidateId, resourceId];
+    } else if (action === 'RESET') {
+      query = `
+        INSERT INTO target_learning_progress (target_id, candidate_id, resource_id, status, last_accessed_at, completed_at)
+        VALUES ($1, $2, $3, 'NOT_STARTED', NOW(), NULL)
+        ON CONFLICT (target_id, resource_id)
+        DO UPDATE SET status = 'NOT_STARTED', completed_at = NULL, last_accessed_at = NOW()
+        RETURNING *`;
+      params = [id, candidateId, resourceId];
+    } else if (action === 'BOOKMARK') {
+      query = `
+        INSERT INTO target_learning_progress (target_id, candidate_id, resource_id, is_bookmarked, last_accessed_at)
+        VALUES ($1, $2, $3, TRUE, NOW())
+        ON CONFLICT (target_id, resource_id)
+        DO UPDATE SET is_bookmarked = NOT target_learning_progress.is_bookmarked, last_accessed_at = NOW()
+        RETURNING *`;
+      params = [id, candidateId, resourceId];
+    } else {
+      return res.status(400).json({ error: 'Invalid action. Supported: START, COMPLETE, RESET, BOOKMARK' });
+    }
+
+    const updated = await pool.query(query, params);
+
+    return res.json({
+      success: true,
+      progress: updated.rows[0],
+    });
+  } catch (err) {
+    console.error('Update learning progress error:', err);
+    return res.status(500).json({ error: 'Failed to update learning progress' });
+  }
+});
+
+// ============================================================
+// PRACTICE ENGINE: REQUIREMENT-LINKED SANDBOX (PRIVATE ATTEMPTS)
+// ============================================================
+router.get('/targets/:id/practice', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const candidateId = req.candidateId;
+    const { id } = req.params;
+
+    // Validate ownership
+    const targetRes = await pool.query(
+      `SELECT t.id, t.company_id, t.vacancy_id, cr.title AS vacancy_title, c.name AS company_name
+       FROM targets t
+       JOIN company_roles cr ON cr.id = t.vacancy_id
+       JOIN companies c ON c.id = t.company_id
+       WHERE t.id = $1 AND t.candidate_id = $2`,
+      [id, candidateId]
+    );
+
+    if (targetRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Target workspace not found or access denied.' });
+    }
+
+    const target = targetRes.rows[0];
+
+    // Fetch requirements for target
+    const reqRes = await pool.query(
+      `SELECT id, name, description, requirement_type, importance, weight
+       FROM requirements
+       WHERE role_id = $1
+       ORDER BY created_at ASC`,
+      [target.vacancy_id]
+    );
+
+    const requirements = reqRes.rows;
+    const reqNames = requirements.map(r => r.name);
+
+    // Fetch question counts per requirement
+    const qCountRes = reqNames.length > 0 ? await pool.query(
+      `SELECT requirement_name, COUNT(*) as question_count
+       FROM practice_questions
+       WHERE requirement_name = ANY($1)
+       GROUP BY requirement_name`,
+      [reqNames]
+    ) : { rows: [] };
+
+    const qCountMap = new Map();
+    for (const r of qCountRes.rows) {
+      qCountMap.set(r.requirement_name.toLowerCase(), parseInt(r.question_count, 10));
+    }
+
+    // Fetch candidate's past practice attempts for this target
+    const attemptsRes = await pool.query(
+      `SELECT id, requirement_name, status, score, max_score, topics_to_revisit, started_at, submitted_at
+       FROM practice_attempts
+       WHERE target_id = $1 AND candidate_id = $2
+       ORDER BY created_at DESC`,
+      [id, candidateId]
+    );
+
+    const attempts = attemptsRes.rows;
+    const completedSetNames = new Set(
+      attempts.filter(a => a.status === 'COMPLETED').map(a => a.requirement_name.toLowerCase())
+    );
+
+    const requirementSets = requirements.map(r => {
+      const qCount = qCountMap.get(r.name.toLowerCase()) || 0;
+      const reqAttempts = attempts.filter(a => a.requirement_name.toLowerCase() === r.name.toLowerCase());
+      const bestScore = reqAttempts.reduce((max, a) => Math.max(max, Number(a.score) || 0), 0);
+      const isCompleted = completedSetNames.has(r.name.toLowerCase());
+
+      return {
+        requirementId: r.id,
+        requirementName: r.name,
+        importance: r.importance,
+        availableQuestions: qCount,
+        attemptsCount: reqAttempts.length,
+        isCompleted,
+        bestScore,
+        lastAttempt: reqAttempts[0] || null,
+      };
+    });
+
+    return res.json({
+      target,
+      requirementSets,
+      attemptsHistory: attempts,
+      summary: {
+        totalRequirements: requirements.length,
+        completedSets: completedSetNames.size,
+        totalAttempts: attempts.length,
+        practiceStatus: completedSetNames.size === 0 ? 'NOT_STARTED' : (completedSetNames.size >= requirements.length ? 'COMPLETED' : 'IN_PROGRESS'),
+        summaryLabel: `${completedSetNames.size} of ${requirements.length} practice sets completed`,
+      },
+    });
+  } catch (err) {
+    console.error('Get target practice error:', err);
+    return res.status(500).json({ error: 'Failed to fetch practice sets' });
+  }
+});
+
+// POST /api/candidate-portal/targets/:id/practice/start
+router.post('/targets/:id/practice/start', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const candidateId = req.candidateId;
+    const { id } = req.params;
+    const { requirementName } = req.body;
+
+    if (!requirementName) {
+      return res.status(400).json({ error: 'requirementName is required' });
+    }
+
+    // Validate ownership
+    const targetRes = await pool.query(
+      `SELECT id FROM targets WHERE id = $1 AND candidate_id = $2`,
+      [id, candidateId]
+    );
+
+    if (targetRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Target workspace not found or access denied.' });
+    }
+
+    // Fetch practice questions for this requirement
+    // NEVER return correct_option or explanation here (prevent cheating before submission)
+    const questionsRes = await pool.query(
+      `SELECT id, requirement_name, title, prompt, question_type, options, topic_area, difficulty
+       FROM practice_questions
+       WHERE LOWER(requirement_name) = LOWER($1)
+       ORDER BY created_at ASC`,
+      [requirementName]
+    );
+
+    if (questionsRes.rowCount === 0) {
+      return res.status(404).json({ error: `No practice questions available for ${requirementName}` });
+    }
+
+    // Create a new practice attempt
+    const attemptRes = await pool.query(
+      `INSERT INTO practice_attempts (target_id, candidate_id, requirement_name, status, max_score)
+       VALUES ($1, $2, $3, 'IN_PROGRESS', $4)
+       RETURNING id, requirement_name, started_at`,
+      [id, candidateId, requirementName, questionsRes.rowCount]
+    );
+
+    return res.json({
+      attemptId: attemptRes.rows[0].id,
+      requirementName,
+      startedAt: attemptRes.rows[0].started_at,
+      questions: questionsRes.rows,
+    });
+  } catch (err) {
+    console.error('Start practice attempt error:', err);
+    return res.status(500).json({ error: 'Failed to start practice session' });
+  }
+});
+
+// POST /api/candidate-portal/targets/:id/practice/submit
+router.post('/targets/:id/practice/submit', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const candidateId = req.candidateId;
+    const { id } = req.params;
+    const { attemptId, answers } = req.body; // answers is { [questionId]: chosenKey }
+
+    if (!attemptId || !answers) {
+      return res.status(400).json({ error: 'attemptId and answers are required' });
+    }
+
+    // Validate ownership of attempt
+    const attemptRes = await pool.query(
+      `SELECT id, target_id, requirement_name, status
+       FROM practice_attempts
+       WHERE id = $1 AND target_id = $2 AND candidate_id = $3`,
+      [attemptId, id, candidateId]
+    );
+
+    if (attemptRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Practice attempt not found or access denied.' });
+    }
+
+    const attempt = attemptRes.rows[0];
+
+    // Fetch questions with correct answers to grade
+    const questionsRes = await pool.query(
+      `SELECT id, requirement_name, title, prompt, options, correct_option, explanation, topic_area
+       FROM practice_questions
+       WHERE LOWER(requirement_name) = LOWER($1)`,
+      [attempt.requirement_name]
+    );
+
+    let earnedScore = 0;
+    const totalMax = questionsRes.rowCount;
+    const topicsToRevisit = [];
+    const questionResults = [];
+
+    for (const q of questionsRes.rows) {
+      const chosenKey = (answers[q.id] || '').trim().toUpperCase();
+      const isCorrect = chosenKey === q.correct_option;
+
+      if (isCorrect) {
+        earnedScore += 1;
+      } else {
+        if (q.topic_area && !topicsToRevisit.includes(q.topic_area)) {
+          topicsToRevisit.push(q.topic_area);
+        }
+      }
+
+      questionResults.push({
+        questionId: q.id,
+        title: q.title,
+        prompt: q.prompt,
+        options: q.options,
+        chosenKey,
+        correctKey: q.correct_option,
+        isCorrect,
+        explanation: q.explanation,
+        topicArea: q.topic_area,
+      });
+    }
+
+    // Persist attempt results with explanations unlocked
+    await pool.query(
+      `UPDATE practice_attempts
+       SET answers = $1, score = $2, max_score = $3, explanations_released = TRUE,
+           status = 'COMPLETED', topics_to_revisit = $4, submitted_at = NOW()
+       WHERE id = $5`,
+      [JSON.stringify(answers), earnedScore, totalMax, JSON.stringify(topicsToRevisit), attemptId]
+    );
+
+    return res.json({
+      success: true,
+      attemptId,
+      requirementName: attempt.requirement_name,
+      score: earnedScore,
+      maxScore: totalMax,
+      percentage: totalMax > 0 ? Math.round((earnedScore / totalMax) * 100) : 0,
+      topicsToRevisit,
+      results: questionResults,
+      message: 'Practice attempt completed. Explanations and topic recommendations unlocked.',
+    });
+  } catch (err) {
+    console.error('Submit practice attempt error:', err);
+    return res.status(500).json({ error: 'Failed to submit practice attempt' });
+  }
+});
+
+// GET /api/candidate-portal/targets/:id/practice/attempts/:attemptId
+router.get('/targets/:id/practice/attempts/:attemptId', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const candidateId = req.candidateId;
+    const { id, attemptId } = req.params;
+
+    const attemptRes = await pool.query(
+      `SELECT pa.id, pa.target_id, pa.requirement_name, pa.status, pa.answers, pa.score, pa.max_score,
+              pa.explanations_released, pa.topics_to_revisit, pa.started_at, pa.submitted_at
+       FROM practice_attempts pa
+       WHERE pa.id = $1 AND pa.target_id = $2 AND pa.candidate_id = $3`,
+      [attemptId, id, candidateId]
+    );
+
+    if (attemptRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Practice attempt not found or access denied.' });
+    }
+
+    const attempt = attemptRes.rows[0];
+
+    // If submitted, attach explanations and question breakdown
+    let questionResults = [];
+    if (attempt.explanations_released) {
+      const qRes = await pool.query(
+        `SELECT id, requirement_name, title, prompt, options, correct_option, explanation, topic_area
+         FROM practice_questions
+         WHERE LOWER(requirement_name) = LOWER($1)`,
+        [attempt.requirement_name]
+      );
+
+      const answersObj = attempt.answers || {};
+      questionResults = qRes.rows.map(q => {
+        const chosenKey = (answersObj[q.id] || '').trim().toUpperCase();
+        return {
+          questionId: q.id,
+          title: q.title,
+          prompt: q.prompt,
+          options: q.options,
+          chosenKey,
+          correctKey: q.correct_option,
+          isCorrect: chosenKey === q.correct_option,
+          explanation: q.explanation,
+          topicArea: q.topic_area,
+        };
+      });
+    }
+
+    return res.json({
+      attempt,
+      results: questionResults,
+    });
+  } catch (err) {
+    console.error('Get practice attempt details error:', err);
+    return res.status(500).json({ error: 'Failed to fetch practice attempt details' });
   }
 });
 
