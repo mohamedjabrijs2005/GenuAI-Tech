@@ -37,12 +37,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       {/* Main Admin Area */}
       <div
         style={{
-          marginLeft: '270px',
           flex: 1,
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
-          width: 'calc(100% - 270px)',
         }}
         className="admin-main-wrapper"
       >

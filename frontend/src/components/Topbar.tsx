@@ -50,7 +50,7 @@ export default function Topbar({ onToggleMobileSidebar }: TopbarProps) {
   return (
     <header className="topbar">
       {/* Title & Mobile Toggle (Left) */}
-      <div className="flex items-center gap-2.5 min-w-0" style={{ flexShrink: 1, overflow: 'hidden' }}>
+      <div className="flex items-center gap-2.5 min-w-0" style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
         {onToggleMobileSidebar && (
           <button
             onClick={onToggleMobileSidebar}
@@ -89,7 +89,7 @@ export default function Topbar({ onToggleMobileSidebar }: TopbarProps) {
       </div>
 
       {/* Utilities (Right) */}
-      <div className="flex items-center gap-3" style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+      <div className="flex items-center gap-2" style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
         {/* Connected Sync Indicator */}
         <div
           className="flex items-center gap-1.5"
@@ -106,19 +106,19 @@ export default function Topbar({ onToggleMobileSidebar }: TopbarProps) {
           }}
         >
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
-          <span style={{ color: '#059669', fontWeight: 700 }}>Connected</span>
+          <span className="topbar-hide-mobile" style={{ color: '#059669', fontWeight: 700 }}>Connected</span>
         </div>
 
         {/* Company Verification Status Pill */}
         {isVerified ? (
-          <span className="badge badge-green" style={{ fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          <span className="badge badge-green topbar-compact-mobile" style={{ fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
             <ShieldCheck size={13} style={{ color: 'var(--success)' }} />
             Approved
           </span>
         ) : (
-          <span className="badge badge-yellow" style={{ fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          <span className="badge badge-yellow topbar-compact-mobile" style={{ fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
             <ShieldCheck size={13} style={{ color: 'var(--warning)' }} />
-            {rawStatus === 'PENDING_VERIFICATION' ? 'Pending Verification' : rawStatus.replace(/_/g, ' ') || 'Pending Verification'}
+            {rawStatus === 'PENDING_VERIFICATION' ? 'Pending' : rawStatus.replace(/_/g, ' ') || 'Pending'}
           </span>
         )}
       </div>

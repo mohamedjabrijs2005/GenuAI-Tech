@@ -393,7 +393,8 @@ img { display: block; max-width: 100%; }
   box-shadow: 1px 0 3px rgba(15, 23, 42, 0.03);
 }
 
-.main-content {
+.main-content,
+.admin-main-wrapper {
   margin-left: var(--sidebar-w);
   flex: 1;
   min-height: 100vh;
@@ -1345,8 +1346,6 @@ tbody tr:hover { background: #f1f5f9; }
 .text-white { color: #ffffff; }
 .font-bold { font-weight: 700; }
 
-/* ============================================================
-   GRID UTILITIES
 /* ============================================================
    STITCH RECRUITMENT INTELLIGENCE DASHBOARD SUITE
    ============================================================ */
@@ -2452,6 +2451,121 @@ a.btn,
 @media (max-width: 640px) {
   .landing-header-signin {
     display: none !important;
+  }
+}
+
+/* ============================================================
+   MOBILE TOPBAR & SHELL RESPONSIVE UTILITIES (<= 768px)
+   ============================================================ */
+@media (max-width: 768px) {
+  .topbar-hide-mobile {
+    display: none !important;
+  }
+  .topbar-compact-mobile {
+    font-size: 10.5px !important;
+    padding: 3px 8px !important;
+    letter-spacing: -0.2px !important;
+  }
+  .topbar {
+    padding: 0 12px !important;
+    gap: 8px !important;
+    height: 52px !important;
+  }
+  .admin-page-main {
+    padding: 16px 12px 48px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar-hide-xs {
+    display: none !important;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE TABLE WRAPPERS
+   ============================================================ */
+.table-responsive,
+.table-container,
+.responsive-table {
+  width: 100%;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+}
+
+.table-responsive table,
+.responsive-table table,
+.data-table {
+  min-width: 580px;
+}
+
+/* ============================================================
+   AUTH FULLSCREEN MOBILE OPTIMIZATIONS
+   ============================================================ */
+@media (max-width: 1024px) {
+  .auth-hero-top-nav {
+    display: none !important;
+  }
+  .auth-hero-headline {
+    font-size: 22px !important;
+    line-height: 1.28 !important;
+  }
+  .auth-hero-subtext {
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+    margin-bottom: 20px !important;
+  }
+  .auth-ledger-card {
+    padding: 16px 14px !important;
+    border-radius: 14px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-two-col-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+  .auth-fullscreen-right {
+    padding: 24px 14px 20px !important;
+  }
+  .auth-fullscreen-left {
+    padding: 28px 16px 40px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-fullscreen-form-card {
+    padding: 22px 14px !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+  }
+  .auth-persona-tabs {
+    gap: 2px !important;
+    padding: 3px !important;
+    margin-bottom: 14px !important;
+  }
+  .auth-persona-tab {
+    font-size: 11px !important;
+    padding: 7px 4px !important;
+    gap: 4px !important;
+  }
+  .auth-form-title {
+    font-size: 18px !important;
+  }
+  .auth-form-subtitle {
+    font-size: 12px !important;
+  }
+  .auth-ledger-card {
+    padding: 12px 10px !important;
+  }
+  .auth-features-list {
+    display: flex !important;
+    gap: 12px !important;
+  }
+  .auth-feature-item {
+    padding: 8px !important;
   }
 }
 

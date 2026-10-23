@@ -83,7 +83,7 @@ export function CandidateTopbar({ onToggleMobileSidebar }: CandidateTopbarProps)
   return (
     <header className="topbar">
       {/* Left: page title & hamburger button */}
-      <div className="flex items-center gap-2.5 min-w-0" style={{ flexShrink: 1, overflow: 'hidden' }}>
+      <div className="flex items-center gap-2.5 min-w-0" style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
         {onToggleMobileSidebar && (
           <button
             onClick={onToggleMobileSidebar}
@@ -122,7 +122,7 @@ export function CandidateTopbar({ onToggleMobileSidebar }: CandidateTopbarProps)
       </div>
 
       {/* Right: status & profile actions */}
-      <div className="flex items-center gap-3" style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+      <div className="flex items-center gap-2" style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
         {/* Connected state & sync timestamp */}
         <div
           className="flex items-center gap-1.5"
@@ -140,8 +140,8 @@ export function CandidateTopbar({ onToggleMobileSidebar }: CandidateTopbarProps)
         >
           <span className="badge-dot" style={{ background: '#10b981', width: 6, height: 6 }} />
           <span style={{ color: '#059669', fontWeight: 700 }}>Connected</span>
-          <span style={{ opacity: 0.4 }}>·</span>
-          <span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', fontSize: 10.5 }}>
+          <span className="topbar-hide-mobile" style={{ opacity: 0.4 }}>·</span>
+          <span className="topbar-hide-mobile" style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', fontSize: 10.5 }}>
             Last sync: {syncTime || 'Just now'}
           </span>
         </div>
@@ -218,7 +218,7 @@ export function CandidateTopbar({ onToggleMobileSidebar }: CandidateTopbarProps)
 
         {/* Candidate role badge */}
         <span
-          className="badge badge-green"
+          className="badge badge-green topbar-hide-mobile"
           style={{ fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0 }}
         >
           <ShieldCheck size={13} style={{ color: 'var(--success)' }} />

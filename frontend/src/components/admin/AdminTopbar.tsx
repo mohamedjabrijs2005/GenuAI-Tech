@@ -42,7 +42,7 @@ export function AdminTopbar({ onToggleMobileSidebar }: AdminTopbarProps) {
   return (
     <header className="topbar">
       {/* Left: page title & hamburger button */}
-      <div className="flex items-center gap-2.5 min-w-0" style={{ flexShrink: 1, overflow: 'hidden' }}>
+      <div className="flex items-center gap-2.5 min-w-0" style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
         {onToggleMobileSidebar && (
           <button
             onClick={onToggleMobileSidebar}
@@ -81,7 +81,7 @@ export function AdminTopbar({ onToggleMobileSidebar }: AdminTopbarProps) {
       </div>
 
       {/* Right: status + role */}
-      <div className="flex items-center gap-3" style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+      <div className="flex items-center gap-2" style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
         {/* Live sync indicator — mirrors Company Dashboard LIVE badge */}
         <div
           className="flex items-center gap-1.5"
@@ -99,15 +99,15 @@ export function AdminTopbar({ onToggleMobileSidebar }: AdminTopbarProps) {
         >
           <span className="badge-dot-live" />
           <span style={{ color: 'var(--success)', fontWeight: 700 }}>LIVE</span>
-          <span style={{ opacity: 0.4 }}>|</span>
-          <span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+          <span className="topbar-hide-mobile" style={{ opacity: 0.4 }}>|</span>
+          <span className="topbar-hide-mobile" style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
             {time || 'Syncing...'}
           </span>
         </div>
 
         {/* Admin role badge — mirrors Company Dashboard verification badge */}
         <span
-          className="badge badge-yellow"
+          className="badge badge-yellow topbar-compact-mobile"
           style={{ fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0 }}
         >
           <ShieldCheck size={13} style={{ color: 'var(--warning)' }} />
