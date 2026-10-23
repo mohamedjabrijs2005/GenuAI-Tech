@@ -312,22 +312,45 @@ export default function HomePage() {
             bottom: 0,
             background: '#ffffff',
             zIndex: 99,
-            padding: '24px',
+            padding: '20px 24px 36px',
             display: 'flex',
             flexDirection: 'column',
-            gap: 16,
+            gap: 14,
             borderBottom: '1px solid #e2e8f0',
+            overflowY: 'auto',
+            maxHeight: 'calc(100vh - 64px)',
           }}
         >
-          <a href="#problem" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>Product</a>
-          <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>How It Works</a>
-          <a href="#candidates" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>For Candidates</a>
-          <a href="#companies" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>For Companies</a>
-          <a href="#pricing" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>Pricing</a>
-          <a href="#trust" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}>Trust &amp; Privacy</a>
-          <div style={{ height: 1, background: '#e2e8f0', margin: '8px 0' }} />
-          <Link href="/login" onClick={() => setMobileMenuOpen(false)} style={{ padding: '10px', textAlign: 'center', background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)', color: '#fff', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Sign In to Workspace</Link>
-          <Link href="/login?mode=register" onClick={() => setMobileMenuOpen(false)} style={{ padding: '10px', textAlign: 'center', background: '#f1f5f9', color: '#0f172a', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Create Account</Link>
+          <a href="#problem" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', textDecoration: 'none' }}>Product</a>
+          <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', textDecoration: 'none' }}>How It Works</a>
+          <a href="#candidates" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', textDecoration: 'none' }}>For Candidates</a>
+          <a href="#companies" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', textDecoration: 'none' }}>For Companies</a>
+          <a href="#pricing" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', textDecoration: 'none' }}>Pricing</a>
+          <a href="#trust" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', textDecoration: 'none' }}>Trust &amp; Privacy</a>
+
+          <div style={{ height: 1, background: '#e2e8f0', margin: '4px 0' }} />
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', letterSpacing: '0.6px', textTransform: 'uppercase' }}>
+            Platform Pages &amp; Governance
+          </div>
+          <Link href="/trust" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 14, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>
+            Trust &amp; Verification
+          </Link>
+          <Link href="/privacy" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 14, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>
+            Privacy Policy
+          </Link>
+          <Link href="/terms" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 14, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>
+            Terms of Use
+          </Link>
+          <Link href="/accessibility" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 14, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>
+            Accessibility &amp; Accommodations
+          </Link>
+          <Link href="/contact" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 14, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>
+            Contact &amp; Support
+          </Link>
+
+          <div style={{ height: 1, background: '#e2e8f0', margin: '6px 0' }} />
+          <Link href="/login" onClick={() => setMobileMenuOpen(false)} style={{ padding: '12px', textAlign: 'center', background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)', color: '#fff', borderRadius: 8, fontWeight: 700, textDecoration: 'none', boxShadow: '0 2px 6px rgba(184, 134, 11, 0.25)' }}>Sign In to Workspace</Link>
+          <Link href="/login?mode=register" onClick={() => setMobileMenuOpen(false)} style={{ padding: '12px', textAlign: 'center', background: '#f8fafc', color: '#0f172a', borderRadius: 8, fontWeight: 700, textDecoration: 'none', border: '1px solid #cbd5e1' }}>Create Account</Link>
         </div>
       )}
 

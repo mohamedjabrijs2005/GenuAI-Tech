@@ -485,16 +485,16 @@ export default function AuthPage() {
       {/* ================= RIGHT SIDE: COMPACT, MODERN AUTH CARD ================= */}
       <div className="auth-fullscreen-right">
         <div className="auth-fullscreen-form-card">
-          {/* Mobile-only logo */}
+          {/* Mobile-only logo with Home link */}
           <div className="auth-mobile-logo">
-            <div>
+            <Link href="/" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div className="sidebar-logo-text gold-gradient-text" style={{ fontSize: 16, fontWeight: 900, letterSpacing: '-0.3px', textAlign: 'center' }}>
                 GenuAI Technologies
               </div>
               <span style={{ fontSize: 9.5, color: '#b8860b', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', display: 'block', textAlign: 'center' }}>
                 Recruitment Intelligence
               </span>
-            </div>
+            </Link>
           </div>
           {/* Persona Switcher: Candidate | Company | Admin (Admin only for Sign In) */}
           <div className="auth-persona-tabs">
@@ -816,6 +816,40 @@ export default function AuthPage() {
               </p>
             </div>
           )}
+          {/* Platform Navigation Links — ensures no pages are missing on mobile */}
+          <div style={{
+            marginTop: 20,
+            paddingTop: 16,
+            borderTop: '1px solid #f1f5f9',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+            alignItems: 'center',
+            textAlign: 'center',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <Link href="/" style={{ fontSize: 12, fontWeight: 700, color: '#475569', textDecoration: 'none' }}>
+                ← Platform Home
+              </Link>
+              <span style={{ color: '#cbd5e1' }}>•</span>
+              <Link href="/register" style={{ fontSize: 12, fontWeight: 700, color: '#854d0e', textDecoration: 'none' }}>
+                Choose Pathway
+              </Link>
+              <span style={{ color: '#cbd5e1' }}>•</span>
+              <Link href="/trust" style={{ fontSize: 12, fontWeight: 600, color: '#64748b', textDecoration: 'none' }}>
+                Trust &amp; Privacy
+              </Link>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'center', fontSize: 11, color: '#94a3b8' }}>
+              <Link href="/privacy" style={{ color: '#94a3b8', textDecoration: 'none' }}>Privacy Policy</Link>
+              <span>•</span>
+              <Link href="/terms" style={{ color: '#94a3b8', textDecoration: 'none' }}>Terms of Use</Link>
+              <span>•</span>
+              <Link href="/accessibility" style={{ color: '#94a3b8', textDecoration: 'none' }}>Accessibility</Link>
+              <span>•</span>
+              <Link href="/contact" style={{ color: '#94a3b8', textDecoration: 'none' }}>Contact</Link>
+            </div>
+          </div>
         </div>
       </div>
 

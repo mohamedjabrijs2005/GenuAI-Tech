@@ -1964,16 +1964,25 @@ tbody tr:hover { background: #f1f5f9; }
 }
 
 @media (max-width: 1024px) {
+  .auth-fullscreen-layout {
+    flex-direction: column !important;
+    min-height: 100vh;
+  }
   .auth-fullscreen-right {
     order: 1;
-    min-height: 100vh;
-    padding: 24px 16px;
-    width: 100%;
+    min-height: auto !important;
+    padding: 32px 16px 28px !important;
+    width: 100% !important;
     background: #f8fafc;
   }
-  /* Hide left panel entirely on mobile — show only the form */
   .auth-fullscreen-left {
-    display: none !important;
+    order: 2;
+    min-height: auto !important;
+    padding: 36px 20px 48px !important;
+    border-right: none !important;
+    border-top: 1px solid rgba(212, 175, 55, 0.25) !important;
+    display: flex !important;
+    width: 100% !important;
   }
 }
 
@@ -2433,6 +2442,15 @@ a.btn,
     font-size: 14px !important;
   }
   .landing-header .sidebar-logo-sub {
+    display: none !important;
+  }
+  .landing-header-cta {
+    display: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .landing-header-signin {
     display: none !important;
   }
 }

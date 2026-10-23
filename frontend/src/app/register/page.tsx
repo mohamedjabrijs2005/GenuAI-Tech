@@ -107,8 +107,8 @@ export default function RegisterAccountSelectPage() {
           {/* Dual Selection Cards */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: 24,
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+            gap: 20,
             marginBottom: 32,
           }}>
             {/* 1. Candidate Card */}
@@ -301,16 +301,16 @@ export default function RegisterAccountSelectPage() {
               <span>Platform Governance &amp; Public Transparency:</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-              <Link href="/vacancies" style={{ color: '#0f172a', fontWeight: 600, textDecoration: 'none' }}>
+              <Link href="/candidate/vacancies" style={{ color: '#0f172a', fontWeight: 600, textDecoration: 'none' }}>
                 Browse Vacancies
               </Link>
               <span>&middot;</span>
-              <Link href="/about" style={{ color: '#0f172a', fontWeight: 600, textDecoration: 'none' }}>
+              <Link href="/#how-it-works" style={{ color: '#0f172a', fontWeight: 600, textDecoration: 'none' }}>
                 How GenuAI Works
               </Link>
               <span>&middot;</span>
-              <Link href="/pricing" style={{ color: '#0f172a', fontWeight: 600, textDecoration: 'none' }}>
-                Pricing
+              <Link href="/trust" style={{ color: '#0f172a', fontWeight: 600, textDecoration: 'none' }}>
+                Trust &amp; Privacy
               </Link>
               <span>&middot;</span>
               <Link href="/login?role=admin" style={{ color: '#b8860b', fontWeight: 700, textDecoration: 'none' }}>

@@ -76,7 +76,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       />
       <div className="main-content">
         <Topbar onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} />
-        <main>{children}</main>
+        <main className="page-content">{children}</main>
       </div>
     </div>
   );
