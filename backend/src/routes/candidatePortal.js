@@ -887,30 +887,52 @@ router.post('/targets/:id/assessment/submit', authenticate, requireCandidate, as
 
         totalEarnedScore += qObjectiveEarned;
 
-        // Free-text scenario answers are stored for human rubric evaluation, NOT auto-scored
+        // Predefined rubric definition (independent of candidate submission)
+        const rubricDefinition = {
+          scenarioMax,
+          criteria: [
+            { name: 'Technical Accuracy & Problem Formulation', maxPoints: Math.round(scenarioMax * 0.5 * 10) / 10 },
+            { name: 'Implementation Feasibility & Architecture', maxPoints: Math.round(scenarioMax * 0.5 * 10) / 10 },
+          ],
+        };
+
+        const candidateSubmission = {
+          textExplanation,
+          chosenMcq,
+          submittedAt: new Date().toISOString(),
+        };
+
+        // Free-text scenario answers are stored separately from rubric criteria
         await client.query(
           `INSERT INTO assessment_requirement_scores
-             (attempt_id, requirement_id, score, max_score, assessment_notes, scoring_source, rubric_criteria, evaluation_status)
-           VALUES ($1, $2, $3, $4, $5, 'OBJECTIVE_MCQ', $6, 'PENDING_REVIEW')`,
+             (attempt_id, requirement_id, score, max_score, assessment_notes, scoring_source, rubric_criteria, candidate_answers, evaluation_status)
+           VALUES ($1, $2, $3, $4, $5, 'OBJECTIVE_MCQ', $6, $7, 'PENDING_REVIEW')`,
           [
             attemptId,
             q.requirementId,
             Math.round(qObjectiveEarned * 10) / 10,
             q.maxScore,
             `MCQ: ${chosenMcq === q.correctOption ? 'Correct' : 'Incorrect'}; Scenario evaluation pending recruiter review.`,
-            JSON.stringify({ textExplanation, scenarioMax, submittedAt: new Date().toISOString() }),
+            JSON.stringify(rubricDefinition),
+            JSON.stringify(candidateSubmission),
           ]
         );
       }
 
       const objectiveTotal = Math.min(100, Math.round(totalEarnedScore));
 
+      // Freeze immutable version snapshot of requirements and criteria
+      const versionSnapshot = {
+        requirements: requirements.map(r => ({ id: r.id, name: r.name, importance: r.importance, weight: r.weight })),
+        capturedAt: new Date().toISOString(),
+      };
+
       await client.query(
         `UPDATE assessment_attempts
          SET status = 'SUBMITTED', submitted_at = NOW(), score = $1, objective_score = $1, scenario_score = 0,
-             grading_status = 'PENDING_REVIEW', answers = $2, updated_at = NOW()
-         WHERE id = $3`,
-        [objectiveTotal, JSON.stringify(finalAnswers), attemptId]
+             grading_status = 'PENDING_REVIEW', answers = $2, version_snapshot = $3, updated_at = NOW()
+         WHERE id = $4`,
+        [objectiveTotal, JSON.stringify(finalAnswers), JSON.stringify(versionSnapshot), attemptId]
       );
 
       // Recompute Target Coverage in same transaction

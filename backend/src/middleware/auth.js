@@ -63,9 +63,9 @@ async function authenticate(req, res, next) {
       return res.status(403).json({ error: 'Account has been disabled. Please contact support.' });
     }
 
-    // Enforce session invalidation if token_version mismatch
-    if (payload.tokenVersion && user.token_version && payload.tokenVersion !== user.token_version) {
-      return res.status(401).json({ error: 'Session expired due to a recent password or security update. Please sign in again.' });
+    // Enforce session invalidation: require valid integer tokenVersion matching user.token_version
+    if (!Number.isInteger(payload.tokenVersion) || payload.tokenVersion !== user.token_version) {
+      return res.status(401).json({ error: 'Session expired. Please sign in again.' });
     }
 
     req.user = user;

@@ -169,4 +169,211 @@ router.delete('/questions/:qid', async (req, res) => {
   }
 });
 
+// ============================================================
+// GET /api/assessments/company/pending-attempts
+// List candidate assessment attempts for recruiter review
+// ============================================================
+router.get('/company/pending-attempts', async (req, res) => {
+  try {
+    const companyId = req.companyMembership.company_id;
+
+    const result = await pool.query(
+      `SELECT aa.id, aa.target_id, aa.candidate_id, aa.submitted_at, aa.score,
+              aa.objective_score, aa.scenario_score, aa.grading_status, aa.status,
+              c.first_name, c.last_name, c.email as candidate_email,
+              cr.title as vacancy_title, cr.id as vacancy_id
+       FROM assessment_attempts aa
+       JOIN targets t ON t.id = aa.target_id
+       JOIN candidates c ON c.id = aa.candidate_id
+       JOIN company_roles cr ON cr.id = t.vacancy_id
+       WHERE aa.company_id = $1 AND aa.status IN ('SUBMITTED', 'GRADED')
+       ORDER BY CASE WHEN aa.grading_status = 'PENDING_REVIEW' THEN 0 ELSE 1 END, aa.submitted_at DESC`,
+      [companyId]
+    );
+
+    return res.json({ attempts: result.rows });
+  } catch (err) {
+    console.error('List company assessment attempts error:', err);
+    return res.status(500).json({ error: 'Failed to fetch candidate assessment attempts' });
+  }
+});
+
+// ============================================================
+// GET /api/assessments/company/attempts/:attemptId
+// Get full attempt details with separated scenario answers and rubrics
+// ============================================================
+router.get('/company/attempts/:attemptId', async (req, res) => {
+  try {
+    const companyId = req.companyMembership.company_id;
+    const { attemptId } = req.params;
+
+    const attemptRes = await pool.query(
+      `SELECT aa.id, aa.target_id, aa.candidate_id, aa.company_id, aa.submitted_at,
+              aa.score, aa.objective_score, aa.scenario_score, aa.grading_status,
+              aa.answers, aa.version_snapshot, aa.evaluator_id, aa.evaluated_at,
+              c.first_name, c.last_name, c.email as candidate_email,
+              cr.title as vacancy_title, cr.id as vacancy_id,
+              u.first_name as evaluator_first_name, u.last_name as evaluator_last_name
+       FROM assessment_attempts aa
+       JOIN targets t ON t.id = aa.target_id
+       JOIN candidates c ON c.id = aa.candidate_id
+       JOIN company_roles cr ON cr.id = t.vacancy_id
+       LEFT JOIN users u ON u.id = aa.evaluator_id
+       WHERE aa.id = $1 AND aa.company_id = $2`,
+      [attemptId, companyId]
+    );
+
+    if (attemptRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Assessment attempt not found or unauthorized' });
+    }
+
+    const attempt = attemptRes.rows[0];
+
+    const scoresRes = await pool.query(
+      `SELECT ars.id, ars.requirement_id, ars.score, ars.max_score, ars.assessment_notes,
+              ars.scoring_source, ars.rubric_criteria, ars.candidate_answers, ars.evaluation_status,
+              r.name as requirement_name, r.importance, r.weight
+       FROM assessment_requirement_scores ars
+       JOIN requirements r ON r.id = ars.requirement_id
+       WHERE ars.attempt_id = $1
+       ORDER BY r.created_at ASC`,
+      [attemptId]
+    );
+
+    return res.json({
+      attempt,
+      requirementScores: scoresRes.rows,
+    });
+  } catch (err) {
+    console.error('Get company attempt detail error:', err);
+    return res.status(500).json({ error: 'Failed to fetch attempt details' });
+  }
+});
+
+// ============================================================
+// POST /api/assessments/company/attempts/:attemptId/evaluate
+// Recruiter saves rubric marks & rationale with tenant & bound checks
+// ============================================================
+router.post('/company/attempts/:attemptId/evaluate', async (req, res) => {
+  const companyId = req.companyMembership.company_id;
+  const { attemptId } = req.params;
+  const { evaluations } = req.body; // Array of { requirementId, scenarioScore, feedback }
+
+  if (!Array.isArray(evaluations) || evaluations.length === 0) {
+    return res.status(400).json({ error: 'Evaluations array is required' });
+  }
+
+  // Evaluator permission check
+  const memberRole = (req.companyMembership.member_role || '').toUpperCase();
+  const allowedRoles = ['COMPANY_OWNER', 'HIRING_MANAGER', 'RECRUITER', 'ADMIN'];
+  if (!allowedRoles.includes(memberRole)) {
+    return res.status(403).json({ error: 'Forbidden: Insufficient permissions to evaluate candidate assessments' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Tenant boundary check
+    const attemptRes = await client.query(
+      `SELECT aa.id, aa.target_id, aa.company_id, aa.objective_score, aa.status
+       FROM assessment_attempts aa
+       WHERE aa.id = $1 AND aa.company_id = $2`,
+      [attemptId, companyId]
+    );
+
+    if (attemptRes.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Assessment attempt not found for this company' });
+    }
+
+    const attempt = attemptRes.rows[0];
+
+    // Fetch existing requirement scores for bounds verification
+    const existingScoresRes = await client.query(
+      `SELECT requirement_id, score, max_score, rubric_criteria
+       FROM assessment_requirement_scores
+       WHERE attempt_id = $1`,
+      [attemptId]
+    );
+
+    const scoreMap = new Map();
+    for (const row of existingScoresRes.rows) {
+      scoreMap.set(row.requirement_id, row);
+    }
+
+    let totalScenarioEarned = 0;
+
+    for (const ev of evaluations) {
+      const existing = scoreMap.get(ev.requirementId);
+      if (!existing) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: `Requirement ${ev.requirementId} is not part of this assessment attempt.` });
+      }
+
+      const scoreNum = Number(ev.scenarioScore);
+      if (isNaN(scoreNum) || scoreNum < 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: `Scenario score for requirement ${ev.requirementId} must be a non-negative number.` });
+      }
+
+      // Max allowable scenario marks is 50% of the requirement max_score
+      const maxAllowedScenario = Math.round((Number(existing.max_score) * 0.5) * 10) / 10;
+      if (scoreNum > maxAllowedScenario) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          error: `Score ${scoreNum} exceeds maximum allowable rubric mark of ${maxAllowedScenario} for requirement.`
+        });
+      }
+
+      totalScenarioEarned += scoreNum;
+
+      // Base objective score was initially stored; add scenario score to obtain total requirement score
+      const objectiveBase = Math.round((Number(existing.score) > maxAllowedScenario ? maxAllowedScenario : Number(existing.score)) * 10) / 10;
+      const totalReqScore = Math.min(Number(existing.max_score), objectiveBase + scoreNum);
+
+      const feedbackText = (ev.feedback || '').trim() || 'Recruiter rubric evaluated';
+
+      await client.query(
+        `UPDATE assessment_requirement_scores
+         SET score = $1, evaluation_status = 'EVALUATED',
+             assessment_notes = assessment_notes || ' | [Recruiter Evaluation]: ' || $2
+         WHERE attempt_id = $3 AND requirement_id = $4`,
+        [totalReqScore, feedbackText, attemptId, ev.requirementId]
+      );
+    }
+
+    const finalTotalScore = Math.min(100, Math.round((Number(attempt.objective_score) || 0) + totalScenarioEarned));
+
+    await client.query(
+      `UPDATE assessment_attempts
+       SET scenario_score = $1, score = $2, grading_status = 'FULLY_GRADED', evaluator_id = $3, evaluated_at = NOW(), updated_at = NOW()
+       WHERE id = $4`,
+      [totalScenarioEarned, finalTotalScore, req.user.id, attemptId]
+    );
+
+    // Recompute target requirement coverage with explicit threshold policy
+    const { recomputeTargetCoverage } = require('./evidenceService');
+    await recomputeTargetCoverage(client, attempt.target_id);
+
+    await client.query('COMMIT');
+
+    return res.json({
+      success: true,
+      finalScore: finalTotalScore,
+      scenarioScore: totalScenarioEarned,
+      objectiveScore: attempt.objective_score,
+      gradingStatus: 'FULLY_GRADED',
+      message: 'Assessment rubric evaluation saved. Requirement coverage recalculated.',
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Recruiter evaluate assessment error:', err);
+    return res.status(500).json({ error: 'Failed to save evaluation' });
+  } finally {
+    client.release();
+  }
+});
+
 module.exports = router;
+

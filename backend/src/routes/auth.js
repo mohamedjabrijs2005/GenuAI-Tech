@@ -412,9 +412,9 @@ router.post('/verify-email', async (req, res) => {
     const result = await pool.query(
       `UPDATE users
        SET email_verified = TRUE, email_verification_token = NULL, email_verification_expires = NULL
-       WHERE (email_verification_token = $1 OR email_verification_token = $2) AND email_verification_expires > NOW() AND email_verified = FALSE
+       WHERE email_verification_token = $1 AND email_verification_expires > NOW() AND email_verified = FALSE
        RETURNING id, email, first_name`,
-      [hashedToken, token]
+      [hashedToken]
     );
 
     if (result.rowCount === 0) {
@@ -548,9 +548,9 @@ router.post(
       const result = await pool.query(
         `UPDATE users
          SET password_hash = $1, password_reset_token = NULL, password_reset_expires = NULL, token_version = token_version + 1
-         WHERE (password_reset_token = $2 OR password_reset_token = $3) AND password_reset_expires > NOW() AND is_active = TRUE
+         WHERE password_reset_token = $2 AND password_reset_expires > NOW() AND is_active = TRUE
          RETURNING id, email`,
-        [passwordHash, hashedToken, token]
+        [passwordHash, hashedToken]
       );
 
       if (result.rowCount === 0) {
@@ -600,9 +600,18 @@ router.post(
       }
 
       const newHash = await bcrypt.hash(newPassword, 12);
-      await pool.query('UPDATE users SET password_hash = $1, token_version = token_version + 1 WHERE id = $2', [newHash, req.user.id]);
+      const updateResult = await pool.query(
+        'UPDATE users SET password_hash = $1, token_version = token_version + 1 WHERE id = $2 RETURNING token_version',
+        [newHash, req.user.id]
+      );
+      const updatedVersion = updateResult.rows[0].token_version;
+      const newToken = generateToken(req.user.id, { token_version: updatedVersion });
 
-      return res.json({ success: true, message: 'Password changed successfully. All other sessions have been logged out.' });
+      return res.json({
+        success: true,
+        message: 'Password changed successfully. All other sessions have been logged out.',
+        token: newToken,
+      });
     } catch (err) {
       console.error('Change password error:', err);
       return res.status(500).json({ error: 'Password change failed' });
@@ -650,10 +659,12 @@ router.post('/google', loginLimiter, async (req, res) => {
     const { email, sub: googleId, given_name: firstName = 'Google', family_name: lastName = 'User' } = payload;
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Check if user exists by email or provider_id
+    // 1. First: Resolve identity by provider + Google sub
     let userResult = await pool.query(
-      'SELECT id, email, first_name, last_name, role, is_active, email_verified, auth_provider, provider_id, token_version FROM users WHERE LOWER(email) = $1',
-      [normalizedEmail]
+      `SELECT id, email, first_name, last_name, role, is_active, email_verified, auth_provider, provider_id, token_version
+       FROM users
+       WHERE auth_provider = 'google' AND provider_id = $1`,
+      [googleId]
     );
 
     let user;
@@ -666,21 +677,54 @@ router.post('/google', loginLimiter, async (req, res) => {
         return res.status(403).json({ error: 'Account has been disabled. Please contact support.' });
       }
 
-      // 3. Admin privilege protection: prevent administrative account takeover via public Google OAuth
-      const roleUpper = (user.role || '').toUpperCase();
-      const isAdminRole = ['SUPER_ADMIN', 'VERIFICATION_ADMIN', 'SUPPORT_ADMIN', 'GENUAI_ADMIN'].includes(roleUpper);
-      if (isAdminRole && user.auth_provider !== 'google') {
-        return res.status(403).json({ error: 'Platform administrative accounts must authenticate via dedicated governance credentials.' });
+      // Verify that stored Google sub matches incoming sub
+      if (user.provider_id !== googleId) {
+        return res.status(403).json({ error: 'Google identity mismatch. Authentication rejected.' });
       }
 
-      // Link Google credentials if not already linked
-      if (user.auth_provider !== 'google' || !user.provider_id) {
+      // Admin privilege protection
+      const roleUpper = (user.role || '').toUpperCase();
+      const isAdminRole = ['SUPER_ADMIN', 'VERIFICATION_ADMIN', 'SUPPORT_ADMIN', 'GENUAI_ADMIN'].includes(roleUpper);
+      if (isAdminRole) {
+        return res.status(403).json({ error: 'Platform administrative accounts must authenticate via dedicated governance credentials.' });
+      }
+    } else {
+      // 2. Second: Not linked by provider_id; check if an account exists with the verified Google email
+      const emailUserResult = await pool.query(
+        `SELECT id, email, first_name, last_name, role, is_active, email_verified, auth_provider, provider_id, token_version
+         FROM users
+         WHERE LOWER(email) = $1`,
+        [normalizedEmail]
+      );
+
+      if (emailUserResult.rowCount > 0) {
+        user = emailUserResult.rows[0];
+
+        if (user.is_active === false) {
+          return res.status(403).json({ error: 'Account has been disabled. Please contact support.' });
+        }
+
+        // Prevent administrative account takeover via public Google OAuth
+        const roleUpper = (user.role || '').toUpperCase();
+        const isAdminRole = ['SUPER_ADMIN', 'VERIFICATION_ADMIN', 'SUPPORT_ADMIN', 'GENUAI_ADMIN'].includes(roleUpper);
+        if (isAdminRole) {
+          return res.status(403).json({ error: 'Platform administrative accounts must authenticate via dedicated governance credentials.' });
+        }
+
+        // If the account was already linked to a DIFFERENT Google sub, reject (identity mismatch protection)
+        if (user.auth_provider === 'google' && user.provider_id && user.provider_id !== googleId) {
+          return res.status(409).json({ error: 'This email is already associated with a different Google account. Authentication rejected.' });
+        }
+
+        // Secure explicit linking: account was password-based; link Google credentials
         await pool.query(
           `UPDATE users SET auth_provider = 'google', provider_id = $1, email_verified = TRUE WHERE id = $2`,
           [googleId, user.id]
         );
-      }
-    } else {
+        user.auth_provider = 'google';
+        user.provider_id = googleId;
+        user.email_verified = true;
+      } else {
       // New user creation
       const isCandidate = requestedRole === 'CANDIDATE' || !companyName || companyName === 'Candidate Workspace';
       const userRole = isCandidate ? 'CANDIDATE' : 'COMPANY_OWNER';
@@ -733,6 +777,7 @@ router.post('/google', loginLimiter, async (req, res) => {
         client.release();
       }
     }
+  }
 
     if (!companyData) {
       const memberResult = await pool.query(
