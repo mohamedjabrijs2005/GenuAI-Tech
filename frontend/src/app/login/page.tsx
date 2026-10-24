@@ -164,12 +164,12 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
       reviewOutcome: 'Platform Admin Approved',
     },
     trustFooter: 'Platform Governance • Verification • Compliance Audits',
-    cardTitle: 'Governance Sign In',
-    cardSubtitle: 'Authorized platform administration personnel only',
+    cardTitle: 'Admin Dashboard & Governance',
+    cardSubtitle: 'Sign in or create an authorized administrator account',
     emailLabel: 'Admin Email Address',
-    emailPlaceholder: 'admin@genuai.test',
-    submitText: 'Sign In to Console',
-    allowRegister: false,
+    emailPlaceholder: 'admin@genuai.io',
+    submitText: 'Access Admin Dashboard',
+    allowRegister: true,
   },
 };
 
@@ -309,7 +309,8 @@ export default function AuthPage() {
           lastName,
           email: form.email.trim(),
           password: form.password,
-          companyName: persona === 'company' ? (form.companyName.trim() || 'My Company') : 'Candidate Workspace',
+          role: persona === 'admin' ? 'SUPER_ADMIN' : (persona === 'candidate' ? 'CANDIDATE' : 'COMPANY_OWNER'),
+          companyName: persona === 'company' ? (form.companyName.trim() || 'My Company') : (persona === 'admin' ? 'GenuAI Administration' : 'Candidate Workspace'),
         });
       }
     } catch (e: any) {
@@ -555,7 +556,7 @@ export default function AuthPage() {
               </span>
             </Link>
           </div>
-          {/* Persona Switcher: Candidate | Company | Admin (Admin only for Sign In) */}
+          {/* Persona Switcher: Candidate | Company | Admin */}
           <div className="auth-persona-tabs">
             <button
               type="button"
@@ -573,16 +574,14 @@ export default function AuthPage() {
               <Building2 size={13} />
               <span>Company</span>
             </button>
-            {isLogin && (
-              <button
-                type="button"
-                onClick={() => handlePersonaChange('admin')}
-                className={`auth-persona-tab ${persona === 'admin' ? 'active' : ''}`}
-              >
-                <ShieldCheck size={13} />
-                <span>Admin</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => handlePersonaChange('admin')}
+              className={`auth-persona-tab ${persona === 'admin' ? 'active' : ''}`}
+            >
+              <ShieldCheck size={13} />
+              <span>Admin</span>
+            </button>
           </div>
 
           {/* Mode Switcher (Sign In vs Create Account) */}
@@ -848,7 +847,13 @@ export default function AuthPage() {
                 </>
               ) : (
                 <>
-                  <span>{persona === 'company' ? 'Create Company Workspace' : 'Create Candidate Account'}</span>
+                  <span>
+                    {persona === 'company'
+                      ? 'Create Company Workspace'
+                      : persona === 'admin'
+                      ? 'Create Admin Account'
+                      : 'Create Candidate Account'}
+                  </span>
                   <ArrowRight size={15} />
                 </>
               )}

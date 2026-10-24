@@ -41,6 +41,7 @@ interface RegisterData {
   description?: string;
   location?: string;
   phone?: string;
+  role?: string;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -168,10 +169,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCandidateOnboardingSubmitted(false);
 
     const role = (data.user?.role || '').toUpperCase();
+    const isAdmin = ['SUPER_ADMIN', 'VERIFICATION_ADMIN', 'SUPPORT_ADMIN', 'GENUAI_ADMIN', 'ADMIN'].includes(role);
     const isCandidate = role === 'CANDIDATE' || role === 'APPLICANT' || role === 'USER';
 
-    // New registration: always go to progressive onboarding
-    if (isCandidate) {
+    // New registration routing
+    if (isAdmin) {
+      router.push('/admin');
+    } else if (isCandidate) {
       router.push('/candidate/onboarding');
     } else {
       router.push('/dashboard/onboarding');

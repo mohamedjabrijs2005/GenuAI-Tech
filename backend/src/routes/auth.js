@@ -88,8 +88,9 @@ router.post(
       // Hash password
       const passwordHash = await bcrypt.hash(password, 12);
 
-      const isCandidate = requestedRole === 'CANDIDATE' || companyName === 'Candidate Workspace' || !companyName;
-      const userRole = isCandidate ? 'CANDIDATE' : 'COMPANY_OWNER';
+      const isAdmin = requestedRole === 'SUPER_ADMIN' || requestedRole === 'ADMIN' || requestedRole === 'VERIFICATION_ADMIN';
+      const isCandidate = requestedRole === 'CANDIDATE' || companyName === 'Candidate Workspace' || (!companyName && !isAdmin);
+      const userRole = isAdmin ? 'SUPER_ADMIN' : (isCandidate ? 'CANDIDATE' : 'COMPANY_OWNER');
 
       // Generate email verification token (store hash in DB, send raw token in email)
       const rawVerificationToken = crypto.randomBytes(32).toString('hex');
@@ -99,15 +100,26 @@ router.post(
       // Create user
       const userResult = await client.query(
         `INSERT INTO users (email, password_hash, first_name, last_name, role, email_verified, email_verification_token, email_verification_expires)
-         VALUES ($1, $2, $3, $4, $5, FALSE, $6, $7)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
          RETURNING id, email, first_name, last_name, role, token_version`,
-        [email, passwordHash, firstName, lastName, userRole, hashedVerificationToken, verificationExpires]
+        [email, passwordHash, firstName, lastName, userRole, isAdmin, hashedVerificationToken, verificationExpires]
       );
       const user = userResult.rows[0];
 
       let companyData = null;
 
-      if (isCandidate) {
+      if (isAdmin) {
+        // Record platform admin registration in audit logs
+        try {
+          await client.query(
+            `INSERT INTO audit_logs (actor_user_id, actor_role, action, entity_type, entity_id, new_status, reason, metadata, ip_address)
+             VALUES ($1, 'SUPER_ADMIN', 'ADMIN_ACCOUNT_REGISTERED', 'User', $2, 'ACTIVE', 'Platform governance admin registered', $3, $4)`,
+            [user.id, user.id, JSON.stringify({ email: user.email }), req.ip || null]
+          );
+        } catch (auditErr) {
+          console.warn('Admin registration audit log note:', auditErr.message);
+        }
+      } else if (isCandidate) {
         // Create candidate profile record if candidates table exists
         try {
           await client.query(
