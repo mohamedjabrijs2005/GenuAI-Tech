@@ -8,7 +8,7 @@ import {
   Eye, EyeOff, Lock, Mail, CheckCircle2,
   AlertCircle, ArrowRight, Building2, User,
   FileCheck, Target, UserCheck, ChevronRight,
-  Check, X, KeyRound, Compass, ShieldCheck,
+  Check, X, Compass, ShieldCheck,
   Layers, Award, Sparkles
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -42,7 +42,6 @@ interface PersonaConfig {
   emailPlaceholder: string;
   submitText: string;
   allowRegister: boolean;
-  demoCredentials: { email: string; pass: string; name?: string; company?: string };
 }
 
 const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
@@ -87,7 +86,6 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
     emailPlaceholder: 'you@example.com',
     submitText: 'Sign In to Workspace',
     allowRegister: true,
-    demoCredentials: { email: 'candidate@genuai.test', pass: 'Candidate123!', name: 'Alex Rivera' },
   },
   company: {
     label: 'Company',
@@ -130,7 +128,6 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
     emailPlaceholder: 'you@company.com',
     submitText: 'Sign In to Workspace',
     allowRegister: true,
-    demoCredentials: { email: 'companya@genuai.test', pass: 'CompanyA123!', name: 'Alice Owner', company: 'Alpha Technologies' },
   },
   admin: {
     label: 'Admin',
@@ -173,7 +170,6 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
     emailPlaceholder: 'admin@genuai.test',
     submitText: 'Sign In to Console',
     allowRegister: false,
-    demoCredentials: { email: 'admin@genuai.test', pass: 'Admin12345!', name: 'Platform Admin' },
   },
 };
 
@@ -240,20 +236,6 @@ export default function AuthPage() {
   const set = (k: string, v: string) => {
     setForm((prev) => ({ ...prev, [k]: v }));
     if (error) setError('');
-  };
-
-  const handleQuickDemo = () => {
-    setIsLogin(true);
-    const demo = config.demoCredentials;
-    setForm({
-      name: demo.name || '',
-      email: demo.email,
-      password: demo.pass,
-      confirmPassword: demo.pass,
-      companyName: demo.company || '',
-    });
-    setAgreedTerms(true);
-    toast.success(`Loaded demo credentials for ${config.label}`);
   };
 
   const validateEmail = (email: string) => {
@@ -915,18 +897,6 @@ export default function AuthPage() {
           )}
 
           <Script src="https://accounts.google.com/gsi/client" strategy="lazyOnload" />
-
-          {/* Discreet Quick-Demo Access Chip */}
-          <div className="auth-demo-chip-box">
-            <button
-              type="button"
-              onClick={handleQuickDemo}
-              className="auth-demo-chip-btn"
-            >
-              <KeyRound size={12} style={{ color: '#b8860b' }} />
-              <span>Autofill {config.label} test credentials</span>
-            </button>
-          </div>
 
           {/* Admin Restricted Notice */}
           {persona === 'admin' && (
