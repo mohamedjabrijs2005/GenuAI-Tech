@@ -19,7 +19,7 @@ async function request(path, options = {}) {
   let data = null;
   try {
     data = await res.json();
-  } catch (_) {}
+  } catch (_) { }
   return { status: res.status, ok: res.ok, data };
 }
 

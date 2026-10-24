@@ -5,6 +5,7 @@
 
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const pool = require('./src/database/pool');
+const bcrypt = require('bcryptjs');
 const app = require('./src/server');
 
 const BASE_URL = 'http://127.0.0.1:4000/api';
@@ -36,24 +37,35 @@ async function run() {
   let companyAId, companyBId;
   let vacancyId;
 
+  // Create unique test accounts for this run
+  const ts = Date.now();
+  const companyAEmail = `lifecycle_co_a_${ts}@genuai.test`;
+  const companyAPass = `LifecycleA_${ts}!`;
+  const companyBEmail = `lifecycle_co_b_${ts}@genuai.test`;
+  const companyBPass = `LifecycleB_${ts}!`;
+  const adminEmail = `lifecycle_admin_${ts}@genuai.test`;
+  const adminPass = `LifecycleAdmin_${ts}!`;
+
   try {
     // ----------------------------------------------------------------
-    // Step 1: Log in as Company A
+    // Step 1: Register as Company A (fresh account)
     // ----------------------------------------------------------------
-    console.log('Step 1: Logging in as Company A...');
-    const loginA = await request('/auth/login', {
+    console.log('Step 1: Registering and logging in as Company A...');
+    const regA = await request('/auth/register', {
       method: 'POST',
       body: {
-        email: 'companya@genuai.test',
-        password: 'CompanyA123!',
+        firstName: 'Lifecycle', lastName: 'CompanyA',
+        email: companyAEmail, password: companyAPass,
+        companyName: 'Lifecycle Alpha Enterprises',
+        industry: 'Technology', website: 'https://lifecycle-a.io',
       },
     });
-    if (loginA.status !== 200 || !loginA.data.token) {
-      throw new Error('Company A login failed: ' + JSON.stringify(loginA.data));
+    if (regA.status !== 201 || !regA.data.token) {
+      throw new Error('Company A registration failed: ' + JSON.stringify(regA.data));
     }
-    companyAToken = loginA.data.token;
-    companyAId = loginA.data.user.companyId;
-    console.log(`  ✅ Logged in as Company A (Company ID: ${companyAId})`);
+    companyAToken = regA.data.token;
+    companyAId = regA.data.company?.id;
+    console.log(`  ✅ Registered & logged in as Company A (Company ID: ${companyAId})`);
 
     // ----------------------------------------------------------------
     // Step 2: Create a draft vacancy
@@ -62,8 +74,16 @@ async function run() {
     const deptsRes = await request('/departments', {
       headers: { Authorization: `Bearer ${companyAToken}` },
     });
-    const departmentId = deptsRes.data.departments[0]?.id;
-    if (!departmentId) throw new Error('No departments available for Company A');
+    let departmentId = deptsRes.data?.departments?.[0]?.id;
+    if (!departmentId) {
+      const createDept = await request('/departments', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${companyAToken}` },
+        body: { name: 'Core Engineering', description: 'Core Systems & Infrastructure' },
+      });
+      departmentId = createDept.data?.department?.id || createDept.data?.id;
+    }
+    if (!departmentId) throw new Error('No departments available for Company A and failed to create one');
 
     const createVac = await request('/vacancies', {
       method: 'POST',
@@ -135,19 +155,31 @@ async function run() {
     console.log('  ✅ Vacancy transitioned from DRAFT -> PENDING_ADMIN_REVIEW');
 
     // ----------------------------------------------------------------
-    // Step 5: Log in as Super Admin
+    // Step 5: Create and log in as Super Admin (dynamic)
     // ----------------------------------------------------------------
-    console.log('\nStep 5: Logging in as Admin...');
+    console.log('\nStep 5: Creating and logging in as Admin...');
+    const adminHash = await bcrypt.hash(adminPass, 10);
+    await pool.query(
+      `INSERT INTO users (email, password_hash, first_name, last_name, role)
+       VALUES ($1, $2, 'Lifecycle', 'Admin', 'SUPER_ADMIN')`,
+      [adminEmail, adminHash]
+    );
     const loginAdmin = await request('/auth/login', {
       method: 'POST',
-      body: {
-        email: 'admin@genuai.test',
-        password: 'Admin12345!',
-      },
+      body: { email: adminEmail, password: adminPass },
     });
-    if (loginAdmin.status !== 200 || !loginAdmin.data.token) throw new Error('Admin login failed');
+    if (loginAdmin.status !== 200 || !loginAdmin.data.token) throw new Error('Admin login failed: ' + JSON.stringify(loginAdmin.data));
     adminToken = loginAdmin.data.token;
-    console.log('  ✅ Logged in as Super Admin');
+    console.log('  ✅ Created and logged in as Super Admin');
+
+    // Admin verifies Company A so vacancies can be approved
+    const approveCo = await request(`/admin/companies/${companyAId}/status`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${adminToken}` },
+      body: { status: 'APPROVED', reason: 'Corporate entity documents verified.' },
+    });
+    if (approveCo.status !== 200) throw new Error('Admin company approval failed: ' + JSON.stringify(approveCo.data));
+    console.log('  ✅ Admin approved Company A verification status');
 
     // ----------------------------------------------------------------
     // Step 6: Admin requests changes
@@ -270,20 +302,22 @@ async function run() {
     console.log(`  ✅ Activity log contains ${activityA.data.activities.length} entries, including VACANCY_PUBLISHED with server timestamp`);
 
     // ----------------------------------------------------------------
-    // Step 15: Log in as Company B
+    // Step 15: Register as Company B (fresh account)
     // ----------------------------------------------------------------
-    console.log('\nStep 15: Logging in as Company B...');
-    const loginB = await request('/auth/login', {
+    console.log('\nStep 15: Registering Company B for isolation test...');
+    const regB = await request('/auth/register', {
       method: 'POST',
       body: {
-        email: 'companyb@genuai.test',
-        password: 'CompanyB123!',
+        firstName: 'Lifecycle', lastName: 'CompanyB',
+        email: companyBEmail, password: companyBPass,
+        companyName: 'Lifecycle Beta Enterprises',
+        industry: 'Technology', website: 'https://lifecycle-b.io',
       },
     });
-    if (loginB.status !== 200 || !loginB.data.token) throw new Error('Company B login failed');
-    companyBToken = loginB.data.token;
-    companyBId = loginB.data.user.companyId;
-    console.log(`  ✅ Logged in as Company B (Company ID: ${companyBId})`);
+    if (regB.status !== 201 || !regB.data.token) throw new Error('Company B registration failed: ' + JSON.stringify(regB.data));
+    companyBToken = regB.data.token;
+    companyBId = regB.data.company?.id;
+    console.log(`  ✅ Registered Company B (Company ID: ${companyBId})`);
 
     // ----------------------------------------------------------------
     // Step 16: Confirm Company A's data is completely invisible to Company B
