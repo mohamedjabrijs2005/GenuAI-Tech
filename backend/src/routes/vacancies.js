@@ -164,14 +164,16 @@ router.post(
 
       // Audit log
       await pool.query(
-        `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, new_status, metadata, ip_address)
-         VALUES ($1, $2, $3, 'VACANCY_CREATED', 'Vacancy', $4, 'DRAFT', $5, $6)`,
+        `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, new_status, metadata, old_value, new_value, ip_address)
+         VALUES ($1, $2, $3, 'VACANCY_CREATED', 'Vacancy', $4, 'DRAFT', $5, $6, $7, $8)`,
         [
           companyId,
           req.user.id,
           req.user.role || 'COMPANY_OWNER',
           vacancy.id,
           JSON.stringify({ title, department: deptCheck.rows[0]?.name }),
+          null,
+          JSON.stringify({ status: 'DRAFT', title, location: location || 'Remote' }),
           req.ip || null,
         ]
       );
@@ -306,8 +308,8 @@ router.post('/:id/submit', async (req, res) => {
 
     // 4. Record audit log
     await client.query(
-      `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, reason, metadata, ip_address)
-       VALUES ($1, $2, $3, 'VACANCY_SUBMITTED', 'Vacancy', $4, $5, 'PENDING_ADMIN_REVIEW', 'Submitted for platform admin governance review', $6, $7)`,
+      `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, reason, metadata, old_value, new_value, ip_address)
+       VALUES ($1, $2, $3, 'VACANCY_SUBMITTED', 'Vacancy', $4, $5, 'PENDING_ADMIN_REVIEW', 'Submitted for platform admin governance review', $6, $7, $8, $9)`,
       [
         companyId,
         req.user.id,
@@ -315,6 +317,8 @@ router.post('/:id/submit', async (req, res) => {
         id,
         vacancy.status,
         JSON.stringify({ requirementsCount: reqCount, title: vacancy.title }),
+        JSON.stringify({ status: vacancy.status }),
+        JSON.stringify({ status: 'PENDING_ADMIN_REVIEW' }),
         req.ip || null,
       ]
     );
@@ -394,8 +398,8 @@ router.post('/:id/publish', async (req, res) => {
     );
 
     await client.query(
-      `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, metadata, ip_address)
-       VALUES ($1, $2, $3, 'VACANCY_PUBLISHED', 'Vacancy', $4, $5, 'PUBLISHED', $6, $7)`,
+      `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, metadata, old_value, new_value, ip_address)
+       VALUES ($1, $2, $3, 'VACANCY_PUBLISHED', 'Vacancy', $4, $5, 'PUBLISHED', $6, $7, $8, $9)`,
       [
         companyId,
         req.user.id,
@@ -403,6 +407,8 @@ router.post('/:id/publish', async (req, res) => {
         id,
         vacancy.status,
         JSON.stringify({ title: vacancy.title }),
+        JSON.stringify({ status: vacancy.status }),
+        JSON.stringify({ status: 'PUBLISHED' }),
         req.ip || null,
       ]
     );

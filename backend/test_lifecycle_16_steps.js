@@ -353,10 +353,33 @@ async function run() {
     console.log('\n====================================================');
     console.log('🎉 ALL 16 STEPS OF LIFECYCLE ACCEPTANCE PASSED CLEANLY');
     console.log('====================================================\n');
-    process.exit(0);
   } catch (err) {
     console.error('\n❌ LIFECYCLE TEST FAILED:', err.message);
-    process.exit(1);
+    process.exitCode = 1;
+  } finally {
+    console.log('🧹 Cleaning up test accounts and artifacts...');
+    try {
+      if (companyAId) {
+        await pool.query('DELETE FROM company_roles WHERE company_id = $1', [companyAId]);
+        await pool.query('DELETE FROM departments WHERE company_id = $1', [companyAId]);
+        await pool.query('DELETE FROM audit_logs WHERE company_id = $1', [companyAId]);
+        await pool.query('DELETE FROM company_members WHERE company_id = $1', [companyAId]);
+        await pool.query('DELETE FROM companies WHERE id = $1', [companyAId]);
+      }
+      if (companyBId) {
+        await pool.query('DELETE FROM audit_logs WHERE company_id = $1', [companyBId]);
+        await pool.query('DELETE FROM company_members WHERE company_id = $1', [companyBId]);
+        await pool.query('DELETE FROM companies WHERE id = $1', [companyBId]);
+      }
+      await pool.query(
+        'DELETE FROM users WHERE email IN ($1, $2, $3)',
+        [companyAEmail, companyBEmail, adminEmail]
+      );
+      console.log('  ✅ Cleaned up isolated test companies, vacancies, and admin accounts.\n');
+    } catch (cleanupErr) {
+      console.warn('  ⚠️ Cleanup note:', cleanupErr.message);
+    }
+    process.exit(process.exitCode || 0);
   }
 }
 

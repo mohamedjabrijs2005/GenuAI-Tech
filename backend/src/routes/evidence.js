@@ -8,10 +8,11 @@ router.use(authenticate, requireCompany);
 // Helper: log audit
 async function audit(client, { companyId, userId, user, entity, entityId, action, prev, next }) {
   await client.query(
-    `INSERT INTO audit_logs (company_id, user_id, actor_name, actor_email, actor_role, entity_type, entity_id, action, prev_state, new_state)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+    `INSERT INTO audit_logs (company_id, user_id, actor_name, actor_email, actor_role, entity_type, entity_id, action, prev_state, new_state, old_value, new_value)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
     [companyId, userId, `${user.first_name} ${user.last_name}`, user.email, user.role,
-     entity, entityId, action, prev ? JSON.stringify(prev) : null, next ? JSON.stringify(next) : null]
+     entity, entityId, action, prev ? JSON.stringify(prev) : null, next ? JSON.stringify(next) : null,
+     prev ? JSON.stringify(prev) : null, next ? JSON.stringify(next) : null]
   );
 }
 
@@ -562,17 +563,20 @@ router.post('/items/:evidenceId/review', async (req, res) => {
     // 3. Insert Audit Log
     const auditAction = `EVIDENCE_${normalizedDecision}`;
     await client.query(
-      `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, new_status, reason, metadata)
-       VALUES ($1, $2, $3, $4, 'Evidence', $5, $6, $7, $8)`,
+      `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, reason, metadata, old_value, new_value)
+       VALUES ($1, $2, $3, $4, 'Evidence', $5, $6, $7, $8, $9, $10, $11)`,
       [
         cid,
         req.user.id,
         req.companyMembership.member_role || 'RECRUITER',
         auditAction,
         evidenceId,
+        ev.review_status,
         normalizedDecision,
         reviewerNote || `Recruiter reviewed evidence item: ${normalizedDecision}`,
         JSON.stringify({ targetId: ev.target_id, requirementId: ev.requirement_id, decision: normalizedDecision }),
+        JSON.stringify({ review_status: ev.review_status }),
+        JSON.stringify({ review_status: normalizedDecision, reviewer_note: reviewerNote || null }),
       ]
     );
 

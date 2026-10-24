@@ -444,13 +444,15 @@ router.post('/company/attempts/:attemptId/evaluate', async (req, res) => {
 
     // Audit log with old/new marks
     await client.query(
-      `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, new_status, reason, metadata)
-       VALUES ($1, $2, $3, 'ASSESSMENT_EVALUATION_RECORDED', 'assessment_attempts', $4, $5,
-               'Recruiter scenario rubric evaluation recorded', $6)`,
+      `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, reason, metadata, old_value, new_value)
+       VALUES ($1, $2, $3, 'ASSESSMENT_EVALUATION_RECORDED', 'assessment_attempts', $4, $5, $6,
+               'Recruiter scenario rubric evaluation recorded', $7, $8, $9)`,
       [
-        companyId, req.user.id, memberRole, attemptId, finalGradingStatus,
+        companyId, req.user.id, memberRole, attemptId, attempt.grading_status, finalGradingStatus,
         JSON.stringify({ attemptId, scenarioScore: totalScen, finalScore: finalTotalScore,
           gradingStatus: finalGradingStatus, evaluationsCount: evaluations.length, details: auditDetails }),
+        JSON.stringify({ grading_status: attempt.grading_status, total_score: attempt.total_score }),
+        JSON.stringify({ grading_status: finalGradingStatus, total_score: finalTotalScore, scenario_score: totalScen }),
       ]
     );
 

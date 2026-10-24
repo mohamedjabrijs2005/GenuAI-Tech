@@ -286,14 +286,25 @@ async function runTestSuite() {
 
     if (failed === 0) {
       console.log('🎉 RESULT: READY FOR CANDIDATE DEVELOPMENT');
-      process.exit(0);
     } else {
       console.error('❌ RESULT: NOT READY FOR CANDIDATE DEVELOPMENT');
-      process.exit(1);
+      process.exitCode = 1;
     }
   } catch (err) {
     console.error('Test Suite Exception:', err);
-    process.exit(1);
+    process.exitCode = 1;
+  } finally {
+    try {
+      if (newCompanyId) {
+        await pool.query('DELETE FROM company_roles WHERE company_id = $1', [newCompanyId]);
+        await pool.query('DELETE FROM departments WHERE company_id = $1', [newCompanyId]);
+        await pool.query('DELETE FROM audit_logs WHERE company_id = $1', [newCompanyId]);
+        await pool.query('DELETE FROM company_members WHERE company_id = $1', [newCompanyId]);
+        await pool.query('DELETE FROM companies WHERE id = $1', [newCompanyId]);
+      }
+      await pool.query('DELETE FROM users WHERE email IN ($1, $2)', [uniqueEmail, uniqueEmailB]);
+    } catch (_) {}
+    process.exit(process.exitCode || 0);
   }
 }
 

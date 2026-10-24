@@ -318,8 +318,8 @@ const handleCompanyStatus = async (req, res) => {
 
     // Insert immutable audit log in PostgreSQL
     await client.query(
-      `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, reason, metadata, ip_address)
-       VALUES ($1, $2, $3, $4, 'Company', $5, $6, $7, $8, $9, $10)`,
+      `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, reason, metadata, old_value, new_value, ip_address)
+       VALUES ($1, $2, $3, $4, 'Company', $5, $6, $7, $8, $9, $10, $11, $12)`,
       [
         id,
         req.user.id,
@@ -330,6 +330,8 @@ const handleCompanyStatus = async (req, res) => {
         normalizedStatus,
         finalNote,
         JSON.stringify({ companyName: updatedCompany.name, officialEmail: updatedCompany.official_email }),
+        JSON.stringify({ verification_status: prevStatus }),
+        JSON.stringify({ verification_status: normalizedStatus, review_note: finalNote }),
         req.ip || null,
       ]
     );
@@ -593,8 +595,8 @@ const handleVacancyStatus = async (req, res) => {
 
     // Insert immutable audit log row
     await client.query(`
-      INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, reason, metadata, ip_address)
-      VALUES ($1, $2, $3, $4, 'Vacancy', $5, $6, $7, $8, $9, $10)
+      INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, reason, metadata, old_value, new_value, ip_address)
+      VALUES ($1, $2, $3, $4, 'Vacancy', $5, $6, $7, $8, $9, $10, $11, $12)
     `, [
       vacancy.company_id,
       req.user.id,
@@ -605,6 +607,8 @@ const handleVacancyStatus = async (req, res) => {
       normalizedStatus,
       finalNote,
       JSON.stringify({ roleTitle: updatedVacancy.title, companyName: vacancy.company_name }),
+      JSON.stringify({ status: prevStatus }),
+      JSON.stringify({ status: normalizedStatus, review_note: finalNote }),
       req.ip || null,
     ]);
 
