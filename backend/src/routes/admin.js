@@ -352,7 +352,7 @@ const handleCompanyStatus = async (req, res) => {
   } catch (err) {
     try { await client.query('ROLLBACK'); } catch (_) {}
     console.error('Update company status error:', err);
-    return res.status(500).json({ error: 'Failed to update company verification status' });
+    return res.status(500).json({ error: err.message || 'Failed to update company verification status' });
   } finally {
     try { client.release(); } catch (_) {}
   }
@@ -630,7 +630,7 @@ const handleVacancyStatus = async (req, res) => {
   } catch (err) {
     try { await client.query('ROLLBACK'); } catch (_) {}
     console.error('Update vacancy status error:', err);
-    return res.status(500).json({ error: 'Failed to update vacancy status' });
+    return res.status(500).json({ error: err.message || 'Failed to update vacancy status' });
   } finally {
     try { client.release(); } catch (_) {}
   }
@@ -748,11 +748,20 @@ router.patch('/users/:id/status', async (req, res) => {
     if (userRes.rowCount === 0) return res.status(404).json({ error: 'User not found' });
     const prevStatus = userRes.rows[0].status || 'Active';
 
-    await pool.query('UPDATE users SET status = $1, updated_at = NOW() WHERE id = $2', [status, id]);
+    const isActive = status === 'Active';
+    await pool.query(
+      `UPDATE users SET
+         status = $1,
+         is_active = $2,
+         disabled_at = CASE WHEN $2::boolean THEN NULL ELSE NOW() END,
+         updated_at = NOW()
+       WHERE id = $3`,
+      [status, isActive, id]
+    );
 
     await pool.query(
-      `INSERT INTO audit_logs (actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, reason, metadata)
-       VALUES ($1, $2, $3, 'User', $4, $5, $6, $7, $8)`,
+      `INSERT INTO audit_logs (actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, reason, metadata, old_value, new_value)
+       VALUES ($1, $2, $3, 'User', $4, $5, $6, $7, $8, $9, $10)`,
       [
         req.user.id,
         req.user.role || 'SUPER_ADMIN',
@@ -762,13 +771,15 @@ router.patch('/users/:id/status', async (req, res) => {
         status,
         reason || `User status changed to ${status}`,
         JSON.stringify({ targetEmail: userRes.rows[0].email }),
+        JSON.stringify({ status: prevStatus, is_active: userRes.rows[0].is_active }),
+        JSON.stringify({ status, is_active: isActive }),
       ]
     );
 
     return res.json({ success: true, message: `User status updated to ${status}` });
   } catch (err) {
     console.error('Admin user status update error:', err);
-    return res.status(500).json({ error: 'Failed to update user status' });
+    return res.status(500).json({ error: err.message || 'Failed to update user status' });
   }
 });
 
