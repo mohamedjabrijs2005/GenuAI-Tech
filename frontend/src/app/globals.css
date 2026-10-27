@@ -1775,41 +1775,7 @@ tbody tr:hover { background: #f1f5f9; }
   opacity: 0.92;
 }
 
-.sail-left-logo {
-  font-size: 26px;
-  font-weight: 900;
-  line-height: 1.1;
-  letter-spacing: -0.5px;
-  display: flex;
-  align-items: baseline;
-  gap: 2px;
-}
 
-.sail-left-brand-genu {
-  color: #ffffff;
-}
-
-.sail-left-brand-ai {
-  color: #fbbf24;
-}
-
-.sail-left-brand-tech {
-  font-size: 14px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
-  letter-spacing: 0.2px;
-  margin-left: 4px;
-}
-
-.sail-left-tagline {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.82);
-  margin-top: 5px;
-  display: block;
-}
 
 /* Truthful Overview Card on Left */
 .sail-left-overview-card {
@@ -1966,51 +1932,7 @@ tbody tr:hover { background: #f1f5f9; }
   background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.45), transparent);
 }
 
-.sail-form-logo {
-  font-size: 25px;
-  font-weight: 900;
-  letter-spacing: -0.5px;
-  line-height: 1.1;
-  text-align: center;
-  display: inline-flex;
-  align-items: baseline;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 2px;
-}
 
-/* CRITICAL FIX: Ensure 'Genu' is fully dark navy, AI is gold, and Technologies is clearly styled */
-.sail-form-card .sail-logo-genu,
-.sail-right-panel .sail-logo-genu {
-  color: #0f172a !important;
-  font-weight: 900;
-}
-
-.sail-form-card .sail-logo-ai,
-.sail-right-panel .sail-logo-ai {
-  color: #d97706 !important;
-  font-weight: 900;
-}
-
-.sail-form-card .sail-logo-tech,
-.sail-right-panel .sail-logo-tech {
-  color: #b8860b !important;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.3px;
-  margin-left: 3px;
-}
-
-.sail-form-powered {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: #854d0e;
-  text-align: center;
-  display: block;
-  margin-top: 4px;
-}
 
 /* Persona tabs */
 .sail-persona-tabs {

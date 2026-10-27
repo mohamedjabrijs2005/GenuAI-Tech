@@ -254,14 +254,34 @@ export default function AuthPage() {
 
         {/* Content on left panel */}
         <div className="sail-left-content">
-          {/* Top Brand Link */}
-          <Link href="/" style={{ textDecoration: 'none' }} className="sail-left-brand-link">
-            <div className="sail-left-logo">
-              <span className="sail-left-brand-genu">Genu</span>
-              <span className="sail-left-brand-ai">AI</span>
-              <span className="sail-left-brand-tech"> Technologies</span>
+          {/* Top Brand Link - matching dashboard top-left */}
+          <Link href="/" style={{ textDecoration: 'none', display: 'inline-block' }} className="sail-left-brand-link">
+            <div
+              className="sidebar-logo-text gold-gradient-text"
+              style={{
+                fontSize: 22,
+                fontWeight: 900,
+                lineHeight: 1.15,
+                letterSpacing: '-0.3px',
+                filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.45))',
+              }}
+            >
+              GenuAI Technologies
             </div>
-            <div className="sail-left-tagline">Structured Recruitment & Verification Platform</div>
+            <span
+              className="sidebar-logo-sub"
+              style={{
+                fontSize: 10.5,
+                color: '#fde68a',
+                fontWeight: 700,
+                letterSpacing: '0.6px',
+                textTransform: 'uppercase',
+                display: 'block',
+                marginTop: 4,
+              }}
+            >
+              Recruitment Intelligence
+            </span>
           </Link>
 
           {/* Truthful Auth Overview Card */}
@@ -323,16 +343,47 @@ export default function AuthPage() {
       <div className="sail-right-panel">
         <div className="sail-form-card">
 
-          {/* Top Logo + Decorative Lines (SAIL-Signature) */}
+          {/* Top Logo + Decorative Lines (SAIL-Signature) - matching dashboard top-left */}
           <div className="sail-form-logo-row">
             <div className="sail-deco-line" />
-            <Link href="/" style={{ textDecoration: 'none', flexShrink: 0, textAlign: 'center' }}>
-              <div className="sail-form-logo">
-                <span className="sail-logo-genu">Genu</span>
-                <span className="sail-logo-ai">AI</span>
-                <span className="sail-logo-tech"> Technologies</span>
+            <Link
+              href="/"
+              style={{
+                textDecoration: 'none',
+                flexShrink: 0,
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+              }}
+            >
+              <div
+                className="sidebar-logo-text gold-gradient-text"
+                style={{
+                  fontSize: 22,
+                  fontWeight: 900,
+                  lineHeight: 1.15,
+                  letterSpacing: '-0.3px',
+                  textAlign: 'center',
+                }}
+              >
+                GenuAI Technologies
               </div>
-              <div className="sail-form-powered">Recruitment &amp; Assessment Platform</div>
+              <span
+                className="sidebar-logo-sub"
+                style={{
+                  fontSize: 10,
+                  color: '#854d0e',
+                  fontWeight: 700,
+                  letterSpacing: '0.6px',
+                  textTransform: 'uppercase',
+                  display: 'block',
+                  marginTop: 3,
+                  textAlign: 'center',
+                }}
+              >
+                Recruitment Intelligence
+              </span>
             </Link>
             <div className="sail-deco-line" />
           </div>
