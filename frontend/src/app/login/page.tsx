@@ -5,11 +5,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
 import {
-  Eye, EyeOff, Lock, Mail, CheckCircle2,
+  Eye, EyeOff, Lock, Mail,
   AlertCircle, ArrowRight, Building2, User,
-  FileCheck, Target, UserCheck, ChevronRight,
-  Check, X, Compass, ShieldCheck,
-  Layers, Award, Sparkles
+  ShieldCheck, X,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
@@ -19,23 +17,6 @@ type UserPersona = 'candidate' | 'company' | 'admin';
 
 interface PersonaConfig {
   label: string;
-  tagline: string;
-  headline: string;
-  subtext: string;
-  roleBadge: string;
-  flowSteps: string[];
-  features: { title: string; desc: string; icon: any }[];
-  ledgerSample: {
-    roleTitle: string;
-    companyName: string;
-    requirement: string;
-    reqType: string;
-    evidenceTitle: string;
-    evidenceType: string;
-    coverageStatus: string;
-    reviewOutcome: string;
-  };
-  trustFooter: string;
   cardTitle: string;
   cardSubtitle: string;
   emailLabel: string;
@@ -47,128 +28,29 @@ interface PersonaConfig {
 const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
   candidate: {
     label: 'Candidate',
-    tagline: 'Candidate Workspace & Evidence Profile',
-    headline: 'Target verified roles. Present relevant evidence.',
-    subtext: 'Connect your real projects, work samples, and assessments directly to published vacancy criteria for transparent, human-led review.',
-    roleBadge: 'Candidate Portal',
-    flowSteps: ['TARGET ROLE', 'PREPARE', 'SUBMIT EVIDENCE', 'RECRUITER REVIEW'],
-    features: [
-      {
-        title: 'Explicit Role Rubrics',
-        desc: 'Review exact vacancy requirements, priority weights, and accepted evidence types upfront.',
-        icon: Compass,
-      },
-      {
-        title: 'Target Privacy Isolation',
-        desc: 'Applications and submissions are strictly isolated per company; never cross-shared.',
-        icon: Lock,
-      },
-      {
-        title: 'Direct Evidence Mapping',
-        desc: 'Connect portfolio work, code repositories, and work samples directly to role rubrics.',
-        icon: ShieldCheck,
-      },
-    ],
-    ledgerSample: {
-      roleTitle: 'Senior Backend Engineer',
-      companyName: 'Alpha Technologies',
-      requirement: 'Distributed Systems & Data Consensus',
-      reqType: 'Required Skill',
-      evidenceTitle: 'Raft Consensus Protocol Implementation',
-      evidenceType: 'Project Work Sample',
-      coverageStatus: 'Supported',
-      reviewOutcome: 'Human Recruiter Contextual Review',
-    },
-    trustFooter: 'Candidate Privacy • Isolated Targets • Human-Led Decisions',
     cardTitle: 'Welcome to GenuAI',
-    cardSubtitle: 'Sign in to access your candidate workspace and active targets',
+    cardSubtitle: 'Sign in to access your candidate workspace',
     emailLabel: 'Email Address',
     emailPlaceholder: 'you@example.com',
-    submitText: 'Sign In to Workspace',
+    submitText: 'Sign In',
     allowRegister: true,
   },
   company: {
     label: 'Company',
-    tagline: 'Evidence-Centered Recruitment Intelligence',
-    headline: 'Define the role. Review the evidence. Decide with clarity.',
-    subtext: 'Evaluate candidate work samples, projects, and structured assessments against explicit role requirements — without automated AI filtering.',
-    roleBadge: 'Employer Workspace',
-    flowSteps: ['DEFINE REQUIREMENTS', 'MODERATION', 'COLLECT EVIDENCE', 'HUMAN DECISION'],
-    features: [
-      {
-        title: 'Structured Vacancy Builder',
-        desc: 'Define departments, roles, and weighted requirement criteria with transparent rubrics.',
-        icon: Layers,
-      },
-      {
-        title: 'Requirement-Linked Evidence',
-        desc: 'Review code samples, certifications, and portfolio evidence mapped to each requirement.',
-        icon: FileCheck,
-      },
-      {
-        title: 'Human-Led Hiring Outcomes',
-        desc: 'Zero automated algorithmic rejections; human hiring managers retain total authority.',
-        icon: UserCheck,
-      },
-    ],
-    ledgerSample: {
-      roleTitle: 'Principal Cloud Architect',
-      companyName: 'Flow Test Enterprises',
-      requirement: 'Kubernetes & AWS Infrastructure',
-      reqType: 'High Priority',
-      evidenceTitle: 'Production Terraform Cluster Architecture',
-      evidenceType: 'Infrastructure Sample',
-      coverageStatus: 'Supported',
-      reviewOutcome: 'Recruiter Evaluated & Accepted',
-    },
-    trustFooter: 'Multi-Tenant Isolation • Audit History • Human Authority',
     cardTitle: 'Company Workspace',
-    cardSubtitle: 'Sign in to manage vacancies, requirements, and candidate evidence',
+    cardSubtitle: 'Sign in to manage vacancies and candidate evidence',
     emailLabel: 'Work Email Address',
     emailPlaceholder: 'you@company.com',
-    submitText: 'Sign In to Workspace',
+    submitText: 'Sign In',
     allowRegister: true,
   },
   admin: {
     label: 'Admin',
-    tagline: 'Platform Governance & Trust Administration',
-    headline: 'Verify employers. Moderate vacancies. Audit platform compliance.',
-    subtext: 'Administrative console for company verification, vacancy moderation, user security, and platform audit trail inspection.',
-    roleBadge: 'Governance Console',
-    flowSteps: ['VERIFY COMPANY', 'MODERATE VACANCIES', 'MONITOR SIGNALS', 'AUDIT LOGS'],
-    features: [
-      {
-        title: 'Company Verification',
-        desc: 'Review corporate domains and business registration before granting publishing rights.',
-        icon: CheckCircle2,
-      },
-      {
-        title: 'Vacancy Moderation',
-        desc: 'Ensure published vacancies meet quality rubrics and transparent requirement standards.',
-        icon: ShieldCheck,
-      },
-      {
-        title: 'System Audit Logs',
-        desc: 'Inspect platform activity logs and maintain transparent accountability records.',
-        icon: Award,
-      },
-    ],
-    ledgerSample: {
-      roleTitle: 'Corporate Identity Verification',
-      companyName: 'Alpha Technologies',
-      requirement: 'Domain & Legal Entity Verification',
-      reqType: 'Governance Prerequisite',
-      evidenceTitle: 'Corporate Registration Certificate',
-      evidenceType: 'Official Document',
-      coverageStatus: 'Verified',
-      reviewOutcome: 'Platform Admin Approved',
-    },
-    trustFooter: 'Platform Governance • Verification • Compliance Audits',
-    cardTitle: 'Admin Dashboard & Governance',
-    cardSubtitle: 'Sign in or create an authorized administrator account',
+    cardTitle: 'Admin Dashboard',
+    cardSubtitle: 'Sign in to the governance and administration console',
     emailLabel: 'Admin Email Address',
     emailPlaceholder: 'admin@genuai.io',
-    submitText: 'Access Admin Dashboard',
+    submitText: 'Access Dashboard',
     allowRegister: true,
   },
 };
@@ -206,20 +88,11 @@ export default function AuthPage() {
       const modeParam = params.get('mode');
 
       const wantsRegister = path.includes('/register') || modeParam === 'register';
-      if (wantsRegister) {
-        setIsLogin(false);
-      } else {
-        setIsLogin(true);
-      }
+      setIsLogin(!wantsRegister);
 
-      if (roleParam === 'candidate') {
-        setPersona('candidate');
-      } else if (roleParam === 'company') {
-        setPersona('company');
-      } else if (roleParam === 'admin') {
-        setPersona('admin');
-        setIsLogin(true);
-      }
+      if (roleParam === 'candidate') setPersona('candidate');
+      else if (roleParam === 'company') setPersona('company');
+      else if (roleParam === 'admin') { setPersona('admin'); setIsLogin(true); }
     }
   }, []);
 
@@ -228,9 +101,7 @@ export default function AuthPage() {
   const handlePersonaChange = (p: UserPersona) => {
     setPersona(p);
     setError('');
-    if (p === 'admin') {
-      setIsLogin(true);
-    }
+    if (p === 'admin') setIsLogin(true);
   };
 
   const set = (k: string, v: string) => {
@@ -238,9 +109,8 @@ export default function AuthPage() {
     if (error) setError('');
   };
 
-  const validateEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  };
+  const validateEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
   const getPasswordStrength = (pass: string) => {
     if (!pass) return { score: 0, label: 'None', color: '#cbd5e1' };
@@ -249,39 +119,21 @@ export default function AuthPage() {
     if (pass.length >= 8) score += 1;
     if (/[A-Z]/.test(pass) && /[0-9]/.test(pass)) score += 1;
     if (/[^A-Za-z0-9]/.test(pass)) score += 1;
-
     if (score <= 1) return { score: 1, label: 'Weak', color: '#f87171' };
-    if (score === 2 || score === 3) return { score: 2, label: 'Good', color: '#f59e0b' };
+    if (score <= 3) return { score: 2, label: 'Good', color: '#f59e0b' };
     return { score: 3, label: 'Strong', color: '#10b981' };
   };
 
   const validate = () => {
-    if (!form.email || !form.email.trim()) {
-      return `Please enter your ${persona === 'admin' ? 'admin' : persona === 'company' ? 'work' : ''} email address.`;
-    }
-    if (!validateEmail(form.email)) {
-      return 'Please enter a valid email address.';
-    }
-    if (!form.password || !form.password.trim()) {
-      return 'Please enter your password.';
-    }
-
+    if (!form.email?.trim()) return `Please enter your email address.`;
+    if (!validateEmail(form.email)) return 'Please enter a valid email address.';
+    if (!form.password?.trim()) return 'Please enter your password.';
     if (!isLogin && config.allowRegister) {
-      if (!agreedTerms) {
-        return 'Please agree to the Terms of Service and Privacy Policy.';
-      }
-      if (!form.name.trim()) {
-        return 'Full name is required.';
-      }
-      if (persona === 'company' && !form.companyName.trim()) {
-        return 'Company or organization name is required.';
-      }
-      if (form.password.length < 8) {
-        return 'Password must be at least 8 characters.';
-      }
-      if (form.password !== form.confirmPassword) {
-        return 'Passwords do not match.';
-      }
+      if (!agreedTerms) return 'Please agree to the Terms of Service and Privacy Policy.';
+      if (!form.name.trim()) return 'Full name is required.';
+      if (persona === 'company' && !form.companyName.trim()) return 'Company name is required.';
+      if (form.password.length < 8) return 'Password must be at least 8 characters.';
+      if (form.password !== form.confirmPassword) return 'Passwords do not match.';
     }
     return null;
   };
@@ -289,13 +141,9 @@ export default function AuthPage() {
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const err = validate();
-    if (err) {
-      setError(err);
-      return;
-    }
+    if (err) { setError(err); return; }
     setLoading(true);
     setError('');
-
     try {
       if (isLogin) {
         await login(form.email.trim().toLowerCase(), form.password);
@@ -303,32 +151,32 @@ export default function AuthPage() {
         const nameParts = form.name.trim().split(' ');
         const firstName = nameParts[0] || 'User';
         const lastName = nameParts.slice(1).join(' ') || 'Member';
-
         await authRegister({
           firstName,
           lastName,
           email: form.email.trim(),
           password: form.password,
           role: persona === 'admin' ? 'SUPER_ADMIN' : (persona === 'candidate' ? 'CANDIDATE' : 'COMPANY_OWNER'),
-          companyName: persona === 'company' ? (form.companyName.trim() || 'My Company') : (persona === 'admin' ? 'GenuAI Administration' : 'Candidate Workspace'),
+          companyName: persona === 'company'
+            ? (form.companyName.trim() || 'My Company')
+            : (persona === 'admin' ? 'GenuAI Administration' : 'Candidate Workspace'),
         });
       }
     } catch (e: any) {
       if (e.response?.status === 409) {
         setIsLogin(true);
-        const msg = 'This email is already registered. Switched to Sign In mode — please enter your password.';
+        const msg = 'This email is already registered. Please sign in instead.';
         setError(msg);
         toast(msg, { icon: 'ℹ️' });
         return;
       }
-      const msg = e.response?.data?.error || e.message || 'Authentication failed. Please verify credentials.';
+      const msg = e.response?.data?.error || e.message || 'Authentication failed. Please check your credentials.';
       setError(msg);
       toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
-
 
   const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -346,23 +194,20 @@ export default function AuthPage() {
         setForgotEmail('');
       }, 3000);
     } catch (err: any) {
-      const msg = err.response?.data?.error || 'Failed to submit reset request.';
-      toast.error(msg);
+      toast.error(err.response?.data?.error || 'Failed to submit reset request.');
     }
   };
 
   const handleGoogleSignIn = async () => {
     if (persona === 'admin') {
-      toast.error('Google Sign-In is restricted for platform administrative accounts. Use dedicated credentials.');
+      toast.error('Google Sign-In is not available for admin accounts.');
       return;
     }
-
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (!clientId) {
-      toast.error('Google Sign-In pending configuration: NEXT_PUBLIC_GOOGLE_CLIENT_ID is not configured in environment.');
+      toast.error('Google Sign-In is not configured.');
       return;
     }
-
     try {
       setLoading(true);
       if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
@@ -375,23 +220,15 @@ export default function AuthPage() {
                 requestedRole: persona === 'company' ? 'COMPANY_OWNER' : 'CANDIDATE',
                 companyName: form.companyName || undefined,
               });
-
               if (res.data?.token) {
                 localStorage.setItem('genuai_token', res.data.token);
                 localStorage.setItem('genuai_user', JSON.stringify(res.data.user));
-                if (res.data.company) {
-                  localStorage.setItem('genuai_company', JSON.stringify(res.data.company));
-                }
+                if (res.data.company) localStorage.setItem('genuai_company', JSON.stringify(res.data.company));
                 toast.success('Signed in with Google!');
-                if (res.data.user?.role === 'COMPANY_OWNER') {
-                  router.push('/dashboard');
-                } else {
-                  router.push('/candidate');
-                }
+                router.push(res.data.user?.role === 'COMPANY_OWNER' ? '/dashboard' : '/candidate');
               }
             } catch (err: any) {
-              const msg = err.response?.data?.error || 'Google authentication failed.';
-              toast.error(msg);
+              toast.error(err.response?.data?.error || 'Google authentication failed.');
             } finally {
               setLoading(false);
             }
@@ -399,9 +236,9 @@ export default function AuthPage() {
         });
         (window as any).google.accounts.id.prompt();
       } else {
-        toast.error('Google Sign-In library is loading. Please try again in a moment.');
+        toast.error('Google Sign-In is loading. Please try again.');
       }
-    } catch (e: any) {
+    } catch {
       toast.error('Failed to initialize Google Sign-In.');
     } finally {
       setLoading(false);
@@ -409,239 +246,83 @@ export default function AuthPage() {
   };
 
   const passStrength = getPasswordStrength(form.password);
-  const ledger = config.ledgerSample;
 
   return (
-    <div className="auth-fullscreen-layout">
-      {/* ================= LEFT SIDE: SLEEK HERO & LIVE RECRUITMENT LEDGER ================= */}
-      <div className="auth-fullscreen-left">
-        {/* Top Header */}
-        <div className="auth-hero-top-nav">
-          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div>
-              <div className="sidebar-logo-text gold-gradient-text" style={{ fontSize: 18, fontWeight: 900, lineHeight: 1.1, letterSpacing: '-0.3px' }}>
-                GenuAI Technologies
-              </div>
-              <span
-                style={{
-                  fontSize: 10.5,
-                  color: '#d4af37',
-                  fontWeight: 700,
-                  letterSpacing: '0.6px',
-                  textTransform: 'uppercase',
-                  display: 'block',
-                  marginTop: 2,
-                }}
-              >
-                Recruitment Intelligence
-              </span>
+    <div className="auth-page-wrapper">
+      {/* Decorative background orbs */}
+      <div className="auth-bg-orb auth-bg-orb-1" />
+      <div className="auth-bg-orb auth-bg-orb-2" />
+      <div className="auth-bg-orb auth-bg-orb-3" />
+
+      <div className="auth-center-container">
+
+        {/* Logo */}
+        <div className="auth-brand-header">
+          <Link href="/" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div className="sidebar-logo-text gold-gradient-text" style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.5px', lineHeight: 1.1 }}>
+              GenuAI Technologies
             </div>
+            <span style={{ fontSize: 10, color: '#b8860b', fontWeight: 700, letterSpacing: '1.2px', textTransform: 'uppercase', display: 'block', marginTop: 3 }}>
+              Recruitment Intelligence
+            </span>
           </Link>
-
-          <div className="auth-hero-badge">
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#b8860b' }} />
-            <span>{config.roleBadge}</span>
-          </div>
         </div>
 
-        {/* Main Center Content */}
-        <div className="auth-hero-main-content">
-          <div className="auth-hero-tagline">
-            <Sparkles size={13} style={{ color: '#d4af37' }} />
-            <span>{config.tagline}</span>
-          </div>
+        {/* Auth Card */}
+        <div className="auth-card-elegant">
 
-          <h1 className="auth-hero-headline">
-            {config.headline}
-          </h1>
-
-          <p className="auth-hero-subtext">
-            {config.subtext}
-          </p>
-
-          {/* Interactive Live Recruitment Context Ledger Card */}
-          <div className="auth-ledger-card">
-            <div className="auth-ledger-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className="auth-pulse-dot" />
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#f8fafc', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                  Illustrative Requirement &amp; Evidence Ledger
-                </span>
-              </div>
-              <span style={{ fontSize: 10.5, color: '#94a3b8', fontWeight: 600 }}>
-                {ledger.companyName}
-              </span>
-            </div>
-
-            <div className="auth-ledger-body">
-              <div className="auth-ledger-row">
-                <span className="auth-ledger-label">Role &amp; Requirement:</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 700, color: '#ffffff' }}>{ledger.roleTitle}</span>
-                  <span className="auth-tag-pill">{ledger.requirement}</span>
-                  <span className="auth-tag-sub">{ledger.reqType}</span>
-                </div>
-              </div>
-
-              <div className="auth-ledger-row">
-                <span className="auth-ledger-label">Candidate Evidence:</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 12, color: '#e2e8f0', fontWeight: 600 }}>{ledger.evidenceTitle}</span>
-                  <span style={{ fontSize: 10, background: 'rgba(212, 175, 55, 0.15)', padding: '2px 7px', borderRadius: 4, color: '#fbbf24', fontWeight: 600 }}>
-                    Evidence Attached
-                  </span>
-                </div>
-              </div>
-
-              <div className="auth-ledger-footer">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: 11, color: '#94a3b8' }}>Coverage State:</span>
-                  <span className="auth-coverage-badge">✓ {ledger.coverageStatus}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#fbbf24', fontWeight: 600 }}>
-                  <UserCheck size={13} />
-                  <span>{ledger.reviewOutcome}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 3 Value Features */}
-          <div className="auth-features-list">
-            {config.features.map((f) => {
-              const IconComp = f.icon;
-              return (
-                <div key={f.title} className="auth-feature-item">
-                  <div className="auth-feature-icon">
-                    <IconComp size={15} style={{ color: '#d4af37' }} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc', marginBottom: 2 }}>
-                      {f.title}
-                    </div>
-                    <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.45 }}>
-                      {f.desc}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Bottom Trust Strip */}
-        <div className="auth-hero-bottom-strip">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ color: '#ffffff', fontWeight: 700, fontSize: 12 }}>GenuAI Technologies</span>
-            <span style={{ color: 'rgba(255, 255, 255, 0.25)' }}>•</span>
-            <span style={{ color: '#fbbf24', fontWeight: 700, fontSize: 11.5 }}>{config.trustFooter}</span>
-          </div>
-          <div>
-            <span style={{ fontSize: 11, color: '#64748b' }}>Zero automated AI rejection decisions</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ================= RIGHT SIDE: COMPACT, MODERN AUTH CARD ================= */}
-      <div className="auth-fullscreen-right">
-        <div className="auth-fullscreen-form-card">
-          {/* Mobile-only logo with Home link */}
-          <div className="auth-mobile-logo">
-            <Link href="/" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div className="sidebar-logo-text gold-gradient-text" style={{ fontSize: 16, fontWeight: 900, letterSpacing: '-0.3px', textAlign: 'center' }}>
-                GenuAI Technologies
-              </div>
-              <span style={{ fontSize: 9.5, color: '#b8860b', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', display: 'block', textAlign: 'center' }}>
-                Recruitment Intelligence
-              </span>
-            </Link>
-          </div>
-          {/* Persona Switcher: Candidate | Company | Admin */}
+          {/* Persona Switcher */}
           <div className="auth-persona-tabs">
-            <button
-              type="button"
-              onClick={() => handlePersonaChange('candidate')}
-              className={`auth-persona-tab ${persona === 'candidate' ? 'active' : ''}`}
-            >
-              <User size={13} />
-              <span>Candidate</span>
+            <button type="button" onClick={() => handlePersonaChange('candidate')} className={`auth-persona-tab ${persona === 'candidate' ? 'active' : ''}`}>
+              <User size={13} /><span>Candidate</span>
             </button>
-            <button
-              type="button"
-              onClick={() => handlePersonaChange('company')}
-              className={`auth-persona-tab ${persona === 'company' ? 'active' : ''}`}
-            >
-              <Building2 size={13} />
-              <span>Company</span>
+            <button type="button" onClick={() => handlePersonaChange('company')} className={`auth-persona-tab ${persona === 'company' ? 'active' : ''}`}>
+              <Building2 size={13} /><span>Company</span>
             </button>
-            <button
-              type="button"
-              onClick={() => handlePersonaChange('admin')}
-              className={`auth-persona-tab ${persona === 'admin' ? 'active' : ''}`}
-            >
-              <ShieldCheck size={13} />
-              <span>Admin</span>
+            <button type="button" onClick={() => handlePersonaChange('admin')} className={`auth-persona-tab ${persona === 'admin' ? 'active' : ''}`}>
+              <ShieldCheck size={13} /><span>Admin</span>
             </button>
           </div>
 
-          {/* Mode Switcher (Sign In vs Create Account) */}
+          {/* Sign In / Create Account toggle */}
           {config.allowRegister && (
             <div className="auth-pill-switch">
               <button
                 type="button"
-                onClick={() => {
-                  setIsLogin(true);
-                  setError('');
-                }}
+                onClick={() => { setIsLogin(true); setError(''); }}
                 className={`auth-pill-btn ${isLogin ? 'active' : ''}`}
-              >
-                Sign In
-              </button>
+              >Sign In</button>
               <button
                 type="button"
-                onClick={() => {
-                  setIsLogin(false);
-                  setError('');
-                }}
+                onClick={() => { setIsLogin(false); setError(''); }}
                 className={`auth-pill-btn ${!isLogin ? 'active' : ''}`}
-              >
-                Create Account
-              </button>
+              >Create Account</button>
             </div>
           )}
 
-          <div style={{ marginBottom: 18 }}>
+          {/* Title */}
+          <div style={{ marginBottom: 20 }}>
             <h2 className="auth-form-title">
-              {isLogin ? config.cardTitle : (persona === 'company' ? 'Create Company Workspace' : 'Create Candidate Account')}
+              {isLogin ? config.cardTitle : (persona === 'company' ? 'Create Company Account' : persona === 'admin' ? 'Create Admin Account' : 'Create Candidate Account')}
             </h2>
             <p className="auth-form-subtitle">
-              {isLogin ? config.cardSubtitle : 'Get started with requirement-linked evidence and structured evaluation'}
+              {isLogin ? config.cardSubtitle : 'Get started with your GenuAI account'}
             </p>
           </div>
 
-          {/* Error Notice */}
+          {/* Error */}
           {error && (
-            <div
-              style={{
-                background: '#fef2f2',
-                border: '1px solid #fecaca',
-                color: '#b91c1c',
-                fontSize: 12,
-                fontWeight: 600,
-                padding: '10px 14px',
-                borderRadius: 8,
-                marginBottom: 16,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-              }}
-            >
+            <div style={{
+              background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c',
+              fontSize: 12, fontWeight: 600, padding: '10px 14px', borderRadius: 10,
+              marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8,
+            }}>
               <AlertCircle size={15} style={{ flexShrink: 0, color: '#ef4444' }} />
               <span>{error}</span>
             </div>
           )}
 
-          {/* Authentication Form */}
+          {/* Form */}
           <form onSubmit={handleSubmit}>
             {!isLogin && config.allowRegister && (
               <div className={persona === 'company' ? 'auth-two-col-grid' : ''} style={{ gap: 10, marginBottom: 12 }}>
@@ -649,13 +330,7 @@ export default function AuthPage() {
                   <label className="auth-input-label">Full Name *</label>
                   <div className="auth-input-wrapper">
                     <User size={15} className="auth-input-icon" />
-                    <input
-                      type="text"
-                      placeholder="Sarah Connor"
-                      value={form.name}
-                      onChange={(e) => set('name', e.target.value)}
-                      className="auth-text-input"
-                    />
+                    <input type="text" placeholder="Your full name" value={form.name} onChange={(e) => set('name', e.target.value)} className="auth-text-input" />
                   </div>
                 </div>
                 {persona === 'company' && (
@@ -663,13 +338,7 @@ export default function AuthPage() {
                     <label className="auth-input-label">Company Name *</label>
                     <div className="auth-input-wrapper">
                       <Building2 size={15} className="auth-input-icon" />
-                      <input
-                        type="text"
-                        placeholder="Acme Tech"
-                        value={form.companyName}
-                        onChange={(e) => set('companyName', e.target.value)}
-                        className="auth-text-input"
-                      />
+                      <input type="text" placeholder="Your company" value={form.companyName} onChange={(e) => set('companyName', e.target.value)} className="auth-text-input" />
                     </div>
                   </div>
                 )}
@@ -696,14 +365,9 @@ export default function AuthPage() {
                 <label className="auth-input-label" style={{ margin: 0 }}>Password *</label>
                 {isLogin && (
                   <span
-                    onClick={() => {
-                      setForgotEmail(form.email || '');
-                      setShowForgotModal(true);
-                    }}
+                    onClick={() => { setForgotEmail(form.email || ''); setShowForgotModal(true); }}
                     style={{ fontSize: 11, fontWeight: 700, color: '#b8860b', cursor: 'pointer' }}
-                  >
-                    Forgot Password?
-                  </span>
+                  >Forgot Password?</span>
                 )}
               </div>
               <div className="auth-input-wrapper">
@@ -720,25 +384,11 @@ export default function AuthPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: 12,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: '#94a3b8',
-                    background: 'none',
-                    border: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    cursor: 'pointer',
-                    padding: 0,
-                  }}
+                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', background: 'none', border: 'none', display: 'flex', alignItems: 'center', cursor: 'pointer', padding: 0 }}
                 >
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
-
-              {/* Password Strength meter on register */}
               {!isLogin && form.password && (
                 <div style={{ marginTop: 6 }}>
                   <div style={{ display: 'flex', gap: 4, height: 3, marginBottom: 4 }}>
@@ -746,9 +396,7 @@ export default function AuthPage() {
                     <div style={{ flex: 1, borderRadius: 2, background: passStrength.score >= 2 ? passStrength.color : '#e2e8f0' }} />
                     <div style={{ flex: 1, borderRadius: 2, background: passStrength.score >= 3 ? passStrength.color : '#e2e8f0' }} />
                   </div>
-                  <span style={{ fontSize: 10, color: passStrength.color, fontWeight: 700 }}>
-                    Password Strength: {passStrength.label}
-                  </span>
+                  <span style={{ fontSize: 10, color: passStrength.color, fontWeight: 700 }}>Password Strength: {passStrength.label}</span>
                 </div>
               )}
             </div>
@@ -770,19 +418,7 @@ export default function AuthPage() {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: 12,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: '#94a3b8',
-                      background: 'none',
-                      border: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      cursor: 'pointer',
-                      padding: 0,
-                    }}
+                    style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', background: 'none', border: 'none', display: 'flex', alignItems: 'center', cursor: 'pointer', padding: 0 }}
                   >
                     {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
@@ -790,28 +426,21 @@ export default function AuthPage() {
               </div>
             )}
 
-            {/* Remember Me */}
             {isLogin && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11.5, color: '#64748b' }}>
-                  <input
-                    type="checkbox"
-                    id="remember-checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    style={{ accentColor: '#b8860b', cursor: 'pointer', borderRadius: 4 }}
-                  />
-                  <label htmlFor="remember-checkbox" style={{ cursor: 'pointer', userSelect: 'none' }}>Stay signed in</label>
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11.5, color: '#64748b', marginBottom: 14 }}>
+                <input
+                  type="checkbox"
+                  id="remember-checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  style={{ accentColor: '#b8860b', cursor: 'pointer' }}
+                />
+                <label htmlFor="remember-checkbox" style={{ cursor: 'pointer', userSelect: 'none' }}>Stay signed in</label>
               </div>
             )}
 
-            {/* Terms checkbox on register */}
             {!isLogin && (
-              <div
-                className="auth-terms-box"
-                onClick={() => setAgreedTerms(!agreedTerms)}
-              >
+              <div className="auth-terms-box" onClick={() => setAgreedTerms(!agreedTerms)}>
                 <input
                   type="checkbox"
                   id="terms-checkbox"
@@ -821,41 +450,18 @@ export default function AuthPage() {
                 />
                 <label htmlFor="terms-checkbox" style={{ cursor: 'pointer', fontSize: 11, color: '#475569', lineHeight: 1.45 }}>
                   I agree to the{' '}
-                  <span onClick={(e) => { e.stopPropagation(); setShowTermsModal(true); }} style={{ color: '#854d0e', fontWeight: 700, textDecoration: 'underline' }}>
-                    Terms of Service
-                  </span>{' '}
-                  and{' '}
-                  <span onClick={(e) => { e.stopPropagation(); setShowTermsModal(true); }} style={{ color: '#854d0e', fontWeight: 700, textDecoration: 'underline' }}>
-                    Privacy Policy
-                  </span>.
+                  <span onClick={(e) => { e.stopPropagation(); setShowTermsModal(true); }} style={{ color: '#854d0e', fontWeight: 700, textDecoration: 'underline' }}>Terms of Service</span>
+                  {' '}and{' '}
+                  <span onClick={(e) => { e.stopPropagation(); setShowTermsModal(true); }} style={{ color: '#854d0e', fontWeight: 700, textDecoration: 'underline' }}>Privacy Policy</span>.
                 </label>
               </div>
             )}
 
-            {/* Submit CTA */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="auth-submit-btn"
-            >
-              {loading ? (
-                <span>Authenticating…</span>
-              ) : isLogin ? (
-                <>
-                  <span>{config.submitText}</span>
-                  <ArrowRight size={15} />
-                </>
+            <button type="submit" disabled={loading} className="auth-submit-btn">
+              {loading ? <span>Signing in…</span> : isLogin ? (
+                <><span>{config.submitText}</span><ArrowRight size={15} /></>
               ) : (
-                <>
-                  <span>
-                    {persona === 'company'
-                      ? 'Create Company Workspace'
-                      : persona === 'admin'
-                      ? 'Create Admin Account'
-                      : 'Create Candidate Account'}
-                  </span>
-                  <ArrowRight size={15} />
-                </>
+                <><span>{persona === 'company' ? 'Create Company Account' : persona === 'admin' ? 'Create Admin Account' : 'Create Candidate Account'}</span><ArrowRight size={15} /></>
               )}
             </button>
           </form>
@@ -864,31 +470,24 @@ export default function AuthPage() {
           {persona !== 'admin' && (
             <div style={{ marginTop: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '12px 0 10px' }}>
-                <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+                <div style={{ flex: 1, height: 1, background: '#e8e0cc' }} />
                 <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>or</span>
-                <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+                <div style={{ flex: 1, height: 1, background: '#e8e0cc' }} />
               </div>
-
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
                 style={{
-                  width: '100%',
-                  height: 42,
-                  borderRadius: 10,
-                  border: '1px solid #cbd5e1',
-                  background: '#ffffff',
-                  color: '#334155',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 10,
-                  cursor: 'pointer',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                  transition: 'background 0.15s ease',
+                  width: '100%', height: 44, borderRadius: 10,
+                  border: '1px solid #e2d8c0', background: '#ffffff',
+                  color: '#334155', fontSize: 13, fontWeight: 600,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  gap: 10, cursor: 'pointer',
+                  boxShadow: '0 1px 4px rgba(184,134,11,0.08)',
+                  transition: 'box-shadow 0.18s ease, border-color 0.18s ease',
                 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#d4af37'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 2px 12px rgba(184,134,11,0.16)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#e2d8c0'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 1px 4px rgba(184,134,11,0.08)'; }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -903,44 +502,31 @@ export default function AuthPage() {
 
           <Script src="https://accounts.google.com/gsi/client" strategy="lazyOnload" />
 
-          {/* Admin Restricted Notice */}
           {persona === 'admin' && (
             <div style={{ marginTop: 14, textAlign: 'center' }}>
               <p style={{ fontSize: 11, color: '#64748b', margin: 0 }}>
-                Restricted to authorized <strong style={{ color: '#854d0e' }}>@genuai.test</strong> accounts.
+                Restricted to authorized <strong style={{ color: '#854d0e' }}>administrator</strong> accounts.
               </p>
             </div>
           )}
-          {/* Platform Navigation Links — ensures no pages are missing on mobile */}
+
+          {/* Footer links */}
           <div style={{
-            marginTop: 20,
-            paddingTop: 16,
-            borderTop: '1px solid #f1f5f9',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-            alignItems: 'center',
-            textAlign: 'center',
+            marginTop: 22, paddingTop: 16, borderTop: '1px solid #f0ebe0',
+            display: 'flex', flexDirection: 'column', gap: 8,
+            alignItems: 'center', textAlign: 'center',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-              <Link href="/" style={{ fontSize: 12, fontWeight: 700, color: '#475569', textDecoration: 'none' }}>
-                ← Platform Home
-              </Link>
-              <span style={{ color: '#cbd5e1' }}>•</span>
-              <Link href="/register" style={{ fontSize: 12, fontWeight: 700, color: '#854d0e', textDecoration: 'none' }}>
-                Choose Pathway
-              </Link>
-              <span style={{ color: '#cbd5e1' }}>•</span>
-              <Link href="/trust" style={{ fontSize: 12, fontWeight: 600, color: '#64748b', textDecoration: 'none' }}>
-                Trust &amp; Privacy
-              </Link>
+              <Link href="/" style={{ fontSize: 12, fontWeight: 700, color: '#475569', textDecoration: 'none' }}>← Home</Link>
+              <span style={{ color: '#d4c9a8' }}>•</span>
+              <Link href="/register" style={{ fontSize: 12, fontWeight: 700, color: '#854d0e', textDecoration: 'none' }}>Get Started</Link>
+              <span style={{ color: '#d4c9a8' }}>•</span>
+              <Link href="/trust" style={{ fontSize: 12, fontWeight: 600, color: '#64748b', textDecoration: 'none' }}>Privacy</Link>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'center', fontSize: 11, color: '#94a3b8' }}>
               <Link href="/privacy" style={{ color: '#94a3b8', textDecoration: 'none' }}>Privacy Policy</Link>
               <span>•</span>
               <Link href="/terms" style={{ color: '#94a3b8', textDecoration: 'none' }}>Terms of Use</Link>
-              <span>•</span>
-              <Link href="/accessibility" style={{ color: '#94a3b8', textDecoration: 'none' }}>Accessibility</Link>
               <span>•</span>
               <Link href="/contact" style={{ color: '#94a3b8', textDecoration: 'none' }}>Contact</Link>
             </div>
@@ -948,127 +534,48 @@ export default function AuthPage() {
         </div>
       </div>
 
-      {/* ================= FORGOT PASSWORD MODAL ================= */}
+      {/* Forgot Password Modal */}
       {showForgotModal && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(15, 23, 42, 0.65)',
-          backdropFilter: 'blur(5px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          padding: 16,
-        }}>
-          <div style={{
-            background: '#ffffff',
-            borderRadius: 16,
-            padding: 26,
-            maxWidth: 420,
-            width: '100%',
-            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
-            border: '1px solid rgba(212, 175, 55, 0.35)',
-          }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 16 }}>
+          <div style={{ background: '#ffffff', borderRadius: 18, padding: 28, maxWidth: 420, width: '100%', boxShadow: '0 24px 56px rgba(0,0,0,0.18)', border: '1px solid rgba(212,175,55,0.3)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', margin: 0 }}>
-                Reset Workspace Password
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowForgotModal(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}
-              >
-                <X size={18} />
-              </button>
+              <h3 style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', margin: 0 }}>Reset Password</h3>
+              <button type="button" onClick={() => setShowForgotModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={18} /></button>
             </div>
-            <p style={{ fontSize: 12.5, color: '#475569', marginBottom: 16, lineHeight: 1.5 }}>
-              Enter your registered email address and we will dispatch secure instructions to reset your workspace access.
+            <p style={{ fontSize: 13, color: '#475569', marginBottom: 16, lineHeight: 1.5 }}>
+              Enter your registered email address and we'll send you password reset instructions.
             </p>
             <form onSubmit={handleForgotSubmit}>
               <div style={{ marginBottom: 16 }}>
-                <label className="auth-input-label">Registered Email Address</label>
+                <label className="auth-input-label">Email Address</label>
                 <div className="auth-input-wrapper">
                   <Mail size={15} className="auth-input-icon" />
-                  <input
-                    type="email"
-                    placeholder="you@company.com"
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    className="auth-text-input"
-                    required
-                  />
+                  <input type="email" placeholder="you@example.com" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} className="auth-text-input" required />
                 </div>
               </div>
-              <button
-                type="submit"
-                className="auth-submit-btn"
-                style={{ marginTop: 0 }}
-              >
-                {forgotSent ? 'Reset Link Dispatched!' : 'Send Reset Link'}
+              <button type="submit" className="auth-submit-btn" style={{ marginTop: 0 }}>
+                {forgotSent ? 'Reset Link Sent!' : 'Send Reset Link'}
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* ================= TERMS & PRIVACY MODAL ================= */}
+      {/* Terms Modal */}
       {showTermsModal && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(15, 23, 42, 0.65)',
-          backdropFilter: 'blur(5px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          padding: 16,
-        }}>
-          <div style={{
-            background: '#ffffff',
-            borderRadius: 16,
-            padding: 26,
-            maxWidth: 500,
-            width: '100%',
-            maxHeight: '80vh',
-            overflowY: 'auto',
-            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
-            border: '1px solid rgba(212, 175, 55, 0.35)',
-          }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 16 }}>
+          <div style={{ background: '#ffffff', borderRadius: 18, padding: 28, maxWidth: 500, width: '100%', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 24px 56px rgba(0,0,0,0.18)', border: '1px solid rgba(212,175,55,0.3)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', margin: 0 }}>
-                Terms of Service &amp; Privacy Policy
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowTermsModal(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}
-              >
-                <X size={18} />
-              </button>
+              <h3 style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', margin: 0 }}>Terms of Service & Privacy Policy</h3>
+              <button type="button" onClick={() => setShowTermsModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={18} /></button>
             </div>
-            <div style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <p>
-                <strong>1. Role-Based Evidence Governance</strong>: GenuAI provides recruitment intelligence and verifiable skill assessment records. All evaluation evidence is traceable back to company-defined role requirements.
-              </p>
-              <p>
-                <strong>2. Human Authority</strong>: GenuAI does not make automated hiring or rejection decisions. Final recruitment authority remains exclusively with human recruiters and hiring managers.
-              </p>
-              <p>
-                <strong>3. Target Data Privacy</strong>: Candidate and company evaluation data is compartmentalized by Target with strict multi-tenant isolation.
-              </p>
+            <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.65, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <p><strong>1. Evidence-Based Evaluation</strong>: GenuAI provides recruitment intelligence with verifiable skill assessment records. All evaluation evidence is traceable to company-defined role requirements.</p>
+              <p><strong>2. Human Authority</strong>: GenuAI does not make automated hiring or rejection decisions. Final recruitment authority remains exclusively with human recruiters and hiring managers.</p>
+              <p><strong>3. Data Privacy</strong>: Candidate and company evaluation data is compartmentalized with strict multi-tenant isolation and not shared across organizations.</p>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setAgreedTerms(true);
-                setShowTermsModal(false);
-              }}
-              className="auth-submit-btn"
-              style={{ marginTop: 20 }}
-            >
-              I Accept &amp; Agree
+            <button type="button" onClick={() => { setAgreedTerms(true); setShowTermsModal(false); }} className="auth-submit-btn" style={{ marginTop: 20 }}>
+              I Accept & Agree
             </button>
           </div>
         </div>

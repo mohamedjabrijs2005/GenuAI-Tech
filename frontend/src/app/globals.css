@@ -1698,303 +1698,156 @@ tbody tr:hover { background: #f1f5f9; }
    GOOGLE STITCH AUTHENTICATION SUITE (FULL-SIZE PAGE)
    ============================================================ */
 /* ==========================================================================
-   AUTH PAGE DESIGN SYSTEM: White with Metallic Gold Theme & Split-Screen Layout
+   AUTH PAGE DESIGN SYSTEM: Elegant White & Metallic Gold — Full-Page Centered
    ========================================================================== */
 
 /* ============================================================
-   AUTH FULLSCREEN LAYOUT — PREMIUM MODERN DESIGN
+   AUTH FULL-PAGE WRAPPER — PREMIUM CENTERED LAYOUT
    ============================================================ */
 
-.auth-fullscreen-layout {
-  display: flex;
+.auth-page-wrapper {
   min-height: 100vh;
   width: 100%;
-  background: #0d1424;
-  color: #1e293b;
-  overflow-x: hidden;
-  font-family: inherit;
-}
-
-@media (max-width: 1024px) {
-  .auth-fullscreen-layout {
-    flex-direction: column;
-  }
-}
-
-/* Left Brand & Live Ledger Canvas (Deep Obsidian Navy + Gold Radiance) */
-.auth-fullscreen-left {
-  flex: 1.15;
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at 12% 18%, rgba(212, 175, 55, 0.14) 0%, transparent 40%),
-    radial-gradient(circle at 88% 82%, rgba(99, 102, 241, 0.08) 0%, transparent 45%),
-    linear-gradient(150deg, #0d1829 0%, #101c34 48%, #14213d 100%);
-  color: #ffffff;
-  padding: 48px 56px;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
   position: relative;
   overflow: hidden;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(212, 175, 55, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 10% 90%, rgba(212, 175, 55, 0.07) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(184, 134, 11, 0.06) 0%, transparent 50%),
+    linear-gradient(160deg, #fffdf8 0%, #faf8f0 40%, #fff9ee 70%, #fefcf5 100%);
+  font-family: inherit;
+  box-sizing: border-box;
 }
 
-@media (max-width: 1200px) {
-  .auth-fullscreen-left {
-    padding: 36px 36px;
-  }
-}
-
-@media (max-width: 1024px) {
-  .auth-fullscreen-left {
-    display: none !important;
-  }
-}
-
-.auth-hero-top-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 28px;
-  position: relative;
-  z-index: 2;
-}
-
-.auth-hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 12px;
-  border-radius: 99px;
-  background: rgba(212, 175, 55, 0.12);
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: #fbbf24;
-  backdrop-filter: blur(8px);
-}
-
-.auth-hero-main-content {
-  position: relative;
-  z-index: 2;
-  max-width: 620px;
-  margin: auto 0;
-}
-
-.auth-hero-tagline {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  color: #d4af37;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.auth-hero-headline {
-  font-size: clamp(26px, 2.8vw, 36px);
-  font-weight: 900;
-  line-height: 1.2;
-  letter-spacing: -0.8px;
-  color: #f8fafc;
-  margin: 0 0 14px;
-}
-
-.auth-hero-subtext {
-  font-size: 14.5px;
-  color: #94a3b8;
-  line-height: 1.6;
-  margin: 0 0 24px;
-  font-weight: 400;
-}
-
-/* Live Requirement & Evidence Ledger Card */
-.auth-ledger-card {
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(212, 175, 55, 0.25);
-  border-radius: 14px;
-  padding: 18px 20px;
-  margin-bottom: 24px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(12px);
-}
-
-.auth-ledger-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 12px;
-  margin-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.auth-pulse-dot {
-  width: 7px;
-  height: 7px;
+/* Decorative floating orbs */
+.auth-bg-orb {
+  position: absolute;
   border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 8px #10b981;
-  display: inline-block;
-  animation: pulse-green 2s infinite ease-in-out;
+  pointer-events: none;
+  animation: orb-float 8s ease-in-out infinite;
 }
 
-@keyframes pulse-green {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.2); }
+.auth-bg-orb-1 {
+  width: 520px;
+  height: 520px;
+  top: -160px;
+  right: -120px;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.10) 0%, transparent 70%);
+  animation-delay: 0s;
 }
 
-.auth-ledger-body {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.auth-bg-orb-2 {
+  width: 380px;
+  height: 380px;
+  bottom: -100px;
+  left: -80px;
+  background: radial-gradient(circle, rgba(184, 134, 11, 0.08) 0%, transparent 70%);
+  animation-delay: -3s;
 }
 
-.auth-ledger-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.auth-bg-orb-3 {
+  width: 260px;
+  height: 260px;
+  top: 50%;
+  left: 8%;
+  transform: translateY(-50%);
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.06) 0%, transparent 70%);
+  animation-delay: -5s;
 }
 
-.auth-ledger-label {
-  font-size: 11px;
-  color: #64748b;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
+@keyframes orb-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-24px) scale(1.03); }
 }
 
-.auth-tag-pill {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: rgba(212, 175, 55, 0.15);
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  color: #fbbf24;
+.auth-bg-orb-2 {
+  animation-name: orb-float-alt;
 }
 
-.auth-tag-sub {
-  font-size: 10.5px;
-  font-weight: 600;
-  color: #94a3b8;
+@keyframes orb-float-alt {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(18px) scale(1.02); }
 }
 
-.auth-ledger-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 4px;
-  padding-top: 10px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.08);
-  flex-wrap: wrap;
-  gap: 8px;
-}
+/* ============================================================
+   AUTH CENTER CONTAINER
+   ============================================================ */
 
-.auth-coverage-badge {
-  font-size: 11px;
-  font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: #ecfdf5;
-  color: #065f46;
-  border: 1px solid #a7f3d0;
-}
-
-/* Feature Bullets List */
-.auth-features-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.auth-feature-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.auth-feature-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: rgba(212, 175, 55, 0.15);
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.auth-hero-bottom-strip {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 12px;
-  color: #64748b;
+.auth-center-container {
   position: relative;
   z-index: 2;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-/* Right Side Form Screen (Luminous Clean Surface + Elevated Form Card) */
-.auth-fullscreen-right {
-  flex: 0.85;
-  min-height: 100vh;
-  background: #f8fafc;
+  width: 100%;
+  max-width: 480px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  padding: 40px 32px;
-  position: relative;
+  gap: 0;
 }
 
-@media (max-width: 1024px) {
-  .auth-fullscreen-layout {
-    flex-direction: column !important;
-    min-height: 100vh;
-  }
-  .auth-fullscreen-right {
-    flex: 1;
-    min-height: 100vh !important;
-    padding: 32px 16px 28px !important;
-    width: 100% !important;
-    background: #f8fafc;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-  .auth-fullscreen-left {
-    display: none !important;
-  }
+/* ============================================================
+   AUTH BRAND HEADER
+   ============================================================ */
+
+.auth-brand-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 28px;
 }
 
-.auth-fullscreen-form-card {
+/* ============================================================
+   AUTH CARD — ELEGANT GLASS SURFACE
+   ============================================================ */
+
+.auth-card-elegant {
   width: 100%;
-  max-width: 440px;
-  background: #ffffff;
-  border: 1px solid rgba(212, 175, 55, 0.28);
-  border-radius: 20px;
-  padding: 34px 30px;
-  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(0, 0, 0, 0.03);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(212, 175, 55, 0.32);
+  border-radius: 24px;
+  padding: 36px 34px;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.02),
+    0 24px 60px rgba(184, 134, 11, 0.10),
+    0 8px 24px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   position: relative;
+  overflow: hidden;
+}
+
+.auth-card-elegant::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #d4af37 0%, #f5d97a 50%, #b8860b 100%);
+  border-radius: 24px 24px 0 0;
 }
 
 @media (max-width: 480px) {
-  .auth-fullscreen-form-card {
-    padding: 24px 18px;
-    border-radius: 16px;
+  .auth-card-elegant {
+    padding: 28px 20px;
+    border-radius: 18px;
+  }
+  .auth-page-wrapper {
+    padding: 24px 12px;
   }
 }
+
+
+/* ============================================================
+   AUTH FORM COMPONENTS — PERSONA TABS, INPUTS, BUTTON
+   ============================================================ */
+
+
+
 
 /* Persona Switcher Tabs */
 .auth-persona-tabs {
@@ -2190,19 +2043,7 @@ tbody tr:hover { background: #f1f5f9; }
   }
 }
 
-/* Auth Mobile Logo — visible only on mobile, hides on desktop */
-.auth-mobile-logo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 20px;
-  justify-content: center;
-}
-@media (min-width: 1025px) {
-  .auth-mobile-logo {
-    display: none !important;
-  }
-}
+
 
 /* ============================================================
    DEPARTMENT GRID CARDS — PROFESSIONAL DESIGN
@@ -2466,30 +2307,16 @@ a.btn,
 }
 
 /* ============================================================
-   AUTH FULLSCREEN MOBILE OPTIMIZATIONS
+   AUTH MOBILE OPTIMIZATIONS
    ============================================================ */
-@media (max-width: 1024px) {
-  .auth-fullscreen-left {
-    display: none !important;
-  }
-}
-
 @media (max-width: 640px) {
   .auth-two-col-grid {
     grid-template-columns: 1fr !important;
     gap: 8px !important;
   }
-  .auth-fullscreen-right {
-    padding: 24px 14px 20px !important;
-  }
 }
 
 @media (max-width: 480px) {
-  .auth-fullscreen-form-card {
-    padding: 24px 16px !important;
-    border-radius: 16px !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
-  }
   .auth-persona-tabs {
     gap: 2px !important;
     padding: 3px !important;
@@ -2507,4 +2334,3 @@ a.btn,
     font-size: 12px !important;
   }
 }
-
