@@ -7,7 +7,7 @@ import Script from 'next/script';
 import {
   Eye, EyeOff, Lock, Mail,
   AlertCircle, ArrowRight, Building2, User,
-  ShieldCheck, X, CheckCircle2,
+  ShieldCheck, X, CheckCircle2, ArrowLeft,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
@@ -47,7 +47,7 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
     emailLabel: 'Admin Email',
     emailPlaceholder: 'admin@genuai.io',
     submitText: 'Enter Governance Console',
-    allowRegister: false,
+    allowRegister: true,
   },
 };
 
@@ -84,7 +84,7 @@ export default function AuthPage() {
       if (modeParam === 'register') setIsLogin(false);
       if (roleParam === 'candidate') setPersona('candidate');
       else if (roleParam === 'company') setPersona('company');
-      else if (roleParam === 'admin') { setPersona('admin'); setIsLogin(true); }
+      else if (roleParam === 'admin') setPersona('admin');
     }
   }, []);
 
@@ -93,7 +93,6 @@ export default function AuthPage() {
   const handlePersonaChange = (p: UserPersona) => {
     setPersona(p);
     setError('');
-    if (p === 'admin') setIsLogin(true);
   };
 
   const set = (k: string, v: string) => {
@@ -235,448 +234,640 @@ export default function AuthPage() {
 
   const passStrength = getPasswordStrength(form.password);
 
-  // ─── ICON MAP ───────────────────────────────────────────────────────────────
   const personaIcons: Record<UserPersona, React.ReactNode> = {
     candidate: <User size={14} />,
     company: <Building2 size={14} />,
     admin: <ShieldCheck size={14} />,
   };
 
-  // ─── RENDER ─────────────────────────────────────────────────────────────────
   return (
     <div style={{
+      position: 'relative',
       minHeight: '100vh',
       display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-      background: '#f8f7f5',
+      padding: '32px 18px',
+      overflowX: 'hidden',
     }}>
 
-      {/* ══════════════════════════════════════════════════════
-          LEFT PANEL — Background Image + Branding
-      ══════════════════════════════════════════════════════ */}
+      {/* ─── FULL-SCREEN BACKGROUND IMAGE ─── */}
       <div style={{
-        flex: '0 0 48%',
-        position: 'relative',
-        overflow: 'hidden',
+        position: 'fixed',
+        inset: 0,
+        backgroundImage: "url('/auth-hero.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        zIndex: 0,
+      }} />
+
+      {/* ─── PLEASANT AMBIENT OVERLAY ─── */}
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'radial-gradient(ellipse at 50% 50%, rgba(10, 16, 32, 0.4) 0%, rgba(6, 10, 24, 0.76) 100%)',
+        backdropFilter: 'blur(1.5px)',
+        zIndex: 1,
+      }} />
+
+      {/* ─── TOP NAVIGATION: RETURN HOME ─── */}
+      <header style={{
+        position: 'absolute',
+        top: 24,
+        left: 28,
+        right: 28,
         display: 'flex',
-        flexDirection: 'column',
+        alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '48px 52px',
-      }} className="auth-left-panel">
+        zIndex: 10,
+      }}>
+        <Link
+          href="/"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            color: 'rgba(255,255,255,0.85)',
+            textDecoration: 'none',
+            fontSize: 13,
+            fontWeight: 700,
+            padding: '7px 14px',
+            borderRadius: 99,
+            background: 'rgba(255,255,255,0.08)',
+            border: '1px solid rgba(255,255,255,0.18)',
+            backdropFilter: 'blur(8px)',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.16)';
+            e.currentTarget.style.color = '#fff';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+            e.currentTarget.style.color = 'rgba(255,255,255,0.85)';
+          }}
+        >
+          <ArrowLeft size={14} /> Back to Home
+        </Link>
 
-        {/* Full-bleed background image */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: "url('/auth-hero.jpg')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          zIndex: 0,
-        }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 600 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80' }} />
+          Verified Secure Platform
+        </div>
+      </header>
 
-        {/* Dark overlay for readability */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(160deg, rgba(8,14,35,0.72) 0%, rgba(8,14,35,0.55) 45%, rgba(184,134,11,0.25) 100%)',
-          zIndex: 1,
-        }} />
+      {/* ─── FLOATING PLEASANT AUTH CARD (NO HARSH SQUARES / NO UNRELATED BOXES) ─── */}
+      <main style={{
+        position: 'relative',
+        zIndex: 10,
+        width: '100%',
+        maxWidth: 440,
+        background: 'rgba(255, 255, 255, 0.96)',
+        backdropFilter: 'blur(28px)',
+        borderRadius: 24,
+        padding: '36px 34px 28px',
+        boxShadow: '0 24px 64px rgba(0, 0, 0, 0.45), 0 4px 16px rgba(0, 0, 0, 0.1)',
+        border: '1px solid rgba(255, 255, 255, 0.9)',
+        marginTop: 40,
+        marginBottom: 20,
+      }}>
 
-        {/* Top: Logo */}
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <Link href="/" style={{ textDecoration: 'none' }}>
-            <div style={{
-              fontSize: 22, fontWeight: 900, letterSpacing: '-0.4px', lineHeight: 1.15,
-              background: 'linear-gradient(90deg, #d4af37, #f5d890)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            }}>
+        {/* BRANDING HEADER — MATCHES TOP-LEFT OF DASHBOARD EXACTLY */}
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <Link href="/" style={{ textDecoration: 'none', display: 'inline-block' }}>
+            <div
+              className="sidebar-logo-text gold-gradient-text"
+              style={{
+                fontSize: 22,
+                fontWeight: 900,
+                letterSpacing: '-0.4px',
+                lineHeight: 1.15,
+                textAlign: 'center',
+              }}
+            >
               GenuAI Technologies
             </div>
-            <div style={{
-              fontSize: 10, fontWeight: 700, color: 'rgba(212,175,55,0.75)',
-              textTransform: 'uppercase', letterSpacing: '0.6px', marginTop: 3,
-            }}>
+            <div
+              style={{
+                fontSize: 10,
+                color: '#854d0e',
+                fontWeight: 800,
+                letterSpacing: '0.8px',
+                textTransform: 'uppercase',
+                textAlign: 'center',
+                marginTop: 4,
+              }}
+            >
               Recruitment Intelligence
             </div>
           </Link>
         </div>
 
-        {/* Center: Hero copy */}
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <h2 style={{
-            fontSize: 'clamp(22px, 2.8vw, 34px)', fontWeight: 900,
-            color: '#ffffff', letterSpacing: '-0.8px', lineHeight: 1.25,
-            margin: '0 0 16px',
-          }}>
-            Where evidence<br />
-            <span style={{ background: 'linear-gradient(90deg,#d4af37,#f5d890)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              meets opportunity.
-            </span>
-          </h2>
-          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.72)', lineHeight: 1.7, maxWidth: 320, margin: 0 }}>
-            GenuAI connects verified vacancies with role-specific evidence, transparent requirement coverage, and human-led hiring decisions.
-          </p>
-
-          {/* Pillars */}
-          <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {[
-              'Verified company & vacancy workflow',
-              'Target-specific candidate privacy',
-              'Human-led hiring decisions only',
-            ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <CheckCircle2 size={15} color="#d4af37" />
-                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.82)', fontWeight: 500 }}>{item}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Bottom: back link */}
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <Link href="/" style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', fontWeight: 600, letterSpacing: '0.3px' }}>
-            ← Back to home
-          </Link>
-        </div>
-      </div>
-
-      {/* ══════════════════════════════════════════════════════
-          RIGHT PANEL — Auth Form
-      ══════════════════════════════════════════════════════ */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '40px 28px',
-        background: '#ffffff',
-        overflowY: 'auto',
-        minHeight: '100vh',
-      }}>
-        <div style={{ width: '100%', maxWidth: 420 }}>
-
-          {/* Persona tabs */}
-          <div style={{
-            display: 'flex', gap: 4,
-            background: '#f4f2ee', borderRadius: 12, padding: 4,
-            marginBottom: 28, border: '1px solid #ece9e0',
-          }}>
-            {(['candidate', 'company', 'admin'] as UserPersona[]).map((p) => (
-              <button
-                key={p}
-                type="button"
-                id={`auth-persona-tab-${p}`}
-                onClick={() => handlePersonaChange(p)}
-                style={{
-                  flex: 1, padding: '8px 6px',
-                  borderRadius: 9, border: 'none', cursor: 'pointer',
-                  fontSize: 12, fontWeight: 700,
-                  fontFamily: 'inherit',
-                  transition: 'all 0.18s ease',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                  background: persona === p ? '#ffffff' : 'transparent',
-                  color: persona === p ? '#92400e' : '#64748b',
-                  boxShadow: persona === p ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
-                }}
-              >
-                {personaIcons[p]}
-                {PERSONA_CONFIG[p].label}
-              </button>
-            ))}
-          </div>
-
-          {/* Heading */}
-          <div style={{ marginBottom: 24 }}>
-            <h1 style={{ fontSize: 26, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', margin: '0 0 6px' }}>
-              {isLogin
-                ? (persona === 'admin' ? 'Platform Governance' : 'Welcome back')
-                : (persona === 'company' ? 'Register Company' : 'Create Account')}
-            </h1>
-            <p style={{ fontSize: 13.5, color: '#64748b', margin: 0, lineHeight: 1.5 }}>
-              {isLogin ? config.cardSubtitle : 'Get started — free to register'}
-            </p>
-          </div>
-
-          {/* Sign In / Create Account toggle */}
-          {config.allowRegister && (
-            <div style={{
-              display: 'flex', marginBottom: 24,
-              background: '#f8f7f5', borderRadius: 10, padding: 3,
-              border: '1px solid #e8e4db',
-            }}>
-              {[{ id: 'auth-mode-signin', label: 'Sign In', active: isLogin }, { id: 'auth-mode-register', label: 'Create Account', active: !isLogin }].map((btn) => (
-                <button
-                  key={btn.id}
-                  id={btn.id}
-                  type="button"
-                  onClick={() => { setIsLogin(btn.label === 'Sign In'); setError(''); }}
-                  style={{
-                    flex: 1, padding: '8px 12px', borderRadius: 8, border: 'none',
-                    fontFamily: 'inherit', cursor: 'pointer', fontSize: 13, fontWeight: 700,
-                    transition: 'all 0.18s ease',
-                    background: btn.active ? '#ffffff' : 'transparent',
-                    color: btn.active ? '#0f172a' : '#94a3b8',
-                    boxShadow: btn.active ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                  }}
-                >
-                  {btn.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Error */}
-          {error && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              background: '#fef2f2', border: '1px solid #fecaca',
-              color: '#b91c1c', fontSize: 12.5, fontWeight: 600,
-              padding: '10px 14px', borderRadius: 10, marginBottom: 18,
-            }}>
-              <AlertCircle size={14} style={{ flexShrink: 0 }} />
-              {error}
-            </div>
-          )}
-
-          {/* FORM */}
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-            {/* Register extras */}
-            {!isLogin && config.allowRegister && (
-              <>
-                <div style={{ display: 'grid', gridTemplateColumns: persona === 'company' ? '1fr 1fr' : '1fr', gap: 12 }}>
-                  <div>
-                    <label style={labelStyle}>Full Name</label>
-                    <div style={inputWrapStyle}>
-                      <User size={14} style={iconStyle} />
-                      <input type="text" placeholder="e.g. Alex Morgan" value={form.name} onChange={(e) => set('name', e.target.value)} style={inputStyle} className="auth-input" required />
-                    </div>
-                  </div>
-                  {persona === 'company' && (
-                    <div>
-                      <label style={labelStyle}>Company Name</label>
-                      <div style={inputWrapStyle}>
-                        <Building2 size={14} style={iconStyle} />
-                        <input type="text" placeholder="e.g. Acme Corp" value={form.companyName} onChange={(e) => set('companyName', e.target.value)} style={inputStyle} className="auth-input" required />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-
-            {/* Email */}
-            <div>
-              <label style={labelStyle}>{config.emailLabel}</label>
-              <div style={inputWrapStyle}>
-                <Mail size={14} style={iconStyle} />
-                <input
-                  type="email"
-                  placeholder={config.emailPlaceholder}
-                  autoComplete="email"
-                  value={form.email}
-                  onChange={(e) => set('email', e.target.value)}
-                  style={inputStyle}
-                  className="auth-input"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Password */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <label style={{ ...labelStyle, marginBottom: 0 }}>Password</label>
-                {isLogin && (
-                  <button type="button" onClick={() => { setForgotEmail(form.email || ''); setShowForgotModal(true); }}
-                    style={{ fontSize: 12, fontWeight: 700, color: '#b8860b', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                    Forgot password?
-                  </button>
-                )}
-              </div>
-              <div style={inputWrapStyle}>
-                <Lock size={14} style={iconStyle} />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
-                  autoComplete={isLogin ? 'current-password' : 'new-password'}
-                  value={form.password}
-                  onChange={(e) => set('password', e.target.value)}
-                  style={{ ...inputStyle, paddingRight: 42 }}
-                  className="auth-input"
-                  required
-                />
-                <button type="button" onClick={() => setShowPassword(!showPassword)}
-                  style={{ position: 'absolute', right: 12, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', padding: 0 }}>
-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-              </div>
-              {/* Strength meter */}
-              {!isLogin && form.password && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 7 }}>
-                  <div style={{ flex: 1, display: 'flex', gap: 4, height: 3 }}>
-                    {[1, 2, 3].map((n) => (
-                      <div key={n} style={{ flex: 1, borderRadius: 2, background: passStrength.score >= n ? passStrength.color : '#e2e8f0', transition: 'background 0.2s' }} />
-                    ))}
-                  </div>
-                  <span style={{ fontSize: 10.5, fontWeight: 700, color: passStrength.color }}>{passStrength.label}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Confirm Password */}
-            {!isLogin && config.allowRegister && (
-              <div>
-                <label style={labelStyle}>Confirm Password</label>
-                <div style={inputWrapStyle}>
-                  <Lock size={14} style={iconStyle} />
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="Re-enter your password"
-                    autoComplete="new-password"
-                    value={form.confirmPassword}
-                    onChange={(e) => set('confirmPassword', e.target.value)}
-                    style={{ ...inputStyle, paddingRight: 42 }}
-                    className="auth-input"
-                    required
-                  />
-                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    style={{ position: 'absolute', right: 12, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', padding: 0 }}>
-                    {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Remember Me */}
-            {isLogin && (
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: '#64748b', cursor: 'pointer' }}>
-                <input type="checkbox" id="remember-me" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} style={{ accentColor: '#b8860b', width: 14, height: 14 }} />
-                Stay signed in to GenuAI
-              </label>
-            )}
-
-            {/* Terms */}
-            {!isLogin && (
-              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: '#475569', cursor: 'pointer', lineHeight: 1.55 }}>
-                <input type="checkbox" id="terms-cb" checked={agreedTerms} onChange={(e) => setAgreedTerms(e.target.checked)} style={{ accentColor: '#b8860b', marginTop: 2, flexShrink: 0 }} />
-                I agree to the{' '}
-                <span onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} style={{ color: '#b8860b', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}>
-                  Terms of Service
-                </span>{' '}and{' '}
-                <span onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} style={{ color: '#b8860b', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}>
-                  Privacy Policy
-                </span>
-              </label>
-            )}
-
-            {/* Submit */}
+        {/* PERSONA TABS */}
+        <div style={{
+          display: 'flex',
+          gap: 4,
+          background: '#f3f1ec',
+          borderRadius: 12,
+          padding: 4,
+          marginBottom: 22,
+        }}>
+          {(['candidate', 'company', 'admin'] as UserPersona[]).map((p) => (
             <button
-              type="submit"
-              id="auth-submit-btn"
-              disabled={loading}
+              key={p}
+              type="button"
+              id={`auth-persona-tab-${p}`}
+              onClick={() => handlePersonaChange(p)}
               style={{
-                width: '100%', height: 50, borderRadius: 12, border: 'none',
-                background: loading ? '#d4af37' : 'linear-gradient(135deg, #b8860b 0%, #d4af37 60%, #c9a227 100%)',
-                color: '#fff', fontSize: 14.5, fontWeight: 800,
-                fontFamily: 'inherit', cursor: loading ? 'not-allowed' : 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
-                boxShadow: '0 4px 18px rgba(184,134,11,0.35)',
-                transition: 'all 0.2s ease',
-                marginTop: 4, letterSpacing: '0.1px',
+                flex: 1,
+                padding: '8px 6px',
+                borderRadius: 9,
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 12,
+                fontWeight: 700,
+                fontFamily: 'inherit',
+                transition: 'all 0.18s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 5,
+                background: persona === p ? '#ffffff' : 'transparent',
+                color: persona === p ? '#854d0e' : '#64748b',
+                boxShadow: persona === p ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
               }}
             >
-              {loading ? (
-                <span style={{ width: 18, height: 18, border: '2.5px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'auth-spin 0.75s linear infinite', display: 'inline-block' }} />
-              ) : isLogin ? (
-                <>{config.submitText} <ArrowRight size={16} /></>
-              ) : (
-                <>{persona === 'company' ? 'Register Company' : 'Complete Registration'} <ArrowRight size={16} /></>
-              )}
+              {personaIcons[p]}
+              {PERSONA_CONFIG[p].label}
             </button>
-          </form>
+          ))}
+        </div>
 
-          {/* Google Sign-In */}
-          {persona !== 'admin' && (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0 14px' }}>
-                <div style={{ flex: 1, height: 1, background: '#ece9e0' }} />
-                <span style={{ fontSize: 11.5, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>or</span>
-                <div style={{ flex: 1, height: 1, background: '#ece9e0' }} />
-              </div>
+        {/* FORM TITLE & SUBTITLE */}
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.4px', margin: '0 0 5px' }}>
+            {isLogin
+              ? (persona === 'admin' ? 'Governance Sign In' : 'Welcome Back')
+              : (persona === 'company' ? 'Register Company' : (persona === 'admin' ? 'Register Admin Account' : 'Create Candidate Account'))}
+          </h1>
+          <p style={{ fontSize: 13, color: '#64748b', margin: 0, lineHeight: 1.45 }}>
+            {isLogin
+              ? config.cardSubtitle
+              : (persona === 'admin' ? 'Platform compliance & audit administration' : 'Transparent, requirement-centered recruitment')}
+          </p>
+        </div>
 
+        {/* SIGN IN / REGISTER TOGGLE PILL */}
+        {config.allowRegister && (
+          <div style={{
+            display: 'flex',
+            marginBottom: 20,
+            background: '#f8f7f5',
+            borderRadius: 10,
+            padding: 3,
+            border: '1px solid #ece9e0',
+          }}>
+            {[{ id: 'auth-mode-signin', label: 'Sign In', active: isLogin }, { id: 'auth-mode-register', label: 'Create Account', active: !isLogin }].map((btn) => (
               <button
-                id="auth-google-btn"
+                key={btn.id}
+                id={btn.id}
                 type="button"
-                onClick={handleGoogleSignIn}
+                onClick={() => { setIsLogin(btn.label === 'Sign In'); setError(''); }}
                 style={{
-                  width: '100%', height: 46, borderRadius: 12,
-                  border: '1.5px solid #e8e4db', background: '#ffffff',
-                  color: '#334155', fontSize: 13.5, fontWeight: 600,
-                  fontFamily: 'inherit', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                  flex: 1,
+                  padding: '7px 12px',
+                  borderRadius: 8,
+                  border: 'none',
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                  fontSize: 12.5,
+                  fontWeight: 700,
                   transition: 'all 0.18s ease',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                  background: btn.active ? '#ffffff' : 'transparent',
+                  color: btn.active ? '#0f172a' : '#94a3b8',
+                  boxShadow: btn.active ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#d4af37'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 3px 12px rgba(184,134,11,0.14)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#e8e4db'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'; }}
               >
-                <svg width="18" height="18" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                </svg>
-                Continue with Google
+                {btn.label}
               </button>
+            ))}
+          </div>
+        )}
+
+        {/* ERROR NOTICE */}
+        {error && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            background: '#fef2f2',
+            border: '1px solid #fecaca',
+            color: '#b91c1c',
+            fontSize: 12.5,
+            fontWeight: 600,
+            padding: '9px 12px',
+            borderRadius: 10,
+            marginBottom: 16,
+          }}>
+            <AlertCircle size={14} style={{ flexShrink: 0 }} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* FORM FIELDS */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {/* REGISTER EXTRA FIELDS */}
+          {!isLogin && config.allowRegister && (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: persona === 'company' ? '1fr 1fr' : '1fr', gap: 10 }}>
+                <div>
+                  <label style={labelStyle}>Full Name</label>
+                  <div style={inputWrapStyle}>
+                    <User size={14} style={iconStyle} />
+                    <input
+                      type="text"
+                      placeholder="e.g. Alex Morgan"
+                      value={form.name}
+                      onChange={(e) => set('name', e.target.value)}
+                      style={inputStyle}
+                      className="auth-input"
+                      required
+                    />
+                  </div>
+                </div>
+                {persona === 'company' && (
+                  <div>
+                    <label style={labelStyle}>Company Name</label>
+                    <div style={inputWrapStyle}>
+                      <Building2 size={14} style={iconStyle} />
+                      <input
+                        type="text"
+                        placeholder="e.g. Acme Corp"
+                        value={form.companyName}
+                        onChange={(e) => set('companyName', e.target.value)}
+                        style={inputStyle}
+                        className="auth-input"
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </>
           )}
 
-          {/* Admin note */}
-          {persona === 'admin' && (
-            <p style={{ fontSize: 12, color: '#64748b', textAlign: 'center', marginTop: 16 }}>
-              Restricted to authorized <strong style={{ color: '#b8860b' }}>GenuAI Governance</strong> administrators.
-            </p>
+          {/* EMAIL */}
+          <div>
+            <label style={labelStyle}>{config.emailLabel}</label>
+            <div style={inputWrapStyle}>
+              <Mail size={14} style={iconStyle} />
+              <input
+                type="email"
+                placeholder={config.emailPlaceholder}
+                autoComplete="email"
+                value={form.email}
+                onChange={(e) => set('email', e.target.value)}
+                style={inputStyle}
+                className="auth-input"
+                required
+              />
+            </div>
+          </div>
+
+          {/* PASSWORD */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+              <label style={{ ...labelStyle, marginBottom: 0 }}>Password</label>
+              {isLogin && (
+                <button
+                  type="button"
+                  onClick={() => { setForgotEmail(form.email || ''); setShowForgotModal(true); }}
+                  style={{
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    color: '#b8860b',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                >
+                  Forgot password?
+                </button>
+              )}
+            </div>
+            <div style={inputWrapStyle}>
+              <Lock size={14} style={iconStyle} />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Enter your password"
+                autoComplete={isLogin ? 'current-password' : 'new-password'}
+                value={form.password}
+                onChange={(e) => set('password', e.target.value)}
+                style={{ ...inputStyle, paddingRight: 40 }}
+                className="auth-input"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: 12,
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#94a3b8',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: 0,
+                }}
+              >
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+
+            {/* STRENGTH INDICATOR */}
+            {!isLogin && form.password && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+                <div style={{ flex: 1, display: 'flex', gap: 4, height: 3 }}>
+                  {[1, 2, 3].map((n) => (
+                    <div
+                      key={n}
+                      style={{
+                        flex: 1,
+                        borderRadius: 2,
+                        background: passStrength.score >= n ? passStrength.color : '#e2e8f0',
+                        transition: 'background 0.2s',
+                      }}
+                    />
+                  ))}
+                </div>
+                <span style={{ fontSize: 10.5, fontWeight: 700, color: passStrength.color }}>
+                  {passStrength.label}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* CONFIRM PASSWORD */}
+          {!isLogin && config.allowRegister && (
+            <div>
+              <label style={labelStyle}>Confirm Password</label>
+              <div style={inputWrapStyle}>
+                <Lock size={14} style={iconStyle} />
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="Re-enter your password"
+                  autoComplete="new-password"
+                  value={form.confirmPassword}
+                  onChange={(e) => set('confirmPassword', e.target.value)}
+                  style={{ ...inputStyle, paddingRight: 40 }}
+                  className="auth-input"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: 12,
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#94a3b8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: 0,
+                  }}
+                >
+                  {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+            </div>
           )}
 
-          {/* Footer links */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-            justifyContent: 'center', marginTop: 28, paddingTop: 20,
-            borderTop: '1px solid #f0ebe0', fontSize: 12, color: '#94a3b8',
-          }}>
-            {[['/', 'Home'], ['/privacy', 'Privacy'], ['/terms', 'Terms'], ['/trust', 'Trust Center']].map(([href, label], i) => (
-              <React.Fragment key={i}>
-                {i > 0 && <span style={{ color: '#d8d4cc', fontSize: 9 }}>•</span>}
-                <Link href={href} style={{ color: '#94a3b8', textDecoration: 'none', fontWeight: 600, transition: 'color 0.15s' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#b8860b')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#94a3b8')}>
-                  {label}
-                </Link>
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-      </div>
+          {/* REMEMBER ME */}
+          {isLogin && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#64748b', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                id="remember-me"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                style={{ accentColor: '#b8860b', width: 14, height: 14 }}
+              />
+              Stay signed in to GenuAI
+            </label>
+          )}
 
-      {/* ─── FORGOT PASSWORD MODAL ─────────────────────────────────────── */}
+          {/* TERMS CHECKBOX */}
+          {!isLogin && (
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 11.5, color: '#475569', cursor: 'pointer', lineHeight: 1.5 }}>
+              <input
+                type="checkbox"
+                id="terms-cb"
+                checked={agreedTerms}
+                onChange={(e) => setAgreedTerms(e.target.checked)}
+                style={{ accentColor: '#b8860b', marginTop: 2, flexShrink: 0 }}
+              />
+              <span>
+                I agree to the{' '}
+                <span
+                  onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }}
+                  style={{ color: '#b8860b', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}
+                >
+                  Terms of Service
+                </span>{' '}and{' '}
+                <span
+                  onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }}
+                  style={{ color: '#b8860b', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}
+                >
+                  Privacy Policy
+                </span>
+              </span>
+            </label>
+          )}
+
+          {/* PRIMARY SUBMIT BUTTON */}
+          <button
+            type="submit"
+            id="auth-submit-btn"
+            disabled={loading}
+            style={{
+              width: '100%',
+              height: 48,
+              borderRadius: 12,
+              border: 'none',
+              background: loading
+                ? '#d4af37'
+                : 'linear-gradient(135deg, #b8860b 0%, #d4af37 60%, #c9a227 100%)',
+              color: '#ffffff',
+              fontSize: 14,
+              fontWeight: 800,
+              fontFamily: 'inherit',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              boxShadow: '0 4px 18px rgba(184,134,11,0.35)',
+              transition: 'all 0.2s ease',
+              marginTop: 4,
+              letterSpacing: '0.1px',
+            }}
+          >
+            {loading ? (
+              <span style={{
+                width: 18,
+                height: 18,
+                border: '2.5px solid rgba(255,255,255,0.4)',
+                borderTopColor: '#ffffff',
+                borderRadius: '50%',
+                animation: 'auth-spin 0.75s linear infinite',
+                display: 'inline-block',
+              }} />
+            ) : isLogin ? (
+              <>{config.submitText} <ArrowRight size={15} /></>
+            ) : (
+              <>{persona === 'company' ? 'Register Company' : (persona === 'admin' ? 'Create Admin Account' : 'Complete Registration')} <ArrowRight size={15} /></>
+            )}
+          </button>
+        </form>
+
+        {/* GOOGLE SIGN IN */}
+        {persona !== 'admin' && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0 14px' }}>
+              <div style={{ flex: 1, height: 1, background: '#ece9e0' }} />
+              <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>or</span>
+              <div style={{ flex: 1, height: 1, background: '#ece9e0' }} />
+            </div>
+
+            <button
+              id="auth-google-btn"
+              type="button"
+              onClick={handleGoogleSignIn}
+              style={{
+                width: '100%',
+                height: 44,
+                borderRadius: 12,
+                border: '1.5px solid #e8e4db',
+                background: '#ffffff',
+                color: '#334155',
+                fontSize: 13,
+                fontWeight: 600,
+                fontFamily: 'inherit',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                transition: 'all 0.18s ease',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#d4af37';
+                e.currentTarget.style.boxShadow = '0 3px 12px rgba(184,134,11,0.12)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = '#e8e4db';
+                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+              }}
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+              </svg>
+              Continue with Google
+            </button>
+          </>
+        )}
+
+        {/* ADMIN RESTRICTION NOTE */}
+        {persona === 'admin' && (
+          <p style={{ fontSize: 11.5, color: '#64748b', textAlign: 'center', marginTop: 14 }}>
+            Restricted to authorized <strong style={{ color: '#b8860b' }}>GenuAI Governance</strong> administrators.
+          </p>
+        )}
+
+        {/* FOOTER LINKS */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          marginTop: 22,
+          paddingTop: 16,
+          borderTop: '1px solid #f0ebe0',
+          fontSize: 11.5,
+          color: '#94a3b8',
+        }}>
+          {[['/', 'Home'], ['/privacy', 'Privacy'], ['/terms', 'Terms'], ['/trust', 'Trust Center']].map(([href, label], i) => (
+            <React.Fragment key={i}>
+              {i > 0 && <span style={{ color: '#d8d4cc', fontSize: 8 }}>•</span>}
+              <Link
+                href={href}
+                style={{ color: '#94a3b8', textDecoration: 'none', fontWeight: 600, transition: 'color 0.15s' }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#b8860b')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#94a3b8')}
+              >
+                {label}
+              </Link>
+            </React.Fragment>
+          ))}
+        </div>
+      </main>
+
+      {/* ─── FORGOT PASSWORD MODAL ─── */}
       {showForgotModal && (
         <div onClick={() => setShowForgotModal(false)} style={modalBackdropStyle}>
           <div onClick={(e) => e.stopPropagation()} style={modalStyle}>
             <div style={modalHeaderStyle}>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#0f172a' }}>Reset Password</h3>
-              <button type="button" onClick={() => setShowForgotModal(false)} style={modalCloseStyle}><X size={18} /></button>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0f172a' }}>Reset Password</h3>
+              <button type="button" onClick={() => setShowForgotModal(false)} style={modalCloseStyle}><X size={16} /></button>
             </div>
-            <p style={{ fontSize: 13.5, color: '#475569', margin: '0 0 20px', lineHeight: 1.6 }}>
-              Enter your registered email and we'll send you secure reset instructions.
+            <p style={{ fontSize: 13, color: '#475569', margin: '0 0 18px', lineHeight: 1.55 }}>
+              Enter your registered email address and we will dispatch secure reset instructions.
             </p>
             <form onSubmit={handleForgotSubmit}>
-              <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 14 }}>
                 <label style={labelStyle}>Email Address</label>
                 <div style={inputWrapStyle}>
                   <Mail size={14} style={iconStyle} />
-                  <input type="email" placeholder="you@example.com" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} style={inputStyle} className="auth-input" required />
+                  <input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    style={inputStyle}
+                    className="auth-input"
+                    required
+                  />
                 </div>
               </div>
-              <button type="submit" style={{ width: '100%', height: 46, borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#b8860b,#d4af37)', color: '#fff', fontSize: 14, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', boxShadow: '0 3px 12px rgba(184,134,11,0.3)' }}>
+              <button
+                type="submit"
+                style={{
+                  width: '100%',
+                  height: 44,
+                  borderRadius: 10,
+                  border: 'none',
+                  background: 'linear-gradient(135deg,#b8860b,#d4af37)',
+                  color: '#fff',
+                  fontSize: 13.5,
+                  fontWeight: 800,
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                  boxShadow: '0 3px 12px rgba(184,134,11,0.3)',
+                }}
+              >
                 {forgotSent ? '✓ Reset Link Sent!' : 'Send Reset Link'}
               </button>
             </form>
@@ -684,26 +875,40 @@ export default function AuthPage() {
         </div>
       )}
 
-      {/* ─── TERMS MODAL ───────────────────────────────────────────────── */}
+      {/* ─── TERMS MODAL ─── */}
       {showTermsModal && (
         <div onClick={() => setShowTermsModal(false)} style={modalBackdropStyle}>
-          <div onClick={(e) => e.stopPropagation()} style={{ ...modalStyle, maxWidth: 520 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ ...modalStyle, maxWidth: 500 }}>
             <div style={modalHeaderStyle}>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#0f172a' }}>Terms & Privacy Overview</h3>
-              <button type="button" onClick={() => setShowTermsModal(false)} style={modalCloseStyle}><X size={18} /></button>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0f172a' }}>Terms & Privacy Overview</h3>
+              <button type="button" onClick={() => setShowTermsModal(false)} style={modalCloseStyle}><X size={16} /></button>
             </div>
-            <div style={{ maxHeight: 320, overflowY: 'auto', paddingRight: 4, fontSize: 13.5, color: '#475569', lineHeight: 1.65 }}>
-              <h4 style={{ color: '#0f172a', margin: '0 0 6px', fontSize: 14 }}>1. Evidence-Based Evaluation</h4>
-              <p style={{ margin: '0 0 14px' }}>GenuAI provides role-specific evaluation workspaces. All scoring rubrics and assessments are objective and based on documented vacancy criteria.</p>
-              <h4 style={{ color: '#0f172a', margin: '0 0 6px', fontSize: 14 }}>2. Candidate Privacy & Data Isolation</h4>
-              <p style={{ margin: '0 0 14px' }}>Your personal and evaluation data is strictly partitioned. Data is never sold, shared across unverified third parties, or used to train public generative models.</p>
-              <h4 style={{ color: '#0f172a', margin: '0 0 6px', fontSize: 14 }}>3. Human-in-the-Loop Governance</h4>
-              <p style={{ margin: 0 }}>AI evaluations are analytical recommendations. All final recruitment decisions are made by human hiring leaders.</p>
+            <div style={{ maxHeight: 300, overflowY: 'auto', paddingRight: 4, fontSize: 13, color: '#475569', lineHeight: 1.6 }}>
+              <h4 style={{ color: '#0f172a', margin: '0 0 4px', fontSize: 13.5 }}>1. Objective Evidence Evaluation</h4>
+              <p style={{ margin: '0 0 12px' }}>GenuAI provides role-specific evaluation workspaces. Scoring criteria and rubrics are based on transparent vacancy requirements.</p>
+              <h4 style={{ color: '#0f172a', margin: '0 0 4px', fontSize: 13.5 }}>2. Candidate Privacy & Data Isolation</h4>
+              <p style={{ margin: '0 0 12px' }}>Your target applications and evidence are strictly compartmentalized per company. Data is never shared or cross-sold.</p>
+              <h4 style={{ color: '#0f172a', margin: '0 0 4px', fontSize: 13.5 }}>3. Human-Led Hiring Decisions</h4>
+              <p style={{ margin: 0 }}>GenuAI guarantees zero automatic AI rejections. Final hiring assessments remain entirely with human company leaders.</p>
             </div>
             <button
               type="button"
               onClick={() => { setAgreedTerms(true); setShowTermsModal(false); }}
-              style={{ width: '100%', height: 46, borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#b8860b,#d4af37)', color: '#fff', fontSize: 14, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', marginTop: 20, boxShadow: '0 3px 12px rgba(184,134,11,0.3)' }}>
+              style={{
+                width: '100%',
+                height: 44,
+                borderRadius: 10,
+                border: 'none',
+                background: 'linear-gradient(135deg,#b8860b,#d4af37)',
+                color: '#fff',
+                fontSize: 13.5,
+                fontWeight: 800,
+                fontFamily: 'inherit',
+                cursor: 'pointer',
+                marginTop: 18,
+                boxShadow: '0 3px 12px rgba(184,134,11,0.3)',
+              }}
+            >
               I Understand & Agree
             </button>
           </div>
@@ -720,55 +925,85 @@ export default function AuthPage() {
           background: #ffffff !important;
           box-shadow: 0 0 0 3px rgba(212,175,55,0.18) !important;
         }
-        .auth-left-panel { display: flex; }
-        @media (max-width: 760px) {
-          .auth-left-panel { display: none !important; }
-        }
       `}</style>
     </div>
   );
 }
 
-// ─── Shared inline styles ──────────────────────────────────────────────────────
+// ─── Inline styles ───
 const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: 12, fontWeight: 700,
-  color: '#374151', marginBottom: 6, letterSpacing: '0.1px',
+  display: 'block',
+  fontSize: 11.5,
+  fontWeight: 700,
+  color: '#374151',
+  marginBottom: 5,
+  letterSpacing: '0.1px',
 };
 
 const inputWrapStyle: React.CSSProperties = {
-  position: 'relative', display: 'flex', alignItems: 'center',
+  position: 'relative',
+  display: 'flex',
+  alignItems: 'center',
 };
 
 const iconStyle: React.CSSProperties = {
-  position: 'absolute', left: 13, color: '#94a3b8', pointerEvents: 'none', zIndex: 1,
+  position: 'absolute',
+  left: 13,
+  color: '#94a3b8',
+  pointerEvents: 'none',
+  zIndex: 1,
 };
 
 const inputStyle: React.CSSProperties = {
-  width: '100%', height: 46, padding: '0 14px 0 38px',
-  fontSize: 13.5, color: '#0f172a', background: '#f8f7f5',
-  border: '1.5px solid #e8e4db', borderRadius: 10, outline: 'none',
-  boxSizing: 'border-box', transition: 'all 0.18s ease',
+  width: '100%',
+  height: 44,
+  padding: '0 14px 0 36px',
+  fontSize: 13,
+  color: '#0f172a',
+  background: '#f8f7f5',
+  border: '1.5px solid #e8e4db',
+  borderRadius: 10,
+  outline: 'none',
+  boxSizing: 'border-box',
+  transition: 'all 0.18s ease',
   fontFamily: 'inherit',
 };
 
 const modalBackdropStyle: React.CSSProperties = {
-  position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)',
-  backdropFilter: 'blur(4px)', zIndex: 200,
-  display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+  position: 'fixed',
+  inset: 0,
+  background: 'rgba(15,23,42,0.6)',
+  backdropFilter: 'blur(4px)',
+  zIndex: 200,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 20,
 };
 
 const modalStyle: React.CSSProperties = {
-  background: '#ffffff', borderRadius: 18, padding: '28px 28px',
-  width: '100%', maxWidth: 420,
+  background: '#ffffff',
+  borderRadius: 18,
+  padding: '26px',
+  width: '100%',
+  maxWidth: 420,
   boxShadow: '0 24px 60px rgba(0,0,0,0.18)',
-  animation: 'fadeUp 0.2s ease',
 };
 
 const modalHeaderStyle: React.CSSProperties = {
-  display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14,
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 12,
 };
 
 const modalCloseStyle: React.CSSProperties = {
-  background: '#f1f5f9', border: 'none', borderRadius: 8, cursor: 'pointer',
-  padding: 6, display: 'flex', alignItems: 'center', color: '#64748b',
+  background: '#f1f5f9',
+  border: 'none',
+  borderRadius: 8,
+  cursor: 'pointer',
+  padding: 6,
+  display: 'flex',
+  alignItems: 'center',
+  color: '#64748b',
 };
