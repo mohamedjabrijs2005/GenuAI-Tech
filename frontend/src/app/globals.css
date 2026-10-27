@@ -1725,17 +1725,17 @@ tbody tr:hover { background: #f1f5f9; }
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
-  background: #0f172a;
+  clip-path: polygon(0 0, 86% 0, 100% 100%, 0 100%);
+  background: transparent;
 }
 
-/* Background image & gradient tint clipped with precise diagonal slant */
+/* Background image & gradient tint fill the clipped panel */
 .sail-image-bg {
   position: absolute;
   inset: 0;
   background-size: cover;
   background-position: center top;
   background-repeat: no-repeat;
-  clip-path: polygon(0 0, 86% 0, 100% 100%, 0 100%);
   z-index: 0;
 }
 
@@ -1744,11 +1744,10 @@ tbody tr:hover { background: #f1f5f9; }
   inset: 0;
   background: linear-gradient(
     135deg,
-    rgba(184, 134, 11, 0.65) 0%,
-    rgba(212, 175, 55, 0.35) 35%,
-    rgba(15, 23, 42, 0.72) 100%
+    rgba(184, 134, 11, 0.60) 0%,
+    rgba(212, 175, 55, 0.30) 35%,
+    rgba(15, 23, 42, 0.65) 100%
   );
-  clip-path: polygon(0 0, 86% 0, 100% 100%, 0 100%);
   z-index: 1;
 }
 
@@ -1777,104 +1776,7 @@ tbody tr:hover { background: #f1f5f9; }
 
 
 
-/* Truthful Overview Card on Left */
-.sail-left-overview-card {
-  margin: auto 0;
-  padding: 28px 26px;
-  background: rgba(15, 23, 42, 0.55);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1.5px solid rgba(212, 175, 55, 0.38);
-  border-radius: 20px;
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
-  max-width: 520px;
-}
 
-.sail-overview-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 99px;
-  background: rgba(212, 175, 55, 0.22);
-  border: 1px solid rgba(212, 175, 55, 0.45);
-  color: #fde68a;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  margin-bottom: 16px;
-}
-
-.sail-overview-headline {
-  font-size: clamp(26px, 2.5vw, 36px);
-  font-weight: 900;
-  color: #ffffff;
-  line-height: 1.2;
-  letter-spacing: -0.6px;
-  margin: 0 0 12px;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.3);
-}
-
-.sail-overview-desc {
-  font-size: 13.5px;
-  color: rgba(255, 255, 255, 0.88);
-  line-height: 1.6;
-  margin: 0 0 18px;
-}
-
-.sail-overview-pillars {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.sail-pillar-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.sail-pillar-icon {
-  color: #fbbf24;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.sail-pillar-item strong {
-  display: block;
-  font-size: 12.5px;
-  color: #ffffff;
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-.sail-pillar-item p {
-  font-size: 11.5px;
-  color: rgba(255, 255, 255, 0.76);
-  margin: 2px 0 0;
-  line-height: 1.45;
-}
-
-.sail-trust-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.sail-trust-tag {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 99px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 700;
-}
 
 .sail-left-footer {
   font-size: 11.5px;

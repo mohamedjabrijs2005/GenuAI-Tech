@@ -7,7 +7,7 @@ import Script from 'next/script';
 import {
   Eye, EyeOff, Lock, Mail,
   AlertCircle, ArrowRight, Building2, User,
-  ShieldCheck, X, CheckCircle2,
+  ShieldCheck, X,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
@@ -284,53 +284,7 @@ export default function AuthPage() {
             </span>
           </Link>
 
-          {/* Truthful Auth Overview Card */}
-          <div className="sail-left-overview-card">
-            <div className="sail-overview-badge">
-              <ShieldCheck size={14} />
-              <span>GenuAI Platform Overview</span>
-            </div>
 
-            <h1 className="sail-overview-headline">
-              Hire with evidence.<br />Not guesswork.
-            </h1>
-
-            <p className="sail-overview-desc">
-              GenuAI Technologies provides a requirement-centered recruitment environment connecting verified candidates to high-growth companies through objective, structured evaluations.
-            </p>
-
-            <div className="sail-overview-pillars">
-              <div className="sail-pillar-item">
-                <CheckCircle2 size={16} className="sail-pillar-icon" />
-                <div>
-                  <strong>Role-Specific Skill Benchmarks</strong>
-                  <p>Evaluation rubrics aligned to real company vacancy criteria.</p>
-                </div>
-              </div>
-
-              <div className="sail-pillar-item">
-                <CheckCircle2 size={16} className="sail-pillar-icon" />
-                <div>
-                  <strong>Human-in-the-Loop Decision Making</strong>
-                  <p>AI assists interview structuring; human hiring leaders make all decisions.</p>
-                </div>
-              </div>
-
-              <div className="sail-pillar-item">
-                <CheckCircle2 size={16} className="sail-pillar-icon" />
-                <div>
-                  <strong>Role-Partitioned Governance</strong>
-                  <p>Strict privacy isolation for Candidates, Employers, and Admin consoles.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="sail-trust-tags">
-              <span className="sail-trust-tag">Candidate Hub</span>
-              <span className="sail-trust-tag">Employer Portal</span>
-              <span className="sail-trust-tag">Trust & Governance</span>
-            </div>
-          </div>
 
           {/* Bottom Copyright */}
           <div className="sail-left-footer">
