@@ -7,7 +7,7 @@ import Script from 'next/script';
 import {
   Eye, EyeOff, Lock, Mail,
   AlertCircle, ArrowRight, Building2, User,
-  ShieldCheck, X,
+  ShieldCheck, X, CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
@@ -17,7 +17,6 @@ type UserPersona = 'candidate' | 'company' | 'admin';
 
 interface PersonaConfig {
   label: string;
-  cardTitle: string;
   cardSubtitle: string;
   emailLabel: string;
   emailPlaceholder: string;
@@ -28,8 +27,7 @@ interface PersonaConfig {
 const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
   candidate: {
     label: 'Candidate',
-    cardTitle: 'Candidate Login',
-    cardSubtitle: 'Sign in to access your interview workspace & evaluations',
+    cardSubtitle: 'Access your recruitment workspace & evidence locker',
     emailLabel: 'Email Address',
     emailPlaceholder: 'you@example.com',
     submitText: 'Sign In to Workspace',
@@ -37,8 +35,7 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
   },
   company: {
     label: 'Company',
-    cardTitle: 'Employer Portal',
-    cardSubtitle: 'Sign in to manage role vacancies & evaluate talent',
+    cardSubtitle: 'Manage vacancies & evaluate candidate evidence',
     emailLabel: 'Work Email',
     emailPlaceholder: 'recruiter@company.com',
     submitText: 'Access Company Portal',
@@ -46,8 +43,7 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
   },
   admin: {
     label: 'Admin',
-    cardTitle: 'Platform Governance',
-    cardSubtitle: 'Sign in to the GenuAI compliance & audit console',
+    cardSubtitle: 'GenuAI platform compliance & audit console',
     emailLabel: 'Admin Email',
     emailPlaceholder: 'admin@genuai.io',
     submitText: 'Enter Governance Console',
@@ -82,14 +78,10 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const path = window.location.pathname;
       const params = new URLSearchParams(window.location.search);
       const roleParam = params.get('role');
       const modeParam = params.get('mode');
-
-      const wantsRegister = path.includes('/register') || modeParam === 'register';
-      setIsLogin(!wantsRegister);
-
+      if (modeParam === 'register') setIsLogin(false);
       if (roleParam === 'candidate') setPersona('candidate');
       else if (roleParam === 'company') setPersona('company');
       else if (roleParam === 'admin') { setPersona('admin'); setIsLogin(true); }
@@ -113,7 +105,7 @@ export default function AuthPage() {
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
   const getPasswordStrength = (pass: string) => {
-    if (!pass) return { score: 0, label: 'None', color: '#cbd5e1' };
+    if (!pass) return { score: 0, label: '', color: '#e2e8f0' };
     let score = 0;
     if (pass.length >= 6) score++;
     if (pass.length >= 8) score++;
@@ -243,246 +235,311 @@ export default function AuthPage() {
 
   const passStrength = getPasswordStrength(form.password);
 
+  // ─── ICON MAP ───────────────────────────────────────────────────────────────
+  const personaIcons: Record<UserPersona, React.ReactNode> = {
+    candidate: <User size={14} />,
+    company: <Building2 size={14} />,
+    admin: <ShieldCheck size={14} />,
+  };
+
+  // ─── RENDER ─────────────────────────────────────────────────────────────────
   return (
-    <div className="auth-fullbg-page">
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+      background: '#f8f7f5',
+    }}>
 
-      {/* ======= FULL VIEWPORT BACKGROUND IMAGE ======= */}
-      <div
-        className="auth-fullbg-backdrop"
-        style={{ backgroundImage: "url('/auth-hero.jpg')" }}
-      />
+      {/* ══════════════════════════════════════════════════════
+          LEFT PANEL — Background Image + Branding
+      ══════════════════════════════════════════════════════ */}
+      <div style={{
+        flex: '0 0 48%',
+        position: 'relative',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        padding: '48px 52px',
+      }} className="auth-left-panel">
 
-      {/* ======= LUMINOUS WARM WHITE-GOLD FROSTED OVERLAY ======= */}
-      <div className="auth-fullbg-overlay" />
+        {/* Full-bleed background image */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: "url('/auth-hero.jpg')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          zIndex: 0,
+        }} />
 
-      {/* ======= CENTERED LOGIN CARD ======= */}
-      <div className="auth-fullbg-container">
-        <div className="auth-login-card">
+        {/* Dark overlay for readability */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(160deg, rgba(8,14,35,0.72) 0%, rgba(8,14,35,0.55) 45%, rgba(184,134,11,0.25) 100%)',
+          zIndex: 1,
+        }} />
 
-          {/* Top Brand Link — Matches Dashboard Top-Left Presentation */}
-          <Link href="/" className="auth-card-brand">
-            <div
-              className="sidebar-logo-text gold-gradient-text"
-              style={{
-                fontSize: 24,
-                fontWeight: 900,
-                lineHeight: 1.15,
-                letterSpacing: '-0.3px',
-                textAlign: 'center',
-              }}
-            >
+        {/* Top: Logo */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <Link href="/" style={{ textDecoration: 'none' }}>
+            <div style={{
+              fontSize: 22, fontWeight: 900, letterSpacing: '-0.4px', lineHeight: 1.15,
+              background: 'linear-gradient(90deg, #d4af37, #f5d890)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            }}>
               GenuAI Technologies
             </div>
-            <span
-              className="sidebar-logo-sub"
-              style={{
-                fontSize: 10.5,
-                color: '#854d0e',
-                fontWeight: 700,
-                letterSpacing: '0.6px',
-                textTransform: 'uppercase',
-                display: 'block',
-                marginTop: 4,
-                textAlign: 'center',
-              }}
-            >
+            <div style={{
+              fontSize: 10, fontWeight: 700, color: 'rgba(212,175,55,0.75)',
+              textTransform: 'uppercase', letterSpacing: '0.6px', marginTop: 3,
+            }}>
               Recruitment Intelligence
-            </span>
+            </div>
           </Link>
+        </div>
 
-          {/* Persona Selection Tabs */}
-          <div className="auth-persona-tabs">
-            {(['candidate', 'company', 'admin'] as UserPersona[]).map((p) => {
-              const icons: Record<UserPersona, React.ReactNode> = {
-                candidate: <User size={13} />,
-                company: <Building2 size={13} />,
-                admin: <ShieldCheck size={13} />,
-              };
-              return (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => handlePersonaChange(p)}
-                  className={`auth-persona-tab${persona === p ? ' active' : ''}`}
-                  id={`auth-persona-tab-${p}`}
-                >
-                  {icons[p]}
-                  <span>{PERSONA_CONFIG[p].label}</span>
-                </button>
-              );
-            })}
+        {/* Center: Hero copy */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <h2 style={{
+            fontSize: 'clamp(22px, 2.8vw, 34px)', fontWeight: 900,
+            color: '#ffffff', letterSpacing: '-0.8px', lineHeight: 1.25,
+            margin: '0 0 16px',
+          }}>
+            Where evidence<br />
+            <span style={{ background: 'linear-gradient(90deg,#d4af37,#f5d890)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              meets opportunity.
+            </span>
+          </h2>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.72)', lineHeight: 1.7, maxWidth: 320, margin: 0 }}>
+            GenuAI connects verified vacancies with role-specific evidence, transparent requirement coverage, and human-led hiring decisions.
+          </p>
+
+          {/* Pillars */}
+          <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[
+              'Verified company & vacancy workflow',
+              'Target-specific candidate privacy',
+              'Human-led hiring decisions only',
+            ].map((item, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <CheckCircle2 size={15} color="#d4af37" />
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.82)', fontWeight: 500 }}>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom: back link */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <Link href="/" style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', fontWeight: 600, letterSpacing: '0.3px' }}>
+            ← Back to home
+          </Link>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          RIGHT PANEL — Auth Form
+      ══════════════════════════════════════════════════════ */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px 28px',
+        background: '#ffffff',
+        overflowY: 'auto',
+        minHeight: '100vh',
+      }}>
+        <div style={{ width: '100%', maxWidth: 420 }}>
+
+          {/* Persona tabs */}
+          <div style={{
+            display: 'flex', gap: 4,
+            background: '#f4f2ee', borderRadius: 12, padding: 4,
+            marginBottom: 28, border: '1px solid #ece9e0',
+          }}>
+            {(['candidate', 'company', 'admin'] as UserPersona[]).map((p) => (
+              <button
+                key={p}
+                type="button"
+                id={`auth-persona-tab-${p}`}
+                onClick={() => handlePersonaChange(p)}
+                style={{
+                  flex: 1, padding: '8px 6px',
+                  borderRadius: 9, border: 'none', cursor: 'pointer',
+                  fontSize: 12, fontWeight: 700,
+                  fontFamily: 'inherit',
+                  transition: 'all 0.18s ease',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                  background: persona === p ? '#ffffff' : 'transparent',
+                  color: persona === p ? '#92400e' : '#64748b',
+                  boxShadow: persona === p ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                }}
+              >
+                {personaIcons[p]}
+                {PERSONA_CONFIG[p].label}
+              </button>
+            ))}
           </div>
 
-          {/* Sign In / Create Account Toggle */}
-          {config.allowRegister && (
-            <div className="auth-mode-toggle">
-              <button
-                type="button"
-                onClick={() => { setIsLogin(true); setError(''); }}
-                className={`auth-mode-btn${isLogin ? ' active' : ''}`}
-                id="auth-mode-signin"
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => { setIsLogin(false); setError(''); }}
-                className={`auth-mode-btn${!isLogin ? ' active' : ''}`}
-                id="auth-mode-register"
-              >
-                Create Account
-              </button>
-            </div>
-          )}
-
-          {/* Welcome Text */}
-          <div className="auth-welcome-block">
-            <h2 className="auth-welcome-title">
+          {/* Heading */}
+          <div style={{ marginBottom: 24 }}>
+            <h1 style={{ fontSize: 26, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', margin: '0 0 6px' }}>
               {isLogin
-                ? (persona === 'admin' ? 'Platform Governance' : 'Welcome to GenuAI Technologies!')
-                : (persona === 'company' ? 'Register Company Account' : 'Create Candidate Account')}
-            </h2>
-            <p className="auth-welcome-sub">
-              {isLogin ? config.cardSubtitle : 'Get started with verified recruitment — free to register'}
+                ? (persona === 'admin' ? 'Platform Governance' : 'Welcome back')
+                : (persona === 'company' ? 'Register Company' : 'Create Account')}
+            </h1>
+            <p style={{ fontSize: 13.5, color: '#64748b', margin: 0, lineHeight: 1.5 }}>
+              {isLogin ? config.cardSubtitle : 'Get started — free to register'}
             </p>
           </div>
 
-          {/* Error Banner */}
+          {/* Sign In / Create Account toggle */}
+          {config.allowRegister && (
+            <div style={{
+              display: 'flex', marginBottom: 24,
+              background: '#f8f7f5', borderRadius: 10, padding: 3,
+              border: '1px solid #e8e4db',
+            }}>
+              {[{ id: 'auth-mode-signin', label: 'Sign In', active: isLogin }, { id: 'auth-mode-register', label: 'Create Account', active: !isLogin }].map((btn) => (
+                <button
+                  key={btn.id}
+                  id={btn.id}
+                  type="button"
+                  onClick={() => { setIsLogin(btn.label === 'Sign In'); setError(''); }}
+                  style={{
+                    flex: 1, padding: '8px 12px', borderRadius: 8, border: 'none',
+                    fontFamily: 'inherit', cursor: 'pointer', fontSize: 13, fontWeight: 700,
+                    transition: 'all 0.18s ease',
+                    background: btn.active ? '#ffffff' : 'transparent',
+                    color: btn.active ? '#0f172a' : '#94a3b8',
+                    boxShadow: btn.active ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                  }}
+                >
+                  {btn.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Error */}
           {error && (
-            <div className="auth-error-box">
-              <AlertCircle size={15} style={{ flexShrink: 0 }} />
-              <span>{error}</span>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: '#fef2f2', border: '1px solid #fecaca',
+              color: '#b91c1c', fontSize: 12.5, fontWeight: 600,
+              padding: '10px 14px', borderRadius: 10, marginBottom: 18,
+            }}>
+              <AlertCircle size={14} style={{ flexShrink: 0 }} />
+              {error}
             </div>
           )}
 
           {/* FORM */}
-          <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-            {/* Register-only fields */}
+            {/* Register extras */}
             {!isLogin && config.allowRegister && (
-              <div className={persona === 'company' ? 'auth-two-col' : ''} style={{ marginBottom: 14 }}>
-                <div className="auth-field">
-                  <label className="auth-label">Full Name</label>
-                  <div className="auth-input-wrap">
-                    <User size={15} className="auth-input-icon" />
-                    <input
-                      type="text"
-                      placeholder="e.g. Alex Morgan"
-                      value={form.name}
-                      onChange={(e) => set('name', e.target.value)}
-                      className="auth-input"
-                      required
-                    />
-                  </div>
-                </div>
-                {persona === 'company' && (
-                  <div className="auth-field">
-                    <label className="auth-label">Company Name</label>
-                    <div className="auth-input-wrap">
-                      <Building2 size={15} className="auth-input-icon" />
-                      <input
-                        type="text"
-                        placeholder="e.g. Acme Corp"
-                        value={form.companyName}
-                        onChange={(e) => set('companyName', e.target.value)}
-                        className="auth-input"
-                        required
-                      />
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: persona === 'company' ? '1fr 1fr' : '1fr', gap: 12 }}>
+                  <div>
+                    <label style={labelStyle}>Full Name</label>
+                    <div style={inputWrapStyle}>
+                      <User size={14} style={iconStyle} />
+                      <input type="text" placeholder="e.g. Alex Morgan" value={form.name} onChange={(e) => set('name', e.target.value)} style={inputStyle} className="auth-input" required />
                     </div>
                   </div>
-                )}
-              </div>
+                  {persona === 'company' && (
+                    <div>
+                      <label style={labelStyle}>Company Name</label>
+                      <div style={inputWrapStyle}>
+                        <Building2 size={14} style={iconStyle} />
+                        <input type="text" placeholder="e.g. Acme Corp" value={form.companyName} onChange={(e) => set('companyName', e.target.value)} style={inputStyle} className="auth-input" required />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
             )}
 
-            {/* Email Field */}
-            <div className="auth-field">
-              <label className="auth-label">{config.emailLabel}</label>
-              <div className="auth-input-wrap">
-                <Mail size={15} className="auth-input-icon" />
+            {/* Email */}
+            <div>
+              <label style={labelStyle}>{config.emailLabel}</label>
+              <div style={inputWrapStyle}>
+                <Mail size={14} style={iconStyle} />
                 <input
                   type="email"
                   placeholder={config.emailPlaceholder}
                   autoComplete="email"
                   value={form.email}
                   onChange={(e) => set('email', e.target.value)}
+                  style={inputStyle}
                   className="auth-input"
                   required
                 />
               </div>
             </div>
 
-            {/* Password Field */}
-            <div className="auth-field">
-              <div className="auth-label-row">
-                <label className="auth-label">Password</label>
+            {/* Password */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <label style={{ ...labelStyle, marginBottom: 0 }}>Password</label>
                 {isLogin && (
-                  <span
-                    className="auth-forgot"
-                    onClick={() => { setForgotEmail(form.email || ''); setShowForgotModal(true); }}
-                  >
-                    Forgot Password?
-                  </span>
+                  <button type="button" onClick={() => { setForgotEmail(form.email || ''); setShowForgotModal(true); }}
+                    style={{ fontSize: 12, fontWeight: 700, color: '#b8860b', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                    Forgot password?
+                  </button>
                 )}
               </div>
-              <div className="auth-input-wrap">
-                <Lock size={15} className="auth-input-icon" />
+              <div style={inputWrapStyle}>
+                <Lock size={14} style={iconStyle} />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Enter your password"
                   autoComplete={isLogin ? 'current-password' : 'new-password'}
                   value={form.password}
                   onChange={(e) => set('password', e.target.value)}
+                  style={{ ...inputStyle, paddingRight: 42 }}
                   className="auth-input"
-                  style={{ paddingRight: 40 }}
                   required
                 />
-                <button
-                  type="button"
-                  className="auth-eye-btn"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  style={{ position: 'absolute', right: 12, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', padding: 0 }}>
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
-
-              {/* Password Strength Meter (Registration only) */}
+              {/* Strength meter */}
               {!isLogin && form.password && (
-                <div className="auth-strength-bar">
-                  <div className="auth-strength-track">
-                    <div style={{ flex: 1, height: '100%', borderRadius: 2, background: passStrength.score >= 1 ? passStrength.color : '#e2e8f0' }} />
-                    <div style={{ flex: 1, height: '100%', borderRadius: 2, background: passStrength.score >= 2 ? passStrength.color : '#e2e8f0' }} />
-                    <div style={{ flex: 1, height: '100%', borderRadius: 2, background: passStrength.score >= 3 ? passStrength.color : '#e2e8f0' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 7 }}>
+                  <div style={{ flex: 1, display: 'flex', gap: 4, height: 3 }}>
+                    {[1, 2, 3].map((n) => (
+                      <div key={n} style={{ flex: 1, borderRadius: 2, background: passStrength.score >= n ? passStrength.color : '#e2e8f0', transition: 'background 0.2s' }} />
+                    ))}
                   </div>
-                  <span style={{ fontSize: 10.5, color: passStrength.color, fontWeight: 700 }}>
-                    {passStrength.label}
-                  </span>
+                  <span style={{ fontSize: 10.5, fontWeight: 700, color: passStrength.color }}>{passStrength.label}</span>
                 </div>
               )}
             </div>
 
-            {/* Confirm Password (Registration only) */}
+            {/* Confirm Password */}
             {!isLogin && config.allowRegister && (
-              <div className="auth-field">
-                <label className="auth-label">Confirm Password</label>
-                <div className="auth-input-wrap">
-                  <Lock size={15} className="auth-input-icon" />
+              <div>
+                <label style={labelStyle}>Confirm Password</label>
+                <div style={inputWrapStyle}>
+                  <Lock size={14} style={iconStyle} />
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     placeholder="Re-enter your password"
                     autoComplete="new-password"
                     value={form.confirmPassword}
                     onChange={(e) => set('confirmPassword', e.target.value)}
+                    style={{ ...inputStyle, paddingRight: 42 }}
                     className="auth-input"
-                    style={{ paddingRight: 40 }}
                     required
                   />
-                  <button
-                    type="button"
-                    className="auth-eye-btn"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                  >
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{ position: 'absolute', right: 12, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', padding: 0 }}>
                     {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
@@ -491,55 +548,44 @@ export default function AuthPage() {
 
             {/* Remember Me */}
             {isLogin && (
-              <div className="auth-remember">
-                <input
-                  type="checkbox"
-                  id="remember-me"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                />
-                <label htmlFor="remember-me">Stay signed in to GenuAI</label>
-              </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: '#64748b', cursor: 'pointer' }}>
+                <input type="checkbox" id="remember-me" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} style={{ accentColor: '#b8860b', width: 14, height: 14 }} />
+                Stay signed in to GenuAI
+              </label>
             )}
 
-            {/* Terms & Privacy */}
+            {/* Terms */}
             {!isLogin && (
-              <div className="auth-terms-row" onClick={() => setAgreedTerms(!agreedTerms)}>
-                <input
-                  type="checkbox"
-                  id="terms-cb"
-                  checked={agreedTerms}
-                  onChange={(e) => setAgreedTerms(e.target.checked)}
-                  style={{ accentColor: '#b8860b', marginTop: 2, flexShrink: 0 }}
-                />
-                <label htmlFor="terms-cb">
-                  I agree to the{' '}
-                  <span
-                    onClick={(e) => { e.stopPropagation(); setShowTermsModal(true); }}
-                    style={{ color: '#b8860b', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}
-                  >
-                    Terms of Service
-                  </span>
-                  {' '}and{' '}
-                  <span
-                    onClick={(e) => { e.stopPropagation(); setShowTermsModal(true); }}
-                    style={{ color: '#b8860b', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}
-                  >
-                    Privacy Policy
-                  </span>
-                </label>
-              </div>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: '#475569', cursor: 'pointer', lineHeight: 1.55 }}>
+                <input type="checkbox" id="terms-cb" checked={agreedTerms} onChange={(e) => setAgreedTerms(e.target.checked)} style={{ accentColor: '#b8860b', marginTop: 2, flexShrink: 0 }} />
+                I agree to the{' '}
+                <span onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} style={{ color: '#b8860b', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}>
+                  Terms of Service
+                </span>{' '}and{' '}
+                <span onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} style={{ color: '#b8860b', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}>
+                  Privacy Policy
+                </span>
+              </label>
             )}
 
-            {/* Submit Pill Button */}
+            {/* Submit */}
             <button
               type="submit"
-              disabled={loading}
-              className="auth-submit-btn"
               id="auth-submit-btn"
+              disabled={loading}
+              style={{
+                width: '100%', height: 50, borderRadius: 12, border: 'none',
+                background: loading ? '#d4af37' : 'linear-gradient(135deg, #b8860b 0%, #d4af37 60%, #c9a227 100%)',
+                color: '#fff', fontSize: 14.5, fontWeight: 800,
+                fontFamily: 'inherit', cursor: loading ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
+                boxShadow: '0 4px 18px rgba(184,134,11,0.35)',
+                transition: 'all 0.2s ease',
+                marginTop: 4, letterSpacing: '0.1px',
+              }}
             >
               {loading ? (
-                <span className="auth-spinner" />
+                <span style={{ width: 18, height: 18, border: '2.5px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'auth-spin 0.75s linear infinite', display: 'inline-block' }} />
               ) : isLogin ? (
                 <>{config.submitText} <ArrowRight size={16} /></>
               ) : (
@@ -548,20 +594,30 @@ export default function AuthPage() {
             </button>
           </form>
 
-          {/* Social Sign-In Divider & Button */}
+          {/* Google Sign-In */}
           {persona !== 'admin' && (
             <>
-              <div className="auth-divider">
-                <div className="auth-divider-line" />
-                <span>or continue with</span>
-                <div className="auth-divider-line" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0 14px' }}>
+                <div style={{ flex: 1, height: 1, background: '#ece9e0' }} />
+                <span style={{ fontSize: 11.5, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>or</span>
+                <div style={{ flex: 1, height: 1, background: '#ece9e0' }} />
               </div>
 
               <button
+                id="auth-google-btn"
                 type="button"
                 onClick={handleGoogleSignIn}
-                className="auth-google-btn"
-                id="auth-google-btn"
+                style={{
+                  width: '100%', height: 46, borderRadius: 12,
+                  border: '1.5px solid #e8e4db', background: '#ffffff',
+                  color: '#334155', fontSize: 13.5, fontWeight: 600,
+                  fontFamily: 'inherit', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                  transition: 'all 0.18s ease',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#d4af37'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 3px 12px rgba(184,134,11,0.14)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#e8e4db'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'; }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -569,115 +625,150 @@ export default function AuthPage() {
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                 </svg>
-                <span>Continue with Google</span>
+                Continue with Google
               </button>
             </>
           )}
 
-          <Script src="https://accounts.google.com/gsi/client" strategy="lazyOnload" />
-
-          {/* Admin Note */}
+          {/* Admin note */}
           {persona === 'admin' && (
-            <p className="auth-admin-note">
+            <p style={{ fontSize: 12, color: '#64748b', textAlign: 'center', marginTop: 16 }}>
               Restricted to authorized <strong style={{ color: '#b8860b' }}>GenuAI Governance</strong> administrators.
             </p>
           )}
 
-          {/* Footer Links */}
-          <div className="auth-footer-links">
-            <Link href="/">← Home</Link>
-            <span>&middot;</span>
-            <Link href="/privacy">Privacy Policy</Link>
-            <span>&middot;</span>
-            <Link href="/terms">Terms of Service</Link>
-            <span>&middot;</span>
-            <Link href="/trust">Trust Center</Link>
+          {/* Footer links */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+            justifyContent: 'center', marginTop: 28, paddingTop: 20,
+            borderTop: '1px solid #f0ebe0', fontSize: 12, color: '#94a3b8',
+          }}>
+            {[['/', 'Home'], ['/privacy', 'Privacy'], ['/terms', 'Terms'], ['/trust', 'Trust Center']].map(([href, label], i) => (
+              <React.Fragment key={i}>
+                {i > 0 && <span style={{ color: '#d8d4cc', fontSize: 9 }}>•</span>}
+                <Link href={href} style={{ color: '#94a3b8', textDecoration: 'none', fontWeight: 600, transition: 'color 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#b8860b')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#94a3b8')}>
+                  {label}
+                </Link>
+              </React.Fragment>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* ======= FORGOT PASSWORD MODAL ======= */}
+      {/* ─── FORGOT PASSWORD MODAL ─────────────────────────────────────── */}
       {showForgotModal && (
-        <div className="auth-modal-backdrop" onClick={() => setShowForgotModal(false)}>
-          <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="auth-modal-header">
-              <h3>Reset Password</h3>
-              <button
-                type="button"
-                onClick={() => setShowForgotModal(false)}
-                className="auth-modal-close"
-                aria-label="Close modal"
-              >
-                <X size={18} />
-              </button>
+        <div onClick={() => setShowForgotModal(false)} style={modalBackdropStyle}>
+          <div onClick={(e) => e.stopPropagation()} style={modalStyle}>
+            <div style={modalHeaderStyle}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#0f172a' }}>Reset Password</h3>
+              <button type="button" onClick={() => setShowForgotModal(false)} style={modalCloseStyle}><X size={18} /></button>
             </div>
-            <p style={{ fontSize: 13, color: '#475569', marginBottom: 16, lineHeight: 1.55 }}>
-              Enter your registered email address and we will send you secure password reset instructions.
+            <p style={{ fontSize: 13.5, color: '#475569', margin: '0 0 20px', lineHeight: 1.6 }}>
+              Enter your registered email and we'll send you secure reset instructions.
             </p>
             <form onSubmit={handleForgotSubmit}>
-              <div className="auth-field">
-                <label className="auth-label">Email Address</label>
-                <div className="auth-input-wrap">
-                  <Mail size={15} className="auth-input-icon" />
-                  <input
-                    type="email"
-                    placeholder="you@example.com"
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    className="auth-input"
-                    required
-                  />
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>Email Address</label>
+                <div style={inputWrapStyle}>
+                  <Mail size={14} style={iconStyle} />
+                  <input type="email" placeholder="you@example.com" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} style={inputStyle} className="auth-input" required />
                 </div>
               </div>
-              <button type="submit" className="auth-submit-btn" style={{ marginTop: 12 }}>
-                {forgotSent ? 'Reset Link Sent!' : 'Send Reset Link'}
+              <button type="submit" style={{ width: '100%', height: 46, borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#b8860b,#d4af37)', color: '#fff', fontSize: 14, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', boxShadow: '0 3px 12px rgba(184,134,11,0.3)' }}>
+                {forgotSent ? '✓ Reset Link Sent!' : 'Send Reset Link'}
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* ======= TERMS & PRIVACY MODAL ======= */}
+      {/* ─── TERMS MODAL ───────────────────────────────────────────────── */}
       {showTermsModal && (
-        <div className="auth-modal-backdrop" onClick={() => setShowTermsModal(false)}>
-          <div className="auth-modal" style={{ maxWidth: 540 }} onClick={(e) => e.stopPropagation()}>
-            <div className="auth-modal-header">
-              <h3>Terms &amp; Privacy Overview</h3>
-              <button
-                type="button"
-                onClick={() => setShowTermsModal(false)}
-                className="auth-modal-close"
-                aria-label="Close modal"
-              >
-                <X size={18} />
-              </button>
+        <div onClick={() => setShowTermsModal(false)} style={modalBackdropStyle}>
+          <div onClick={(e) => e.stopPropagation()} style={{ ...modalStyle, maxWidth: 520 }}>
+            <div style={modalHeaderStyle}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#0f172a' }}>Terms & Privacy Overview</h3>
+              <button type="button" onClick={() => setShowTermsModal(false)} style={modalCloseStyle}><X size={18} /></button>
             </div>
-            <div style={{ maxHeight: 340, overflowY: 'auto', paddingRight: 6, fontSize: 13, color: '#475569', lineHeight: 1.65 }}>
+            <div style={{ maxHeight: 320, overflowY: 'auto', paddingRight: 4, fontSize: 13.5, color: '#475569', lineHeight: 1.65 }}>
               <h4 style={{ color: '#0f172a', margin: '0 0 6px', fontSize: 14 }}>1. Evidence-Based Evaluation</h4>
-              <p style={{ margin: '0 0 12px' }}>
-                GenuAI Technologies provides role-specific evaluation workspaces. All scoring rubrics and assessments are objective and based on documented vacancy criteria.
-              </p>
-              <h4 style={{ color: '#0f172a', margin: '0 0 6px', fontSize: 14 }}>2. Candidate Privacy &amp; Data Isolation</h4>
-              <p style={{ margin: '0 0 12px' }}>
-                Your personal and evaluation data is strictly partitioned. Data is never sold, shared across unverified third parties, or used to train public generative models.
-              </p>
+              <p style={{ margin: '0 0 14px' }}>GenuAI provides role-specific evaluation workspaces. All scoring rubrics and assessments are objective and based on documented vacancy criteria.</p>
+              <h4 style={{ color: '#0f172a', margin: '0 0 6px', fontSize: 14 }}>2. Candidate Privacy & Data Isolation</h4>
+              <p style={{ margin: '0 0 14px' }}>Your personal and evaluation data is strictly partitioned. Data is never sold, shared across unverified third parties, or used to train public generative models.</p>
               <h4 style={{ color: '#0f172a', margin: '0 0 6px', fontSize: 14 }}>3. Human-in-the-Loop Governance</h4>
-              <p style={{ margin: 0 }}>
-                AI evaluations are analytical recommendations provided to employers. All final recruitment decisions are made by human hiring leaders.
-              </p>
+              <p style={{ margin: 0 }}>AI evaluations are analytical recommendations. All final recruitment decisions are made by human hiring leaders.</p>
             </div>
             <button
               type="button"
               onClick={() => { setAgreedTerms(true); setShowTermsModal(false); }}
-              className="auth-submit-btn"
-              style={{ marginTop: 20 }}
-            >
-              I Understand &amp; Agree
+              style={{ width: '100%', height: 46, borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#b8860b,#d4af37)', color: '#fff', fontSize: 14, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', marginTop: 20, boxShadow: '0 3px 12px rgba(184,134,11,0.3)' }}>
+              I Understand & Agree
             </button>
           </div>
         </div>
       )}
 
+      <Script src="https://accounts.google.com/gsi/client" strategy="lazyOnload" />
+
+      <style>{`
+        @keyframes auth-spin { to { transform: rotate(360deg); } }
+        .auth-input:focus {
+          outline: none;
+          border-color: #d4af37 !important;
+          background: #ffffff !important;
+          box-shadow: 0 0 0 3px rgba(212,175,55,0.18) !important;
+        }
+        .auth-left-panel { display: flex; }
+        @media (max-width: 760px) {
+          .auth-left-panel { display: none !important; }
+        }
+      `}</style>
     </div>
   );
 }
+
+// ─── Shared inline styles ──────────────────────────────────────────────────────
+const labelStyle: React.CSSProperties = {
+  display: 'block', fontSize: 12, fontWeight: 700,
+  color: '#374151', marginBottom: 6, letterSpacing: '0.1px',
+};
+
+const inputWrapStyle: React.CSSProperties = {
+  position: 'relative', display: 'flex', alignItems: 'center',
+};
+
+const iconStyle: React.CSSProperties = {
+  position: 'absolute', left: 13, color: '#94a3b8', pointerEvents: 'none', zIndex: 1,
+};
+
+const inputStyle: React.CSSProperties = {
+  width: '100%', height: 46, padding: '0 14px 0 38px',
+  fontSize: 13.5, color: '#0f172a', background: '#f8f7f5',
+  border: '1.5px solid #e8e4db', borderRadius: 10, outline: 'none',
+  boxSizing: 'border-box', transition: 'all 0.18s ease',
+  fontFamily: 'inherit',
+};
+
+const modalBackdropStyle: React.CSSProperties = {
+  position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)',
+  backdropFilter: 'blur(4px)', zIndex: 200,
+  display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+};
+
+const modalStyle: React.CSSProperties = {
+  background: '#ffffff', borderRadius: 18, padding: '28px 28px',
+  width: '100%', maxWidth: 420,
+  boxShadow: '0 24px 60px rgba(0,0,0,0.18)',
+  animation: 'fadeUp 0.2s ease',
+};
+
+const modalHeaderStyle: React.CSSProperties = {
+  display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14,
+};
+
+const modalCloseStyle: React.CSSProperties = {
+  background: '#f1f5f9', border: 'none', borderRadius: 8, cursor: 'pointer',
+  padding: 6, display: 'flex', alignItems: 'center', color: '#64748b',
+};
