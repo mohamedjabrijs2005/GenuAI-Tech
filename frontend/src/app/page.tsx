@@ -1,300 +1,76 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
-  Compass, FileCheck, ArrowRight,
-  Building2, Lock, Layers, CheckCircle2, Menu, X, ChevronDown, ChevronUp,
-  FileText, UserCheck, Check, Minus, Sparkles, ShieldCheck, Briefcase, GraduationCap, MapPin
+  ArrowRight, CheckCircle2, FileCheck, Lock, UserCheck, FileText,
+  Menu, X, ChevronDown, ChevronUp, Sparkles, Check
 } from 'lucide-react';
-import api from '@/lib/api';
 
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
-  const [openPricingFaqIndex, setOpenPricingFaqIndex] = useState<number | null>(0);
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   const toggleFaq = (index: number) => {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
   };
 
   const STEPS = [
-    {
-      num: '1',
-      title: 'Define',
-      desc: 'Companies define roles, requirements, and accepted evaluation methods.',
-      isLive: true,
-    },
-    {
-      num: '2',
-      title: 'Verify',
-      desc: 'Platform governance verifies company status and moderates vacancy listings.',
-      isLive: true,
-    },
-    {
-      num: '3',
-      title: 'Target',
-      desc: 'Candidates select a specific published vacancy to create an isolated Target.',
-      isLive: true,
-    },
-    {
-      num: '4',
-      title: 'Prepare',
-      desc: 'Candidates review role-relevant learning benchmarks when available.',
-      isLive: false,
-    },
-    {
-      num: '5',
-      title: 'Prove',
-      desc: 'Candidates complete company-configured assessments when configured.',
-      isLive: false,
-    },
-    {
-      num: '6',
-      title: 'Evidence',
-      desc: 'Candidates submit projects, work samples, and portfolio items against requirements.',
-      isLive: true,
-    },
-    {
-      num: '7',
-      title: 'Review',
-      desc: 'Recruiters evaluate evidence coverage with role-specific rubrics.',
-      isLive: true,
-    },
-    {
-      num: '8',
-      title: 'Human Decision',
-      desc: 'Recruiters record hiring outcomes. Zero automated AI rejections.',
-      isLive: true,
-    },
+    { num: '01', title: 'Define', desc: 'Companies define roles, requirements, and evaluation methods.', live: true },
+    { num: '02', title: 'Verify', desc: 'Platform governance verifies company status and moderates vacancy listings.', live: true },
+    { num: '03', title: 'Target', desc: 'Candidates select a specific published vacancy to create an isolated Target.', live: true },
+    { num: '04', title: 'Evidence', desc: 'Candidates submit projects, work samples, and portfolio items against requirements.', live: true },
+    { num: '05', title: 'Review', desc: 'Recruiters evaluate evidence coverage with role-specific rubrics.', live: true },
+    { num: '06', title: 'Decision', desc: 'Recruiters record hiring outcomes. Zero automated AI rejections.', live: true },
   ];
 
   const FAQS = [
-    {
-      q: 'Is GenuAI an AI hiring system?',
-      a: 'No. GenuAI helps organize role requirements, candidate evidence, and recruiter review context. Hiring decisions remain entirely with people at the hiring company.',
-    },
-    {
-      q: 'Does GenuAI automatically reject candidates?',
-      a: 'No. The platform does not make automatic hiring or rejection decisions based on an AI score, percentage, or algorithm.',
-    },
-    {
-      q: 'What is a Target?',
-      a: 'A Target is a candidate’s dedicated recruitment context for one specific company vacancy version (Target = Candidate + Company + Vacancy + Vacancy Version). Each target keeps its own requirements, evidence, and privacy boundary.',
-    },
-    {
-      q: 'What does Evidence Gap mean?',
-      a: 'An Evidence Gap means sufficient supporting evidence is not currently available for a vacancy requirement. It does not mean the candidate lacks that skill.',
-    },
-    {
-      q: 'Can one company see my activity with another company?',
-      a: 'No. Target data is strictly compartmentalized by company. Company A can see only information connected to your Target for Company A.',
-    },
-    {
-      q: 'Are certificates automatically accepted as proof?',
-      a: 'No. Certificates and work samples can be submitted as supporting evidence where accepted, but recruiters evaluate all evidence in the context of the specific vacancy requirement.',
-    },
-    {
-      q: 'What does a file integrity record mean?',
-      a: 'A file integrity record (cryptographic SHA-256 hash) confirms that a submitted file version has not been altered after recording. It does not independently verify document authenticity, ownership, or competence.',
-    },
-    {
-      q: 'Is assessment monitoring used?',
-      a: 'Only where a company explicitly configures an official assessment module. Candidates receive prior notice of monitored parameters, and any integrity signals require human recruiter review.',
-    },
-    {
-      q: 'How can I request an accommodation?',
-      a: 'Candidates can submit confidential accommodation requests through the Accessibility page or within enabled assessment and interview workflows.',
-    },
-    {
-      q: 'Is GenuAI available for companies?',
-      a: 'Yes. Approved companies can create a workspace, define roles and departments, publish verified vacancies, and evaluate target evidence according to available platform features.',
-    },
+    { q: 'Is GenuAI an AI hiring system?', a: 'No. GenuAI helps organize role requirements, candidate evidence, and recruiter review context. Hiring decisions remain entirely with people at the hiring company.' },
+    { q: 'Does GenuAI automatically reject candidates?', a: 'No. The platform does not make automatic hiring or rejection decisions based on an AI score, percentage, or algorithm.' },
+    { q: 'What is a Target?', a: 'A Target is a candidate\'s dedicated recruitment context for one specific company vacancy. Each target keeps its own requirements, evidence, and privacy boundary.' },
+    { q: 'What does Evidence Gap mean?', a: 'An Evidence Gap means sufficient supporting evidence is not currently available for a vacancy requirement. It does not mean the candidate lacks that skill.' },
+    { q: 'Can one company see my activity with another company?', a: 'No. Target data is strictly compartmentalized by company. Company A can see only information connected to your Target for Company A.' },
+    { q: 'Is GenuAI free for candidates?', a: 'Core candidate access is free, including exploring verified vacancies, creating targets, and participating in the standard target workflow.' },
   ];
-
-  const PRICING_FAQS = [
-    {
-      q: 'Is GenuAI free for candidates?',
-      a: 'Core candidate access is free, including exploring verified vacancies, creating targets, and participating in the standard target workflow. Candidate career plans (Candidate Plus, Pro, and Career Pack) are available as paid upgrades for additional preparation, practice sessions, and career support.',
-    },
-    {
-      q: 'How does company workspace onboarding work?',
-      a: 'Companies register their workspace and undergo platform governance verification. Once verified, hiring teams can define requirements, publish verified vacancies, and review candidate evidence within their plan.',
-    },
-    {
-      q: 'Does GenuAI charge candidates to apply for jobs?',
-      a: 'No. Candidates should not need to pay to access verified opportunities or create targets for a company vacancy.',
-    },
-    {
-      q: 'Are assessments included in every company plan?',
-      a: 'Assessment capability is being released in phases. Organizations can discuss assessment requirements during onboarding or through the assessment-services option.',
-    },
-    {
-      q: 'Can a company start small and upgrade later?',
-      a: 'Yes. The plan structure is designed to support a move from structured vacancy management to deeper evidence review, assessment workflows, and enterprise governance as needs grow.',
-    },
-    {
-      q: 'Does GenuAI make hiring decisions?',
-      a: 'No. GenuAI organizes requirements, evidence, coverage, and review information. Recruiters and companies make final human hiring decisions.',
-    },
-    {
-      q: 'What does “Evidence Gap” mean?',
-      a: 'It means sufficient supporting evidence is not currently available for a vacancy requirement. It does not mean the candidate lacks the skill.',
-    },
-    {
-      q: 'Can institutions or recruitment partners use GenuAI?',
-      a: 'Yes. Enterprise and institutional plans are intended for organizations that need multi-team governance, placement workflows, reporting, or customized implementation.',
-    },
-  ];
-
-  const COMPARISON_ROWS = [
-    { name: 'Candidate profile', candidate: 'Included', starter: '—', pro: '—', enterprise: '—' },
-    { name: 'Explore verified vacancies', candidate: 'Included', starter: '—', pro: '—', enterprise: '—' },
-    { name: 'Create targets', candidate: 'Included', starter: '—', pro: '—', enterprise: '—' },
-    { name: 'Company workspace', candidate: '—', starter: 'Included', pro: 'Included', enterprise: 'Included' },
-    { name: 'Company verification workflow', candidate: '—', starter: 'Included', pro: 'Included', enterprise: 'Included' },
-    { name: 'Vacancy creation & publishing', candidate: '—', starter: 'Included', pro: 'Included', enterprise: 'Included' },
-    { name: 'Requirement definition', candidate: 'View only', starter: 'Included', pro: 'Included', enterprise: 'Included' },
-    { name: 'Target-specific evidence', candidate: 'Submit', starter: 'Review', pro: 'Advanced Review', enterprise: 'Full Governance' },
-    { name: 'Evidence coverage view', candidate: 'View', starter: 'Basic view', pro: 'Detailed view', enterprise: 'Custom metrics' },
-    { name: 'Recruiter evidence review', candidate: '—', starter: 'Standard', pro: 'Structured rubrics', enterprise: 'Multi-evaluator' },
-    { name: 'Recruiter seats', candidate: '—', starter: '1–2 seats', pro: 'Multiple seats', enterprise: 'Custom / Scaled' },
-    { name: 'Candidate pipeline', candidate: 'My targets', starter: 'Basic list', pro: 'Advanced pipeline', enterprise: 'Multi-team pipeline' },
-    { name: 'Assessment workflow', candidate: 'When configured', starter: '—', pro: 'Planned', enterprise: 'Planned / Custom' },
-    { name: 'Interview workflow', candidate: 'When scheduled', starter: '—', pro: 'Planned', enterprise: 'Planned / Custom' },
-    { name: 'Audit history', candidate: 'Activity log', starter: 'Basic history', pro: 'Enhanced history', enterprise: 'Advanced compliance' },
-    { name: 'Advanced reporting', candidate: '—', starter: '—', pro: 'Included', enterprise: 'Custom reporting' },
-    { name: 'Governance & permissions', candidate: '—', starter: '—', pro: 'Team settings', enterprise: 'Multi-department' },
-    { name: 'Enterprise onboarding', candidate: '—', starter: 'Standard guide', pro: 'Priority setup', enterprise: 'Dedicated pathway' },
-    { name: 'Custom integrations', candidate: '—', starter: '—', pro: '—', enterprise: 'Integration planning' },
-  ];
-
-  const togglePricingFaq = (index: number) => {
-    setOpenPricingFaqIndex(openPricingFaqIndex === index ? null : index);
-  };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fafaf9', color: '#0f172a', display: 'flex', flexDirection: 'column', fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}>
-      {/* Skip to Content for Accessibility */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only"
-        style={{
-          position: 'absolute',
-          left: -9999,
-          top: 'auto',
-          width: 1,
-          height: 1,
-          overflow: 'hidden',
-          zIndex: 9999,
-        }}
-        onFocus={(e) => {
-          e.currentTarget.style.position = 'fixed';
-          e.currentTarget.style.top = '16px';
-          e.currentTarget.style.left = '16px';
-          e.currentTarget.style.width = 'auto';
-          e.currentTarget.style.height = 'auto';
-          e.currentTarget.style.padding = '10px 18px';
-          e.currentTarget.style.background = '#b8860b';
-          e.currentTarget.style.color = '#ffffff';
-          e.currentTarget.style.borderRadius = '8px';
-          e.currentTarget.style.fontWeight = 'bold';
-        }}
-        onBlur={(e) => {
-          e.currentTarget.style.position = 'absolute';
-          e.currentTarget.style.left = '-9999px';
-          e.currentTarget.style.width = '1px';
-          e.currentTarget.style.height = '1px';
-        }}
-      >
-        Skip to main content
-      </a>
+    <div style={{ minHeight: '100vh', background: '#fafaf8', color: '#0f172a', fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}>
 
-      {/* 1. STICKY TOPBAR / HEADER (Matches the 3 Dashboards) */}
-      <header className="landing-header">
-        <div className="landing-header-inner">
-          {/* Brand identity matching dashboards without shield logo */}
-          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-            <div>
-              <div className="sidebar-logo-text gold-gradient-text" style={{ fontSize: 16, fontWeight: 900, lineHeight: 1.1, letterSpacing: '-0.3px' }}>
-                GenuAI Technologies
-              </div>
-              <span
-                className="sidebar-logo-sub"
-                style={{
-                  fontSize: 10,
-                  color: '#854d0e',
-                  fontWeight: 700,
-                  letterSpacing: '0.5px',
-                  textTransform: 'uppercase',
-                  display: 'block',
-                }}
-              >
-                Recruitment Intelligence
-              </span>
-            </div>
+      {/* ── NAVBAR ── */}
+      <header style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+        background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(212,175,55,0.15)',
+        height: 64, display: 'flex', alignItems: 'center',
+      }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {/* Brand */}
+          <Link href="/" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+            <span className="sidebar-logo-text gold-gradient-text" style={{ fontSize: 17, fontWeight: 900, letterSpacing: '-0.3px' }}>
+              GenuAI Technologies
+            </span>
+            <span style={{ fontSize: 9.5, color: '#b8860b', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+              Recruitment Intelligence
+            </span>
           </Link>
 
-          {/* Center Nav */}
-          <nav aria-label="Main Navigation" className="landing-nav">
-            <a href="#problem">Product</a>
-            <a href="#how-it-works">How It Works</a>
-            <a href="#candidates">For Candidates</a>
-            <a href="#companies">For Companies</a>
-            <a href="#pricing">Pricing</a>
-            <a href="#trust">Trust &amp; Privacy</a>
+          {/* Desktop Nav */}
+          <nav style={{ display: 'flex', gap: 32, alignItems: 'center' }} className="landing-nav">
+            <a href="#how-it-works" style={{ fontSize: 13.5, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>How It Works</a>
+            <a href="#for-candidates" style={{ fontSize: 13.5, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>Candidates</a>
+            <a href="#for-companies" style={{ fontSize: 13.5, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>Companies</a>
+            <a href="#faq" style={{ fontSize: 13.5, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>FAQ</a>
           </nav>
 
-          {/* Right Action Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            <Link
-              href="/login"
-              className="landing-header-signin"
-              style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: '#334155',
-                padding: '7px 14px',
-                borderRadius: 8,
-                textDecoration: 'none',
-                border: '1px solid #cbd5e1',
-                background: '#fff',
-                whiteSpace: 'nowrap',
-              }}
-            >
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <Link href="/login" style={{ fontSize: 13, fontWeight: 700, color: '#475569', padding: '7px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', textDecoration: 'none' }}>
               Sign In
             </Link>
-
-            <Link
-              href="/login?mode=register"
-              className="landing-header-cta"
-              style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: '#ffffff',
-                padding: '7px 16px',
-                borderRadius: 8,
-                textDecoration: 'none',
-                background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
-                boxShadow: '0 2px 6px rgba(184, 134, 11, 0.25)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <span>Create Account</span>
-              <ArrowRight size={13} />
+            <Link href="/login?mode=register" style={{ fontSize: 13, fontWeight: 700, color: '#fff', padding: '7px 18px', borderRadius: 8, background: 'linear-gradient(135deg,#b8860b,#d4af37)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+              Get Started <ArrowRight size={13} />
             </Link>
-
-            {/* Mobile Menu Toggle */}
-            <button
-              aria-expanded={mobileMenuOpen}
-              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="landing-mobile-btn"
-            >
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="landing-mobile-btn" aria-label="Menu">
               {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
@@ -303,1736 +79,388 @@ export default function HomePage() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 64,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: '#ffffff',
-            zIndex: 99,
-            padding: '20px 24px 36px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 14,
-            borderBottom: '1px solid #e2e8f0',
-            overflowY: 'auto',
-            maxHeight: 'calc(100vh - 64px)',
-          }}
-        >
-          <a href="#problem" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', textDecoration: 'none' }}>Product</a>
-          <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', textDecoration: 'none' }}>How It Works</a>
-          <a href="#candidates" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', textDecoration: 'none' }}>For Candidates</a>
-          <a href="#companies" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', textDecoration: 'none' }}>For Companies</a>
-          <a href="#pricing" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', textDecoration: 'none' }}>Pricing</a>
-          <a href="#trust" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', textDecoration: 'none' }}>Trust &amp; Privacy</a>
-
-          <div style={{ height: 1, background: '#e2e8f0', margin: '4px 0' }} />
-          <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', letterSpacing: '0.6px', textTransform: 'uppercase' }}>
-            Platform Pages &amp; Governance
-          </div>
-          <Link href="/trust" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 14, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>
-            Trust &amp; Verification
-          </Link>
-          <Link href="/privacy" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 14, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>
-            Privacy Policy
-          </Link>
-          <Link href="/terms" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 14, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>
-            Terms of Use
-          </Link>
-          <Link href="/accessibility" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 14, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>
-            Accessibility &amp; Accommodations
-          </Link>
-          <Link href="/contact" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 14, fontWeight: 600, color: '#475569', textDecoration: 'none' }}>
-            Contact &amp; Support
-          </Link>
-
-          <div style={{ height: 1, background: '#e2e8f0', margin: '6px 0' }} />
-          <Link href="/login" onClick={() => setMobileMenuOpen(false)} style={{ padding: '12px', textAlign: 'center', background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)', color: '#fff', borderRadius: 8, fontWeight: 700, textDecoration: 'none', boxShadow: '0 2px 6px rgba(184, 134, 11, 0.25)' }}>Sign In to Workspace</Link>
-          <Link href="/login?mode=register" onClick={() => setMobileMenuOpen(false)} style={{ padding: '12px', textAlign: 'center', background: '#f8fafc', color: '#0f172a', borderRadius: 8, fontWeight: 700, textDecoration: 'none', border: '1px solid #cbd5e1' }}>Create Account</Link>
+        <div style={{ position: 'fixed', top: 64, left: 0, right: 0, bottom: 0, background: '#fff', zIndex: 99, padding: '28px 28px', display: 'flex', flexDirection: 'column', gap: 20, overflowY: 'auto' }}>
+          {['#how-it-works', '#for-candidates', '#for-companies', '#faq'].map((href, i) => (
+            <a key={i} href={href} onClick={() => setMobileMenuOpen(false)} style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', textDecoration: 'none' }}>
+              {['How It Works', 'For Candidates', 'For Companies', 'FAQ'][i]}
+            </a>
+          ))}
+          <div style={{ height: 1, background: '#f1f5f9' }} />
+          <Link href="/login" onClick={() => setMobileMenuOpen(false)} style={{ padding: '13px', textAlign: 'center', background: 'linear-gradient(135deg,#b8860b,#d4af37)', color: '#fff', borderRadius: 9, fontWeight: 700, textDecoration: 'none' }}>Sign In to Workspace</Link>
         </div>
       )}
 
-      {/* MAIN CONTENT */}
-      <main id="main-content" style={{ flex: 1 }}>
+      <main id="main-content">
 
-        {/* 2. HERO SECTION */}
-        <section style={{ padding: '64px 24px 44px', maxWidth: 1200, margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '6px 14px',
-              borderRadius: 99,
-              background: 'rgba(212, 175, 55, 0.12)',
-              border: '1px solid rgba(212, 175, 55, 0.4)',
-              color: '#854d0e',
-              fontSize: 12,
-              fontWeight: 700,
-              marginBottom: 20,
-            }}
-          >
-            <CheckCircle2 size={15} style={{ color: '#b8860b' }} />
-            <span>Requirement-Centered Recruitment Intelligence</span>
-            <span style={{ opacity: 0.3 }}>|</span>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669', display: 'inline-block' }} />
-            <span style={{ color: '#059669', fontWeight: 700 }}>Live</span>
-          </div>
+        {/* ── HERO ── Full-viewport background image */}
+        <section style={{ position: 'relative', height: '100vh', minHeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          {/* Background image */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            backgroundImage: 'url(/landing-hero.jpg)',
+            backgroundSize: 'cover', backgroundPosition: 'center bottom',
+          }} />
+          {/* Overlay */}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(10,15,30,0.55) 0%, rgba(10,15,30,0.35) 50%, rgba(10,15,30,0.65) 100%)' }} />
 
-          <h1
-            style={{
-              fontSize: 'clamp(30px, 5vw, 48px)',
-              fontWeight: 900,
-              letterSpacing: '-1.2px',
-              lineHeight: 1.18,
-              color: '#0f172a',
-              maxWidth: 900,
-              margin: '0 0 18px 0',
-            }}
-          >
-            Prepare for the role. Show relevant evidence.{' '}
-            <span className="gold-gradient-text">Make hiring clearer.</span>
-          </h1>
+          {/* Hero content */}
+          <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '0 24px', maxWidth: 820, margin: '0 auto' }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 28,
+              padding: '6px 16px', borderRadius: 99,
+              background: 'rgba(212,175,55,0.2)', border: '1px solid rgba(212,175,55,0.5)',
+              color: '#fde68a', fontSize: 12, fontWeight: 700,
+            }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', display: 'inline-block' }} />
+              Requirement-Centered Recruitment Intelligence · Live
+            </div>
 
-          <p style={{ fontSize: 'clamp(15px, 1.8vw, 17px)', lineHeight: 1.6, color: '#475569', maxWidth: 740, margin: '0 0 32px 0' }}>
-            GenuAI connects verified vacancies with role-specific preparation, target-based evidence, transparent requirement coverage, recruiter review, and human-led hiring decisions.
-          </p>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 18 }}>
-            <Link
-              href="/login"
-              style={{
-                padding: '13px 28px',
-                borderRadius: 9,
-                background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
-                color: '#ffffff',
-                fontSize: 14.5,
-                fontWeight: 800,
-                textDecoration: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                boxShadow: '0 4px 14px rgba(184, 134, 11, 0.25)',
-              }}
-            >
-              <span>Get Started</span>
-              <ArrowRight size={15} />
-            </Link>
-
-            <a
-              href="#how-it-works"
-              style={{
-                padding: '13px 26px',
-                borderRadius: 9,
-                background: '#ffffff',
-                border: '1.5px solid #d4af37',
-                color: '#854d0e',
-                fontSize: 14.5,
-                fontWeight: 800,
-                textDecoration: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-              }}
-            >
-              <span>How It Works</span>
-            </a>
-          </div>
-
-          <div style={{ marginBottom: 28 }}>
-            <Link href="/login?role=company" style={{ fontSize: 13, color: '#854d0e', fontWeight: 700, textDecoration: 'underline' }}>
-              Hiring for a company? Access company workspace →
-            </Link>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 12, color: '#64748b', fontWeight: 600, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <span>✓ Human-led decisions</span>
-            <span>•</span>
-            <span>✓ Target-specific privacy</span>
-            <span>•</span>
-            <span>✓ Requirement-linked evidence</span>
-          </div>
-
-          {/* Workflow Diagram */}
-          <div
-            style={{
-              marginTop: 44,
-              width: '100%',
-              maxWidth: 960,
-              background: '#ffffff',
-              borderRadius: 14,
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.04)',
-              padding: '24px 20px',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, borderBottom: '1px solid #f1f5f9', paddingBottom: 12 }}>
-              <span style={{ fontSize: 11.5, fontWeight: 800, color: '#854d0e', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Illustrative Workflow: How GenuAI Organizes Recruitment Information
+            <h1 style={{
+              fontSize: 'clamp(32px, 5.5vw, 58px)', fontWeight: 900,
+              color: '#ffffff', letterSpacing: '-1.5px', lineHeight: 1.14,
+              margin: '0 0 22px',
+              textShadow: '0 2px 20px rgba(0,0,0,0.3)',
+            }}>
+              Prepare for the role.<br />
+              <span style={{ background: 'linear-gradient(90deg,#d4af37,#f5d890)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                Show relevant evidence.
               </span>
-              <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>Standardized Rubrics</span>
-            </div>
+            </h1>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12, textAlign: 'left' }}>
-              <div style={{ background: '#fafaf9', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: 10, fontWeight: 800, color: '#b8860b', textTransform: 'uppercase', marginBottom: 2 }}>1. Role Requirement</div>
-                <div style={{ fontSize: 12.5, fontWeight: 800, color: '#0f172a' }}>Java &amp; REST APIs</div>
-                <div style={{ fontSize: 10.5, color: '#059669', fontWeight: 700, marginTop: 2 }}>Required Skill</div>
-              </div>
-
-              <div style={{ background: '#fafaf9', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: 10, fontWeight: 800, color: '#b8860b', textTransform: 'uppercase', marginBottom: 2 }}>2. Candidate Target</div>
-                <div style={{ fontSize: 12.5, fontWeight: 800, color: '#0f172a' }}>Backend Developer</div>
-                <div style={{ fontSize: 10.5, color: '#64748b', fontWeight: 600, marginTop: 2 }}>Alpha Technologies</div>
-              </div>
-
-              <div style={{ background: '#fafaf9', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: 10, fontWeight: 800, color: '#b8860b', textTransform: 'uppercase', marginBottom: 2 }}>3. Supporting Evidence</div>
-                <div style={{ fontSize: 12.5, fontWeight: 800, color: '#0f172a' }}>Project &amp; Work Sample</div>
-                <div style={{ fontSize: 10.5, color: '#854d0e', fontWeight: 600, marginTop: 2 }}>Requirement-Linked</div>
-              </div>
-
-              <div style={{ background: '#fafaf9', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: 10, fontWeight: 800, color: '#b8860b', textTransform: 'uppercase', marginBottom: 2 }}>4. Evidence Coverage</div>
-                <div style={{ fontSize: 12.5, fontWeight: 800, color: '#059669' }}>Supported</div>
-                <div style={{ fontSize: 10.5, color: '#64748b', fontWeight: 600, marginTop: 2 }}>Transparent State</div>
-              </div>
-
-              <div style={{ background: '#f0fdf4', padding: 12, borderRadius: 8, border: '1px solid #bbf7d0' }}>
-                <div style={{ fontSize: 10, fontWeight: 800, color: '#166534', textTransform: 'uppercase', marginBottom: 2 }}>5. Recruiter Review</div>
-                <div style={{ fontSize: 12.5, fontWeight: 800, color: '#14532d' }}>Human Decision</div>
-                <div style={{ fontSize: 10.5, color: '#166534', fontWeight: 600, marginTop: 2 }}>Contextual Evaluation</div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: 14, fontSize: 11.5, color: '#64748b', textAlign: 'center', fontStyle: 'italic' }}>
-              No automatic hiring decisions. GenuAI helps people review role-relevant evidence with context.
-            </div>
-          </div>
-        </section>
-
-        {/* 3. TRUST BAR */}
-        <section style={{ background: '#ffffff', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', padding: '20px 24px' }}>
-          <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 16, width: '100%' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <CheckCircle2 size={18} style={{ color: '#059669', flexShrink: 0 }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>Verified company &amp; vacancy workflow</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <FileCheck size={18} style={{ color: '#b8860b', flexShrink: 0 }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>Requirement-linked evidence</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Lock size={18} style={{ color: '#0284c7', flexShrink: 0 }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>Target-specific data separation</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <UserCheck size={18} style={{ color: '#854d0e', flexShrink: 0 }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>Human-led hiring decisions</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <FileText size={18} style={{ color: '#475569', flexShrink: 0 }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>Auditable workflow history</span>
-              </div>
-            </div>
-            <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>
-              Built to make recruitment information clearer—not to replace human judgment.
-            </div>
-          </div>
-        </section>
-
-        {/* 4. THE PROBLEM SECTION */}
-        <section id="problem" style={{ padding: '72px 24px', maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 40 }}>
-            <h2 style={{ fontSize: 'clamp(22px, 3.2vw, 34px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.8px', marginBottom: 10 }}>
-              Recruitment data is scattered. Hiring context should not be.
-            </h2>
-            <p style={{ fontSize: 15, color: '#475569', maxWidth: 700, margin: '0 auto' }}>
-              Traditional hiring tools separate vacancy definition, candidate preparation, assessments, work samples, and interview scorecards. GenuAI connects these around the requirements of a specific role.
-            </p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
-            {/* Traditional Process */}
-            <div style={{ background: '#ffffff', borderRadius: 12, border: '1px solid #e2e8f0', padding: 26 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#ba1a1a', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
-                Traditional Fragmented Process
-              </div>
-              <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 14 }}>
-                Disjointed Documents &amp; Opaque Scans
-              </h3>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: '#475569' }}>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                  <span style={{ color: '#ba1a1a', fontWeight: 800 }}>✕</span>
-                  <span>Generic resumes evaluated without specific requirement mapping.</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                  <span style={{ color: '#ba1a1a', fontWeight: 800 }}>✕</span>
-                  <span>Projects and portfolios disconnected from vacancy criteria.</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                  <span style={{ color: '#ba1a1a', fontWeight: 800 }}>✕</span>
-                  <span>Opaque black-box AI scores that automatically filter candidate applications.</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                  <span style={{ color: '#ba1a1a', fontWeight: 800 }}>✕</span>
-                  <span>Recruiters left guessing which skills are actually supported by evidence.</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* GenuAI Process */}
-            <div style={{ background: '#ffffff', borderRadius: 12, border: '2px solid #b8860b', padding: 26, boxShadow: '0 6px 20px rgba(184, 134, 11, 0.08)' }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
-                GenuAI Requirement-Centered Engine
-              </div>
-              <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 14 }}>
-                Requirement → Evidence → Coverage → Decision
-              </h3>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: '#334155' }}>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                  <span style={{ color: '#059669', fontWeight: 800 }}>✓</span>
-                  <span>Company defines exact vacancy requirements and evaluation methods.</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                  <span style={{ color: '#059669', fontWeight: 800 }}>✓</span>
-                  <span>Candidates submit requirement-linked projects, work samples, and assessments.</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                  <span style={{ color: '#059669', fontWeight: 800 }}>✓</span>
-                  <span>Transparent coverage states (Supported, Limited, Pending, Evidence Gap).</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                  <span style={{ color: '#059669', fontWeight: 800 }}>✓</span>
-                  <span>Recruiters evaluate evidence in context; final hiring decisions remain human-led.</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        {/* 5. PRODUCT CORE / REQUIREMENT MATRIX */}
-        <section style={{ background: '#ffffff', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', padding: '72px 24px' }}>
-          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: 36 }}>
-              <h2 style={{ fontSize: 'clamp(22px, 3.2vw, 34px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.8px', marginBottom: 10 }}>
-                Built around what the role actually requires.
-              </h2>
-              <p style={{ fontSize: 15, color: '#475569', maxWidth: 680, margin: '0 auto' }}>
-                Every target begins with a verified vacancy and its specific requirements. GenuAI organizes candidate evidence against each requirement cleanly.
-              </p>
-            </div>
-
-            <div style={{ background: '#fafaf9', borderRadius: 14, border: '1px solid #cbd5e1', padding: 24, maxWidth: 880, margin: '0 auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
-                <div>
-                  <h3 style={{ fontSize: 17, fontWeight: 900, color: '#0f172a', margin: 0 }}>Backend Developer</h3>
-                  <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Alpha Technologies • Engineering Department</span>
-                </div>
-                <div>
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: '#fef3c7', color: '#92400e' }}>Status: Preparing</span>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ background: '#ffffff', borderRadius: 8, border: '1px solid #e2e8f0', padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 13.5, fontWeight: 800, color: '#0f172a' }}>Java</span>
-                      <span style={{ fontSize: 9.5, fontWeight: 800, padding: '2px 5px', borderRadius: 4, background: '#fee2e2', color: '#991b1b' }}>REQUIRED</span>
-                    </div>
-                    <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>Evidence: Official Assessment + Java Project</div>
-                  </div>
-                  <span style={{ fontSize: 11.5, fontWeight: 800, padding: '3px 10px', borderRadius: 99, background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0' }}>
-                    Supported
-                  </span>
-                </div>
-
-                <div style={{ background: '#ffffff', borderRadius: 8, border: '1px solid #e2e8f0', padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 13.5, fontWeight: 800, color: '#0f172a' }}>SQL</span>
-                      <span style={{ fontSize: 9.5, fontWeight: 800, padding: '2px 5px', borderRadius: 4, background: '#fee2e2', color: '#991b1b' }}>REQUIRED</span>
-                    </div>
-                    <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>Evidence: Official Assessment Pending</div>
-                  </div>
-                  <span style={{ fontSize: 11.5, fontWeight: 800, padding: '3px 10px', borderRadius: 99, background: '#fffbeb', color: '#92400e', border: '1px solid #fde68a' }}>
-                    Pending
-                  </span>
-                </div>
-
-                <div style={{ background: '#ffffff', borderRadius: 8, border: '1px solid #e2e8f0', padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 13.5, fontWeight: 800, color: '#0f172a' }}>REST APIs</span>
-                      <span style={{ fontSize: 9.5, fontWeight: 800, padding: '2px 5px', borderRadius: 4, background: '#fee2e2', color: '#991b1b' }}>REQUIRED</span>
-                    </div>
-                    <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>Evidence: No supporting evidence submitted yet</div>
-                  </div>
-                  <span style={{ fontSize: 11.5, fontWeight: 800, padding: '3px 10px', borderRadius: 99, background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}>
-                    Evidence Gap
-                  </span>
-                </div>
-
-                <div style={{ background: '#ffffff', borderRadius: 8, border: '1px solid #e2e8f0', padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 13.5, fontWeight: 800, color: '#0f172a' }}>Backend project experience</span>
-                      <span style={{ fontSize: 9.5, fontWeight: 800, padding: '2px 5px', borderRadius: 4, background: '#f1f5f9', color: '#475569' }}>PREFERRED</span>
-                    </div>
-                    <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>Evidence: GitHub Repository Link</div>
-                  </div>
-                  <span style={{ fontSize: 11.5, fontWeight: 800, padding: '3px 10px', borderRadius: 99, background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe' }}>
-                    Limited
-                  </span>
-                </div>
-              </div>
-
-              <div style={{ marginTop: 16, padding: 12, borderRadius: 8, background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', fontSize: 12.5, fontWeight: 600, textAlign: 'center' }}>
-                An Evidence Gap does not mean a candidate lacks a skill. It means sufficient supporting evidence is not currently available for that requirement.
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 6. HOW IT WORKS */}
-        <section id="how-it-works" style={{ padding: '72px 24px', maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 40 }}>
-            <h2 style={{ fontSize: 'clamp(22px, 3.2vw, 34px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.8px', marginBottom: 10 }}>
-              One role requirement. A clearer recruitment journey.
-            </h2>
-            <p style={{ fontSize: 15, color: '#475569', maxWidth: 680, margin: '0 auto 18px' }}>
-              The 8-step requirement-centered pipeline powering GenuAI.
+            <p style={{ fontSize: 'clamp(15px,1.8vw,18px)', color: 'rgba(255,255,255,0.85)', lineHeight: 1.65, margin: '0 0 36px', fontWeight: 400 }}>
+              GenuAI connects verified vacancies with role-specific evidence, transparent requirement coverage, and human-led hiring decisions.
             </p>
 
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 16, fontSize: 12, fontWeight: 700 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#059669' }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#059669' }} />
-                Available Now
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#64748b' }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#cbd5e1' }} />
-                In Development
-              </span>
+            <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link href="/login?mode=register" style={{
+                padding: '14px 32px', borderRadius: 10,
+                background: 'linear-gradient(135deg,#b8860b,#d4af37)',
+                color: '#fff', fontSize: 15, fontWeight: 800,
+                textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8,
+                boxShadow: '0 4px 20px rgba(184,134,11,0.4)',
+              }}>
+                Get Started <ArrowRight size={16} />
+              </Link>
+              <a href="#how-it-works" style={{
+                padding: '14px 32px', borderRadius: 10,
+                background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)',
+                border: '1.5px solid rgba(255,255,255,0.4)',
+                color: '#fff', fontSize: 15, fontWeight: 700, textDecoration: 'none',
+              }}>
+                How It Works
+              </a>
+            </div>
+
+            <div style={{ marginTop: 36, display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap', fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: 600 }}>
+              <span>✓ Human-led decisions</span>
+              <span style={{ opacity: 0.4 }}>|</span>
+              <span>✓ Target-specific privacy</span>
+              <span style={{ opacity: 0.4 }}>|</span>
+              <span>✓ Requirement-linked evidence</span>
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 14 }}>
-            {STEPS.map((s) => (
-              <div
-                key={s.num}
-                style={{
-                  background: '#ffffff',
-                  borderRadius: 10,
-                  border: `1px solid ${s.isLive ? '#b8860b' : '#e2e8f0'}`,
-                  padding: 18,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  boxShadow: s.isLive ? '0 3px 10px rgba(184, 134, 11, 0.05)' : 'none',
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 900, color: s.isLive ? '#b8860b' : '#94a3b8' }}>
-                      0{s.num}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 9.5,
-                        fontWeight: 800,
-                        padding: '2px 7px',
-                        borderRadius: 99,
-                        background: s.isLive ? '#ecfdf5' : '#f1f5f9',
-                        color: s.isLive ? '#065f46' : '#64748b',
-                        border: `1px solid ${s.isLive ? '#a7f3d0' : '#e2e8f0'}`,
-                      }}
-                    >
-                      {s.isLive ? 'Available' : 'Planned'}
-                    </span>
-                  </div>
-                  <h3 style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0' }}>{s.title}</h3>
-                  <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5, margin: 0 }}>{s.desc}</p>
-                </div>
+          {/* Scroll hint */}
+          <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <span>Scroll to explore</span>
+            <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.25)' }} />
+          </div>
+        </section>
+
+        {/* ── TRUST BAR ── */}
+        <section style={{ background: '#fff', borderBottom: '1px solid #f1f5f9', padding: '28px 24px' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: 24, justifyContent: 'center', alignItems: 'center' }}>
+            {[
+              { icon: <CheckCircle2 size={17} color="#059669" />, text: 'Verified company & vacancy workflow' },
+              { icon: <FileCheck size={17} color="#b8860b" />, text: 'Requirement-linked evidence' },
+              { icon: <Lock size={17} color="#0284c7" />, text: 'Target-specific data separation' },
+              { icon: <UserCheck size={17} color="#854d0e" />, text: 'Human-led hiring decisions' },
+              { icon: <FileText size={17} color="#64748b" />, text: 'Auditable workflow history' },
+            ].map((item, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {item.icon}
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: '#334155' }}>{item.text}</span>
               </div>
             ))}
           </div>
         </section>
 
+        {/* ── HOW IT WORKS ── */}
+        <section id="how-it-works" style={{ padding: '96px 24px', maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 60 }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#b8860b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>How It Works</span>
+            <h2 style={{ fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.8px', margin: '10px 0 14px' }}>
+              One role requirement. A clearer recruitment journey.
+            </h2>
+            <p style={{ fontSize: 15.5, color: '#64748b', maxWidth: 600, margin: '0 auto', lineHeight: 1.65 }}>
+              The requirement-centered pipeline powering GenuAI — from vacancy definition to human decision.
+            </p>
+          </div>
 
-        {/* 7. FOR CANDIDATES */}
-        <section id="candidates" style={{ background: '#ffffff', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', padding: '72px 24px' }}>
-          <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 40, alignItems: 'center' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 20 }}>
+            {STEPS.map((s) => (
+              <div key={s.num} style={{
+                background: '#fff', borderRadius: 14, border: '1px solid #e8e4db',
+                padding: '28px 24px',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+              }}
+                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 8px 24px rgba(184,134,11,0.12)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.04)'; }}
+              >
+                <div style={{ fontSize: 28, fontWeight: 900, color: 'rgba(184,134,11,0.2)', marginBottom: 12, fontVariantNumeric: 'tabular-nums' }}>{s.num}</div>
+                <h3 style={{ fontSize: 17, fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>{s.title}</h3>
+                <p style={{ fontSize: 13.5, color: '#64748b', lineHeight: 1.6, margin: 0 }}>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── FOR CANDIDATES ── */}
+        <section id="for-candidates" style={{ background: '#fff', borderTop: '1px solid #f1f5f9', padding: '96px 24px' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(340px,1fr))', gap: 56, alignItems: 'center' }}>
             <div>
-              <span style={{ fontSize: 11.5, fontWeight: 800, color: '#b8860b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>For Candidates</span>
-              <h2 style={{ fontSize: 'clamp(22px, 3.2vw, 34px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.8px', margin: '6px 0 14px' }}>
-                More than a resume. Target real roles with evidence.
+              <span style={{ fontSize: 12, fontWeight: 800, color: '#b8860b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>For Candidates</span>
+              <h2 style={{ fontSize: 'clamp(24px,3.5vw,36px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.8px', margin: '10px 0 16px' }}>
+                More than a resume.<br />Target real roles with evidence.
               </h2>
-              <p style={{ fontSize: 15, color: '#475569', lineHeight: 1.6, marginBottom: 20 }}>
+              <p style={{ fontSize: 15, color: '#64748b', lineHeight: 1.7, marginBottom: 28 }}>
                 Build a transparent record of your role-relevant preparation and evidence. Maintain reusable global profiles while keeping target applications completely separate across companies.
               </p>
-
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px 0', display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13.5, color: '#334155' }}>
-                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <CheckCircle2 size={16} style={{ color: '#059669', flexShrink: 0 }} />
-                  <span>Discover verified published vacancies with transparent rubrics.</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <CheckCircle2 size={16} style={{ color: '#059669', flexShrink: 0 }} />
-                  <span>Keep Company A and Company B targets and evidence isolated.</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <CheckCircle2 size={16} style={{ color: '#059669', flexShrink: 0 }} />
-                  <span>Submit projects, work samples, and certificates per requirement.</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <CheckCircle2 size={16} style={{ color: '#059669', flexShrink: 0 }} />
-                  <span>Follow candidate-visible status updates and request accommodations.</span>
-                </li>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {[
+                  'Discover verified published vacancies with transparent rubrics.',
+                  'Keep Company A and Company B targets and evidence isolated.',
+                  'Submit projects, work samples, and certificates per requirement.',
+                  'Follow candidate-visible status updates at any time.',
+                ].map((item, i) => (
+                  <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14, color: '#334155' }}>
+                    <CheckCircle2 size={17} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                    {item}
+                  </li>
+                ))}
               </ul>
-
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <Link
-                  href="/login?role=candidate"
-                  style={{
-                    padding: '12px 24px',
-                    borderRadius: 8,
-                    background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
-                    color: '#fff',
-                    fontSize: 13.5,
-                    fontWeight: 800,
-                    textDecoration: 'none',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    boxShadow: '0 2px 8px rgba(184, 134, 11, 0.25)',
-                  }}
-                >
-                  <span>Candidate Workspace</span>
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
+              <Link href="/login?role=candidate" style={{
+                padding: '12px 28px', borderRadius: 9, fontSize: 14, fontWeight: 800, textDecoration: 'none',
+                background: 'linear-gradient(135deg,#b8860b,#d4af37)', color: '#fff',
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                boxShadow: '0 3px 12px rgba(184,134,11,0.25)',
+              }}>
+                Candidate Workspace <ArrowRight size={15} />
+              </Link>
             </div>
 
-            {/* Candidate Workspace Card Preview */}
-            <div style={{ background: '#fafaf9', borderRadius: 14, border: '1px solid #cbd5e1', padding: 22 }}>
-              <div style={{ fontSize: 11.5, fontWeight: 800, color: '#854d0e', textTransform: 'uppercase', marginBottom: 10 }}>
-                Candidate Workspace Preview
+            {/* Preview card */}
+            <div style={{ background: '#fafaf8', borderRadius: 16, border: '1px solid #e8e4db', padding: 28, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#b8860b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 16 }}>Candidate Workspace Preview</div>
+              <div style={{ background: '#fff', borderRadius: 10, border: '1px solid #e2e8f0', padding: 16, marginBottom: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>My Targets</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {['Backend Developer — Alpha Technologies', 'Data Analyst — Beta Analytics'].map((t, i) => (
+                    <div key={i} style={{ fontSize: 12.5, color: '#64748b', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: i === 0 ? '#059669' : '#94a3b8', flexShrink: 0 }} />
+                      {t}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div style={{ background: '#ffffff', borderRadius: 8, border: '1px solid #e2e8f0', padding: 14, marginBottom: 10 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 800, color: '#0f172a' }}>My Targets</div>
-                <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 4 }}>• Backend Developer — Alpha Technologies</div>
-                <div style={{ fontSize: 11.5, color: '#64748b' }}>• Data Analyst — Beta Analytics</div>
-              </div>
-              <div style={{ background: '#ffffff', borderRadius: 8, border: '1px solid #e2e8f0', padding: 14 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#059669' }}>Active Target: Backend Developer</div>
-                <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                  <span style={{ fontSize: 10.5, padding: '2px 6px', borderRadius: 4, background: '#f1f5f9' }}>Requirements</span>
-                  <span style={{ fontSize: 10.5, padding: '2px 6px', borderRadius: 4, background: '#f1f5f9' }}>Evidence Locker</span>
-                  <span style={{ fontSize: 10.5, padding: '2px 6px', borderRadius: 4, background: '#f1f5f9' }}>Coverage Ledger</span>
+              <div style={{ background: '#fff', borderRadius: 10, border: '1.5px solid #b8860b', padding: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#059669', marginBottom: 10 }}>Active: Backend Developer</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[
+                    { req: 'Java', status: 'Supported', color: '#059669', bg: '#ecfdf5' },
+                    { req: 'SQL', status: 'Pending', color: '#92400e', bg: '#fffbeb' },
+                    { req: 'REST APIs', status: 'Evidence Gap', color: '#991b1b', bg: '#fef2f2' },
+                  ].map((r, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5 }}>
+                      <span style={{ fontWeight: 700, color: '#0f172a' }}>{r.req}</span>
+                      <span style={{ padding: '2px 10px', borderRadius: 99, background: r.bg, color: r.color, fontWeight: 700, fontSize: 11.5 }}>{r.status}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 8. FOR COMPANIES */}
-        <section id="companies" style={{ padding: '72px 24px', maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 40, alignItems: 'center' }}>
-            <div style={{ background: '#fafaf9', borderRadius: 14, border: '1px solid #cbd5e1', padding: 22, order: 2 }}>
-              <div style={{ fontSize: 11.5, fontWeight: 800, color: '#059669', textTransform: 'uppercase', marginBottom: 10 }}>
-                Recruiter Review Workspace Preview
+        {/* ── FOR COMPANIES ── */}
+        <section id="for-companies" style={{ background: '#fafaf8', borderTop: '1px solid #f1f5f9', padding: '96px 24px' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(340px,1fr))', gap: 56, alignItems: 'center' }}>
+            {/* Preview */}
+            <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e8e4db', padding: 28, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 16 }}>Recruiter Review Workspace</div>
+              <div style={{ background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0', padding: 16, marginBottom: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a' }}>Backend Developer (v2)</div>
+                <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>3 of 4 requirements supported · 1 Evidence Gap</div>
               </div>
-              <div style={{ background: '#ffffff', borderRadius: 8, border: '1px solid #e2e8f0', padding: 14, marginBottom: 10 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 800, color: '#0f172a' }}>Role: Backend Developer (v2)</div>
-                <div style={{ fontSize: 11.5, color: '#475569', marginTop: 4 }}>
-                  Requirement Coverage: 3 of 4 Supported • 1 Evidence Gap
-                </div>
-              </div>
-              <div style={{ background: '#ffffff', borderRadius: 8, border: '1px solid #e2e8f0', padding: 14 }}>
-                <div style={{ fontSize: 11.5, fontWeight: 800, color: '#854d0e' }}>Human Review Action Required</div>
-                <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>
-                  Review submitted project work sample for REST APIs requirement.
-                </div>
+              <div style={{ background: '#fffbeb', borderRadius: 10, border: '1px solid #fde68a', padding: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#92400e', marginBottom: 4 }}>Human Review Required</div>
+                <div style={{ fontSize: 12, color: '#78350f' }}>Review work sample for REST APIs requirement.</div>
               </div>
             </div>
 
-            <div style={{ order: 1 }}>
-              <span style={{ fontSize: 11.5, fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em' }}>For Companies</span>
-              <h2 style={{ fontSize: 'clamp(22px, 3.2vw, 34px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.8px', margin: '6px 0 14px' }}>
-                Review evidence with role context. Make human hiring decisions.
+            <div>
+              <span style={{ fontSize: 12, fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.1em' }}>For Companies</span>
+              <h2 style={{ fontSize: 'clamp(24px,3.5vw,36px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.8px', margin: '10px 0 16px' }}>
+                Review evidence with role context.<br />Make human hiring decisions.
               </h2>
-              <p style={{ fontSize: 15, color: '#475569', lineHeight: 1.6, marginBottom: 20 }}>
-                Define exact role requirements and evaluation criteria. Review target-linked candidate work samples, assessments, and evidence without opaque black-box AI filtering.
+              <p style={{ fontSize: 15, color: '#64748b', lineHeight: 1.7, marginBottom: 28 }}>
+                Define exact role requirements and evaluation criteria. Review target-linked candidate work samples and evidence without opaque black-box AI filtering.
               </p>
-
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px 0', display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13.5, color: '#334155' }}>
-                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <CheckCircle2 size={16} style={{ color: '#059669', flexShrink: 0 }} />
-                  <span>Define departments, roles, vacancies, and clear evaluation rubrics.</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <CheckCircle2 size={16} style={{ color: '#059669', flexShrink: 0 }} />
-                  <span>Review candidate evidence strictly within your company workspace context.</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <CheckCircle2 size={16} style={{ color: '#059669', flexShrink: 0 }} />
-                  <span>Request additional information or work samples where evidence is limited.</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <CheckCircle2 size={16} style={{ color: '#059669', flexShrink: 0 }} />
-                  <span>Maintain auditable hiring workflow history and vacancy versioning.</span>
-                </li>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {[
+                  'Define departments, roles, vacancies, and evaluation rubrics.',
+                  'Review candidate evidence within your company workspace.',
+                  'Request additional information where evidence is limited.',
+                  'Maintain auditable hiring workflow history and vacancy versioning.',
+                ].map((item, i) => (
+                  <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14, color: '#334155' }}>
+                    <CheckCircle2 size={17} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
+                    {item}
+                  </li>
+                ))}
               </ul>
-
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <Link
-                  href="/login?role=company"
-                  style={{
-                    padding: '12px 24px',
-                    borderRadius: 8,
-                    background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
-                    color: '#fff',
-                    fontSize: 13.5,
-                    fontWeight: 800,
-                    textDecoration: 'none',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    boxShadow: '0 2px 8px rgba(184, 134, 11, 0.25)',
-                  }}
-                >
-                  <span>Company Workspace</span>
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
+              <Link href="/login?role=company" style={{
+                padding: '12px 28px', borderRadius: 9, fontSize: 14, fontWeight: 800, textDecoration: 'none',
+                background: 'linear-gradient(135deg,#b8860b,#d4af37)', color: '#fff',
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                boxShadow: '0 3px 12px rgba(184,134,11,0.25)',
+              }}>
+                Company Workspace <ArrowRight size={15} />
+              </Link>
             </div>
           </div>
         </section>
 
-        {/* 9. PRIVACY, SECURITY, AND HUMAN OVERSIGHT */}
-        <section id="trust" style={{ background: '#ffffff', color: '#0f172a', padding: '72px 24px', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
-          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: 40 }}>
-              <span style={{ fontSize: 11.5, fontWeight: 800, color: '#b8860b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                Platform Governance &amp; Ethics
-              </span>
-              <h2 style={{ fontSize: 'clamp(22px, 3.2vw, 34px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.8px', margin: '6px 0 10px' }}>
+        {/* ── TRUST & PRIVACY ── */}
+        <section id="trust" style={{ background: '#fff', borderTop: '1px solid #f1f5f9', padding: '96px 24px' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 56 }}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: '#b8860b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Platform Governance</span>
+              <h2 style={{ fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.8px', margin: '10px 0 14px' }}>
                 Designed for clarity, privacy, and human review.
               </h2>
-              <p style={{ fontSize: 15, color: '#475569', maxWidth: 680, margin: '0 auto' }}>
-                How GenuAI protects candidate data, enforces multi-tenant boundaries, and maintains human responsibility.
+              <p style={{ fontSize: 15.5, color: '#64748b', maxWidth: 580, margin: '0 auto', lineHeight: 1.65 }}>
+                How GenuAI protects candidate data, enforces boundaries, and maintains human responsibility.
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 30 }}>
-              <div style={{ background: '#fafaf9', borderRadius: 10, border: '1px solid #e2e8f0', padding: 20 }}>
-                <Lock size={20} style={{ color: '#b8860b', marginBottom: 10 }} />
-                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>1. Target-Specific Privacy</h3>
-                <p style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.5, margin: 0 }}>
-                  Company data is separated by Target. One company cannot access another company’s target history, evidence, or recruiter notes.
-                </p>
-              </div>
-
-              <div style={{ background: '#fafaf9', borderRadius: 10, border: '1px solid #e2e8f0', padding: 20 }}>
-                <UserCheck size={20} style={{ color: '#059669', marginBottom: 10 }} />
-                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>2. Human-Led Decisions</h3>
-                <p style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.5, margin: 0 }}>
-                  GenuAI organizes requirement evidence. Human recruiters and hiring managers make all hiring decisions.
-                </p>
-              </div>
-
-              <div style={{ background: '#fafaf9', borderRadius: 10, border: '1px solid #e2e8f0', padding: 20 }}>
-                <FileCheck size={20} style={{ color: '#0284c7', marginBottom: 10 }} />
-                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>3. Evidence Traceability</h3>
-                <p style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.5, margin: 0 }}>
-                  Evidence submission records, file hashes, and recruiter review decisions maintain persistent audit logs.
-                </p>
-              </div>
-
-              <div style={{ background: '#fafaf9', borderRadius: 10, border: '1px solid #e2e8f0', padding: 20 }}>
-                <CheckCircle2 size={20} style={{ color: '#b8860b', marginBottom: 10 }} />
-                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>4. Governance &amp; Audit History</h3>
-                <p style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.5, margin: 0 }}>
-                  Company verification and vacancy moderation ensure legitimate recruitment workflows across all tenants.
-                </p>
-              </div>
-            </div>
-
-            <div style={{ background: '#fef3c7', borderRadius: 8, border: '1px solid #fde68a', padding: 14, fontSize: 12.5, color: '#92400e', textAlign: 'center', maxWidth: 820, margin: '0 auto' }}>
-              A file-integrity record can show that a submitted file has not changed after it was recorded. It does not by itself prove document authenticity, ownership, or competence.
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 20 }}>
+              {[
+                { icon: <Lock size={22} color="#b8860b" />, title: 'Target-Specific Privacy', desc: 'Company data is separated by Target. One company cannot access another company\'s target history, evidence, or recruiter notes.' },
+                { icon: <UserCheck size={22} color="#059669" />, title: 'Human-Led Decisions', desc: 'GenuAI organizes requirement evidence. Human recruiters and hiring managers make all hiring decisions.' },
+                { icon: <FileCheck size={22} color="#0284c7" />, title: 'Evidence Traceability', desc: 'Evidence submission records, file hashes, and recruiter review decisions maintain persistent audit logs.' },
+                { icon: <CheckCircle2 size={22} color="#b8860b" />, title: 'Governance & Audit History', desc: 'Company verification and vacancy moderation ensure legitimate recruitment workflows across all tenants.' },
+              ].map((card, i) => (
+                <div key={i} style={{ background: '#fafaf8', borderRadius: 14, border: '1px solid #e8e4db', padding: '28px 22px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                  <div style={{ marginBottom: 14 }}>{card.icon}</div>
+                  <h3 style={{ fontSize: 15.5, fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>{card.title}</h3>
+                  <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6, margin: 0 }}>{card.desc}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* 10. ACCESSIBILITY */}
-        <section style={{ padding: '72px 24px', maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 36, alignItems: 'center' }}>
-            <div>
-              <span style={{ fontSize: 11.5, fontWeight: 800, color: '#b8860b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Accessibility Commitment</span>
-              <h2 style={{ fontSize: 'clamp(22px, 3.2vw, 32px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.8px', margin: '6px 0 14px' }}>
-                A recruitment journey designed to be more accessible.
+        {/* ── FAQ ── */}
+        <section id="faq" style={{ background: '#fafaf8', borderTop: '1px solid #f1f5f9', padding: '96px 24px' }}>
+          <div style={{ maxWidth: 780, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 56 }}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: '#b8860b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>FAQ</span>
+              <h2 style={{ fontSize: 'clamp(24px,3.5vw,36px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.8px', margin: '10px 0 0' }}>
+                Common questions answered.
               </h2>
-              <p style={{ fontSize: 14.5, color: '#475569', lineHeight: 1.6, marginBottom: 20 }}>
-                GenuAI is designed with accessibility best practices—including keyboard navigation, screen-reader compatibility, accessible form labels, high contrast, and confidential accommodation channels.
-              </p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {FAQS.map((faq, i) => (
+                <div key={i} style={{ background: '#fff', borderRadius: 12, border: '1px solid #e8e4db', overflow: 'hidden' }}>
+                  <button
+                    onClick={() => toggleFaq(i)}
+                    style={{ width: '100%', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', gap: 16 }}
+                  >
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>{faq.q}</span>
+                    {openFaqIndex === i ? <ChevronUp size={18} color="#b8860b" /> : <ChevronDown size={18} color="#94a3b8" />}
+                  </button>
+                  {openFaqIndex === i && (
+                    <div style={{ padding: '0 24px 20px', fontSize: 14, color: '#64748b', lineHeight: 1.7, borderTop: '1px solid #f1f5f9' }}>
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px 0', display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, color: '#334155' }}>
-                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✓ Keyboard-accessible navigation &amp; visible focus states</li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✓ Clear semantic headings and screen-reader labels</li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✓ High-contrast status indicators with plain-language labels</li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✓ Confidential accommodation request channel for candidates</li>
-              </ul>
-
-              <Link
-                href="/accessibility"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  fontSize: 13.5,
-                  fontWeight: 800,
-                  color: '#b8860b',
-                  textDecoration: 'none',
-                }}
-              >
-                <span>Read Accessibility &amp; Accommodation Policies</span>
-                <ArrowRight size={15} />
+        {/* ── FINAL CTA ── */}
+        <section style={{ background: '#fff', borderTop: '1px solid #f1f5f9', padding: '96px 24px', textAlign: 'center' }}>
+          <div style={{ maxWidth: 680, margin: '0 auto' }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#b8860b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Get Started</span>
+            <h2 style={{ fontSize: 'clamp(26px,4vw,42px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-1px', margin: '12px 0 16px', lineHeight: 1.2 }}>
+              Build a clearer recruitment workflow.
+            </h2>
+            <p style={{ fontSize: 15.5, color: '#64748b', lineHeight: 1.7, marginBottom: 36 }}>
+              Whether you are hiring for one role or coordinating recruitment across teams, GenuAI helps connect vacancy requirements with relevant evidence and human review.
+            </p>
+            <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link href="/login?mode=register" style={{
+                padding: '14px 32px', borderRadius: 10, fontSize: 15, fontWeight: 800, textDecoration: 'none',
+                background: 'linear-gradient(135deg,#b8860b,#d4af37)', color: '#fff',
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                boxShadow: '0 4px 20px rgba(184,134,11,0.3)',
+              }}>
+                Create Account <ArrowRight size={16} />
+              </Link>
+              <Link href="/login?role=company" style={{
+                padding: '14px 32px', borderRadius: 10, fontSize: 15, fontWeight: 800, textDecoration: 'none',
+                background: '#fff', border: '1.5px solid #d4af37', color: '#854d0e',
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+              }}>
+                Company Workspace
               </Link>
             </div>
-
-            <div style={{ background: '#ffffff', borderRadius: 12, border: '1px solid #e2e8f0', padding: 24 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>Accommodations &amp; Support</div>
-              <p style={{ fontSize: 12.5, color: '#64748b', lineHeight: 1.5, marginBottom: 14 }}>
-                Candidates can submit confidential requests for time extensions, alternative evaluation formats, or assistive technology support without disclosing unnecessary disability details.
-              </p>
-              <Link
-                href="/contact"
-                style={{
-                  display: 'inline-block',
-                  padding: '9px 16px',
-                  borderRadius: 7,
-                  background: '#f1f5f9',
-                  color: '#0f172a',
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  textDecoration: 'none',
-                }}
-              >
-                Submit Accommodation Enquiry →
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* 11. PRICING SECTION */}
-        <section id="pricing" style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', padding: '80px 24px' }}>
-          <div style={{ maxWidth: 1240, margin: '0 auto' }}>
-
-            {/* Header & Positioning */}
-            <div style={{ textAlign: 'center', marginBottom: 36 }}>
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '5px 14px',
-                  borderRadius: 99,
-                  background: 'rgba(212, 175, 55, 0.12)',
-                  border: '1px solid rgba(212, 175, 55, 0.4)',
-                  color: '#854d0e',
-                  fontSize: 12,
-                  fontWeight: 800,
-                  marginBottom: 16,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                }}
-              >
-                <Sparkles size={14} style={{ color: '#b8860b' }} />
-                <span>Transparent &amp; Workflow-Aligned Plans</span>
-              </div>
-
-              <h2 style={{ fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-1px', marginBottom: 12 }}>
-                Pricing that grows with your hiring workflow.
-              </h2>
-              <p style={{ fontSize: 'clamp(14.5px, 1.6vw, 16px)', color: '#475569', maxWidth: 780, margin: '0 auto 20px', lineHeight: 1.6 }}>
-                Start with a structured recruitment workspace. Upgrade when your team needs deeper evidence review, assessment workflows, governance, or enterprise controls.
-              </p>
-
-              {/* Highlighted Candidate Statement */}
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '8px 18px',
-                  borderRadius: 8,
-                  background: '#ffffff',
-                  border: '1.5px solid #b8860b',
-                  color: '#0f172a',
-                  fontSize: 13.5,
-                  fontWeight: 700,
-                  boxShadow: '0 2px 8px rgba(184, 134, 11, 0.08)',
-                }}
-              >
-                <CheckCircle2 size={16} style={{ color: '#059669', flexShrink: 0 }} />
-                <span>Core vacancy access and target creation are free. Candidate career plans are available as paid upgrades.</span>
-              </div>
-            </div>
-
-            {/* Billing Toggle (Keyboard Accessible) */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 40 }}>
-              <div
-                role="radiogroup"
-                aria-label="Billing frequency selection"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  background: '#ffffff',
-                  padding: 4,
-                  borderRadius: 99,
-                  border: '1px solid #cbd5e1',
-                  boxShadow: '0 1px 3px rgba(15, 23, 42, 0.05)',
-                }}
-              >
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={billingCycle === 'monthly'}
-                  onClick={() => setBillingCycle('monthly')}
-                  style={{
-                    padding: '8px 20px',
-                    borderRadius: 99,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    background: billingCycle === 'monthly' ? '#0f172a' : 'transparent',
-                    color: billingCycle === 'monthly' ? '#ffffff' : '#475569',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  Monthly billing
-                </button>
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={billingCycle === 'annual'}
-                  onClick={() => setBillingCycle('annual')}
-                  style={{
-                    padding: '8px 20px',
-                    borderRadius: 99,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    background: billingCycle === 'annual' ? '#0f172a' : 'transparent',
-                    color: billingCycle === 'annual' ? '#ffffff' : '#475569',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  Annual billing
-                </button>
-              </div>
-              <span style={{ fontSize: 12, color: '#64748b', marginTop: 8, fontWeight: 500 }}>
-                {billingCycle === 'annual' ? 'Annual pricing available on request for verified teams' : 'Monthly early access billing terms'}
-              </span>
-            </div>
-
-            {/* 4 Plan Cards */}
-            <div className="pricing-grid" style={{ marginBottom: 48 }}>
-
-              {/* 1. CANDIDATE ACCESS */}
-              <div
-                style={{
-                  background: '#ffffff',
-                  borderRadius: 14,
-                  border: '1px solid #e2e8f0',
-                  padding: '28px 22px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)',
-                }}
-              >
-                <div>
-                  <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 800, color: '#059669', background: '#ecfdf5', padding: '3px 10px', borderRadius: 99, border: '1px solid #a7f3d0', marginBottom: 12 }}>
-                    Free to get started
-                  </div>
-                  <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', marginBottom: 6 }}>
-                    Candidate Free
-                  </h3>
-                  <div style={{ fontSize: 30, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', marginBottom: 4 }}>
-                    ₹0 <span style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>/ Always Free</span>
-                  </div>
-                  <p style={{ fontSize: 12, color: '#64748b', fontWeight: 600, marginBottom: 16 }}>
-                    Core candidate opportunity access remains free.
-                  </p>
-                  <p style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5, marginBottom: 18 }}>
-                    For candidates exploring verified roles and building target-specific recruitment records.
-                  </p>
-
-                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16, marginBottom: 16 }}>
-                    <div style={{ fontSize: 11.5, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 10 }}>
-                      What is included:
-                    </div>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5, color: '#334155' }}>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Candidate profile</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Explore verified published vacancies</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Create and manage targets</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>View role requirements</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Submit accepted target-specific evidence</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>View evidence status and coverage</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Candidate-visible recruitment updates</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Basic privacy controls</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 14, marginBottom: 20 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
-                      What is not included:
-                    </div>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 11.5, color: '#64748b' }}>
-                      <li style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Minus size={13} style={{ color: '#94a3b8', flexShrink: 0 }} />
-                        <span>Guaranteed interviews or job placement</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Minus size={13} style={{ color: '#94a3b8', flexShrink: 0 }} />
-                        <span>Automatic evidence acceptance</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Minus size={13} style={{ color: '#94a3b8', flexShrink: 0 }} />
-                        <span>Candidate ranking or AI hiring score</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div>
-                  <Link
-                    href="/login?role=candidate"
-                    style={{
-                      width: '100%',
-                      padding: '11px 16px',
-                      borderRadius: 8,
-                      background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
-                      color: '#ffffff',
-                      fontSize: 13,
-                      fontWeight: 700,
-                      textDecoration: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                      boxShadow: '0 2px 8px rgba(184,134,11,0.25)',
-                    }}
-                  >
-                    <span>Sign In to Candidate Workspace</span>
-                    <ArrowRight size={14} />
-                  </Link>
-                  <p style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', marginTop: 10, margin: '10px 0 0' }}>
-                    Access candidate workspace, review role requirements, and prepare evidence at no cost.
-                  </p>
-                </div>
-              </div>
-
-              {/* 2. COMPANY STARTER */}
-              <div
-                style={{
-                  background: '#ffffff',
-                  borderRadius: 14,
-                  border: '1px solid #e2e8f0',
-                  padding: '28px 22px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)',
-                }}
-              >
-                <div>
-                  <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 800, color: '#475569', background: '#f1f5f9', padding: '3px 10px', borderRadius: 99, border: '1px solid #cbd5e1', marginBottom: 12 }}>
-                    For small teams starting structured hiring
-                  </div>
-                  <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', marginBottom: 6 }}>
-                    Company Starter
-                  </h3>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.3px', marginBottom: 4 }}>
-                    {billingCycle === 'monthly' ? '₹4,999' : '₹49,999'}
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginLeft: 4 }}>
-                      {billingCycle === 'monthly' ? '/month' : '/year'}
-                    </span>
-                  </div>
-                  <p style={{ fontSize: 12, color: '#64748b', fontWeight: 600, marginBottom: 16 }}>
-                    {billingCycle === 'annual' ? 'Save ~17% vs monthly billing' : 'Up to 3 recruiters · 3 vacancies · 150 targets/month'}
-                  </p>
-                  <p style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5, marginBottom: 18 }}>
-                    For small hiring teams that need verified vacancy management and structured candidate review.
-                  </p>
-
-                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16, marginBottom: 20 }}>
-                    <div style={{ fontSize: 11.5, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 10 }}>
-                      What is included:
-                    </div>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5, color: '#334155' }}>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Company workspace &amp; verification workflow</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Department and role management</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Vacancy creation &amp; publishing workflow</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Requirement definition &amp; vacancy versions</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Candidate target visibility for company roles</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Requirement-linked evidence review</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Basic evidence coverage view &amp; recruiter notes</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Basic audit history &amp; standard support</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div>
-                  <Link
-                    href="/login?role=company"
-                    style={{
-                      width: '100%',
-                      padding: '11px 16px',
-                      borderRadius: 8,
-                      background: '#ffffff',
-                      border: '1.5px solid #d4af37',
-                      color: '#854d0e',
-                      fontSize: 13,
-                      fontWeight: 700,
-                      textDecoration: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <span>Company Workspace Sign In</span>
-                    <ArrowRight size={14} />
-                  </Link>
-                  <p style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', marginTop: 10, margin: '10px 0 0' }}>
-                    Availability may depend on verification and onboarding capacity.
-                  </p>
-                </div>
-              </div>
-
-              {/* 3. COMPANY PROFESSIONAL (RECOMMENDED) */}
-              <div
-                style={{
-                  background: '#ffffff',
-                  borderRadius: 14,
-                  border: '2px solid #b8860b',
-                  padding: '28px 22px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  boxShadow: '0 6px 24px rgba(184, 134, 11, 0.12)',
-                  position: 'relative',
-                }}
-              >
-                <div>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 800, color: '#854d0e', background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', padding: '3px 10px', borderRadius: 99, border: '1px solid #d4af37', marginBottom: 12 }}>
-                    <Sparkles size={12} style={{ color: '#b8860b' }} />
-                    <span>Recommended</span>
-                  </div>
-                  <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', marginBottom: 6 }}>
-                    Company Growth
-                  </h3>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: '#854d0e', letterSpacing: '-0.3px', marginBottom: 4 }}>
-                    {billingCycle === 'monthly' ? '₹12,999' : '₹1,29,999'}
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginLeft: 4 }}>
-                      {billingCycle === 'monthly' ? '/month' : '/year'}
-                    </span>
-                  </div>
-                  <p style={{ fontSize: 12, color: '#64748b', fontWeight: 600, marginBottom: 16 }}>
-                    {billingCycle === 'annual' ? 'Save ~17% vs monthly billing' : 'Up to 10 recruiters · 15 vacancies · 1,000 targets/month'}
-                  </p>
-                  <p style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5, marginBottom: 18 }}>
-                    For growing recruiting teams that need deeper review workflows and configurable evaluation.
-                  </p>
-
-                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16, marginBottom: 20 }}>
-                    <div style={{ fontSize: 11.5, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 10 }}>
-                      Everything in Starter, plus:
-                    </div>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5, color: '#334155' }}>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Multiple recruiter seats &amp; pipeline controls</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Structured requirement-by-requirement review</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Evidence request &amp; clarification workflow</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>
-                          Assessment configuration <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 4, background: '#f1f5f9', color: '#64748b' }}>Planned</span>
-                        </span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Assessment results linked to requirements</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>
-                          Interview workflow <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 4, background: '#f1f5f9', color: '#64748b' }}>Planned</span>
-                        </span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Enhanced audit &amp; reporting views</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Priority support &amp; configurable settings</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div>
-                  <Link
-                    href="/contact"
-                    style={{
-                      width: '100%',
-                      padding: '11px 16px',
-                      borderRadius: 8,
-                      background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
-                      color: '#ffffff',
-                      fontSize: 13,
-                      fontWeight: 800,
-                      textDecoration: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                      boxShadow: '0 2px 8px rgba(184, 134, 11, 0.3)',
-                    }}
-                  >
-                    <span>Talk to our team</span>
-                    <ArrowRight size={14} />
-                  </Link>
-                  <p style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', marginTop: 10, margin: '10px 0 0' }}>
-                    Planned features available as modules are released.
-                  </p>
-                </div>
-              </div>
-
-              {/* 4. ENTERPRISE / INSTITUTION */}
-              <div
-                style={{
-                  background: '#ffffff',
-                  borderRadius: 14,
-                  border: '1px solid #e2e8f0',
-                  padding: '28px 22px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)',
-                }}
-              >
-                <div>
-                  <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 800, color: '#1e40af', background: '#eff6ff', padding: '3px 10px', borderRadius: 99, border: '1px solid #bfdbfe', marginBottom: 12 }}>
-                    For large employers &amp; colleges
-                  </div>
-                  <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', marginBottom: 6 }}>
-                    Enterprise &amp; Institution
-                  </h3>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.3px', marginBottom: 4 }}>
-                    Custom pricing
-                  </div>
-                  <p style={{ fontSize: 12, color: '#64748b', fontWeight: 600, marginBottom: 16 }}>
-                    Scaled for multi-department governance
-                  </p>
-                  <p style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5, marginBottom: 18 }}>
-                    For organizations that need governance, scale, multi-team workflows, and tailored deployment.
-                  </p>
-
-                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16, marginBottom: 20 }}>
-                    <div style={{ fontSize: 11.5, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 10 }}>
-                      Everything in Professional, plus:
-                    </div>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5, color: '#334155' }}>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Multi-team and multi-department governance</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Advanced role and permission controls</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Institutional &amp; placement workflows</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Advanced audit and compliance support</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Enterprise onboarding &amp; dedicated success pathway</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Custom reporting &amp; integration planning</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Custom retention and governance configuration</span>
-                      </li>
-                      <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                        <span>Custom assessment &amp; evaluation programs (where available)</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div>
-                  <Link
-                    href="/contact"
-                    style={{
-                      width: '100%',
-                      padding: '11px 16px',
-                      borderRadius: 8,
-                      background: '#ffffff',
-                      border: '1.5px solid #d4af37',
-                      color: '#854d0e',
-                      fontSize: 13,
-                      fontWeight: 700,
-                      textDecoration: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <span>Contact sales</span>
-                    <ArrowRight size={14} />
-                  </Link>
-                  <p style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', marginTop: 10, margin: '10px 0 0' }}>
-                    Custom SLAs and integrations scoped upon request.
-                  </p>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Assessment Services Add-On Panel */}
-            <div
-              style={{
-                background: '#ffffff',
-                borderRadius: 14,
-                border: '1px solid #e2e8f0',
-                padding: '32px 28px',
-                marginBottom: 36,
-                boxShadow: '0 2px 10px rgba(15, 23, 42, 0.04)',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20, marginBottom: 20 }}>
-                <div style={{ maxWidth: 740 }}>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, color: '#854d0e', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-                    <ShieldCheck size={14} style={{ color: '#b8860b' }} />
-                    <span>Evaluation Add-On</span>
-                  </div>
-                  <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', marginBottom: 8 }}>
-                    Assessment Services
-                  </h3>
-                  <p style={{ fontSize: 13.5, color: '#475569', lineHeight: 1.6, margin: 0 }}>
-                    For companies that want company-configured, role-relevant evaluation as part of the requirement-to-evidence workflow.
-                  </p>
-                </div>
-
-                <Link
-                  href="/contact"
-                  style={{
-                    padding: '10px 20px',
-                    borderRadius: 8,
-                    background: '#ffffff',
-                    border: '1.5px solid #d4af37',
-                    color: '#854d0e',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    textDecoration: 'none',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    flexShrink: 0,
-                  }}
-                >
-                  <span>Discuss assessment needs</span>
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14, borderTop: '1px solid #f1f5f9', paddingTop: 20, marginBottom: 20 }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: '#334155' }}>
-                  <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                  <span>Requirement-aligned assessment design</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: '#334155' }}>
-                  <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                  <span>Assessment configuration &amp; attempt workflow</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: '#334155' }}>
-                  <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                  <span>Requirement-level result mapping</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: '#334155' }}>
-                  <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                  <span>Candidate instructions and transparency</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: '#334155' }}>
-                  <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                  <span>Human review of any integrity signals</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: '#334155' }}>
-                  <Check size={15} style={{ color: '#059669', flexShrink: 0, marginTop: 2 }} />
-                  <span>Assessment version history</span>
-                </div>
-              </div>
-
-              <div style={{ background: '#fafaf9', padding: '12px 16px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12, color: '#64748b', fontStyle: 'italic' }}>
-                Assessment services are released in phases and may be available through early access or custom implementation. Integrity signals may require human review.
-              </div>
-            </div>
-
-            {/* Optional Candidate Career Tools Section */}
-            <div
-              style={{
-                background: '#fafaf9',
-                borderRadius: 12,
-                border: '1px solid #e2e8f0',
-                padding: '24px 24px',
-                marginBottom: 48,
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <GraduationCap size={18} style={{ color: '#b8860b' }} />
-                  <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                    Candidate career plans
-                  </h3>
-                </div>
-                <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0' }}>
-                  From ₹299/month
-                </span>
-              </div>
-              <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.5, marginBottom: 14 }}>
-                Core vacancy access and target creation are free. Upgrade with a candidate career plan for guided preparation, practice sessions, and career support.
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
-                {[
-                  { name: 'Candidate Plus', price: '₹299/month', note: 'or ₹2,499/year', desc: 'Up to 3 guided targets, practice sessions, preparation checklists' },
-                  { name: 'Candidate Pro', price: '₹699/month', note: 'or ₹5,999/year', desc: 'Up to 10 targets, 25 practice sessions, multi-target workspace' },
-                  { name: 'Career Pack', price: '₹1,499 one-time', note: '60-day access', desc: 'One role-specific preparation plan with practice sessions' },
-                ].map(p => (
-                  <div key={p.name} style={{ background: '#ffffff', borderRadius: 8, border: '1px solid #e2e8f0', padding: '14px 16px' }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0f172a', marginBottom: 2 }}>{p.name}</div>
-                    <div style={{ fontSize: 14, fontWeight: 900, color: '#b8860b', marginBottom: 2 }}>{p.price}</div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, marginBottom: 6 }}>{p.note}</div>
-                    <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.4 }}>{p.desc}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 12, color: '#334155' }}>
-                <span style={{ background: '#ffffff', padding: '4px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>• Advanced preparation pathways</span>
-                <span style={{ background: '#ffffff', padding: '4px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>• Expanded practice content</span>
-                <span style={{ background: '#ffffff', padding: '4px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>• Career insights</span>
-                <span style={{ background: '#ffffff', padding: '4px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>• Portfolio guidance</span>
-                <span style={{ background: '#ffffff', padding: '4px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>• Interview preparation</span>
-              </div>
-            </div>
-
-            {/* Plan Comparison Table */}
-            <div style={{ marginBottom: 56 }}>
-              <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                <h3 style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', marginBottom: 6 }}>
-                  Detailed Plan Comparison
-                </h3>
-                <p style={{ fontSize: 14, color: '#475569', marginBottom: 0 }}>
-                  Compare feature coverage across Candidate Free, Company Starter, Company Growth, and Enterprise plans.
-                </p>
-              </div>
-
-              <div className="pricing-table-wrapper">
-                <table>
-                  <caption className="sr-only">Detailed feature comparison across GenuAI plans</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col" style={{ width: '28%' }}>Feature</th>
-                      <th scope="col" style={{ width: '18%' }}>Candidate Free</th>
-                      <th scope="col" style={{ width: '18%' }}>Company Starter</th>
-                      <th scope="col" style={{ width: '18%', color: '#854d0e', background: '#fefce8' }}>Company Growth</th>
-                      <th scope="col" style={{ width: '18%' }}>Enterprise &amp; Institution</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {COMPARISON_ROWS.map((row, i) => (
-                      <tr key={i} style={{ background: i % 2 === 0 ? '#ffffff' : '#fafaf9' }}>
-                        <th scope="row" style={{ fontWeight: 700, color: '#0f172a', background: 'transparent' }}>
-                          {row.name}
-                        </th>
-                        <td>
-                          {row.candidate === 'Included' ? (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#059669', fontWeight: 700 }}>
-                              <Check size={14} /> Included
-                            </span>
-                          ) : (
-                            <span style={{ color: '#64748b' }}>{row.candidate}</span>
-                          )}
-                        </td>
-                        <td>
-                          {row.starter === 'Included' ? (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#059669', fontWeight: 700 }}>
-                              <Check size={14} /> Included
-                            </span>
-                          ) : (
-                            <span style={{ color: '#64748b' }}>{row.starter}</span>
-                          )}
-                        </td>
-                        <td style={{ background: '#fffbeb' }}>
-                          {row.pro === 'Included' ? (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#059669', fontWeight: 700 }}>
-                              <Check size={14} /> Included
-                            </span>
-                          ) : row.pro === 'Planned' ? (
-                            <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: '#e2e8f0', color: '#475569' }}>
-                              Planned
-                            </span>
-                          ) : (
-                            <span style={{ color: '#0f172a', fontWeight: 600 }}>{row.pro}</span>
-                          )}
-                        </td>
-                        <td>
-                          {row.enterprise === 'Included' ? (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#059669', fontWeight: 700 }}>
-                              <Check size={14} /> Included
-                            </span>
-                          ) : (
-                            <span style={{ color: '#0f172a', fontWeight: 600 }}>{row.enterprise}</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Pricing FAQ Accordion */}
-            <div>
-              <div style={{ textAlign: 'center', marginBottom: 28 }}>
-                <h3 style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', marginBottom: 6 }}>
-                  Pricing &amp; Plan Questions
-                </h3>
-                <p style={{ fontSize: 14, color: '#475569' }}>
-                  Clear explanations of GenuAI pricing models and policies.
-                </p>
-              </div>
-
-              <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {PRICING_FAQS.map((faq, index) => {
-                  const isOpen = openPricingFaqIndex === index;
-                  return (
-                    <div
-                      key={index}
-                      style={{
-                        borderRadius: 8,
-                        border: '1px solid #e2e8f0',
-                        background: isOpen ? '#ffffff' : '#fafaf9',
-                        overflow: 'hidden',
-                        boxShadow: isOpen ? '0 2px 6px rgba(15, 23, 42, 0.04)' : 'none',
-                      }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => togglePricingFaq(index)}
-                        aria-expanded={isOpen}
-                        style={{
-                          width: '100%',
-                          padding: '16px 18px',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          fontSize: 14,
-                          fontWeight: 800,
-                          color: '#0f172a',
-                        }}
-                      >
-                        <span>{faq.q}</span>
-                        {isOpen ? <ChevronUp size={16} style={{ color: '#b8860b', flexShrink: 0 }} /> : <ChevronDown size={16} style={{ color: '#64748b', flexShrink: 0 }} />}
-                      </button>
-                      {isOpen && (
-                        <div style={{ padding: '0 18px 16px', fontSize: 13, color: '#475569', lineHeight: 1.6, borderTop: '1px solid #f1f5f9' }}>
-                          {faq.a}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-          </div>
-        </section>
-
-        {/* 12. GENERAL FAQ ACCORDION */}
-        <section style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '72px 24px' }}>
-          <div style={{ maxWidth: 860, margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: 36 }}>
-              <h2 style={{ fontSize: 'clamp(22px, 3.2vw, 34px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.8px', marginBottom: 8 }}>
-                Platform questions, answered clearly.
-              </h2>
-              <p style={{ fontSize: 14.5, color: '#475569' }}>
-                Honest answers about GenuAI's recruitment intelligence platform.
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {FAQS.map((faq, index) => {
-                const isOpen = openFaqIndex === index;
-                return (
-                  <div
-                    key={index}
-                    style={{
-                      borderRadius: 8,
-                      border: '1px solid #e2e8f0',
-                      background: isOpen ? '#fafaf9' : '#ffffff',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <button
-                      onClick={() => toggleFaq(index)}
-                      aria-expanded={isOpen}
-                      style={{
-                        width: '100%',
-                        padding: '16px 18px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        fontSize: 14.5,
-                        fontWeight: 800,
-                        color: '#0f172a',
-                      }}
-                    >
-                      <span>{faq.q}</span>
-                      {isOpen ? <ChevronUp size={16} style={{ color: '#b8860b' }} /> : <ChevronDown size={16} style={{ color: '#64748b' }} />}
-                    </button>
-                    {isOpen && (
-                      <div style={{ padding: '0 18px 16px', fontSize: 13.5, color: '#475569', lineHeight: 1.6 }}>
-                        {faq.a}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* 13. FINAL ENTERPRISE CTA */}
-        <section style={{ padding: '80px 24px', textAlign: 'center', maxWidth: 960, margin: '0 auto' }}>
-          <h2 style={{ fontSize: 'clamp(24px, 3.8vw, 38px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-1px', marginBottom: 12 }}>
-            Build a clearer recruitment workflow.
-          </h2>
-          <p style={{ fontSize: 15.5, color: '#475569', maxWidth: 680, margin: '0 auto 28px', lineHeight: 1.6 }}>
-            Whether you are hiring for one role or coordinating recruitment across teams, GenuAI helps connect vacancy requirements with relevant evidence and human review.
-          </p>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 16 }}>
-            <Link
-              href="/contact"
-              style={{
-                padding: '13px 26px',
-                borderRadius: 9,
-                background: 'linear-gradient(135deg, #b8860b 0%, #d4af37 100%)',
-                color: '#ffffff',
-                fontSize: 14.5,
-                fontWeight: 800,
-                textDecoration: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                boxShadow: '0 4px 14px rgba(184, 134, 11, 0.25)',
-              }}
-            >
-              <span>Talk to our team</span>
-              <ArrowRight size={15} />
-            </Link>
-
-            <Link
-              href="/login?role=company"
-              style={{
-                padding: '13px 26px',
-                borderRadius: 9,
-                background: '#ffffff',
-                border: '1.5px solid #d4af37',
-                color: '#854d0e',
-                fontSize: 14.5,
-                fontWeight: 800,
-                textDecoration: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-              }}
-            >
-              <span>Access Company Workspace</span>
-            </Link>
-          </div>
-
-          <div style={{ fontSize: 12, color: '#64748b' }}>
-            Company access follows a verification workflow. Candidates can explore verified vacancies at no cost.
+            <p style={{ marginTop: 18, fontSize: 12.5, color: '#94a3b8' }}>
+              Core candidate access is free. Company access follows a verification workflow.
+            </p>
           </div>
         </section>
 
       </main>
 
-      {/* 14. COMPLETE SEMANTIC FOOTER */}
-      <footer style={{ background: '#ffffff', color: '#475569', paddingTop: 52, paddingBottom: 28, borderTop: '1px solid #e2e8f0' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 36, marginBottom: 40 }}>
-            {/* Brand */}
+      {/* ── FOOTER ── */}
+      <footer style={{ background: '#0f172a', color: '#94a3b8', padding: '56px 28px 28px' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 36, marginBottom: 44 }}>
             <div>
-              <div style={{ marginBottom: 10 }}>
-                <span style={{ fontSize: 16, fontWeight: 900, color: '#0f172a' }}>GenuAI Technologies</span>
-              </div>
-              <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6, margin: '0 0 12px' }}>
-                Requirement-centered recruitment intelligence. Connecting company vacancy requirements with candidate preparation, evidence, and human-led hiring decisions.
+              <span className="gold-gradient-text" style={{ fontSize: 16, fontWeight: 900, letterSpacing: '-0.3px', display: 'block', marginBottom: 6 }}>GenuAI Technologies</span>
+              <p style={{ fontSize: 12.5, color: '#64748b', lineHeight: 1.6, margin: '0 0 10px' }}>
+                Requirement-centered recruitment intelligence. Human-led hiring decisions.
               </p>
-              <span style={{ fontSize: 11, color: '#94a3b8', display: 'block' }}>
-                No automated AI hiring decisions.
-              </span>
+              <span style={{ fontSize: 11, color: '#475569' }}>No automated AI hiring decisions.</span>
             </div>
-
-            {/* Product */}
-            <div>
-              <h3 style={{ fontSize: 11.5, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
-                Product
-              </h3>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5 }}>
-                <li><a href="#how-it-works" style={{ color: '#475569', textDecoration: 'none' }}>How It Works</a></li>
-                <li><a href="#candidates" style={{ color: '#475569', textDecoration: 'none' }}>For Candidates</a></li>
-                <li><a href="#companies" style={{ color: '#475569', textDecoration: 'none' }}>For Companies</a></li>
-                <li><a href="#pricing" style={{ color: '#475569', textDecoration: 'none' }}>Pricing</a></li>
-                <li><Link href="/login" style={{ color: '#475569', textDecoration: 'none' }}>Workspace Sign In</Link></li>
-              </ul>
-            </div>
-
-            {/* Platform */}
-            <div>
-              <h3 style={{ fontSize: 11.5, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
-                Platform
-              </h3>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5 }}>
-                <li><Link href="/login?role=company" style={{ color: '#475569', textDecoration: 'none' }}>Company Workspace</Link></li>
-                <li><Link href="/login?role=candidate" style={{ color: '#475569', textDecoration: 'none' }}>Candidate Workspace</Link></li>
-                <li><Link href="/trust" style={{ color: '#475569', textDecoration: 'none' }}>Verification Process</Link></li>
-                <li><a href="#problem" style={{ color: '#475569', textDecoration: 'none' }}>Evidence &amp; Coverage</a></li>
-              </ul>
-            </div>
-
-            {/* Trust & Legal */}
-            <div>
-              <h3 style={{ fontSize: 11.5, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
-                Trust &amp; Legal
-              </h3>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5 }}>
-                <li><Link href="/trust" style={{ color: '#475569', textDecoration: 'none' }}>Trust &amp; Privacy</Link></li>
-                <li><Link href="/privacy" style={{ color: '#475569', textDecoration: 'none' }}>Privacy Policy</Link></li>
-                <li><Link href="/terms" style={{ color: '#475569', textDecoration: 'none' }}>Terms of Use</Link></li>
-                <li><Link href="/accessibility" style={{ color: '#475569', textDecoration: 'none' }}>Accessibility</Link></li>
-              </ul>
-            </div>
-
-            {/* Support */}
-            <div>
-              <h3 style={{ fontSize: 11.5, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
-                Support
-              </h3>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5 }}>
-                <li><Link href="/contact" style={{ color: '#475569', textDecoration: 'none' }}>Contact Support</Link></li>
-                <li><Link href="/contact" style={{ color: '#475569', textDecoration: 'none' }}>Report a Concern</Link></li>
-                <li><Link href="/accessibility" style={{ color: '#475569', textDecoration: 'none' }}>Accommodation Request</Link></li>
-              </ul>
-            </div>
+            {[
+              { title: 'Product', links: [['#how-it-works', 'How It Works'], ['#for-candidates', 'For Candidates'], ['#for-companies', 'For Companies'], ['/login', 'Sign In']] },
+              { title: 'Trust & Legal', links: [['/trust', 'Trust & Privacy'], ['/privacy', 'Privacy Policy'], ['/terms', 'Terms of Use'], ['/accessibility', 'Accessibility']] },
+              { title: 'Support', links: [['/contact', 'Contact Support'], ['/contact', 'Report a Concern'], ['/accessibility', 'Accommodation Request']] },
+            ].map((col, i) => (
+              <div key={i}>
+                <h3 style={{ fontSize: 11, fontWeight: 800, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>{col.title}</h3>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {col.links.map(([href, label], j) => (
+                    <li key={j}>
+                      <Link href={href} style={{ fontSize: 13, color: '#64748b', textDecoration: 'none' }}>{label}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
-
-
-          {/* Bottom bar */}
-          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, fontSize: 11.5, color: '#64748b' }}>
-            <div>
-              © {new Date().getFullYear()} GenuAI Technologies. All rights reserved.
-            </div>
-            <div style={{ display: 'flex', gap: 14 }}>
-              <Link href="/privacy" style={{ color: '#64748b', textDecoration: 'none' }}>Privacy</Link>
-              <Link href="/terms" style={{ color: '#64748b', textDecoration: 'none' }}>Terms</Link>
-              <Link href="/accessibility" style={{ color: '#64748b', textDecoration: 'none' }}>Accessibility</Link>
+          <div style={{ borderTop: '1px solid #1e293b', paddingTop: 20, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, fontSize: 12, color: '#475569' }}>
+            <span>© {new Date().getFullYear()} GenuAI Technologies. All rights reserved.</span>
+            <div style={{ display: 'flex', gap: 16 }}>
+              <Link href="/privacy" style={{ color: '#475569', textDecoration: 'none' }}>Privacy</Link>
+              <Link href="/terms" style={{ color: '#475569', textDecoration: 'none' }}>Terms</Link>
+              <Link href="/accessibility" style={{ color: '#475569', textDecoration: 'none' }}>Accessibility</Link>
             </div>
           </div>
         </div>

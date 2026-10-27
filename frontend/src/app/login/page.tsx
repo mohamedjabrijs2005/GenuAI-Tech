@@ -29,7 +29,7 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
   candidate: {
     label: 'Candidate',
     cardTitle: 'Candidate Login',
-    cardSubtitle: 'Sign in to your candidate workspace & interview portal',
+    cardSubtitle: 'Sign in to access your interview workspace & evaluations',
     emailLabel: 'Email Address',
     emailPlaceholder: 'you@example.com',
     submitText: 'Sign In to Workspace',
@@ -38,7 +38,7 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
   company: {
     label: 'Company',
     cardTitle: 'Employer Portal',
-    cardSubtitle: 'Sign in to publish vacancies & review talent evaluations',
+    cardSubtitle: 'Sign in to manage role vacancies & evaluate talent',
     emailLabel: 'Work Email',
     emailPlaceholder: 'recruiter@company.com',
     submitText: 'Access Company Portal',
@@ -47,7 +47,7 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
   admin: {
     label: 'Admin',
     cardTitle: 'Platform Governance',
-    cardSubtitle: 'Sign in to the GenuAI trust & compliance console',
+    cardSubtitle: 'Sign in to the GenuAI compliance & audit console',
     emailLabel: 'Admin Email',
     emailPlaceholder: 'admin@genuai.io',
     submitText: 'Enter Governance Console',
@@ -244,26 +244,31 @@ export default function AuthPage() {
   const passStrength = getPasswordStrength(form.password);
 
   return (
-    <div className="sail-auth-layout">
+    <div className="auth-fullbg-page">
 
-      {/* ======= LEFT: HERO IMAGE & TRUTHFUL OVERVIEW PANEL ======= */}
-      <div className="sail-left-panel">
-        {/* Background image & gradient tint clipped with precise diagonal slant */}
-        <div className="sail-image-bg" style={{ backgroundImage: "url('/auth-hero.jpg')" }} />
-        <div className="sail-image-tint" />
+      {/* ======= FULL VIEWPORT BACKGROUND IMAGE ======= */}
+      <div
+        className="auth-fullbg-backdrop"
+        style={{ backgroundImage: "url('/auth-hero.jpg')" }}
+      />
 
-        {/* Content on left panel */}
-        <div className="sail-left-content">
-          {/* Top Brand Link - matching dashboard top-left */}
-          <Link href="/" style={{ textDecoration: 'none', display: 'inline-block' }} className="sail-left-brand-link">
+      {/* ======= LUMINOUS WARM WHITE-GOLD FROSTED OVERLAY ======= */}
+      <div className="auth-fullbg-overlay" />
+
+      {/* ======= CENTERED LOGIN CARD ======= */}
+      <div className="auth-fullbg-container">
+        <div className="auth-login-card">
+
+          {/* Top Brand Link — Matches Dashboard Top-Left Presentation */}
+          <Link href="/" className="auth-card-brand">
             <div
               className="sidebar-logo-text gold-gradient-text"
               style={{
-                fontSize: 22,
+                fontSize: 24,
                 fontWeight: 900,
                 lineHeight: 1.15,
                 letterSpacing: '-0.3px',
-                filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.45))',
+                textAlign: 'center',
               }}
             >
               GenuAI Technologies
@@ -272,78 +277,21 @@ export default function AuthPage() {
               className="sidebar-logo-sub"
               style={{
                 fontSize: 10.5,
-                color: '#fde68a',
+                color: '#854d0e',
                 fontWeight: 700,
                 letterSpacing: '0.6px',
                 textTransform: 'uppercase',
                 display: 'block',
                 marginTop: 4,
+                textAlign: 'center',
               }}
             >
               Recruitment Intelligence
             </span>
           </Link>
 
-
-
-          {/* Bottom Copyright */}
-          <div className="sail-left-footer">
-            <span>&copy; {new Date().getFullYear()} GenuAI Technologies &middot; Confidential &amp; Encrypted</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ======= RIGHT: FORM PANEL WITH ELEGANT FRAMED CARD ======= */}
-      <div className="sail-right-panel">
-        <div className="sail-form-card">
-
-          {/* Top Logo + Decorative Lines (SAIL-Signature) - matching dashboard top-left */}
-          <div className="sail-form-logo-row">
-            <div className="sail-deco-line" />
-            <Link
-              href="/"
-              style={{
-                textDecoration: 'none',
-                flexShrink: 0,
-                textAlign: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-              }}
-            >
-              <div
-                className="sidebar-logo-text gold-gradient-text"
-                style={{
-                  fontSize: 22,
-                  fontWeight: 900,
-                  lineHeight: 1.15,
-                  letterSpacing: '-0.3px',
-                  textAlign: 'center',
-                }}
-              >
-                GenuAI Technologies
-              </div>
-              <span
-                className="sidebar-logo-sub"
-                style={{
-                  fontSize: 10,
-                  color: '#854d0e',
-                  fontWeight: 700,
-                  letterSpacing: '0.6px',
-                  textTransform: 'uppercase',
-                  display: 'block',
-                  marginTop: 3,
-                  textAlign: 'center',
-                }}
-              >
-                Recruitment Intelligence
-              </span>
-            </Link>
-            <div className="sail-deco-line" />
-          </div>
-
           {/* Persona Selection Tabs */}
-          <div className="sail-persona-tabs">
+          <div className="auth-persona-tabs">
             {(['candidate', 'company', 'admin'] as UserPersona[]).map((p) => {
               const icons: Record<UserPersona, React.ReactNode> = {
                 candidate: <User size={13} />,
@@ -355,7 +303,7 @@ export default function AuthPage() {
                   key={p}
                   type="button"
                   onClick={() => handlePersonaChange(p)}
-                  className={`sail-persona-tab${persona === p ? ' active' : ''}`}
+                  className={`auth-persona-tab${persona === p ? ' active' : ''}`}
                   id={`auth-persona-tab-${p}`}
                 >
                   {icons[p]}
@@ -367,11 +315,11 @@ export default function AuthPage() {
 
           {/* Sign In / Create Account Toggle */}
           {config.allowRegister && (
-            <div className="sail-mode-toggle">
+            <div className="auth-mode-toggle">
               <button
                 type="button"
                 onClick={() => { setIsLogin(true); setError(''); }}
-                className={`sail-mode-btn${isLogin ? ' active' : ''}`}
+                className={`auth-mode-btn${isLogin ? ' active' : ''}`}
                 id="auth-mode-signin"
               >
                 Sign In
@@ -379,7 +327,7 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={() => { setIsLogin(false); setError(''); }}
-                className={`sail-mode-btn${!isLogin ? ' active' : ''}`}
+                className={`auth-mode-btn${!isLogin ? ' active' : ''}`}
                 id="auth-mode-register"
               >
                 Create Account
@@ -388,20 +336,20 @@ export default function AuthPage() {
           )}
 
           {/* Welcome Text */}
-          <div className="sail-welcome-block">
-            <h2 className="sail-welcome-title">
+          <div className="auth-welcome-block">
+            <h2 className="auth-welcome-title">
               {isLogin
-                ? (persona === 'admin' ? 'Platform Governance' : `Welcome to GenuAI Technologies!`)
+                ? (persona === 'admin' ? 'Platform Governance' : 'Welcome to GenuAI Technologies!')
                 : (persona === 'company' ? 'Register Company Account' : 'Create Candidate Account')}
             </h2>
-            <p className="sail-welcome-sub">
+            <p className="auth-welcome-sub">
               {isLogin ? config.cardSubtitle : 'Get started with verified recruitment — free to register'}
             </p>
           </div>
 
-          {/* Error Message */}
+          {/* Error Banner */}
           {error && (
-            <div className="sail-error-box">
+            <div className="auth-error-box">
               <AlertCircle size={15} style={{ flexShrink: 0 }} />
               <span>{error}</span>
             </div>
@@ -412,32 +360,32 @@ export default function AuthPage() {
 
             {/* Register-only fields */}
             {!isLogin && config.allowRegister && (
-              <div className={persona === 'company' ? 'sail-two-col' : ''} style={{ marginBottom: 14 }}>
-                <div className="sail-field">
-                  <label className="sail-label">Full Name</label>
-                  <div className="sail-input-wrap">
-                    <User size={15} className="sail-input-icon" />
+              <div className={persona === 'company' ? 'auth-two-col' : ''} style={{ marginBottom: 14 }}>
+                <div className="auth-field">
+                  <label className="auth-label">Full Name</label>
+                  <div className="auth-input-wrap">
+                    <User size={15} className="auth-input-icon" />
                     <input
                       type="text"
                       placeholder="e.g. Alex Morgan"
                       value={form.name}
                       onChange={(e) => set('name', e.target.value)}
-                      className="sail-input"
+                      className="auth-input"
                       required
                     />
                   </div>
                 </div>
                 {persona === 'company' && (
-                  <div className="sail-field">
-                    <label className="sail-label">Company Name</label>
-                    <div className="sail-input-wrap">
-                      <Building2 size={15} className="sail-input-icon" />
+                  <div className="auth-field">
+                    <label className="auth-label">Company Name</label>
+                    <div className="auth-input-wrap">
+                      <Building2 size={15} className="auth-input-icon" />
                       <input
                         type="text"
                         placeholder="e.g. Acme Corp"
                         value={form.companyName}
                         onChange={(e) => set('companyName', e.target.value)}
-                        className="sail-input"
+                        className="auth-input"
                         required
                       />
                     </div>
@@ -447,50 +395,50 @@ export default function AuthPage() {
             )}
 
             {/* Email Field */}
-            <div className="sail-field">
-              <label className="sail-label">{config.emailLabel}</label>
-              <div className="sail-input-wrap">
-                <Mail size={15} className="sail-input-icon" />
+            <div className="auth-field">
+              <label className="auth-label">{config.emailLabel}</label>
+              <div className="auth-input-wrap">
+                <Mail size={15} className="auth-input-icon" />
                 <input
                   type="email"
                   placeholder={config.emailPlaceholder}
                   autoComplete="email"
                   value={form.email}
                   onChange={(e) => set('email', e.target.value)}
-                  className="sail-input"
+                  className="auth-input"
                   required
                 />
               </div>
             </div>
 
             {/* Password Field */}
-            <div className="sail-field">
-              <div className="sail-label-row">
-                <label className="sail-label">Password</label>
+            <div className="auth-field">
+              <div className="auth-label-row">
+                <label className="auth-label">Password</label>
                 {isLogin && (
                   <span
-                    className="sail-forgot"
+                    className="auth-forgot"
                     onClick={() => { setForgotEmail(form.email || ''); setShowForgotModal(true); }}
                   >
                     Forgot Password?
                   </span>
                 )}
               </div>
-              <div className="sail-input-wrap">
-                <Lock size={15} className="sail-input-icon" />
+              <div className="auth-input-wrap">
+                <Lock size={15} className="auth-input-icon" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Enter your password"
                   autoComplete={isLogin ? 'current-password' : 'new-password'}
                   value={form.password}
                   onChange={(e) => set('password', e.target.value)}
-                  className="sail-input"
+                  className="auth-input"
                   style={{ paddingRight: 40 }}
                   required
                 />
                 <button
                   type="button"
-                  className="sail-eye-btn"
+                  className="auth-eye-btn"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
@@ -498,10 +446,10 @@ export default function AuthPage() {
                 </button>
               </div>
 
-              {/* Password Strength (when registering) */}
+              {/* Password Strength Meter (Registration only) */}
               {!isLogin && form.password && (
-                <div className="sail-strength-bar">
-                  <div className="sail-strength-track">
+                <div className="auth-strength-bar">
+                  <div className="auth-strength-track">
                     <div style={{ flex: 1, height: '100%', borderRadius: 2, background: passStrength.score >= 1 ? passStrength.color : '#e2e8f0' }} />
                     <div style={{ flex: 1, height: '100%', borderRadius: 2, background: passStrength.score >= 2 ? passStrength.color : '#e2e8f0' }} />
                     <div style={{ flex: 1, height: '100%', borderRadius: 2, background: passStrength.score >= 3 ? passStrength.color : '#e2e8f0' }} />
@@ -513,25 +461,25 @@ export default function AuthPage() {
               )}
             </div>
 
-            {/* Confirm Password (when registering) */}
+            {/* Confirm Password (Registration only) */}
             {!isLogin && config.allowRegister && (
-              <div className="sail-field">
-                <label className="sail-label">Confirm Password</label>
-                <div className="sail-input-wrap">
-                  <Lock size={15} className="sail-input-icon" />
+              <div className="auth-field">
+                <label className="auth-label">Confirm Password</label>
+                <div className="auth-input-wrap">
+                  <Lock size={15} className="auth-input-icon" />
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     placeholder="Re-enter your password"
                     autoComplete="new-password"
                     value={form.confirmPassword}
                     onChange={(e) => set('confirmPassword', e.target.value)}
-                    className="sail-input"
+                    className="auth-input"
                     style={{ paddingRight: 40 }}
                     required
                   />
                   <button
                     type="button"
-                    className="sail-eye-btn"
+                    className="auth-eye-btn"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                   >
@@ -543,7 +491,7 @@ export default function AuthPage() {
 
             {/* Remember Me */}
             {isLogin && (
-              <div className="sail-remember">
+              <div className="auth-remember">
                 <input
                   type="checkbox"
                   id="remember-me"
@@ -556,7 +504,7 @@ export default function AuthPage() {
 
             {/* Terms & Privacy */}
             {!isLogin && (
-              <div className="sail-terms-row" onClick={() => setAgreedTerms(!agreedTerms)}>
+              <div className="auth-terms-row" onClick={() => setAgreedTerms(!agreedTerms)}>
                 <input
                   type="checkbox"
                   id="terms-cb"
@@ -583,15 +531,15 @@ export default function AuthPage() {
               </div>
             )}
 
-            {/* Submit Pill Button (SAIL-Style) */}
+            {/* Submit Pill Button */}
             <button
               type="submit"
               disabled={loading}
-              className="sail-submit-btn"
+              className="auth-submit-btn"
               id="auth-submit-btn"
             >
               {loading ? (
-                <span className="sail-spinner" />
+                <span className="auth-spinner" />
               ) : isLogin ? (
                 <>{config.submitText} <ArrowRight size={16} /></>
               ) : (
@@ -603,16 +551,16 @@ export default function AuthPage() {
           {/* Social Sign-In Divider & Button */}
           {persona !== 'admin' && (
             <>
-              <div className="sail-divider">
-                <div className="sail-divider-line" />
+              <div className="auth-divider">
+                <div className="auth-divider-line" />
                 <span>or continue with</span>
-                <div className="sail-divider-line" />
+                <div className="auth-divider-line" />
               </div>
 
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                className="sail-google-btn"
+                className="auth-google-btn"
                 id="auth-google-btn"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24">
@@ -630,13 +578,13 @@ export default function AuthPage() {
 
           {/* Admin Note */}
           {persona === 'admin' && (
-            <p className="sail-admin-note">
+            <p className="auth-admin-note">
               Restricted to authorized <strong style={{ color: '#b8860b' }}>GenuAI Governance</strong> administrators.
             </p>
           )}
 
           {/* Footer Links */}
-          <div className="sail-footer-links">
+          <div className="auth-footer-links">
             <Link href="/">← Home</Link>
             <span>&middot;</span>
             <Link href="/privacy">Privacy Policy</Link>
@@ -650,14 +598,14 @@ export default function AuthPage() {
 
       {/* ======= FORGOT PASSWORD MODAL ======= */}
       {showForgotModal && (
-        <div className="sail-modal-backdrop" onClick={() => setShowForgotModal(false)}>
-          <div className="sail-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="sail-modal-header">
+        <div className="auth-modal-backdrop" onClick={() => setShowForgotModal(false)}>
+          <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="auth-modal-header">
               <h3>Reset Password</h3>
               <button
                 type="button"
                 onClick={() => setShowForgotModal(false)}
-                className="sail-modal-close"
+                className="auth-modal-close"
                 aria-label="Close modal"
               >
                 <X size={18} />
@@ -667,21 +615,21 @@ export default function AuthPage() {
               Enter your registered email address and we will send you secure password reset instructions.
             </p>
             <form onSubmit={handleForgotSubmit}>
-              <div className="sail-field">
-                <label className="sail-label">Email Address</label>
-                <div className="sail-input-wrap">
-                  <Mail size={15} className="sail-input-icon" />
+              <div className="auth-field">
+                <label className="auth-label">Email Address</label>
+                <div className="auth-input-wrap">
+                  <Mail size={15} className="auth-input-icon" />
                   <input
                     type="email"
                     placeholder="you@example.com"
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
-                    className="sail-input"
+                    className="auth-input"
                     required
                   />
                 </div>
               </div>
-              <button type="submit" className="sail-submit-btn" style={{ marginTop: 12 }}>
+              <button type="submit" className="auth-submit-btn" style={{ marginTop: 12 }}>
                 {forgotSent ? 'Reset Link Sent!' : 'Send Reset Link'}
               </button>
             </form>
@@ -691,14 +639,14 @@ export default function AuthPage() {
 
       {/* ======= TERMS & PRIVACY MODAL ======= */}
       {showTermsModal && (
-        <div className="sail-modal-backdrop" onClick={() => setShowTermsModal(false)}>
-          <div className="sail-modal" style={{ maxWidth: 540 }} onClick={(e) => e.stopPropagation()}>
-            <div className="sail-modal-header">
+        <div className="auth-modal-backdrop" onClick={() => setShowTermsModal(false)}>
+          <div className="auth-modal" style={{ maxWidth: 540 }} onClick={(e) => e.stopPropagation()}>
+            <div className="auth-modal-header">
               <h3>Terms &amp; Privacy Overview</h3>
               <button
                 type="button"
                 onClick={() => setShowTermsModal(false)}
-                className="sail-modal-close"
+                className="auth-modal-close"
                 aria-label="Close modal"
               >
                 <X size={18} />
@@ -721,7 +669,7 @@ export default function AuthPage() {
             <button
               type="button"
               onClick={() => { setAgreedTerms(true); setShowTermsModal(false); }}
-              className="sail-submit-btn"
+              className="auth-submit-btn"
               style={{ marginTop: 20 }}
             >
               I Understand &amp; Agree

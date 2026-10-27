@@ -1698,162 +1698,114 @@ tbody tr:hover { background: #f1f5f9; }
    GOOGLE STITCH AUTHENTICATION SUITE (FULL-SIZE PAGE)
    ============================================================ */
 /* ==========================================================================
-   AUTH PAGE — SAIL-INSPIRED SPLIT-SCREEN: IMAGE LEFT + FORM RIGHT
+   AUTH PAGE — FULL-VIEWPORT BACKGROUND IMAGE + CLEAN ELEGANT CARD
    Gold & White Premium Theme for GenuAI Technologies
    ========================================================================== */
 
-.sail-auth-layout {
-  display: flex;
+.auth-fullbg-page {
+  position: relative;
   min-height: 100vh;
   width: 100%;
-  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+  box-sizing: border-box;
   overflow-x: hidden;
   font-family: inherit;
-  background: #ffffff;
 }
 
-/* ============================================================
-   LEFT PANEL — HERO IMAGE WITH PRECISE ANGULAR SLANT & OVERVIEW
-   ============================================================ */
-
-.sail-left-panel {
-  position: relative;
-  flex: 1 1 50%;
-  width: 50%;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  overflow: hidden;
-  clip-path: polygon(0 0, 86% 0, 100% 100%, 0 100%);
-  background: transparent;
-}
-
-/* Background image & gradient tint fill the clipped panel */
-.sail-image-bg {
-  position: absolute;
+/* Fullscreen Background Image */
+.auth-fullbg-backdrop {
+  position: fixed;
   inset: 0;
   background-size: cover;
-  background-position: center top;
+  background-position: center center;
   background-repeat: no-repeat;
   z-index: 0;
 }
 
-.sail-image-tint {
-  position: absolute;
+/* Elegant Warm White-Gold Frosted Overlay */
+.auth-fullbg-overlay {
+  position: fixed;
   inset: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(184, 134, 11, 0.60) 0%,
-    rgba(212, 175, 55, 0.30) 35%,
-    rgba(15, 23, 42, 0.65) 100%
-  );
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(255, 255, 255, 0.88) 0%, rgba(254, 250, 242, 0.82) 45%, rgba(248, 238, 218, 0.78) 100%),
+    linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(15, 23, 42, 0.12) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 1;
 }
 
-/* Left panel content container */
-.sail-left-content {
+/* Center Container */
+.auth-fullbg-container {
   position: relative;
-  z-index: 3;
-  padding: 44px 48px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
-  min-height: 100vh;
-  box-sizing: border-box;
-  max-width: 680px;
-}
-
-/* Top brand in left panel */
-.sail-left-brand-link {
-  display: inline-block;
-  transition: opacity 0.2s;
-}
-.sail-left-brand-link:hover {
-  opacity: 0.92;
-}
-
-
-
-
-
-.sail-left-footer {
-  font-size: 11.5px;
-  color: rgba(255, 255, 255, 0.7);
-  padding-top: 16px;
-}
-
-/* ============================================================
-   RIGHT PANEL — CLEAN WHITE BACKGROUND WITH FRAMED CARD
-   ============================================================ */
-
-.sail-right-panel {
-  flex: 1 1 50%;
-  width: 50%;
-  min-height: 100vh;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 44px 28px;
-  position: relative;
-  overflow-y: auto;
-  box-sizing: border-box;
-}
-
-/* The Framed Login Card (SAIL-Style Card) */
-.sail-form-card {
+  z-index: 2;
   width: 100%;
   max-width: 440px;
-  background: #ffffff;
-  border: 1.5px solid #e8dfc8;
-  border-radius: 22px;
-  padding: 34px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Elegant Login Card */
+.auth-login-card {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1.5px solid rgba(212, 175, 55, 0.38);
+  border-radius: 24px;
+  padding: 38px 32px;
   box-shadow:
-    0 12px 42px -10px rgba(184, 134, 11, 0.11),
-    0 2px 8px rgba(0, 0, 0, 0.03);
+    0 24px 60px -15px rgba(184, 134, 11, 0.18),
+    0 8px 24px -6px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   display: flex;
   flex-direction: column;
   align-items: center;
   box-sizing: border-box;
+  animation: auth-card-fade-in 0.3s ease;
 }
 
-/* Logo row with decorative flanking lines */
-.sail-form-logo-row {
+@keyframes auth-card-fade-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Brand Link */
+.auth-card-brand {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  width: 100%;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
+  text-decoration: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.sail-deco-line {
-  flex: 1;
-  height: 1.5px;
-  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.45), transparent);
+.auth-card-brand:hover {
+  opacity: 0.94;
+  transform: translateY(-1px);
 }
-
-
 
 /* Persona tabs */
-.sail-persona-tabs {
+.auth-persona-tabs {
   display: flex;
   width: 100%;
   background: #fbf9f4;
   border: 1px solid #e8dfc8;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 4px;
   margin-bottom: 16px;
   gap: 3px;
 }
 
-.sail-persona-tab {
+.auth-persona-tab {
   flex: 1;
   padding: 8px 6px;
   font-size: 12px;
   font-weight: 700;
-  border-radius: 7px;
+  border-radius: 9px;
   border: none;
   background: transparent;
   color: #64748b;
@@ -1865,12 +1817,12 @@ tbody tr:hover { background: #f1f5f9; }
   gap: 5px;
 }
 
-.sail-persona-tab:hover {
+.auth-persona-tab:hover {
   color: #0f172a;
   background: rgba(212, 175, 55, 0.08);
 }
 
-.sail-persona-tab.active {
+.auth-persona-tab.active {
   background: #ffffff;
   color: #854d0e;
   border: 1px solid rgba(212, 175, 55, 0.5);
@@ -1878,7 +1830,7 @@ tbody tr:hover { background: #f1f5f9; }
 }
 
 /* Mode toggle */
-.sail-mode-toggle {
+.auth-mode-toggle {
   display: flex;
   width: 100%;
   background: #f1f5f9;
@@ -1889,7 +1841,7 @@ tbody tr:hover { background: #f1f5f9; }
   gap: 2px;
 }
 
-.sail-mode-btn {
+.auth-mode-btn {
   flex: 1;
   padding: 7px 10px;
   font-size: 12px;
@@ -1903,20 +1855,20 @@ tbody tr:hover { background: #f1f5f9; }
   text-align: center;
 }
 
-.sail-mode-btn.active {
+.auth-mode-btn.active {
   background: #ffffff;
   color: #0f172a;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 /* Welcome block */
-.sail-welcome-block {
+.auth-welcome-block {
   width: 100%;
   text-align: center;
   margin-bottom: 20px;
 }
 
-.sail-welcome-title {
+.auth-welcome-title {
   font-size: 21px;
   font-weight: 900;
   color: #0f172a;
@@ -1924,7 +1876,7 @@ tbody tr:hover { background: #f1f5f9; }
   margin: 0 0 6px;
 }
 
-.sail-welcome-sub {
+.auth-welcome-sub {
   font-size: 13px;
   color: #64748b;
   margin: 0;
@@ -1932,7 +1884,7 @@ tbody tr:hover { background: #f1f5f9; }
 }
 
 /* Error box */
-.sail-error-box {
+.auth-error-box {
   width: 100%;
   display: flex;
   align-items: center;
@@ -1949,12 +1901,12 @@ tbody tr:hover { background: #f1f5f9; }
 }
 
 /* Form fields */
-.sail-field {
+.auth-field {
   width: 100%;
   margin-bottom: 14px;
 }
 
-.sail-label {
+.auth-label {
   display: block;
   font-size: 11.5px;
   font-weight: 700;
@@ -1962,14 +1914,14 @@ tbody tr:hover { background: #f1f5f9; }
   margin-bottom: 5px;
 }
 
-.sail-label-row {
+.auth-label-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 5px;
 }
 
-.sail-forgot {
+.auth-forgot {
   font-size: 11px;
   font-weight: 700;
   color: #b8860b;
@@ -1977,18 +1929,18 @@ tbody tr:hover { background: #f1f5f9; }
   transition: color 0.15s;
 }
 
-.sail-forgot:hover {
+.auth-forgot:hover {
   color: #854d0e;
   text-decoration: underline;
 }
 
-.sail-input-wrap {
+.auth-input-wrap {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.sail-input-icon {
+.auth-input-icon {
   position: absolute;
   left: 12px;
   color: #94a3b8;
@@ -1997,11 +1949,11 @@ tbody tr:hover { background: #f1f5f9; }
   z-index: 1;
 }
 
-.sail-input-wrap:focus-within .sail-input-icon {
+.auth-input-wrap:focus-within .auth-input-icon {
   color: #b8860b;
 }
 
-.sail-input {
+.auth-input {
   width: 100%;
   height: 44px;
   padding: 0 13px 0 36px;
@@ -2016,18 +1968,18 @@ tbody tr:hover { background: #f1f5f9; }
   font-family: inherit;
 }
 
-.sail-input:focus {
+.auth-input:focus {
   border-color: #d4af37;
   background: #ffffff;
   box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.16);
 }
 
-.sail-input::placeholder {
+.auth-input::placeholder {
   color: #94a3b8;
   font-size: 13px;
 }
 
-.sail-eye-btn {
+.auth-eye-btn {
   position: absolute;
   right: 12px;
   background: none;
@@ -2040,29 +1992,29 @@ tbody tr:hover { background: #f1f5f9; }
   transition: color 0.15s;
 }
 
-.sail-eye-btn:hover { color: #475569; }
+.auth-eye-btn:hover { color: #475569; }
 
-.sail-strength-bar {
+.auth-strength-bar {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-top: 6px;
 }
 
-.sail-strength-track {
+.auth-strength-track {
   flex: 1;
   display: flex;
   gap: 4px;
   height: 4px;
 }
 
-.sail-two-col {
+.auth-two-col {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
-.sail-remember {
+.auth-remember {
   display: flex;
   align-items: center;
   gap: 7px;
@@ -2072,17 +2024,17 @@ tbody tr:hover { background: #f1f5f9; }
   cursor: pointer;
 }
 
-.sail-remember input {
+.auth-remember input {
   accent-color: #b8860b;
   cursor: pointer;
 }
 
-.sail-remember label {
+.auth-remember label {
   cursor: pointer;
   user-select: none;
 }
 
-.sail-terms-row {
+.auth-terms-row {
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -2094,7 +2046,7 @@ tbody tr:hover { background: #f1f5f9; }
 }
 
 /* Submit Pill Button */
-.sail-submit-btn {
+.auth-submit-btn {
   width: 100%;
   height: 48px;
   border-radius: 99px;
@@ -2116,7 +2068,7 @@ tbody tr:hover { background: #f1f5f9; }
   overflow: hidden;
 }
 
-.sail-submit-btn::before {
+.auth-submit-btn::before {
   content: '';
   position: absolute;
   top: 0;
@@ -2127,42 +2079,42 @@ tbody tr:hover { background: #f1f5f9; }
   transition: left 0.4s ease;
 }
 
-.sail-submit-btn:hover:not(:disabled)::before {
+.auth-submit-btn:hover:not(:disabled)::before {
   left: 100%;
 }
 
-.sail-submit-btn:hover:not(:disabled) {
+.auth-submit-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #a47608 0%, #c9a227 60%, #b8860b 100%);
   box-shadow: 0 8px 28px rgba(184, 134, 11, 0.42);
   transform: translateY(-1px);
 }
 
-.sail-submit-btn:active:not(:disabled) {
+.auth-submit-btn:active:not(:disabled) {
   transform: translateY(0);
   box-shadow: 0 4px 12px rgba(184, 134, 11, 0.28);
 }
 
-.sail-submit-btn:disabled {
+.auth-submit-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
 
 /* Loading spinner */
-.sail-spinner {
+.auth-spinner {
   width: 18px;
   height: 18px;
   border: 2.5px solid rgba(255, 255, 255, 0.4);
   border-top-color: #ffffff;
   border-radius: 50%;
-  animation: sail-spin 0.75s linear infinite;
+  animation: auth-spin 0.75s linear infinite;
 }
 
-@keyframes sail-spin {
+@keyframes auth-spin {
   to { transform: rotate(360deg); }
 }
 
 /* Divider + Google */
-.sail-divider {
+.auth-divider {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -2170,20 +2122,20 @@ tbody tr:hover { background: #f1f5f9; }
   margin: 16px 0 12px;
 }
 
-.sail-divider-line {
+.auth-divider-line {
   flex: 1;
   height: 1px;
   background: #e8dfc8;
 }
 
-.sail-divider span {
+.auth-divider span {
   font-size: 11px;
   color: #94a3b8;
   font-weight: 600;
   text-transform: uppercase;
 }
 
-.sail-google-btn {
+.auth-google-btn {
   width: 100%;
   height: 44px;
   border-radius: 99px;
@@ -2202,13 +2154,13 @@ tbody tr:hover { background: #f1f5f9; }
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
-.sail-google-btn:hover {
+.auth-google-btn:hover {
   border-color: #d4af37;
   box-shadow: 0 3px 12px rgba(184, 134, 11, 0.14);
   background: #fffdf8;
 }
 
-.sail-admin-note {
+.auth-admin-note {
   font-size: 11.5px;
   color: #64748b;
   text-align: center;
@@ -2216,7 +2168,7 @@ tbody tr:hover { background: #f1f5f9; }
 }
 
 /* Footer links */
-.sail-footer-links {
+.auth-footer-links {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2229,22 +2181,22 @@ tbody tr:hover { background: #f1f5f9; }
   font-size: 11.5px;
 }
 
-.sail-footer-links a {
+.auth-footer-links a {
   color: #64748b;
   text-decoration: none;
   font-weight: 600;
   transition: color 0.15s;
 }
 
-.sail-footer-links a:hover { color: #b8860b; }
+.auth-footer-links a:hover { color: #b8860b; }
 
-.sail-footer-links span {
+.auth-footer-links span {
   color: #cbd5e1;
   font-size: 10px;
 }
 
 /* Modal */
-.sail-modal-backdrop {
+.auth-modal-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.55);
@@ -2257,7 +2209,7 @@ tbody tr:hover { background: #f1f5f9; }
   padding: 16px;
 }
 
-.sail-modal {
+.auth-modal {
   background: #ffffff;
   border-radius: 20px;
   padding: 28px;
@@ -2265,30 +2217,30 @@ tbody tr:hover { background: #f1f5f9; }
   max-width: 440px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
   border: 1.5px solid rgba(212, 175, 55, 0.35);
-  animation: sail-modal-in 0.22s ease;
+  animation: auth-modal-in 0.22s ease;
   box-sizing: border-box;
 }
 
-@keyframes sail-modal-in {
+@keyframes auth-modal-in {
   from { transform: scale(0.95) translateY(10px); opacity: 0; }
   to { transform: scale(1) translateY(0); opacity: 1; }
 }
 
-.sail-modal-header {
+.auth-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 14px;
 }
 
-.sail-modal-header h3 {
+.auth-modal-header h3 {
   font-size: 18px;
   font-weight: 900;
   color: #0f172a;
   margin: 0;
 }
 
-.sail-modal-close {
+.auth-modal-close {
   background: none;
   border: none;
   color: #64748b;
@@ -2300,62 +2252,40 @@ tbody tr:hover { background: #f1f5f9; }
   transition: background 0.15s;
 }
 
-.sail-modal-close:hover { background: #f1f5f9; }
-
-/* ============================================================
-   RESPONSIVE BREAKPOINTS
-   ============================================================ */
-
-@media (max-width: 1024px) {
-  .sail-left-panel {
-    display: none;
-  }
-  .sail-right-panel {
-    flex: 1 1 100%;
-    width: 100%;
-    padding: 36px 16px;
-  }
-  .sail-form-card {
-    max-width: 440px;
-  }
-  .sail-auth-layout {
-    justify-content: center;
-  }
-}
+.auth-modal-close:hover { background: #f1f5f9; }
 
 @media (max-width: 640px) {
-  .sail-right-panel {
+  .auth-fullbg-page {
     padding: 24px 12px;
   }
-  .sail-form-card {
-    padding: 26px 18px;
-    border-radius: 16px;
+  .auth-login-card {
+    padding: 28px 20px;
+    border-radius: 18px;
   }
-  .sail-two-col {
+  .auth-two-col {
     grid-template-columns: 1fr !important;
   }
 }
 
 @media (max-width: 480px) {
-  .sail-welcome-title {
+  .auth-welcome-title {
     font-size: 19px;
   }
-  .sail-persona-tab {
+  .auth-persona-tab {
     font-size: 11px;
     padding: 7px 4px;
   }
-  .sail-submit-btn {
+  .auth-submit-btn {
     font-size: 13.5px;
     height: 46px;
   }
 }
 
 @media (max-width: 768px) {
-  .sail-input {
+  .auth-input {
     font-size: 16px !important;
   }
 }
-
 
 /* ============================================================
    DEPARTMENT GRID CARDS — PROFESSIONAL DESIGN
