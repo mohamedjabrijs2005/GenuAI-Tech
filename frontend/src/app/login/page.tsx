@@ -28,8 +28,8 @@ interface PersonaConfig {
 const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
   candidate: {
     label: 'Candidate',
-    cardTitle: 'Welcome to GenuAI',
-    cardSubtitle: 'Sign in to access your candidate workspace',
+    cardTitle: 'Welcome back',
+    cardSubtitle: 'Sign in to your candidate workspace',
     emailLabel: 'Email Address',
     emailPlaceholder: 'you@example.com',
     submitText: 'Sign In',
@@ -37,21 +37,21 @@ const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
   },
   company: {
     label: 'Company',
-    cardTitle: 'Company Workspace',
-    cardSubtitle: 'Sign in to manage vacancies and candidate evidence',
-    emailLabel: 'Work Email Address',
+    cardTitle: 'Welcome back',
+    cardSubtitle: 'Sign in to manage your vacancies',
+    emailLabel: 'Work Email',
     emailPlaceholder: 'you@company.com',
     submitText: 'Sign In',
     allowRegister: true,
   },
   admin: {
     label: 'Admin',
-    cardTitle: 'Admin Dashboard',
-    cardSubtitle: 'Sign in to the governance and administration console',
-    emailLabel: 'Admin Email Address',
+    cardTitle: 'Admin Access',
+    cardSubtitle: 'Sign in to the governance console',
+    emailLabel: 'Admin Email',
     emailPlaceholder: 'admin@genuai.io',
     submitText: 'Access Dashboard',
-    allowRegister: true,
+    allowRegister: false,
   },
 };
 
@@ -59,7 +59,7 @@ export default function AuthPage() {
   const router = useRouter();
   const { login, register: authRegister } = useAuth();
 
-  const [persona, setPersona] = useState<UserPersona>('company');
+  const [persona, setPersona] = useState<UserPersona>('candidate');
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -115,21 +115,21 @@ export default function AuthPage() {
   const getPasswordStrength = (pass: string) => {
     if (!pass) return { score: 0, label: 'None', color: '#cbd5e1' };
     let score = 0;
-    if (pass.length >= 6) score += 1;
-    if (pass.length >= 8) score += 1;
-    if (/[A-Z]/.test(pass) && /[0-9]/.test(pass)) score += 1;
-    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
-    if (score <= 1) return { score: 1, label: 'Weak', color: '#f87171' };
+    if (pass.length >= 6) score++;
+    if (pass.length >= 8) score++;
+    if (/[A-Z]/.test(pass) && /[0-9]/.test(pass)) score++;
+    if (/[^A-Za-z0-9]/.test(pass)) score++;
+    if (score <= 1) return { score: 1, label: 'Weak', color: '#ef4444' };
     if (score <= 3) return { score: 2, label: 'Good', color: '#f59e0b' };
     return { score: 3, label: 'Strong', color: '#10b981' };
   };
 
   const validate = () => {
-    if (!form.email?.trim()) return `Please enter your email address.`;
+    if (!form.email?.trim()) return 'Please enter your email address.';
     if (!validateEmail(form.email)) return 'Please enter a valid email address.';
     if (!form.password?.trim()) return 'Please enter your password.';
     if (!isLogin && config.allowRegister) {
-      if (!agreedTerms) return 'Please agree to the Terms of Service and Privacy Policy.';
+      if (!agreedTerms) return 'Please agree to the Terms of Service.';
       if (!form.name.trim()) return 'Full name is required.';
       if (persona === 'company' && !form.companyName.trim()) return 'Company name is required.';
       if (form.password.length < 8) return 'Password must be at least 8 characters.';
@@ -152,8 +152,7 @@ export default function AuthPage() {
         const firstName = nameParts[0] || 'User';
         const lastName = nameParts.slice(1).join(' ') || 'Member';
         await authRegister({
-          firstName,
-          lastName,
+          firstName, lastName,
           email: form.email.trim(),
           password: form.password,
           role: persona === 'admin' ? 'SUPER_ADMIN' : (persona === 'candidate' ? 'CANDIDATE' : 'COMPANY_OWNER'),
@@ -187,7 +186,7 @@ export default function AuthPage() {
     try {
       await api.post('/auth/forgot-password', { email: forgotEmail.trim().toLowerCase() });
       setForgotSent(true);
-      toast.success('Password reset instructions sent if an account exists.');
+      toast.success('Reset instructions sent if an account exists.');
       setTimeout(() => {
         setShowForgotModal(false);
         setForgotSent(false);
@@ -204,10 +203,7 @@ export default function AuthPage() {
       return;
     }
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    if (!clientId) {
-      toast.error('Google Sign-In is not configured.');
-      return;
-    }
+    if (!clientId) { toast.error('Google Sign-In is not configured.'); return; }
     try {
       setLoading(true);
       if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
@@ -248,247 +244,274 @@ export default function AuthPage() {
   const passStrength = getPasswordStrength(form.password);
 
   return (
-    <div className="auth-page-wrapper">
-      {/* Decorative background orbs */}
-      <div className="auth-bg-orb auth-bg-orb-1" />
-      <div className="auth-bg-orb auth-bg-orb-2" />
-      <div className="auth-bg-orb auth-bg-orb-3" />
+    <div className="sail-auth-layout">
 
-      <div className="auth-center-container">
+      {/* ======= LEFT: IMAGE PANEL ======= */}
+      <div className="sail-left-panel">
+        {/* Background image */}
+        <div className="sail-image-bg" style={{ backgroundImage: "url('/auth-hero.jpg')" }} />
 
-        {/* Logo */}
-        <div className="auth-brand-header">
-          <Link href="/" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div className="sidebar-logo-text gold-gradient-text" style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.5px', lineHeight: 1.1 }}>
-              GenuAI Technologies
+        {/* Gold tint overlay */}
+        <div className="sail-image-tint" />
+
+        {/* Diamond clip shape overlay */}
+        <div className="sail-diamond-shape" />
+
+        {/* Brand content on top of image */}
+        <div className="sail-left-content">
+          <Link href="/" style={{ textDecoration: 'none' }}>
+            <div className="sail-left-logo">
+              <span className="sail-logo-genu">Genu</span><span className="sail-logo-ai">AI</span>
             </div>
-            <span style={{ fontSize: 10, color: '#b8860b', fontWeight: 700, letterSpacing: '1.2px', textTransform: 'uppercase', display: 'block', marginTop: 3 }}>
-              Recruitment Intelligence
-            </span>
+            <div className="sail-left-tagline">Recruitment Intelligence</div>
           </Link>
+
+          <div className="sail-left-hero-text">
+            <h1 className="sail-left-headline">
+              Hire with<br />evidence.<br />Not guesswork.
+            </h1>
+            <p className="sail-left-sub">
+              Transparent, human-led recruitment connecting real talent to real roles.
+            </p>
+          </div>
+
+          <div className="sail-left-pills">
+            <span className="sail-pill">Human-Led Decisions</span>
+            <span className="sail-pill">Evidence-Based Hiring</span>
+            <span className="sail-pill">Privacy Isolated</span>
+          </div>
         </div>
+      </div>
 
-        {/* Auth Card */}
-        <div className="auth-card-elegant">
+      {/* ======= RIGHT: FORM PANEL ======= */}
+      <div className="sail-right-panel">
+        <div className="sail-form-container">
 
-          {/* Persona Switcher */}
-          <div className="auth-persona-tabs">
-            <button type="button" onClick={() => handlePersonaChange('candidate')} className={`auth-persona-tab ${persona === 'candidate' ? 'active' : ''}`}>
-              <User size={13} /><span>Candidate</span>
-            </button>
-            <button type="button" onClick={() => handlePersonaChange('company')} className={`auth-persona-tab ${persona === 'company' ? 'active' : ''}`}>
-              <Building2 size={13} /><span>Company</span>
-            </button>
-            <button type="button" onClick={() => handlePersonaChange('admin')} className={`auth-persona-tab ${persona === 'admin' ? 'active' : ''}`}>
-              <ShieldCheck size={13} /><span>Admin</span>
-            </button>
+          {/* Top logo + decorative lines (like SAIL) */}
+          <div className="sail-form-logo-row">
+            <div className="sail-deco-line" />
+            <Link href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
+              <div className="sail-form-logo">
+                <span className="sail-logo-genu">Genu</span><span className="sail-logo-ai">AI</span>
+              </div>
+              <div className="sail-form-powered">Recruitment Intelligence</div>
+            </Link>
+            <div className="sail-deco-line" />
+          </div>
+
+          {/* Persona tabs */}
+          <div className="sail-persona-tabs">
+            {(['candidate', 'company', 'admin'] as UserPersona[]).map((p) => {
+              const icons: Record<UserPersona, React.ReactNode> = {
+                candidate: <User size={13} />,
+                company: <Building2 size={13} />,
+                admin: <ShieldCheck size={13} />,
+              };
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => handlePersonaChange(p)}
+                  className={`sail-persona-tab${persona === p ? ' active' : ''}`}
+                >
+                  {icons[p]}
+                  <span>{PERSONA_CONFIG[p].label}</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* Sign In / Create Account toggle */}
           {config.allowRegister && (
-            <div className="auth-pill-switch">
+            <div className="sail-mode-toggle">
               <button
                 type="button"
                 onClick={() => { setIsLogin(true); setError(''); }}
-                className={`auth-pill-btn ${isLogin ? 'active' : ''}`}
+                className={`sail-mode-btn${isLogin ? ' active' : ''}`}
               >Sign In</button>
               <button
                 type="button"
                 onClick={() => { setIsLogin(false); setError(''); }}
-                className={`auth-pill-btn ${!isLogin ? 'active' : ''}`}
+                className={`sail-mode-btn${!isLogin ? ' active' : ''}`}
               >Create Account</button>
             </div>
           )}
 
-          {/* Title */}
-          <div style={{ marginBottom: 20 }}>
-            <h2 className="auth-form-title">
-              {isLogin ? config.cardTitle : (persona === 'company' ? 'Create Company Account' : persona === 'admin' ? 'Create Admin Account' : 'Create Candidate Account')}
+          {/* Welcome text */}
+          <div className="sail-welcome-block">
+            <h2 className="sail-welcome-title">
+              {isLogin
+                ? config.cardTitle
+                : (persona === 'company' ? 'Create Company Account' : 'Create Your Account')}
             </h2>
-            <p className="auth-form-subtitle">
-              {isLogin ? config.cardSubtitle : 'Get started with your GenuAI account'}
+            <p className="sail-welcome-sub">
+              {isLogin ? config.cardSubtitle : 'Get started with GenuAI — free to join'}
             </p>
           </div>
 
           {/* Error */}
           {error && (
-            <div style={{
-              background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c',
-              fontSize: 12, fontWeight: 600, padding: '10px 14px', borderRadius: 10,
-              marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8,
-            }}>
-              <AlertCircle size={15} style={{ flexShrink: 0, color: '#ef4444' }} />
+            <div className="sail-error-box">
+              <AlertCircle size={14} />
               <span>{error}</span>
             </div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleSubmit}>
+          {/* FORM */}
+          <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+
+            {/* Register-only fields */}
             {!isLogin && config.allowRegister && (
-              <div className={persona === 'company' ? 'auth-two-col-grid' : ''} style={{ gap: 10, marginBottom: 12 }}>
-                <div>
-                  <label className="auth-input-label">Full Name *</label>
-                  <div className="auth-input-wrapper">
-                    <User size={15} className="auth-input-icon" />
-                    <input type="text" placeholder="Your full name" value={form.name} onChange={(e) => set('name', e.target.value)} className="auth-text-input" />
+              <div className={persona === 'company' ? 'sail-two-col' : ''} style={{ marginBottom: 14 }}>
+                <div className="sail-field">
+                  <label className="sail-label">Full Name</label>
+                  <div className="sail-input-wrap">
+                    <User size={15} className="sail-input-icon" />
+                    <input type="text" placeholder="Your full name" value={form.name} onChange={(e) => set('name', e.target.value)} className="sail-input" />
                   </div>
                 </div>
                 {persona === 'company' && (
-                  <div>
-                    <label className="auth-input-label">Company Name *</label>
-                    <div className="auth-input-wrapper">
-                      <Building2 size={15} className="auth-input-icon" />
-                      <input type="text" placeholder="Your company" value={form.companyName} onChange={(e) => set('companyName', e.target.value)} className="auth-text-input" />
+                  <div className="sail-field">
+                    <label className="sail-label">Company Name</label>
+                    <div className="sail-input-wrap">
+                      <Building2 size={15} className="sail-input-icon" />
+                      <input type="text" placeholder="Your company" value={form.companyName} onChange={(e) => set('companyName', e.target.value)} className="sail-input" />
                     </div>
                   </div>
                 )}
               </div>
             )}
 
-            <div className="auth-input-group">
-              <label className="auth-input-label">{config.emailLabel} *</label>
-              <div className="auth-input-wrapper">
-                <Mail size={15} className="auth-input-icon" />
+            {/* Email */}
+            <div className="sail-field">
+              <label className="sail-label">{config.emailLabel}</label>
+              <div className="sail-input-wrap">
+                <Mail size={15} className="sail-input-icon" />
                 <input
                   type="email"
                   placeholder={config.emailPlaceholder}
                   autoComplete="email"
                   value={form.email}
                   onChange={(e) => set('email', e.target.value)}
-                  className="auth-text-input"
+                  className="sail-input"
                 />
               </div>
             </div>
 
-            <div className="auth-input-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                <label className="auth-input-label" style={{ margin: 0 }}>Password *</label>
+            {/* Password */}
+            <div className="sail-field">
+              <div className="sail-label-row">
+                <label className="sail-label">Password</label>
                 {isLogin && (
-                  <span
-                    onClick={() => { setForgotEmail(form.email || ''); setShowForgotModal(true); }}
-                    style={{ fontSize: 11, fontWeight: 700, color: '#b8860b', cursor: 'pointer' }}
-                  >Forgot Password?</span>
+                  <span className="sail-forgot" onClick={() => { setForgotEmail(form.email || ''); setShowForgotModal(true); }}>
+                    Forgot Password?
+                  </span>
                 )}
               </div>
-              <div className="auth-input-wrapper">
-                <Lock size={15} className="auth-input-icon" />
+              <div className="sail-input-wrap">
+                <Lock size={15} className="sail-input-icon" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Enter your password"
                   autoComplete={isLogin ? 'current-password' : 'new-password'}
                   value={form.password}
                   onChange={(e) => set('password', e.target.value)}
-                  className="auth-text-input"
-                  style={{ paddingRight: 38 }}
+                  className="sail-input"
+                  style={{ paddingRight: 40 }}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', background: 'none', border: 'none', display: 'flex', alignItems: 'center', cursor: 'pointer', padding: 0 }}
-                >
+                <button type="button" className="sail-eye-btn" onClick={() => setShowPassword(!showPassword)}>
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
               {!isLogin && form.password && (
-                <div style={{ marginTop: 6 }}>
-                  <div style={{ display: 'flex', gap: 4, height: 3, marginBottom: 4 }}>
-                    <div style={{ flex: 1, borderRadius: 2, background: passStrength.score >= 1 ? passStrength.color : '#e2e8f0' }} />
-                    <div style={{ flex: 1, borderRadius: 2, background: passStrength.score >= 2 ? passStrength.color : '#e2e8f0' }} />
-                    <div style={{ flex: 1, borderRadius: 2, background: passStrength.score >= 3 ? passStrength.color : '#e2e8f0' }} />
+                <div className="sail-strength-bar">
+                  <div className="sail-strength-track">
+                    <div style={{ flex: 1, height: '100%', borderRadius: 2, background: passStrength.score >= 1 ? passStrength.color : '#e2e8f0' }} />
+                    <div style={{ flex: 1, height: '100%', borderRadius: 2, background: passStrength.score >= 2 ? passStrength.color : '#e2e8f0' }} />
+                    <div style={{ flex: 1, height: '100%', borderRadius: 2, background: passStrength.score >= 3 ? passStrength.color : '#e2e8f0' }} />
                   </div>
-                  <span style={{ fontSize: 10, color: passStrength.color, fontWeight: 700 }}>Password Strength: {passStrength.label}</span>
+                  <span style={{ fontSize: 10.5, color: passStrength.color, fontWeight: 700 }}>{passStrength.label}</span>
                 </div>
               )}
             </div>
 
+            {/* Confirm password */}
             {!isLogin && config.allowRegister && (
-              <div className="auth-input-group">
-                <label className="auth-input-label">Confirm Password *</label>
-                <div className="auth-input-wrapper">
-                  <Lock size={15} className="auth-input-icon" />
+              <div className="sail-field">
+                <label className="sail-label">Confirm Password</label>
+                <div className="sail-input-wrap">
+                  <Lock size={15} className="sail-input-icon" />
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     placeholder="Re-enter password"
                     autoComplete="new-password"
                     value={form.confirmPassword}
                     onChange={(e) => set('confirmPassword', e.target.value)}
-                    className="auth-text-input"
-                    style={{ paddingRight: 38 }}
+                    className="sail-input"
+                    style={{ paddingRight: 40 }}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', background: 'none', border: 'none', display: 'flex', alignItems: 'center', cursor: 'pointer', padding: 0 }}
-                  >
+                  <button type="button" className="sail-eye-btn" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                     {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
               </div>
             )}
 
+            {/* Remember me */}
             {isLogin && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11.5, color: '#64748b', marginBottom: 14 }}>
+              <div className="sail-remember">
                 <input
                   type="checkbox"
-                  id="remember-checkbox"
+                  id="remember-me"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  style={{ accentColor: '#b8860b', cursor: 'pointer' }}
+                  style={{ accentColor: '#b8860b' }}
                 />
-                <label htmlFor="remember-checkbox" style={{ cursor: 'pointer', userSelect: 'none' }}>Stay signed in</label>
+                <label htmlFor="remember-me">Stay signed in</label>
               </div>
             )}
 
+            {/* Terms */}
             {!isLogin && (
-              <div className="auth-terms-box" onClick={() => setAgreedTerms(!agreedTerms)}>
+              <div className="sail-terms-row" onClick={() => setAgreedTerms(!agreedTerms)}>
                 <input
                   type="checkbox"
-                  id="terms-checkbox"
+                  id="terms-cb"
                   checked={agreedTerms}
                   onChange={(e) => setAgreedTerms(e.target.checked)}
-                  style={{ marginTop: 2, cursor: 'pointer', accentColor: '#b8860b' }}
+                  style={{ accentColor: '#b8860b', marginTop: 1, flexShrink: 0 }}
                 />
-                <label htmlFor="terms-checkbox" style={{ cursor: 'pointer', fontSize: 11, color: '#475569', lineHeight: 1.45 }}>
+                <label htmlFor="terms-cb">
                   I agree to the{' '}
-                  <span onClick={(e) => { e.stopPropagation(); setShowTermsModal(true); }} style={{ color: '#854d0e', fontWeight: 700, textDecoration: 'underline' }}>Terms of Service</span>
+                  <span onClick={(e) => { e.stopPropagation(); setShowTermsModal(true); }} style={{ color: '#b8860b', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}>Terms</span>
                   {' '}and{' '}
-                  <span onClick={(e) => { e.stopPropagation(); setShowTermsModal(true); }} style={{ color: '#854d0e', fontWeight: 700, textDecoration: 'underline' }}>Privacy Policy</span>.
+                  <span onClick={(e) => { e.stopPropagation(); setShowTermsModal(true); }} style={{ color: '#b8860b', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}>Privacy Policy</span>
                 </label>
               </div>
             )}
 
-            <button type="submit" disabled={loading} className="auth-submit-btn">
-              {loading ? <span>Signing in…</span> : isLogin ? (
-                <><span>{config.submitText}</span><ArrowRight size={15} /></>
+            {/* Submit — SAIL-style full-width pill */}
+            <button type="submit" disabled={loading} className="sail-submit-btn">
+              {loading ? (
+                <span className="sail-spinner" />
+              ) : isLogin ? (
+                <>{config.submitText} <ArrowRight size={16} /></>
               ) : (
-                <><span>{persona === 'company' ? 'Create Company Account' : persona === 'admin' ? 'Create Admin Account' : 'Create Candidate Account'}</span><ArrowRight size={15} /></>
+                <>{persona === 'company' ? 'Create Company Account' : 'Create Account'} <ArrowRight size={16} /></>
               )}
             </button>
           </form>
 
-          {/* Google Sign-In */}
+          {/* Divider + Google */}
           {persona !== 'admin' && (
-            <div style={{ marginTop: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '12px 0 10px' }}>
-                <div style={{ flex: 1, height: 1, background: '#e8e0cc' }} />
-                <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>or</span>
-                <div style={{ flex: 1, height: 1, background: '#e8e0cc' }} />
+            <>
+              <div className="sail-divider">
+                <div className="sail-divider-line" />
+                <span>or</span>
+                <div className="sail-divider-line" />
               </div>
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                style={{
-                  width: '100%', height: 44, borderRadius: 10,
-                  border: '1px solid #e2d8c0', background: '#ffffff',
-                  color: '#334155', fontSize: 13, fontWeight: 600,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  gap: 10, cursor: 'pointer',
-                  boxShadow: '0 1px 4px rgba(184,134,11,0.08)',
-                  transition: 'box-shadow 0.18s ease, border-color 0.18s ease',
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#d4af37'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 2px 12px rgba(184,134,11,0.16)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#e2d8c0'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 1px 4px rgba(184,134,11,0.08)'; }}
-              >
+
+              <button type="button" onClick={handleGoogleSignIn} className="sail-google-btn">
                 <svg width="18" height="18" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -497,63 +520,51 @@ export default function AuthPage() {
                 </svg>
                 <span>Continue with Google</span>
               </button>
-            </div>
+            </>
           )}
 
           <Script src="https://accounts.google.com/gsi/client" strategy="lazyOnload" />
 
+          {/* Admin note */}
           {persona === 'admin' && (
-            <div style={{ marginTop: 14, textAlign: 'center' }}>
-              <p style={{ fontSize: 11, color: '#64748b', margin: 0 }}>
-                Restricted to authorized <strong style={{ color: '#854d0e' }}>administrator</strong> accounts.
-              </p>
-            </div>
+            <p style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', marginTop: 12 }}>
+              Restricted to authorized <strong style={{ color: '#b8860b' }}>administrator</strong> accounts.
+            </p>
           )}
 
           {/* Footer links */}
-          <div style={{
-            marginTop: 22, paddingTop: 16, borderTop: '1px solid #f0ebe0',
-            display: 'flex', flexDirection: 'column', gap: 8,
-            alignItems: 'center', textAlign: 'center',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-              <Link href="/" style={{ fontSize: 12, fontWeight: 700, color: '#475569', textDecoration: 'none' }}>← Home</Link>
-              <span style={{ color: '#d4c9a8' }}>•</span>
-              <Link href="/register" style={{ fontSize: 12, fontWeight: 700, color: '#854d0e', textDecoration: 'none' }}>Get Started</Link>
-              <span style={{ color: '#d4c9a8' }}>•</span>
-              <Link href="/trust" style={{ fontSize: 12, fontWeight: 600, color: '#64748b', textDecoration: 'none' }}>Privacy</Link>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'center', fontSize: 11, color: '#94a3b8' }}>
-              <Link href="/privacy" style={{ color: '#94a3b8', textDecoration: 'none' }}>Privacy Policy</Link>
-              <span>•</span>
-              <Link href="/terms" style={{ color: '#94a3b8', textDecoration: 'none' }}>Terms of Use</Link>
-              <span>•</span>
-              <Link href="/contact" style={{ color: '#94a3b8', textDecoration: 'none' }}>Contact</Link>
-            </div>
+          <div className="sail-footer-links">
+            <Link href="/">← Home</Link>
+            <span>·</span>
+            <Link href="/register">Get Started</Link>
+            <span>·</span>
+            <Link href="/privacy">Privacy</Link>
+            <span>·</span>
+            <Link href="/terms">Terms</Link>
           </div>
         </div>
       </div>
 
-      {/* Forgot Password Modal */}
+      {/* ======= FORGOT PASSWORD MODAL ======= */}
       {showForgotModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 16 }}>
-          <div style={{ background: '#ffffff', borderRadius: 18, padding: 28, maxWidth: 420, width: '100%', boxShadow: '0 24px 56px rgba(0,0,0,0.18)', border: '1px solid rgba(212,175,55,0.3)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', margin: 0 }}>Reset Password</h3>
-              <button type="button" onClick={() => setShowForgotModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={18} /></button>
+        <div className="sail-modal-backdrop">
+          <div className="sail-modal">
+            <div className="sail-modal-header">
+              <h3>Reset Password</h3>
+              <button onClick={() => setShowForgotModal(false)} className="sail-modal-close"><X size={18} /></button>
             </div>
-            <p style={{ fontSize: 13, color: '#475569', marginBottom: 16, lineHeight: 1.5 }}>
-              Enter your registered email address and we'll send you password reset instructions.
+            <p style={{ fontSize: 13, color: '#475569', marginBottom: 16, lineHeight: 1.55 }}>
+              Enter your registered email and we'll send reset instructions.
             </p>
             <form onSubmit={handleForgotSubmit}>
-              <div style={{ marginBottom: 16 }}>
-                <label className="auth-input-label">Email Address</label>
-                <div className="auth-input-wrapper">
-                  <Mail size={15} className="auth-input-icon" />
-                  <input type="email" placeholder="you@example.com" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} className="auth-text-input" required />
+              <div className="sail-field">
+                <label className="sail-label">Email Address</label>
+                <div className="sail-input-wrap">
+                  <Mail size={15} className="sail-input-icon" />
+                  <input type="email" placeholder="you@example.com" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} className="sail-input" required />
                 </div>
               </div>
-              <button type="submit" className="auth-submit-btn" style={{ marginTop: 0 }}>
+              <button type="submit" className="sail-submit-btn" style={{ marginTop: 8 }}>
                 {forgotSent ? 'Reset Link Sent!' : 'Send Reset Link'}
               </button>
             </form>
@@ -561,22 +572,25 @@ export default function AuthPage() {
         </div>
       )}
 
-      {/* Terms Modal */}
+      {/* ======= TERMS MODAL ======= */}
       {showTermsModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 16 }}>
-          <div style={{ background: '#ffffff', borderRadius: 18, padding: 28, maxWidth: 500, width: '100%', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 24px 56px rgba(0,0,0,0.18)', border: '1px solid rgba(212,175,55,0.3)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', margin: 0 }}>Terms of Service & Privacy Policy</h3>
-              <button type="button" onClick={() => setShowTermsModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={18} /></button>
+        <div className="sail-modal-backdrop">
+          <div className="sail-modal" style={{ maxWidth: 500 }}>
+            <div className="sail-modal-header">
+              <h3>Terms of Service & Privacy Policy</h3>
+              <button onClick={() => setShowTermsModal(false)} className="sail-modal-close"><X size={18} /></button>
             </div>
-            <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.65, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.65, display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '60vh', overflowY: 'auto' }}>
               <p><strong>1. Evidence-Based Evaluation</strong>: GenuAI provides recruitment intelligence with verifiable skill assessment records. All evaluation evidence is traceable to company-defined role requirements.</p>
-              <p><strong>2. Human Authority</strong>: GenuAI does not make automated hiring or rejection decisions. Final recruitment authority remains exclusively with human recruiters and hiring managers.</p>
-              <p><strong>3. Data Privacy</strong>: Candidate and company evaluation data is compartmentalized with strict multi-tenant isolation and not shared across organizations.</p>
+              <p><strong>2. Human Authority</strong>: GenuAI does not make automated hiring or rejection decisions. Final authority remains with human recruiters and hiring managers.</p>
+              <p><strong>3. Data Privacy</strong>: Candidate and company data is compartmentalized with strict multi-tenant isolation and not shared across organizations.</p>
             </div>
-            <button type="button" onClick={() => { setAgreedTerms(true); setShowTermsModal(false); }} className="auth-submit-btn" style={{ marginTop: 20 }}>
-              I Accept & Agree
-            </button>
+            <button
+              type="button"
+              onClick={() => { setAgreedTerms(true); setShowTermsModal(false); }}
+              className="sail-submit-btn"
+              style={{ marginTop: 20 }}
+            >I Accept & Agree</button>
           </div>
         </div>
       )}
