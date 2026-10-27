@@ -7,7 +7,7 @@ import Script from 'next/script';
 import {
   Eye, EyeOff, Lock, Mail,
   AlertCircle, ArrowRight, Building2, User,
-  ShieldCheck, X,
+  ShieldCheck, X, CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
@@ -28,29 +28,29 @@ interface PersonaConfig {
 const PERSONA_CONFIG: Record<UserPersona, PersonaConfig> = {
   candidate: {
     label: 'Candidate',
-    cardTitle: 'Welcome back',
-    cardSubtitle: 'Sign in to your candidate workspace',
+    cardTitle: 'Candidate Login',
+    cardSubtitle: 'Sign in to your candidate workspace & interview portal',
     emailLabel: 'Email Address',
     emailPlaceholder: 'you@example.com',
-    submitText: 'Sign In',
+    submitText: 'Sign In to Workspace',
     allowRegister: true,
   },
   company: {
     label: 'Company',
-    cardTitle: 'Welcome back',
-    cardSubtitle: 'Sign in to manage your vacancies',
+    cardTitle: 'Employer Portal',
+    cardSubtitle: 'Sign in to publish vacancies & review talent evaluations',
     emailLabel: 'Work Email',
-    emailPlaceholder: 'you@company.com',
-    submitText: 'Sign In',
+    emailPlaceholder: 'recruiter@company.com',
+    submitText: 'Access Company Portal',
     allowRegister: true,
   },
   admin: {
     label: 'Admin',
-    cardTitle: 'Admin Access',
-    cardSubtitle: 'Sign in to the governance console',
+    cardTitle: 'Platform Governance',
+    cardSubtitle: 'Sign in to the GenuAI trust & compliance console',
     emailLabel: 'Admin Email',
     emailPlaceholder: 'admin@genuai.io',
-    submitText: 'Access Dashboard',
+    submitText: 'Enter Governance Console',
     allowRegister: false,
   },
 };
@@ -129,7 +129,7 @@ export default function AuthPage() {
     if (!validateEmail(form.email)) return 'Please enter a valid email address.';
     if (!form.password?.trim()) return 'Please enter your password.';
     if (!isLogin && config.allowRegister) {
-      if (!agreedTerms) return 'Please agree to the Terms of Service.';
+      if (!agreedTerms) return 'Please agree to the Terms of Service & Privacy Policy.';
       if (!form.name.trim()) return 'Full name is required.';
       if (persona === 'company' && !form.companyName.trim()) return 'Company name is required.';
       if (form.password.length < 8) return 'Password must be at least 8 characters.';
@@ -246,60 +246,98 @@ export default function AuthPage() {
   return (
     <div className="sail-auth-layout">
 
-      {/* ======= LEFT: IMAGE PANEL ======= */}
+      {/* ======= LEFT: HERO IMAGE & TRUTHFUL OVERVIEW PANEL ======= */}
       <div className="sail-left-panel">
-        {/* Background image */}
+        {/* Background image & gradient tint clipped with precise diagonal slant */}
         <div className="sail-image-bg" style={{ backgroundImage: "url('/auth-hero.jpg')" }} />
-
-        {/* Gold tint overlay */}
         <div className="sail-image-tint" />
 
-        {/* Diamond clip shape overlay */}
-        <div className="sail-diamond-shape" />
-
-        {/* Brand content on top of image */}
+        {/* Content on left panel */}
         <div className="sail-left-content">
-          <Link href="/" style={{ textDecoration: 'none' }}>
+          {/* Top Brand Link */}
+          <Link href="/" style={{ textDecoration: 'none' }} className="sail-left-brand-link">
             <div className="sail-left-logo">
-              <span className="sail-logo-genu">Genu</span><span className="sail-logo-ai">AI</span>
+              <span className="sail-left-brand-genu">Genu</span>
+              <span className="sail-left-brand-ai">AI</span>
+              <span className="sail-left-brand-tech"> Technologies</span>
             </div>
-            <div className="sail-left-tagline">Recruitment Intelligence</div>
+            <div className="sail-left-tagline">Structured Recruitment & Verification Platform</div>
           </Link>
 
-          <div className="sail-left-hero-text">
-            <h1 className="sail-left-headline">
-              Hire with<br />evidence.<br />Not guesswork.
+          {/* Truthful Auth Overview Card */}
+          <div className="sail-left-overview-card">
+            <div className="sail-overview-badge">
+              <ShieldCheck size={14} />
+              <span>GenuAI Platform Overview</span>
+            </div>
+
+            <h1 className="sail-overview-headline">
+              Hire with evidence.<br />Not guesswork.
             </h1>
-            <p className="sail-left-sub">
-              Transparent, human-led recruitment connecting real talent to real roles.
+
+            <p className="sail-overview-desc">
+              GenuAI Technologies provides a requirement-centered recruitment environment connecting verified candidates to high-growth companies through objective, structured evaluations.
             </p>
+
+            <div className="sail-overview-pillars">
+              <div className="sail-pillar-item">
+                <CheckCircle2 size={16} className="sail-pillar-icon" />
+                <div>
+                  <strong>Role-Specific Skill Benchmarks</strong>
+                  <p>Evaluation rubrics aligned to real company vacancy criteria.</p>
+                </div>
+              </div>
+
+              <div className="sail-pillar-item">
+                <CheckCircle2 size={16} className="sail-pillar-icon" />
+                <div>
+                  <strong>Human-in-the-Loop Decision Making</strong>
+                  <p>AI assists interview structuring; human hiring leaders make all decisions.</p>
+                </div>
+              </div>
+
+              <div className="sail-pillar-item">
+                <CheckCircle2 size={16} className="sail-pillar-icon" />
+                <div>
+                  <strong>Role-Partitioned Governance</strong>
+                  <p>Strict privacy isolation for Candidates, Employers, and Admin consoles.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="sail-trust-tags">
+              <span className="sail-trust-tag">Candidate Hub</span>
+              <span className="sail-trust-tag">Employer Portal</span>
+              <span className="sail-trust-tag">Trust & Governance</span>
+            </div>
           </div>
 
-          <div className="sail-left-pills">
-            <span className="sail-pill">Human-Led Decisions</span>
-            <span className="sail-pill">Evidence-Based Hiring</span>
-            <span className="sail-pill">Privacy Isolated</span>
+          {/* Bottom Copyright */}
+          <div className="sail-left-footer">
+            <span>&copy; {new Date().getFullYear()} GenuAI Technologies &middot; Confidential &amp; Encrypted</span>
           </div>
         </div>
       </div>
 
-      {/* ======= RIGHT: FORM PANEL ======= */}
+      {/* ======= RIGHT: FORM PANEL WITH ELEGANT FRAMED CARD ======= */}
       <div className="sail-right-panel">
-        <div className="sail-form-container">
+        <div className="sail-form-card">
 
-          {/* Top logo + decorative lines (like SAIL) */}
+          {/* Top Logo + Decorative Lines (SAIL-Signature) */}
           <div className="sail-form-logo-row">
             <div className="sail-deco-line" />
-            <Link href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
+            <Link href="/" style={{ textDecoration: 'none', flexShrink: 0, textAlign: 'center' }}>
               <div className="sail-form-logo">
-                <span className="sail-logo-genu">Genu</span><span className="sail-logo-ai">AI</span>
+                <span className="sail-logo-genu">Genu</span>
+                <span className="sail-logo-ai">AI</span>
+                <span className="sail-logo-tech"> Technologies</span>
               </div>
-              <div className="sail-form-powered">Recruitment Intelligence</div>
+              <div className="sail-form-powered">Recruitment &amp; Assessment Platform</div>
             </Link>
             <div className="sail-deco-line" />
           </div>
 
-          {/* Persona tabs */}
+          {/* Persona Selection Tabs */}
           <div className="sail-persona-tabs">
             {(['candidate', 'company', 'admin'] as UserPersona[]).map((p) => {
               const icons: Record<UserPersona, React.ReactNode> = {
@@ -313,6 +351,7 @@ export default function AuthPage() {
                   type="button"
                   onClick={() => handlePersonaChange(p)}
                   className={`sail-persona-tab${persona === p ? ' active' : ''}`}
+                  id={`auth-persona-tab-${p}`}
                 >
                   {icons[p]}
                   <span>{PERSONA_CONFIG[p].label}</span>
@@ -321,38 +360,44 @@ export default function AuthPage() {
             })}
           </div>
 
-          {/* Sign In / Create Account toggle */}
+          {/* Sign In / Create Account Toggle */}
           {config.allowRegister && (
             <div className="sail-mode-toggle">
               <button
                 type="button"
                 onClick={() => { setIsLogin(true); setError(''); }}
                 className={`sail-mode-btn${isLogin ? ' active' : ''}`}
-              >Sign In</button>
+                id="auth-mode-signin"
+              >
+                Sign In
+              </button>
               <button
                 type="button"
                 onClick={() => { setIsLogin(false); setError(''); }}
                 className={`sail-mode-btn${!isLogin ? ' active' : ''}`}
-              >Create Account</button>
+                id="auth-mode-register"
+              >
+                Create Account
+              </button>
             </div>
           )}
 
-          {/* Welcome text */}
+          {/* Welcome Text */}
           <div className="sail-welcome-block">
             <h2 className="sail-welcome-title">
               {isLogin
-                ? config.cardTitle
-                : (persona === 'company' ? 'Create Company Account' : 'Create Your Account')}
+                ? (persona === 'admin' ? 'Platform Governance' : `Welcome to GenuAI Technologies!`)
+                : (persona === 'company' ? 'Register Company Account' : 'Create Candidate Account')}
             </h2>
             <p className="sail-welcome-sub">
-              {isLogin ? config.cardSubtitle : 'Get started with GenuAI — free to join'}
+              {isLogin ? config.cardSubtitle : 'Get started with verified recruitment — free to register'}
             </p>
           </div>
 
-          {/* Error */}
+          {/* Error Message */}
           {error && (
             <div className="sail-error-box">
-              <AlertCircle size={14} />
+              <AlertCircle size={15} style={{ flexShrink: 0 }} />
               <span>{error}</span>
             </div>
           )}
@@ -367,7 +412,14 @@ export default function AuthPage() {
                   <label className="sail-label">Full Name</label>
                   <div className="sail-input-wrap">
                     <User size={15} className="sail-input-icon" />
-                    <input type="text" placeholder="Your full name" value={form.name} onChange={(e) => set('name', e.target.value)} className="sail-input" />
+                    <input
+                      type="text"
+                      placeholder="e.g. Alex Morgan"
+                      value={form.name}
+                      onChange={(e) => set('name', e.target.value)}
+                      className="sail-input"
+                      required
+                    />
                   </div>
                 </div>
                 {persona === 'company' && (
@@ -375,14 +427,21 @@ export default function AuthPage() {
                     <label className="sail-label">Company Name</label>
                     <div className="sail-input-wrap">
                       <Building2 size={15} className="sail-input-icon" />
-                      <input type="text" placeholder="Your company" value={form.companyName} onChange={(e) => set('companyName', e.target.value)} className="sail-input" />
+                      <input
+                        type="text"
+                        placeholder="e.g. Acme Corp"
+                        value={form.companyName}
+                        onChange={(e) => set('companyName', e.target.value)}
+                        className="sail-input"
+                        required
+                      />
                     </div>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Email */}
+            {/* Email Field */}
             <div className="sail-field">
               <label className="sail-label">{config.emailLabel}</label>
               <div className="sail-input-wrap">
@@ -394,16 +453,20 @@ export default function AuthPage() {
                   value={form.email}
                   onChange={(e) => set('email', e.target.value)}
                   className="sail-input"
+                  required
                 />
               </div>
             </div>
 
-            {/* Password */}
+            {/* Password Field */}
             <div className="sail-field">
               <div className="sail-label-row">
                 <label className="sail-label">Password</label>
                 {isLogin && (
-                  <span className="sail-forgot" onClick={() => { setForgotEmail(form.email || ''); setShowForgotModal(true); }}>
+                  <span
+                    className="sail-forgot"
+                    onClick={() => { setForgotEmail(form.email || ''); setShowForgotModal(true); }}
+                  >
                     Forgot Password?
                   </span>
                 )}
@@ -418,11 +481,19 @@ export default function AuthPage() {
                   onChange={(e) => set('password', e.target.value)}
                   className="sail-input"
                   style={{ paddingRight: 40 }}
+                  required
                 />
-                <button type="button" className="sail-eye-btn" onClick={() => setShowPassword(!showPassword)}>
+                <button
+                  type="button"
+                  className="sail-eye-btn"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
+
+              {/* Password Strength (when registering) */}
               {!isLogin && form.password && (
                 <div className="sail-strength-bar">
                   <div className="sail-strength-track">
@@ -430,12 +501,14 @@ export default function AuthPage() {
                     <div style={{ flex: 1, height: '100%', borderRadius: 2, background: passStrength.score >= 2 ? passStrength.color : '#e2e8f0' }} />
                     <div style={{ flex: 1, height: '100%', borderRadius: 2, background: passStrength.score >= 3 ? passStrength.color : '#e2e8f0' }} />
                   </div>
-                  <span style={{ fontSize: 10.5, color: passStrength.color, fontWeight: 700 }}>{passStrength.label}</span>
+                  <span style={{ fontSize: 10.5, color: passStrength.color, fontWeight: 700 }}>
+                    {passStrength.label}
+                  </span>
                 </div>
               )}
             </div>
 
-            {/* Confirm password */}
+            {/* Confirm Password (when registering) */}
             {!isLogin && config.allowRegister && (
               <div className="sail-field">
                 <label className="sail-label">Confirm Password</label>
@@ -443,21 +516,27 @@ export default function AuthPage() {
                   <Lock size={15} className="sail-input-icon" />
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="Re-enter password"
+                    placeholder="Re-enter your password"
                     autoComplete="new-password"
                     value={form.confirmPassword}
                     onChange={(e) => set('confirmPassword', e.target.value)}
                     className="sail-input"
                     style={{ paddingRight: 40 }}
+                    required
                   />
-                  <button type="button" className="sail-eye-btn" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                  <button
+                    type="button"
+                    className="sail-eye-btn"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
                     {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Remember me */}
+            {/* Remember Me */}
             {isLogin && (
               <div className="sail-remember">
                 <input
@@ -465,13 +544,12 @@ export default function AuthPage() {
                   id="remember-me"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  style={{ accentColor: '#b8860b' }}
                 />
-                <label htmlFor="remember-me">Stay signed in</label>
+                <label htmlFor="remember-me">Stay signed in to GenuAI</label>
               </div>
             )}
 
-            {/* Terms */}
+            {/* Terms & Privacy */}
             {!isLogin && (
               <div className="sail-terms-row" onClick={() => setAgreedTerms(!agreedTerms)}>
                 <input
@@ -479,39 +557,59 @@ export default function AuthPage() {
                   id="terms-cb"
                   checked={agreedTerms}
                   onChange={(e) => setAgreedTerms(e.target.checked)}
-                  style={{ accentColor: '#b8860b', marginTop: 1, flexShrink: 0 }}
+                  style={{ accentColor: '#b8860b', marginTop: 2, flexShrink: 0 }}
                 />
                 <label htmlFor="terms-cb">
                   I agree to the{' '}
-                  <span onClick={(e) => { e.stopPropagation(); setShowTermsModal(true); }} style={{ color: '#b8860b', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}>Terms</span>
+                  <span
+                    onClick={(e) => { e.stopPropagation(); setShowTermsModal(true); }}
+                    style={{ color: '#b8860b', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}
+                  >
+                    Terms of Service
+                  </span>
                   {' '}and{' '}
-                  <span onClick={(e) => { e.stopPropagation(); setShowTermsModal(true); }} style={{ color: '#b8860b', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}>Privacy Policy</span>
+                  <span
+                    onClick={(e) => { e.stopPropagation(); setShowTermsModal(true); }}
+                    style={{ color: '#b8860b', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}
+                  >
+                    Privacy Policy
+                  </span>
                 </label>
               </div>
             )}
 
-            {/* Submit — SAIL-style full-width pill */}
-            <button type="submit" disabled={loading} className="sail-submit-btn">
+            {/* Submit Pill Button (SAIL-Style) */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="sail-submit-btn"
+              id="auth-submit-btn"
+            >
               {loading ? (
                 <span className="sail-spinner" />
               ) : isLogin ? (
                 <>{config.submitText} <ArrowRight size={16} /></>
               ) : (
-                <>{persona === 'company' ? 'Create Company Account' : 'Create Account'} <ArrowRight size={16} /></>
+                <>{persona === 'company' ? 'Register Company' : 'Complete Registration'} <ArrowRight size={16} /></>
               )}
             </button>
           </form>
 
-          {/* Divider + Google */}
+          {/* Social Sign-In Divider & Button */}
           {persona !== 'admin' && (
             <>
               <div className="sail-divider">
                 <div className="sail-divider-line" />
-                <span>or</span>
+                <span>or continue with</span>
                 <div className="sail-divider-line" />
               </div>
 
-              <button type="button" onClick={handleGoogleSignIn} className="sail-google-btn">
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                className="sail-google-btn"
+                id="auth-google-btn"
+              >
                 <svg width="18" height="18" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -525,46 +623,60 @@ export default function AuthPage() {
 
           <Script src="https://accounts.google.com/gsi/client" strategy="lazyOnload" />
 
-          {/* Admin note */}
+          {/* Admin Note */}
           {persona === 'admin' && (
-            <p style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', marginTop: 12 }}>
-              Restricted to authorized <strong style={{ color: '#b8860b' }}>administrator</strong> accounts.
+            <p className="sail-admin-note">
+              Restricted to authorized <strong style={{ color: '#b8860b' }}>GenuAI Governance</strong> administrators.
             </p>
           )}
 
-          {/* Footer links */}
+          {/* Footer Links */}
           <div className="sail-footer-links">
             <Link href="/">← Home</Link>
-            <span>·</span>
-            <Link href="/register">Get Started</Link>
-            <span>·</span>
-            <Link href="/privacy">Privacy</Link>
-            <span>·</span>
-            <Link href="/terms">Terms</Link>
+            <span>&middot;</span>
+            <Link href="/privacy">Privacy Policy</Link>
+            <span>&middot;</span>
+            <Link href="/terms">Terms of Service</Link>
+            <span>&middot;</span>
+            <Link href="/trust">Trust Center</Link>
           </div>
         </div>
       </div>
 
       {/* ======= FORGOT PASSWORD MODAL ======= */}
       {showForgotModal && (
-        <div className="sail-modal-backdrop">
-          <div className="sail-modal">
+        <div className="sail-modal-backdrop" onClick={() => setShowForgotModal(false)}>
+          <div className="sail-modal" onClick={(e) => e.stopPropagation()}>
             <div className="sail-modal-header">
               <h3>Reset Password</h3>
-              <button onClick={() => setShowForgotModal(false)} className="sail-modal-close"><X size={18} /></button>
+              <button
+                type="button"
+                onClick={() => setShowForgotModal(false)}
+                className="sail-modal-close"
+                aria-label="Close modal"
+              >
+                <X size={18} />
+              </button>
             </div>
             <p style={{ fontSize: 13, color: '#475569', marginBottom: 16, lineHeight: 1.55 }}>
-              Enter your registered email and we'll send reset instructions.
+              Enter your registered email address and we will send you secure password reset instructions.
             </p>
             <form onSubmit={handleForgotSubmit}>
               <div className="sail-field">
                 <label className="sail-label">Email Address</label>
                 <div className="sail-input-wrap">
                   <Mail size={15} className="sail-input-icon" />
-                  <input type="email" placeholder="you@example.com" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} className="sail-input" required />
+                  <input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    className="sail-input"
+                    required
+                  />
                 </div>
               </div>
-              <button type="submit" className="sail-submit-btn" style={{ marginTop: 8 }}>
+              <button type="submit" className="sail-submit-btn" style={{ marginTop: 12 }}>
                 {forgotSent ? 'Reset Link Sent!' : 'Send Reset Link'}
               </button>
             </form>
@@ -572,28 +684,47 @@ export default function AuthPage() {
         </div>
       )}
 
-      {/* ======= TERMS MODAL ======= */}
+      {/* ======= TERMS & PRIVACY MODAL ======= */}
       {showTermsModal && (
-        <div className="sail-modal-backdrop">
-          <div className="sail-modal" style={{ maxWidth: 500 }}>
+        <div className="sail-modal-backdrop" onClick={() => setShowTermsModal(false)}>
+          <div className="sail-modal" style={{ maxWidth: 540 }} onClick={(e) => e.stopPropagation()}>
             <div className="sail-modal-header">
-              <h3>Terms of Service & Privacy Policy</h3>
-              <button onClick={() => setShowTermsModal(false)} className="sail-modal-close"><X size={18} /></button>
+              <h3>Terms &amp; Privacy Overview</h3>
+              <button
+                type="button"
+                onClick={() => setShowTermsModal(false)}
+                className="sail-modal-close"
+                aria-label="Close modal"
+              >
+                <X size={18} />
+              </button>
             </div>
-            <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.65, display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '60vh', overflowY: 'auto' }}>
-              <p><strong>1. Evidence-Based Evaluation</strong>: GenuAI provides recruitment intelligence with verifiable skill assessment records. All evaluation evidence is traceable to company-defined role requirements.</p>
-              <p><strong>2. Human Authority</strong>: GenuAI does not make automated hiring or rejection decisions. Final authority remains with human recruiters and hiring managers.</p>
-              <p><strong>3. Data Privacy</strong>: Candidate and company data is compartmentalized with strict multi-tenant isolation and not shared across organizations.</p>
+            <div style={{ maxHeight: 340, overflowY: 'auto', paddingRight: 6, fontSize: 13, color: '#475569', lineHeight: 1.65 }}>
+              <h4 style={{ color: '#0f172a', margin: '0 0 6px', fontSize: 14 }}>1. Evidence-Based Evaluation</h4>
+              <p style={{ margin: '0 0 12px' }}>
+                GenuAI Technologies provides role-specific evaluation workspaces. All scoring rubrics and assessments are objective and based on documented vacancy criteria.
+              </p>
+              <h4 style={{ color: '#0f172a', margin: '0 0 6px', fontSize: 14 }}>2. Candidate Privacy &amp; Data Isolation</h4>
+              <p style={{ margin: '0 0 12px' }}>
+                Your personal and evaluation data is strictly partitioned. Data is never sold, shared across unverified third parties, or used to train public generative models.
+              </p>
+              <h4 style={{ color: '#0f172a', margin: '0 0 6px', fontSize: 14 }}>3. Human-in-the-Loop Governance</h4>
+              <p style={{ margin: 0 }}>
+                AI evaluations are analytical recommendations provided to employers. All final recruitment decisions are made by human hiring leaders.
+              </p>
             </div>
             <button
               type="button"
               onClick={() => { setAgreedTerms(true); setShowTermsModal(false); }}
               className="sail-submit-btn"
               style={{ marginTop: 20 }}
-            >I Accept & Agree</button>
+            >
+              I Understand &amp; Agree
+            </button>
           </div>
         </div>
       )}
+
     </div>
   );
 }
