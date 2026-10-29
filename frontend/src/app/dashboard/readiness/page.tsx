@@ -252,7 +252,11 @@ export default function RoleReadinessPage() {
               </span>
             </div>
             <p className="page-subtitle" style={{ marginTop: 6 }}>
-              {roleTitle ? `${roleTitle} — candidate qualification pipeline` : 'Track verified candidate readiness across your active vacancies'}
+              {vacanciesLoading
+                ? 'Loading role readiness pipeline…'
+                : roleTitle
+                ? `${roleTitle} — candidate qualification pipeline`
+                : 'Track verified candidate readiness across your active vacancies'}
             </p>
           </div>
 
@@ -307,8 +311,33 @@ export default function RoleReadinessPage() {
         </div>
       </div>
 
-      {/* ── Empty State when no vacancies exist ── */}
-      {!vacanciesLoading && vacancies.length === 0 ? (
+      {/* ── Loading State ── */}
+      {vacanciesLoading ? (
+        <div style={{
+          background: '#ffffff',
+          borderRadius: 14,
+          border: '1px solid var(--border)',
+          padding: '60px 24px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '340px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+        }}>
+          <div style={{
+            width: 38, height: 38, borderRadius: '50%',
+            border: '3px solid #e2e8f0', borderTopColor: '#b8860b',
+            animation: 'spin 0.8s linear infinite', marginBottom: 14,
+          }} />
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
+            Loading Readiness Pipeline
+          </div>
+          <div style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>
+            Retrieving real vacancy metrics for {companyDisplayName}…
+          </div>
+        </div>
+      ) : vacancies.length === 0 ? (
         <div style={{
           background: '#ffffff',
           borderRadius: 14,
