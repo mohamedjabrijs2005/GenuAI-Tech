@@ -292,40 +292,57 @@ export default function RoleReadinessFunnelPage() {
         </div>
       </div>
 
-      {/* ── Value Proposition Banner ─────────────────────────────── */}
-      <div className="funnel-value-banner" style={{
-        background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #4338ca 100%)',
-        borderRadius: 14,
-        padding: '22px 28px',
-        marginBottom: 28,
+      {/* ── Recruiter Efficiency Value Card ── */}
+      <div style={{
+        background: '#ffffff',
+        border: '1px solid var(--border)',
+        borderRadius: 12,
+        padding: '20px 24px',
+        marginBottom: 24,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: 16,
+        gap: 18,
       }}>
-        <div style={{ flex: '1 1 300px' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            GenuAI Reduces Screening Time
+        <div style={{ flex: '1 1 320px', minWidth: 260 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            fontSize: 11.5, fontWeight: 700, color: '#b8860b',
+            textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 6,
+          }}>
+            <Zap size={13} style={{ color: '#b8860b' }} />
+            Recruiter Screening Efficiency
           </div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.4 }}>
-            From <span style={{ color: '#fde68a' }}>{funnelData.targetsCreated} total candidates</span> to{' '}
-            <span style={{ color: '#a5f3fc' }}>{funnelData.coverageQualified} evidence-backed</span> — ready for recruiter review
+          <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.35, letterSpacing: '-0.2px' }}>
+            Recruiter reviews only the <span style={{ color: '#059669', background: 'rgba(5,150,105,0.08)', padding: '1px 6px', borderRadius: 4 }}>{funnelData.coverageQualified} candidates meeting coverage</span>, not all {funnelData.targetsCreated}.
+          </div>
+          <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 6, lineHeight: 1.5 }}>
+            Candidates demonstrate capability through structured preparation and verifiable evidence before recruiter review.
           </div>
         </div>
-        <div className="funnel-banner-stats" style={{
-          display: 'flex', gap: 20, flexWrap: 'wrap',
-          background: 'rgba(255,255,255,0.08)', borderRadius: 10, padding: '14px 20px',
+
+        <div style={{
+          display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center',
         }}>
           {[
-            { label: 'Targeted', val: funnelData.targetsCreated, color: '#c7d2fe' },
-            { label: 'Assessment Ready', val: funnelData.assessmentSubmitted, color: '#a5f3fc' },
-            { label: 'Evidence Backed', val: funnelData.coverageQualified, color: '#fde68a' },
-            { label: 'Hired', val: funnelData.hired, color: '#bbf7d0' },
-          ].map(({ label, val, color }) => (
-            <div key={label} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 26, fontWeight: 900, color, lineHeight: 1 }}>{val}</div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 3, fontWeight: 600 }}>{label}</div>
+            { label: 'Targets Created', val: funnelData.targetsCreated, badgeBg: '#eff6ff', badgeColor: '#1d4ed8', border: '#bfdbfe' },
+            { label: 'Assessment Ready', val: funnelData.assessmentSubmitted, badgeBg: '#f0fdf4', badgeColor: '#15803d', border: '#bbf7d0' },
+            { label: 'Coverage Qualified', val: funnelData.coverageQualified, badgeBg: '#fefce8', badgeColor: '#a16207', border: '#fef08a' },
+            { label: 'Hired', val: funnelData.hired, badgeBg: '#faf5ff', badgeColor: '#7e22ce', border: '#e9d5ff' },
+          ].map(({ label, val, badgeBg, badgeColor, border }) => (
+            <div key={label} style={{
+              background: badgeBg,
+              border: `1px solid ${border}`,
+              borderRadius: 10,
+              padding: '12px 18px',
+              textAlign: 'center',
+              minWidth: 105,
+              flex: '1 1 auto',
+            }}>
+              <div style={{ fontSize: 24, fontWeight: 900, color: badgeColor, lineHeight: 1 }}>{val}</div>
+              <div style={{ fontSize: 11, color: '#475569', marginTop: 4, fontWeight: 600 }}>{label}</div>
             </div>
           ))}
         </div>

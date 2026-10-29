@@ -30,20 +30,27 @@ interface EvidenceRecord {
 
 export default function EvidencePage() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [selectedCandidateId, setSelectedCandidateId] = useState<string>('cand-1');
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     async function load() {
-      const data = await DataService.getCandidates();
-      setCandidates(data);
-      if (data.length > 0) {
-        setSelectedCandidateId(data[0].id);
+      try {
+        const data = await DataService.getCandidates();
+        setCandidates(data);
+        if (data.length > 0) {
+          setSelectedCandidateId(data[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to load candidates for evidence:', err);
+      } finally {
+        setIsLoading(false);
       }
     }
     load();
   }, []);
 
-  const currentCandidate = candidates.find(c => c.id === selectedCandidateId) || candidates[0];
+  const currentCandidate = candidates.find(c => c.id === selectedCandidateId) || candidates[0] || null;
 
   // Dynamic requirements evidence matrix for candidate
   const requirements: EvidenceRecord[] = [
@@ -164,32 +171,69 @@ export default function EvidencePage() {
         </div>
       </div>
 
+      {/* Empty State when no candidates */}
+      {!isLoading && candidates.length === 0 && (
+        <div style={{
+          background: '#ffffff',
+          borderRadius: 12,
+          border: '1px solid var(--border)',
+          padding: '48px 32px',
+          textAlign: 'center',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+          marginBottom: 24,
+        }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: 12,
+            background: 'rgba(184,134,11,0.1)', color: '#b8860b',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 16px',
+          }}>
+            <ShieldCheck size={26} />
+          </div>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 8 }}>
+            No Candidate Evidence Dossiers Yet
+          </h2>
+          <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', maxWidth: 500, margin: '0 auto 20px', lineHeight: 1.5 }}>
+            Evidence dossiers and requirement traceability logs are generated as candidates complete targeted assessments and submit verifiable evidence for your company vacancies.
+          </p>
+          <Link
+            href="/dashboard/vacancies"
+            className="btn btn-gold"
+            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+          >
+            <span>View Company Vacancies</span>
+          </Link>
+        </div>
+      )}
+
       {/* Candidate Selector Bar */}
-      <div className="card" style={{ marginBottom: 24, padding: '16px 20px' }}>
-        <div className="flex items-center justify-between" style={{ flexWrap: 'wrap', gap: 14 }}>
-          <div className="flex items-center gap-3">
-            <span style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text-primary)' }}>Select Candidate Dossier:</span>
-            <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
-              {candidates.map(c => (
-                <button
-                  key={c.id}
-                  onClick={() => setSelectedCandidateId(c.id)}
-                  className={`btn btn-sm ${selectedCandidateId === c.id ? 'btn-gold' : 'btn-secondary'}`}
-                >
-                  {c.name} ({c.score ? `${c.score}%` : c.stage})
-                </button>
-              ))}
+      {candidates.length > 0 && (
+        <div className="card" style={{ marginBottom: 24, padding: '16px 20px' }}>
+          <div className="flex items-center justify-between" style={{ flexWrap: 'wrap', gap: 14 }}>
+            <div className="flex items-center gap-3">
+              <span style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text-primary)' }}>Select Candidate Dossier:</span>
+              <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
+                {candidates.map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => setSelectedCandidateId(c.id)}
+                    className={`btn btn-sm ${selectedCandidateId === c.id ? 'btn-gold' : 'btn-secondary'}`}
+                  >
+                    {c.name} ({c.score ? `${c.score}%` : c.stage})
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={16} style={{ color: '#059669' }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
+                SHA-256 Payload Integrity Verified
+              </span>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <ShieldCheck size={16} style={{ color: '#059669' }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
-              SHA-256 Payload Integrity Verified
-            </span>
-          </div>
         </div>
-      </div>
+      )}
 
       {currentCandidate && (
         <div className="grid-3" style={{ gap: 24, alignItems: 'flex-start' }}>

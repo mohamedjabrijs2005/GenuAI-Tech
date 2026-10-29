@@ -76,7 +76,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       />
       <div className="main-content">
         <Topbar onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} />
-        <main className="page-content">{children}</main>
+        <main className="dashboard-main-content" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          {children}
+        </main>
       </div>
     </div>
   );

@@ -254,7 +254,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="page-content" style={{ background: 'var(--surface)', minHeight: '100vh', padding: '24px 32px 48px' }}>
+    <div className="page-content" style={{ background: 'var(--surface)', minHeight: '100vh' }}>
       
       {/* ================= 1. RECRUITER WORKSPACE HEADER ================= */}
       <div style={{
