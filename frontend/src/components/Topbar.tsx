@@ -111,17 +111,71 @@ export default function Topbar({ onToggleMobileSidebar }: TopbarProps) {
         </div>
 
         {/* Company Verification Status Pill */}
-        {isVerified ? (
-          <span className="badge badge-green topbar-compact-mobile" style={{ fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-            <ShieldCheck size={13} style={{ color: 'var(--success)' }} />
-            Approved
-          </span>
-        ) : (
-          <span className="badge badge-yellow topbar-compact-mobile" style={{ fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-            <ShieldCheck size={13} style={{ color: 'var(--warning)' }} />
-            {rawStatus === 'PENDING_VERIFICATION' ? 'Pending' : rawStatus.replace(/_/g, ' ') || 'Pending'}
-          </span>
-        )}
+        {(() => {
+          if (isVerified) {
+            return (
+              <span className="topbar-compact-mobile" style={{
+                fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0,
+                display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 999,
+                background: 'rgba(5, 150, 105, 0.1)', color: '#059669', border: '1px solid rgba(5, 150, 105, 0.25)',
+                fontWeight: 700,
+              }}>
+                <ShieldCheck size={13} style={{ color: '#059669' }} />
+                Approved
+              </span>
+            );
+          }
+          if (rawStatus === 'UNDER_REVIEW') {
+            return (
+              <span className="topbar-compact-mobile" style={{
+                fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0,
+                display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 999,
+                background: 'rgba(37, 99, 235, 0.1)', color: '#2563eb', border: '1px solid rgba(37, 99, 235, 0.25)',
+                fontWeight: 700,
+              }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563eb' }} />
+                Under Review
+              </span>
+            );
+          }
+          if (rawStatus === 'ADDITIONAL_INFORMATION_REQUIRED' || rawStatus === 'CHANGES_REQUESTED') {
+            return (
+              <span className="topbar-compact-mobile" style={{
+                fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0,
+                display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 999,
+                background: 'rgba(217, 119, 6, 0.1)', color: '#d97706', border: '1px solid rgba(217, 119, 6, 0.25)',
+                fontWeight: 700,
+              }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#d97706' }} />
+                Action Required
+              </span>
+            );
+          }
+          if (rawStatus === 'REJECTED' || rawStatus === 'SUSPENDED') {
+            return (
+              <span className="topbar-compact-mobile" style={{
+                fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0,
+                display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 999,
+                background: 'rgba(239, 68, 68, 0.1)', color: '#dc2626', border: '1px solid rgba(239, 68, 68, 0.25)',
+                fontWeight: 700,
+              }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#dc2626' }} />
+                {rawStatus === 'SUSPENDED' ? 'Suspended' : 'Rejected'}
+              </span>
+            );
+          }
+          return (
+            <span className="topbar-compact-mobile" style={{
+              fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0,
+              display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 999,
+              background: 'rgba(217, 119, 6, 0.1)', color: '#d97706', border: '1px solid rgba(217, 119, 6, 0.25)',
+              fontWeight: 700,
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#d97706' }} />
+              Pending
+            </span>
+          );
+        })()}
       </div>
     </header>
   );

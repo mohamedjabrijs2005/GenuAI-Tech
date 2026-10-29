@@ -35,7 +35,7 @@ interface ActivityItem {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, company } = useAuth();
+  const { user, company, refreshAuth } = useAuth();
 
   const [vacancies, setVacancies] = useState<Vacancy[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -95,7 +95,10 @@ export default function DashboardPage() {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await fetchData();
+    await Promise.all([
+      refreshAuth(),
+      fetchData(),
+    ]);
     toast.success('Workspace synchronized with database');
   };
 
@@ -219,36 +222,70 @@ export default function DashboardPage() {
     return <span className="badge badge-gray">{statusStr}</span>;
   };
 
-  // Helper for Company Verification Badge
+  // Helper for Company Verification Badge with Fixed Alignment
   const renderCompanyStatusBadge = () => {
     const s = companyStatus.toUpperCase();
     if (s === 'APPROVED' || s === 'VERIFIED') {
       return (
         <span style={{
-          display: 'inline-flex', alignItems: 'center', gap: 5,
-          padding: '3px 10px', borderRadius: '999px', fontSize: 12, fontWeight: 700,
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '4px 12px', borderRadius: '999px', fontSize: 12, fontWeight: 700,
           background: 'rgba(5, 150, 105, 0.1)', color: '#059669', border: '1px solid rgba(5, 150, 105, 0.25)',
+          whiteSpace: 'nowrap', flexShrink: 0,
         }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669' }} />
-          Approved
+          <ShieldCheck size={14} style={{ color: '#059669' }} />
+          Verified & Approved
         </span>
       );
     }
-    if (s === 'PENDING_VERIFICATION' || s === 'UNDER_REVIEW') {
+    if (s === 'UNDER_REVIEW') {
       return (
         <span style={{
-          display: 'inline-flex', alignItems: 'center', gap: 5,
-          padding: '3px 10px', borderRadius: '999px', fontSize: 12, fontWeight: 700,
-          background: 'rgba(217, 119, 6, 0.1)', color: '#d97706', border: '1px solid rgba(217, 119, 6, 0.25)',
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '4px 12px', borderRadius: '999px', fontSize: 12, fontWeight: 700,
+          background: 'rgba(37, 99, 235, 0.1)', color: '#2563eb', border: '1px solid rgba(37, 99, 235, 0.25)',
+          whiteSpace: 'nowrap', flexShrink: 0,
         }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#d97706' }} />
-          Pending Verification
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563eb' }} />
+          Under Admin Review
+        </span>
+      );
+    }
+    if (s === 'ADDITIONAL_INFORMATION_REQUIRED' || s === 'CHANGES_REQUESTED') {
+      return (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '4px 12px', borderRadius: '999px', fontSize: 12, fontWeight: 700,
+          background: 'rgba(217, 119, 6, 0.1)', color: '#d97706', border: '1px solid rgba(217, 119, 6, 0.25)',
+          whiteSpace: 'nowrap', flexShrink: 0,
+        }}>
+          <AlertCircle size={14} style={{ color: '#d97706' }} />
+          Action Required
+        </span>
+      );
+    }
+    if (s === 'REJECTED' || s === 'SUSPENDED') {
+      return (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '4px 12px', borderRadius: '999px', fontSize: 12, fontWeight: 700,
+          background: 'rgba(239, 68, 68, 0.1)', color: '#dc2626', border: '1px solid rgba(239, 68, 68, 0.25)',
+          whiteSpace: 'nowrap', flexShrink: 0,
+        }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#dc2626' }} />
+          {s === 'SUSPENDED' ? 'Suspended' : 'Rejected'}
         </span>
       );
     }
     return (
-      <span className="badge badge-gray" style={{ fontSize: 12 }}>
-        {companyStatus.replace('_', ' ')}
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        padding: '4px 12px', borderRadius: '999px', fontSize: 12, fontWeight: 700,
+        background: 'rgba(217, 119, 6, 0.1)', color: '#d97706', border: '1px solid rgba(217, 119, 6, 0.25)',
+        whiteSpace: 'nowrap', flexShrink: 0,
+      }}>
+        <Clock size={14} style={{ color: '#d97706' }} />
+        Pending Verification
       </span>
     );
   };
@@ -303,7 +340,7 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          <div style={{ borderLeft: '1px solid var(--border)', paddingLeft: 14 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center' }}>
             {renderCompanyStatusBadge()}
           </div>
         </div>

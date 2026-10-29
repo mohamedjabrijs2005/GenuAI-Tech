@@ -93,7 +93,72 @@ export default function Sidebar({ isMobileOpen = false, onCloseMobile }: Sidebar
   const displayName = user ? `${user.firstName} ${user.lastName}`.trim() : 'User';
   const displayEmail = user?.email || '';
   const companyName = company?.name || 'Workspace';
-  const isVerified = company?.verificationStatus === 'APPROVED' || company?.verificationStatus === 'VERIFIED';
+  const rawStatus = (company?.verificationStatus || 'PENDING_VERIFICATION').toUpperCase();
+  const getStatusBadge = () => {
+    if (rawStatus === 'APPROVED' || rawStatus === 'VERIFIED') {
+      return (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999,
+          background: 'rgba(5, 150, 105, 0.1)', color: '#059669', border: '1px solid rgba(5, 150, 105, 0.25)',
+          flexShrink: 0,
+        }}>
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#059669' }} />
+          Approved
+        </span>
+      );
+    }
+    if (rawStatus === 'UNDER_REVIEW') {
+      return (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999,
+          background: 'rgba(37, 99, 235, 0.1)', color: '#2563eb', border: '1px solid rgba(37, 99, 235, 0.25)',
+          flexShrink: 0,
+        }}>
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#2563eb' }} />
+          Under Review
+        </span>
+      );
+    }
+    if (rawStatus === 'ADDITIONAL_INFORMATION_REQUIRED' || rawStatus === 'CHANGES_REQUESTED') {
+      return (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999,
+          background: 'rgba(217, 119, 6, 0.1)', color: '#d97706', border: '1px solid rgba(217, 119, 6, 0.25)',
+          flexShrink: 0,
+        }}>
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#d97706' }} />
+          Action Req.
+        </span>
+      );
+    }
+    if (rawStatus === 'REJECTED' || rawStatus === 'SUSPENDED') {
+      return (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999,
+          background: 'rgba(239, 68, 68, 0.1)', color: '#dc2626', border: '1px solid rgba(239, 68, 68, 0.25)',
+          flexShrink: 0,
+        }}>
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#dc2626' }} />
+          {rawStatus === 'SUSPENDED' ? 'Suspended' : 'Rejected'}
+        </span>
+      );
+    }
+    return (
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999,
+        background: 'rgba(217, 119, 6, 0.1)', color: '#d97706', border: '1px solid rgba(217, 119, 6, 0.25)',
+        flexShrink: 0,
+      }}>
+        <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#d97706' }} />
+        Pending
+      </span>
+    );
+  };
   const initials = user ? `${user.firstName?.[0] || 'U'}${user.lastName?.[0] || ''}`.toUpperCase() : 'U';
 
   return (
@@ -133,16 +198,13 @@ export default function Sidebar({ isMobileOpen = false, onCloseMobile }: Sidebar
 
       {/* Company Workspace */}
       <div className="sidebar-workspace" style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-          <span className="sidebar-workspace-label" style={{ margin: 0, fontSize: 10, letterSpacing: '0.8px', color: '#94a3b8' }}>WORKSPACE</span>
-          {isVerified && (
-            <span className="gold-badge" style={{ fontSize: 9.5, padding: '1px 7px', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <span className="badge-dot" style={{ background: '#d4af37', width: 5, height: 5 }} />
-              Verified
-            </span>
-          )}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+          <span className="sidebar-workspace-label" style={{ margin: 0, fontSize: 10, letterSpacing: '0.8px', fontWeight: 800, color: '#64748b' }}>
+            WORKSPACE
+          </span>
+          {getStatusBadge()}
         </div>
-        <div className="sidebar-workspace-name" style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div className="sidebar-workspace-name" style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {companyName}
         </div>
       </div>

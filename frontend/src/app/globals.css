@@ -2658,14 +2658,36 @@ a.btn,
 /* ============================================================
    LANDING & AUTH PAGE RESPONSIVENESS & ALIGNMENT
    ============================================================ */
-.auth-top-nav {
-  margin-bottom: 20px;
+.auth-page-wrapper {
+  position: relative;
+  min-height: 100vh;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 32px 18px !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden;
 }
 
-.auth-card {
-  padding: 34px 32px 28px;
-  margin-top: 10px;
-  margin-bottom: 24px;
+@media (min-width: 641px) {
+  .auth-page-wrapper {
+    padding: 72px 24px 40px !important;
+  }
+  
+  .auth-top-nav {
+    position: fixed !important;
+    top: 24px !important;
+    left: 32px !important;
+    right: 32px !important;
+    width: auto !important;
+    max-width: none !important;
+    margin-bottom: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    z-index: 30 !important;
+  }
 }
 
 @media (max-width: 640px) {
@@ -2674,8 +2696,15 @@ a.btn,
   }
 
   .auth-top-nav {
-    margin-bottom: 14px !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 440px !important;
+    margin-bottom: 16px !important;
     padding: 0 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    z-index: 20 !important;
   }
 
   .auth-card {
@@ -2688,6 +2717,22 @@ a.btn,
   .auth-name-grid {
     grid-template-columns: 1fr !important;
   }
+}
+
+.auth-card {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 440px;
+  margin: auto;
+  box-sizing: border-box;
+  padding: 34px 32px 28px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-radius: 24px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45), 0 4px 16px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.9);
 }
 
 /* Dashboard Workspace Header & Mobile Alignment */

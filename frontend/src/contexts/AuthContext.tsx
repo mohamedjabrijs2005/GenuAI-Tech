@@ -96,6 +96,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     refreshAuth();
+
+    // 1. Real-time synchronization on window focus and tab visibility change
+    const onFocusOrVisible = () => {
+      if (document.visibilityState === 'visible') {
+        refreshAuth();
+      }
+    };
+    window.addEventListener('focus', onFocusOrVisible);
+    document.addEventListener('visibilitychange', onFocusOrVisible);
+
+    // 2. Cross-tab real-time BroadcastChannel sync
+    let syncChannel: BroadcastChannel | null = null;
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        syncChannel = new BroadcastChannel('genuai_status_sync');
+        syncChannel.onmessage = (event) => {
+          if (event?.data?.type === 'COMPANY_STATUS_UPDATED' || event?.data?.type === 'AUTH_SYNC') {
+            refreshAuth();
+          }
+        };
+      }
+    } catch (_) {}
+
+    // 3. Local custom event listener
+    const onCustomSync = () => refreshAuth();
+    window.addEventListener('genuai:company-status-updated', onCustomSync);
+
+    // 4. Periodic background poll every 6 seconds to detect live admin verification changes
+    const interval = setInterval(() => {
+      if (typeof window !== 'undefined' && localStorage.getItem('genuai_token')) {
+        refreshAuth();
+      }
+    }, 6000);
+
+    return () => {
+      window.removeEventListener('focus', onFocusOrVisible);
+      document.removeEventListener('visibilitychange', onFocusOrVisible);
+      window.removeEventListener('genuai:company-status-updated', onCustomSync);
+      if (syncChannel) syncChannel.close();
+      clearInterval(interval);
+    };
   }, []);
 
   const login = async (email: string, password: string) => {

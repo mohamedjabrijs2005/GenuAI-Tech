@@ -110,6 +110,21 @@ export default function CompanyVerificationPage() {
         note,
         reason: note,
       });
+
+      // Broadcast real-time company verification update to recruiter workspace
+      try {
+        if (typeof window !== 'undefined') {
+          if ('BroadcastChannel' in window) {
+            const bc = new BroadcastChannel('genuai_status_sync');
+            bc.postMessage({ type: 'COMPANY_STATUS_UPDATED', companyId: dialogCompany.id, status: actionType });
+            bc.close();
+          }
+          window.dispatchEvent(new CustomEvent('genuai:company-status-updated', {
+            detail: { companyId: dialogCompany.id, status: actionType },
+          }));
+        }
+      } catch (_) {}
+
       toast.success(`Company ${dialogCompany.name} updated to ${actionType.replace(/_/g, ' ')}`);
       fetchCompanies();
       if (selectedCompany?.id === dialogCompany.id) {

@@ -241,15 +241,8 @@ export default function AuthPage() {
   };
 
   return (
-    <div style={{
-      position: 'relative',
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+    <div className="auth-page-wrapper" style={{
       fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-      padding: '32px 18px',
-      overflowX: 'hidden',
     }}>
 
       {/* ─── FULL-SCREEN BACKGROUND IMAGE ─── */}
@@ -273,14 +266,7 @@ export default function AuthPage() {
       }} />
 
       {/* ─── TOP NAVIGATION: RETURN HOME ─── */}
-      <header className="auth-top-nav" style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        zIndex: 10,
-        width: '100%',
-        maxWidth: 440,
-      }}>
+      <header className="auth-top-nav">
         <Link
           href="/"
           style={{
@@ -310,24 +296,14 @@ export default function AuthPage() {
           <ArrowLeft size={14} /> Back to Home
         </Link>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 600 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: 600 }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80' }} />
           Verified Secure Platform
         </div>
       </header>
 
       {/* ─── FLOATING PLEASANT AUTH CARD ─── */}
-      <main className="auth-card" style={{
-        position: 'relative',
-        zIndex: 10,
-        width: '100%',
-        maxWidth: 440,
-        background: 'rgba(255, 255, 255, 0.96)',
-        backdropFilter: 'blur(28px)',
-        borderRadius: 24,
-        boxShadow: '0 24px 64px rgba(0, 0, 0, 0.45), 0 4px 16px rgba(0, 0, 0, 0.1)',
-        border: '1px solid rgba(255, 255, 255, 0.9)',
-      }}>
+      <main className="auth-card">
 
         {/* BRANDING HEADER — MATCHES TOP-LEFT OF DASHBOARD EXACTLY */}
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
