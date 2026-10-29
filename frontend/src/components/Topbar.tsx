@@ -9,6 +9,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/dashboard': 'Dashboard Overview',
   '/dashboard/company-profile': 'Company Profile',
   '/dashboard/vacancies': 'Vacancies & Roles',
+  '/dashboard/readiness': 'Role Readiness Funnel',
   '/dashboard/requirements': 'Role Requirements',
   '/dashboard/assessments': 'Assessment Groups & Results',
   '/dashboard/candidates': 'Candidates Pipeline',

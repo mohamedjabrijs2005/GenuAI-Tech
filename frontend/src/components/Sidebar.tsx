@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Briefcase, Target, ClipboardList,
   Users, Shield, Mic2, FileCheck, Settings,
-  Bell, FileText, HandshakeIcon, LogOut, ChevronRight, CreditCard, ScrollText,
+  Bell, FileText, HandshakeIcon, LogOut, ChevronRight, CreditCard, ScrollText, BarChart3,
 } from 'lucide-react';
 
 interface NavItem {
@@ -31,6 +31,7 @@ const NAV: NavSection[] = [
     section: 'Recruitment',
     items: [
       { label: 'Vacancies', href: '/dashboard/vacancies', icon: Briefcase },
+      { label: 'Role Readiness', href: '/dashboard/readiness', icon: BarChart3 },
       { label: 'Candidates', href: '/dashboard/candidates', icon: Users },
     ],
   },
