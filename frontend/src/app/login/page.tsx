@@ -273,15 +273,13 @@ export default function AuthPage() {
       }} />
 
       {/* ─── TOP NAVIGATION: RETURN HOME ─── */}
-      <header style={{
-        position: 'absolute',
-        top: 24,
-        left: 28,
-        right: 28,
+      <header className="auth-top-nav" style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         zIndex: 10,
+        width: '100%',
+        maxWidth: 440,
       }}>
         <Link
           href="/"
@@ -318,8 +316,8 @@ export default function AuthPage() {
         </div>
       </header>
 
-      {/* ─── FLOATING PLEASANT AUTH CARD (NO HARSH SQUARES / NO UNRELATED BOXES) ─── */}
-      <main style={{
+      {/* ─── FLOATING PLEASANT AUTH CARD ─── */}
+      <main className="auth-card" style={{
         position: 'relative',
         zIndex: 10,
         width: '100%',
@@ -327,11 +325,8 @@ export default function AuthPage() {
         background: 'rgba(255, 255, 255, 0.96)',
         backdropFilter: 'blur(28px)',
         borderRadius: 24,
-        padding: '36px 34px 28px',
         boxShadow: '0 24px 64px rgba(0, 0, 0, 0.45), 0 4px 16px rgba(0, 0, 0, 0.1)',
         border: '1px solid rgba(255, 255, 255, 0.9)',
-        marginTop: 40,
-        marginBottom: 20,
       }}>
 
         {/* BRANDING HEADER — MATCHES TOP-LEFT OF DASHBOARD EXACTLY */}
@@ -482,7 +477,7 @@ export default function AuthPage() {
           {/* REGISTER EXTRA FIELDS */}
           {!isLogin && config.allowRegister && (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: persona === 'company' ? '1fr 1fr' : '1fr', gap: 10 }}>
+              <div className="auth-name-grid" style={{ display: 'grid', gridTemplateColumns: persona === 'company' ? '1fr 1fr' : '1fr', gap: 10 }}>
                 <div>
                   <label style={labelStyle}>Full Name</label>
                   <div style={inputWrapStyle}>

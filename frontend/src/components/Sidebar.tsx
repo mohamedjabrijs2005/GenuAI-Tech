@@ -93,7 +93,7 @@ export default function Sidebar({ isMobileOpen = false, onCloseMobile }: Sidebar
   const displayName = user ? `${user.firstName} ${user.lastName}`.trim() : 'User';
   const displayEmail = user?.email || '';
   const companyName = company?.name || 'Workspace';
-  const isVerified = company?.verificationStatus === 'VERIFIED';
+  const isVerified = company?.verificationStatus === 'APPROVED' || company?.verificationStatus === 'VERIFIED';
   const initials = user ? `${user.firstName?.[0] || 'U'}${user.lastName?.[0] || ''}`.toUpperCase() : 'U';
 
   return (
@@ -132,21 +132,17 @@ export default function Sidebar({ isMobileOpen = false, onCloseMobile }: Sidebar
       </div>
 
       {/* Company Workspace */}
-      <div className="sidebar-workspace" style={{ padding: '10px 18px' }}>
-        <div className="flex items-center justify-between" style={{ marginBottom: 2 }}>
-          <span className="sidebar-workspace-label" style={{ margin: 0 }}>WORKSPACE</span>
-          {isVerified ? (
-            <span className="gold-badge" style={{ fontSize: 9.5, padding: '1px 6px', flexShrink: 0 }}>
+      <div className="sidebar-workspace" style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <span className="sidebar-workspace-label" style={{ margin: 0, fontSize: 10, letterSpacing: '0.8px', color: '#94a3b8' }}>WORKSPACE</span>
+          {isVerified && (
+            <span className="gold-badge" style={{ fontSize: 9.5, padding: '1px 7px', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               <span className="badge-dot" style={{ background: '#d4af37', width: 5, height: 5 }} />
               Verified
             </span>
-          ) : (
-            <span className="badge badge-gray" style={{ fontSize: 9.5, padding: '1px 6px', flexShrink: 0 }}>
-              {company?.verificationStatus?.replace(/_/g, ' ') || 'Pending'}
-            </span>
           )}
         </div>
-        <div className="sidebar-workspace-name" style={{ fontSize: 13, fontWeight: 700 }}>
+        <div className="sidebar-workspace-name" style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {companyName}
         </div>
       </div>

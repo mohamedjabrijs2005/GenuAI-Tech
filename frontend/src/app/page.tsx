@@ -208,6 +208,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/login?mode=register"
+              className="landing-cta-btn"
               style={{
                 fontSize: 13,
                 fontWeight: 700,
