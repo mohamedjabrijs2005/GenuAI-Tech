@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   ArrowLeft, Briefcase, MapPin, Clock, Users, FileCheck, Target,
   ChevronRight, Edit3, CheckCircle2, AlertTriangle, Calendar,
-  ClipboardList, Shield, Download, Play, Pause, RefreshCw, Building2, Sparkles, Check
+  ClipboardList, Shield, Download, Play, Pause, RefreshCw, Building2, Sparkles, Check, BarChart3
 } from 'lucide-react';
 import { DataService, Vacancy, Candidate, EvidenceService, VacancyVersion } from '@/lib/dataService';
 import toast from 'react-hot-toast';
@@ -127,11 +127,15 @@ export default function VacancyDetailPage() {
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
             <button onClick={handleToggleStatus} className="btn btn-secondary btn-sm">
               {vacancy.status === 'paused' ? <Play size={14} /> : <Pause size={14} />}
               <span>{vacancy.status === 'paused' ? 'Resume Hiring' : 'Pause Vacancy'}</span>
             </button>
+            <Link href={`/dashboard/vacancies/${id}/readiness`} className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', background: 'linear-gradient(135deg, #1e1b4b, #4338ca)', color: '#fff', border: 'none' }}>
+              <BarChart3 size={14} />
+              <span>Role Readiness Funnel</span>
+            </Link>
             <Link href="/dashboard/candidates" className="btn btn-gold btn-sm">
               <Users size={14} />
               <span>Pipeline ({candidates.length})</span>

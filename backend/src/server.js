@@ -18,6 +18,7 @@ const adminRoutes = require('./routes/admin');
 const { router: evidenceRoutes } = require('./routes/evidence');
 const candidateAssessmentRoutes = require('./routes/candidateAssessments');
 const candidatePortalRoutes = require('./routes/candidatePortal');
+const readinessRoutes = require('./routes/readiness');
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use('/api/evidence', evidenceRoutes);
 app.use('/api/candidate-assessments', candidateAssessmentRoutes);
 app.use('/api/candidate-portal', candidatePortalRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/company/vacancies', readinessRoutes);
 
 // Health check
 app.get('/', (req, res) => {

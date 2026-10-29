@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Briefcase, Users, ClipboardCheck, Calendar, MoreHorizontal, Eye, Sparkles, Copy, Pause, Play, Trash2, X } from 'lucide-react';
+import { Plus, Search, Briefcase, Users, ClipboardCheck, Calendar, MoreHorizontal, Eye, Sparkles, Copy, Pause, Play, Trash2, X, BarChart3 } from 'lucide-react';
 import { DataService, Vacancy } from '@/lib/dataService';
 import toast from 'react-hot-toast';
 
@@ -188,10 +188,19 @@ export default function VacanciesPage() {
                   {v.created}
                 </td>
                 <td style={{ textAlign: 'right' }}>
-                  <div className="flex justify-end gap-1.5">
+                  <div className="flex justify-end gap-1.5" style={{ flexWrap: 'nowrap' }}>
                     <Link href={`/dashboard/vacancies/${v.id}`} className="btn btn-secondary btn-sm" title="View Vacancy Details">
                       <Eye size={14} />
                       <span>Details</span>
+                    </Link>
+                    <Link
+                      href={`/dashboard/vacancies/${v.id}/readiness`}
+                      className="btn btn-sm"
+                      title="Role Readiness Funnel"
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, textDecoration: 'none', background: 'linear-gradient(135deg, #1e1b4b, #4338ca)', color: '#fff', border: 'none', padding: '5px 10px' }}
+                    >
+                      <BarChart3 size={13} />
+                      <span style={{ fontSize: 12 }}>Funnel</span>
                     </Link>
                     <button
                       onClick={() => handleTogglePause(v)}

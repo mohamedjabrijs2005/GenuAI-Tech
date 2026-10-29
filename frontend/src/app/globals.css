@@ -2547,3 +2547,111 @@ a.btn,
 .data-table {
   min-width: 580px;
 }
+
+/* ============================================================
+   ROLE READINESS FUNNEL — MOBILE RESPONSIVE
+   ============================================================ */
+
+/* Page header row wrap on mobile */
+@media (max-width: 768px) {
+  .page-header-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+}
+
+/* Banner responsiveness on mobile */
+@media (max-width: 640px) {
+  .funnel-value-banner {
+    padding: 16px 18px !important;
+  }
+  .funnel-banner-stats {
+    width: 100% !important;
+    justify-content: space-around !important;
+    gap: 12px !important;
+    padding: 10px 14px !important;
+  }
+}
+
+/* Funnel stage rows adaptation on mobile */
+@media (max-width: 640px) {
+  .funnel-stage-row {
+    padding: 12px 14px !important;
+    gap: 10px !important;
+  }
+  .funnel-stage-label-wrap {
+    flex: 0 0 130px !important;
+  }
+  .funnel-stage-sublabel {
+    display: none !important;
+  }
+  .funnel-stage-count-wrap {
+    min-width: 44px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .funnel-stage-row {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+  }
+  .funnel-stage-label-wrap {
+    flex: 0 0 100px !important;
+  }
+  .funnel-stage-label-wrap > div:first-child {
+    font-size: 12px !important;
+  }
+  .funnel-stage-count-wrap span:first-child {
+    font-size: 18px !important;
+  }
+}
+
+/* Ready candidates table horizontally scrollable */
+.ready-candidates-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ready-candidates-table-wrap table {
+  min-width: 500px;
+}
+
+/* Dashboard action buttons wrap on mobile */
+@media (max-width: 600px) {
+  .dashboard-header-actions {
+    flex-wrap: wrap !important;
+    width: 100%;
+  }
+
+  .dashboard-header-actions a,
+  .dashboard-header-actions button {
+    flex: 1 1 auto;
+    min-width: 120px;
+    justify-content: center;
+  }
+}
+
+/* Value explainer cards stack on mobile */
+@media (max-width: 560px) {
+  .value-explainer-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Stage cards auto-grid - 2 cols on small mobile */
+@media (max-width: 480px) {
+  .stage-cards-auto-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+}
+
+/* Breadcrumbs shrink on mobile */
+@media (max-width: 440px) {
+  .breadcrumbs {
+    font-size: 11px !important;
+    flex-wrap: wrap;
+  }
+}
+
