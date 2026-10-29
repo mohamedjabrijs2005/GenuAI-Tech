@@ -101,16 +101,16 @@ router.get('/:id', async (req, res) => {
 });
 
 // ============================================================
-// POST /api/vacancies — Create vacancy as DRAFT
+// POST /api/vacancies — Create vacancy (as DRAFT or PENDING_ADMIN_REVIEW)
 // ============================================================
 router.post(
   '/',
   [
     body('title').trim().notEmpty().withMessage('Vacancy title is required'),
-    body('departmentId').notEmpty().isUUID().withMessage('Valid department ID is required'),
-    body('experienceLevel').isIn(['entry', 'mid', 'senior', 'lead', 'executive']).withMessage('Invalid experience level'),
-    body('employmentType').isIn(['full_time', 'part_time', 'contract', 'internship', 'freelance']).withMessage('Invalid employment type'),
-    body('location').trim().notEmpty().withMessage('Location is required'),
+    body('departmentId').optional({ nullable: true }),
+    body('experienceLevel').optional().isIn(['entry', 'mid', 'senior', 'lead', 'executive']).withMessage('Invalid experience level'),
+    body('employmentType').optional().isIn(['full_time', 'part_time', 'contract', 'internship', 'freelance']).withMessage('Invalid employment type'),
+    body('location').optional().trim(),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -121,6 +121,8 @@ router.post(
       const {
         title,
         departmentId,
+        departmentName,
+        dept,
         jobDescription,
         experienceLevel,
         employmentType,
@@ -129,51 +131,110 @@ router.post(
         salaryRange,
         vacancyCount,
         closingDate,
+        autoSubmit,
+        requirements,
       } = req.body;
 
-      // Verify department belongs to this company (tenant check)
-      const deptCheck = await pool.query(
-        'SELECT id, name FROM departments WHERE id = $1 AND company_id = $2 AND is_active = TRUE',
-        [departmentId, companyId]
-      );
-      if (deptCheck.rowCount === 0) {
-        return res.status(404).json({ error: 'Department not found in your company' });
+      // 1. Resolve or auto-create department for company
+      let finalDeptId = departmentId;
+      if (finalDeptId) {
+        const deptCheck = await pool.query(
+          'SELECT id, name FROM departments WHERE id = $1 AND company_id = $2',
+          [finalDeptId, companyId]
+        );
+        if (deptCheck.rowCount === 0) {
+          finalDeptId = null;
+        }
       }
+
+      if (!finalDeptId) {
+        const targetDeptName = departmentName || dept || 'Engineering';
+        const existingDept = await pool.query(
+          'SELECT id FROM departments WHERE company_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1',
+          [companyId, targetDeptName]
+        );
+        if (existingDept.rowCount > 0) {
+          finalDeptId = existingDept.rows[0].id;
+        } else {
+          const newDept = await pool.query(
+            `INSERT INTO departments (company_id, name, description)
+             VALUES ($1, $2, $3)
+             RETURNING id`,
+            [companyId, targetDeptName, `${targetDeptName} department`]
+          );
+          finalDeptId = newDept.rows[0].id;
+        }
+      }
+
+      const initialStatus = autoSubmit ? 'PENDING_ADMIN_REVIEW' : 'DRAFT';
+      const submittedAt = autoSubmit ? new Date() : null;
+
+      const normExp = (experienceLevel || 'senior').toLowerCase();
+      const normEmp = (employmentType || 'full_time').toLowerCase().replace('-', '_');
 
       const result = await pool.query(
         `INSERT INTO company_roles
          (company_id, department_id, title, job_description, experience_level,
-          employment_type, location, work_mode, salary_range, vacancy_count, closing_date, status)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, 'DRAFT') RETURNING *`,
+          employment_type, location, work_mode, salary_range, vacancy_count, closing_date, status, submitted_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
         [
           companyId,
-          departmentId,
+          finalDeptId,
           title,
           jobDescription || null,
-          experienceLevel,
-          employmentType,
-          location,
+          ['entry', 'mid', 'senior', 'lead', 'executive'].includes(normExp) ? normExp : 'senior',
+          ['full_time', 'part_time', 'contract', 'internship', 'freelance'].includes(normEmp) ? normEmp : 'full_time',
+          location || 'Remote',
           workMode || 'Hybrid',
           salaryRange || null,
           vacancyCount || 1,
           closingDate || null,
+          initialStatus,
+          submittedAt,
         ]
       );
 
       const vacancy = result.rows[0];
 
-      // Audit log
+      // 2. Insert any initial requirements or auto-generate baseline requirement for submission rule
+      const reqList = Array.isArray(requirements) && requirements.length > 0
+        ? requirements
+        : (autoSubmit ? [{ name: `Core Competency — ${title}`, category: 'Technical', reqType: 'Required' }] : []);
+
+      for (const r of reqList) {
+        try {
+          await pool.query(
+            `INSERT INTO requirements
+             (role_id, company_id, name, description, category, req_type, priority, proficiency, eval_method, importance, weight)
+             VALUES ($1, $2, $3, $4, $5, $6, 'High', 'Intermediate', 'Official Technical Assessment', 'REQUIRED', 1.0)`,
+            [
+              vacancy.id,
+              companyId,
+              r.name || r.title || 'Core Requirement',
+              r.description || null,
+              r.category || 'Technical',
+              r.type || r.reqType || 'Required',
+            ]
+          );
+        } catch (rErr) {
+          console.warn('Initial requirement insertion note:', rErr.message);
+        }
+      }
+
+      // 3. Audit log
       await pool.query(
         `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, new_status, metadata, old_value, new_value, ip_address)
-         VALUES ($1, $2, $3, 'VACANCY_CREATED', 'Vacancy', $4, 'DRAFT', $5, $6, $7, $8)`,
+         VALUES ($1, $2, $3, $4, 'Vacancy', $5, $6, $7, $8, $9, $10)`,
         [
           companyId,
           req.user.id,
           req.user.role || 'COMPANY_OWNER',
+          autoSubmit ? 'VACANCY_SUBMITTED_FOR_REVIEW' : 'VACANCY_CREATED',
           vacancy.id,
-          JSON.stringify({ title, department: deptCheck.rows[0]?.name }),
+          initialStatus,
+          JSON.stringify({ title, autoSubmit: Boolean(autoSubmit) }),
           null,
-          JSON.stringify({ status: 'DRAFT', title, location: location || 'Remote' }),
+          JSON.stringify({ status: initialStatus, title }),
           req.ip || null,
         ]
       );

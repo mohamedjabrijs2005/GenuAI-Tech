@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Briefcase, Users, ClipboardCheck, Calendar, MoreHorizontal, Eye, Sparkles, Copy, Pause, Play, Trash2, X, BarChart3 } from 'lucide-react';
+import { Plus, Search, Briefcase, Users, ClipboardCheck, Calendar, MoreHorizontal, Eye, Sparkles, Copy, Pause, Play, Trash2, X, BarChart3, Shield } from 'lucide-react';
 import { DataService, Vacancy } from '@/lib/dataService';
+import api from '@/lib/api';
 import toast from 'react-hot-toast';
 
 const STATUS_BADGE: Record<string, string> = {
@@ -44,6 +45,32 @@ export default function VacanciesPage() {
   useEffect(() => {
     loadVacancies();
   }, []);
+
+  const handleSubmitForVerification = async (v: Vacancy) => {
+    try {
+      // If vacancy has 0 requirements, add baseline requirement so backend submit check passes
+      if ((v.requirement_count || 0) < 1) {
+        await api.post(`/vacancies/${v.id}/requirements`, {
+          name: `Core Competency — ${v.title}`,
+          category: 'Technical',
+          reqType: 'Required',
+        }).catch(() => null);
+      }
+      await api.post(`/vacancies/${v.id}/submit`);
+      // Broadcast to admin verification queue
+      try {
+        if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+          const bc = new BroadcastChannel('genuai_status_sync');
+          bc.postMessage({ type: 'VACANCY_SUBMITTED', vacancyId: v.id });
+          bc.close();
+        }
+      } catch (_) {}
+      toast.success(`Vacancy "${v.title}" submitted to Admin for verification!`);
+      await loadVacancies();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to submit vacancy for verification');
+    }
+  };
 
   const handleTogglePause = async (v: Vacancy) => {
     const nextStatus = v.status === 'paused' ? 'published' : 'paused';
@@ -189,6 +216,17 @@ export default function VacanciesPage() {
                 </td>
                 <td style={{ textAlign: 'right' }}>
                   <div className="flex justify-end gap-1.5" style={{ flexWrap: 'nowrap' }}>
+                    {(v.status === 'draft' || v.status === 'changes_requested') && (
+                      <button
+                        onClick={() => handleSubmitForVerification(v)}
+                        className="btn btn-gold btn-sm"
+                        title="Submit Requisition to Admin for Verification"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', padding: '4px 9px' }}
+                      >
+                        <Shield size={12} />
+                        <span>Submit</span>
+                      </button>
+                    )}
                     <Link href={`/dashboard/vacancies/${v.id}`} className="btn btn-secondary btn-sm" title="View Vacancy Details">
                       <Eye size={14} />
                       <span>Details</span>

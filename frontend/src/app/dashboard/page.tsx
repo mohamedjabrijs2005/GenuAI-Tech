@@ -170,18 +170,28 @@ export default function DashboardPage() {
     setIsSubmitting(true);
     try {
       const selectedDept = departments.find(d => d.id === formDeptId);
-      await DataService.createVacancy({
+      const res = await api.post('/vacancies', {
         title: formTitle.trim(),
-        dept: selectedDept?.name || 'Engineering',
-        department_id: formDeptId || undefined,
-        experience_level: formExpLevel,
-        employment_type: formEmpType,
+        departmentId: formDeptId || undefined,
+        departmentName: selectedDept?.name || 'Engineering',
+        experienceLevel: formExpLevel,
+        employmentType: formEmpType,
         location: formLocation.trim() || 'Remote',
-        openings: formVacancyCount,
-        description: formDesc.trim(),
+        vacancyCount: formVacancyCount,
+        jobDescription: formDesc.trim(),
+        autoSubmit: true, // Auto-submit to admin verification queue
       });
 
-      toast.success('Vacancy requisition created');
+      // Broadcast real-time event to Admin verification console
+      try {
+        if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+          const bc = new BroadcastChannel('genuai_status_sync');
+          bc.postMessage({ type: 'VACANCY_SUBMITTED', vacancyId: res.data?.vacancy?.id });
+          bc.close();
+        }
+      } catch (_) {}
+
+      toast.success('Vacancy requisition created and submitted for admin verification');
       setIsModalOpen(false);
 
       // Reset form
@@ -192,7 +202,8 @@ export default function DashboardPage() {
       // Refresh real data
       await fetchData();
     } catch (err: any) {
-      toast.error('Failed to create vacancy');
+      console.error('Failed to create vacancy', err);
+      toast.error(err.response?.data?.error || 'Failed to create vacancy');
     } finally {
       setIsSubmitting(false);
     }

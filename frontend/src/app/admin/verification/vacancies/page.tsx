@@ -79,6 +79,29 @@ export default function VacancyModerationPage() {
 
   useEffect(() => {
     fetchVacancies();
+
+    // Real-time synchronization when company creates or submits vacancies
+    let bc: BroadcastChannel | null = null;
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        bc = new BroadcastChannel('genuai_status_sync');
+        bc.onmessage = (e) => {
+          if (e?.data?.type === 'VACANCY_SUBMITTED' || e?.data?.type === 'COMPANY_STATUS_UPDATED') {
+            fetchVacancies();
+          }
+        };
+      }
+    } catch (_) {}
+
+    const onFocus = () => fetchVacancies();
+    window.addEventListener('focus', onFocus);
+    const interval = setInterval(fetchVacancies, 8000);
+
+    return () => {
+      if (bc) bc.close();
+      window.removeEventListener('focus', onFocus);
+      clearInterval(interval);
+    };
   }, [statusFilter]);
 
   const handleOpenDetails = async (vac: VacancyRecord) => {
@@ -108,6 +131,16 @@ export default function VacancyModerationPage() {
         note,
         reason: note,
       });
+
+      // Broadcast real-time status update to company workspace
+      try {
+        if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+          const bc = new BroadcastChannel('genuai_status_sync');
+          bc.postMessage({ type: 'VACANCY_STATUS_CHANGED', vacancyId: dialogVacancy.id, status: actionType });
+          bc.close();
+        }
+      } catch (_) {}
+
       toast.success(`Vacancy ${dialogVacancy.roleTitle} updated to ${actionType.replace(/_/g, ' ')}`);
       fetchVacancies();
       if (selectedVacancy?.id === dialogVacancy.id) {
@@ -202,6 +235,7 @@ export default function VacancyModerationPage() {
             <option value="CHANGES_REQUESTED">Changes requested</option>
             <option value="APPROVED">Approved</option>
             <option value="PUBLISHED">Published</option>
+            <option value="DRAFT">Draft requisitions</option>
             <option value="PAUSED">Paused</option>
             <option value="CLOSED">Closed</option>
             <option value="REJECTED">Rejected</option>

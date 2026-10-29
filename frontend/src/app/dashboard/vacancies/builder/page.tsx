@@ -6,8 +6,10 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, ArrowRight, Check, Plus, Trash2, Sparkles, Shield, AlertCircle,
   FileText, Target, Layers, ClipboardList, CheckCircle2, Handshake, Lock, Info,
-  HelpCircle, ChevronDown, ChevronRight, Edit3
+  HelpCircle, ChevronDown, ChevronRight, Edit3, Loader2
 } from 'lucide-react';
+import api from '@/lib/api';
+import toast from 'react-hot-toast';
 
 interface Requirement {
   id: string;
@@ -53,16 +55,17 @@ export default function VacancyBuilderPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // STEP 1 State - Clean blank initial state
   const [basicInfo, setBasicInfo] = useState({
     title: '',
-    dept: '',
+    dept: 'Engineering',
     location: '',
     workMode: 'Hybrid',
     employmentType: 'Full-time',
     openings: 1,
-    experienceLevel: '',
+    experienceLevel: 'senior',
     salaryRange: '',
     deadline: '',
     description: '',
@@ -121,11 +124,59 @@ export default function VacancyBuilderPage() {
     setRequirements(requirements.filter(r => r.id !== id));
   };
 
-  const handleSubmitVerification = () => {
-    setSavedSuccess(true);
-    setTimeout(() => {
-      router.push('/dashboard/vacancies');
-    }, 2000);
+  const handleSubmitVerification = async () => {
+    if (!basicInfo.title.trim()) {
+      toast.error('Vacancy title is required. Please check Step 1.');
+      setCurrentStep(1);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // 1. Post vacancy to backend with autoSubmit: true and all configured requirements
+      const res = await api.post('/vacancies', {
+        title: basicInfo.title.trim(),
+        departmentName: basicInfo.dept || 'Engineering',
+        location: basicInfo.location.trim() || 'Remote',
+        workMode: basicInfo.workMode || 'Hybrid',
+        employmentType: basicInfo.employmentType || 'full_time',
+        experienceLevel: basicInfo.experienceLevel || 'senior',
+        vacancyCount: Number(basicInfo.openings) || 1,
+        salaryRange: basicInfo.salaryRange || null,
+        jobDescription: basicInfo.description || '',
+        autoSubmit: true,
+        requirements: requirements.map((r) => ({
+          name: r.name,
+          category: r.category,
+          type: r.type,
+          priority: r.priority,
+          proficiency: r.proficiency,
+          method: r.method,
+        })),
+      });
+
+      const vacancy = res.data?.vacancy;
+
+      // Broadcast real-time event to Admin verification console
+      try {
+        if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+          const bc = new BroadcastChannel('genuai_status_sync');
+          bc.postMessage({ type: 'VACANCY_SUBMITTED', vacancyId: vacancy?.id });
+          bc.close();
+        }
+      } catch (_) {}
+
+      setSavedSuccess(true);
+      toast.success('Vacancy successfully submitted for Admin Verification!');
+      setTimeout(() => {
+        router.push('/dashboard/vacancies');
+      }, 1500);
+    } catch (err: any) {
+      console.error('Failed to submit vacancy', err);
+      toast.error(err.response?.data?.error || 'Failed to submit vacancy for verification');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -812,10 +863,19 @@ export default function VacancyBuilderPage() {
           <div className="flex justify-end gap-3">
             <button
               className="btn btn-gold btn-lg"
-              disabled={!agreements.permissionA || savedSuccess}
+              disabled={!agreements.permissionA || savedSuccess || isSubmitting}
               onClick={handleSubmitVerification}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
             >
-              <Shield size={16} /> Submit Vacancy for Verification
+              {isSubmitting ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" /> Submitting for Verification...
+                </>
+              ) : (
+                <>
+                  <Shield size={16} /> Submit Vacancy for Verification
+                </>
+              )}
             </button>
           </div>
         </div>

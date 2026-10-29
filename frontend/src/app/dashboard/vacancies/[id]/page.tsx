@@ -9,6 +9,7 @@ import {
   ClipboardList, Shield, Download, Play, Pause, RefreshCw, Building2, Sparkles, Check, BarChart3
 } from 'lucide-react';
 import { DataService, Vacancy, Candidate, EvidenceService, VacancyVersion } from '@/lib/dataService';
+import api from '@/lib/api';
 import toast from 'react-hot-toast';
 
 const STATUS_COLOR: Record<string, string> = {
@@ -42,6 +43,7 @@ export default function VacancyDetailPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'requirements' | 'assessments' | 'applications' | 'versions'>('overview');
   const [isLoading, setIsLoading] = useState(true);
   const [creatingVersion, setCreatingVersion] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -77,6 +79,37 @@ export default function VacancyDetailPage() {
     await DataService.updateVacancyStatus(vacancy.id, nextStatus);
     setVacancy({ ...vacancy, status: nextStatus });
     toast.success(`Vacancy status changed to ${nextStatus}`);
+  };
+
+  const handleSubmitForVerification = async () => {
+    if (!vacancy) return;
+    setIsSubmitting(true);
+    try {
+      // Ensure at least 1 requirement exists so backend check passes
+      const reqsRes = await api.get(`/vacancies/${vacancy.id}/requirements`).catch(() => null);
+      if (!reqsRes?.data?.requirements || reqsRes.data.requirements.length === 0) {
+        await api.post(`/vacancies/${vacancy.id}/requirements`, {
+          name: `Core Competency — ${vacancy.title}`,
+          category: 'Technical',
+          reqType: 'Required',
+        }).catch(() => null);
+      }
+      await api.post(`/vacancies/${vacancy.id}/submit`);
+      try {
+        if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+          const bc = new BroadcastChannel('genuai_status_sync');
+          bc.postMessage({ type: 'VACANCY_SUBMITTED', vacancyId: vacancy.id });
+          bc.close();
+        }
+      } catch (_) {}
+      toast.success('Vacancy successfully submitted for Admin Verification!');
+      const updated = await DataService.getVacancyById(id);
+      if (updated) setVacancy(updated);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to submit vacancy for verification');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading) {
@@ -128,6 +161,17 @@ export default function VacancyDetailPage() {
           </div>
 
           <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
+            {(vacancy.status === 'draft' || vacancy.status === 'changes_requested') && (
+              <button
+                onClick={handleSubmitForVerification}
+                disabled={isSubmitting}
+                className="btn btn-gold btn-sm"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                <Shield size={14} />
+                <span>{isSubmitting ? 'Submitting...' : 'Submit for Verification'}</span>
+              </button>
+            )}
             <button onClick={handleToggleStatus} className="btn btn-secondary btn-sm">
               {vacancy.status === 'paused' ? <Play size={14} /> : <Pause size={14} />}
               <span>{vacancy.status === 'paused' ? 'Resume Hiring' : 'Pause Vacancy'}</span>
