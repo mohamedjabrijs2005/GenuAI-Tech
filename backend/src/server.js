@@ -18,6 +18,7 @@ const adminRoutes = require('./routes/admin');
 const { router: evidenceRoutes } = require('./routes/evidence');
 const candidateAssessmentRoutes = require('./routes/candidateAssessments');
 const candidatePortalRoutes = require('./routes/candidatePortal');
+const candidateInterestRoutes = require('./routes/candidateInterest');
 const readinessRoutes = require('./routes/readiness');
 
 const app = express();
@@ -48,6 +49,8 @@ app.use('/api/interviews', interviewRoutes);
 app.use('/api/evidence', evidenceRoutes);
 app.use('/api/candidate-assessments', candidateAssessmentRoutes);
 app.use('/api/candidate-portal', candidatePortalRoutes);
+app.use('/api/candidate-portal', candidateInterestRoutes);
+app.use('/api/candidate', candidateInterestRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/company/vacancies', readinessRoutes);
 

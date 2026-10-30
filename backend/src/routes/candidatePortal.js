@@ -86,10 +86,11 @@ router.get('/vacancies', async (req, res) => {
     const { search, department, level, workMode } = req.query;
 
     let query = `
-      SELECT cr.id, cr.title, cr.experience_level, cr.employment_type,
+      SELECT cr.id, cr.title, cr.job_description, cr.experience_level, cr.employment_type,
              cr.location, cr.work_mode, cr.salary_range, cr.vacancy_count,
-             cr.published_at, cr.created_at,
-             d.name AS department_name,
+             cr.published_at, cr.created_at, cr.closing_date, cr.application_deadline,
+             cr.id AS role_id,
+             d.id AS department_id, d.name AS department_name,
              c.id AS company_id, c.name AS company_name, c.verification_status AS company_status,
              vv.id AS vacancy_version_id, vv.version_number,
              COUNT(DISTINCT r.id) AS requirements_count
@@ -99,8 +100,10 @@ router.get('/vacancies', async (req, res) => {
       LEFT JOIN vacancy_versions vv ON vv.role_id = cr.id AND (vv.status = 'Published' OR vv.status = 'Approved')
       LEFT JOIN requirements r ON r.role_id = cr.id
       WHERE cr.status = 'PUBLISHED'
-        AND c.verification_status = 'APPROVED'
+        AND (c.verification_status = 'APPROVED' OR c.verification_status = 'ACTIVE')
         AND c.suspended_at IS NULL
+        AND (cr.closing_date IS NULL OR cr.closing_date >= CURRENT_DATE)
+        AND (cr.application_deadline IS NULL OR cr.application_deadline >= CURRENT_DATE)
     `;
     const params = [];
 
@@ -121,7 +124,7 @@ router.get('/vacancies', async (req, res) => {
       query += ` AND cr.work_mode = $${params.length}`;
     }
 
-    query += ` GROUP BY cr.id, d.name, c.id, c.name, c.verification_status, vv.id, vv.version_number ORDER BY cr.published_at DESC NULLS LAST, cr.created_at DESC`;
+    query += ` GROUP BY cr.id, d.id, d.name, c.id, c.name, c.verification_status, vv.id, vv.version_number ORDER BY cr.published_at DESC NULLS LAST, cr.created_at DESC`;
 
     const result = await pool.query(query, params);
     return res.json({ vacancies: result.rows });
@@ -146,8 +149,9 @@ router.get('/vacancies/:id', async (req, res) => {
     const roleRes = await pool.query(
       `SELECT cr.id, cr.title, cr.job_description, cr.experience_level, cr.employment_type,
               cr.location, cr.work_mode, cr.salary_range, cr.vacancy_count, cr.status,
-              cr.published_at, cr.created_at,
-              d.name AS department_name,
+              cr.published_at, cr.created_at, cr.closing_date, cr.application_deadline,
+              cr.id AS role_id,
+              d.id AS department_id, d.name AS department_name,
               c.id AS company_id, c.name AS company_name, c.website AS company_website,
               c.industry AS company_industry, c.description AS company_description,
               c.location AS company_location, c.verification_status AS company_status,
@@ -158,8 +162,10 @@ router.get('/vacancies/:id', async (req, res) => {
        LEFT JOIN vacancy_versions vv ON vv.role_id = cr.id AND (vv.status = 'Published' OR vv.status = 'Approved')
        WHERE cr.id = $1
          AND cr.status = 'PUBLISHED'
-         AND c.verification_status = 'APPROVED'
-         AND c.suspended_at IS NULL`,
+         AND (c.verification_status = 'APPROVED' OR c.verification_status = 'ACTIVE')
+         AND c.suspended_at IS NULL
+         AND (cr.closing_date IS NULL OR cr.closing_date >= CURRENT_DATE)
+         AND (cr.application_deadline IS NULL OR cr.application_deadline >= CURRENT_DATE)`,
       [id]
     );
 
@@ -1879,14 +1885,22 @@ router.post('/targets', authenticate, requireCandidate, async (req, res) => {
       });
     }
 
-    // 5. Insert target record
+    // 5. Insert target record linking candidate, company, vacancy, vacancy version, and role
     const targetInsert = await client.query(
-      `INSERT INTO targets (candidate_id, company_id, vacancy_id, vacancy_version_id, status, targeted_at, last_activity_at)
-       VALUES ($1, $2, $3, $4, 'TARGETED', NOW(), NOW())
-       RETURNING id, candidate_id, company_id, vacancy_id, vacancy_version_id, status, targeted_at, created_at`,
+      `INSERT INTO targets (candidate_id, company_id, vacancy_id, role_id, vacancy_version_id, status, targeted_at, last_activity_at)
+       VALUES ($1, $2, $3, $3, $4, 'TARGETED', NOW(), NOW())
+       RETURNING id, candidate_id, company_id, vacancy_id, role_id, vacancy_version_id, status, targeted_at, created_at`,
       [candidateId, vacancy.company_id, vacancyId, vacancyVersionId]
     );
     const target = targetInsert.rows[0];
+
+    // Ensure candidate interest is recorded
+    await client.query(
+      `INSERT INTO candidate_interest (candidate_id, company_id, vacancy_id, role_id, vacancy_version_id, interest_status, created_at, updated_at)
+       VALUES ($1, $2, $3, $3, $4, 'EXPRESSED', NOW(), NOW())
+       ON CONFLICT DO NOTHING`,
+      [candidateId, vacancy.company_id, vacancyId, vacancyVersionId]
+    ).catch(() => {});
 
     // 6. Record TARGET_CREATED audit log
     await client.query(

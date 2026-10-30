@@ -25,6 +25,7 @@ export default function CandidateVacanciesPage() {
   const [vacancies, setVacancies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [targetedVacancyIds, setTargetedVacancyIds] = useState<Set<string>>(new Set());
+  const [interestedVacancyIds, setInterestedVacancyIds] = useState<Set<string>>(new Set());
 
   // Filters
   const [search, setSearch] = useState('');
@@ -46,12 +47,19 @@ export default function CandidateVacanciesPage() {
         },
       }),
       api.get('/candidate-portal/targets').catch(() => ({ data: { targets: [] } })),
+      api.get('/candidate/interests').catch(() => ({ data: { interests: [] } })),
     ])
-      .then(([vacRes, targetRes]) => {
+      .then(([vacRes, targetRes, interestRes]) => {
         if (!isMounted) return;
         setVacancies(vacRes.data?.vacancies || []);
         const targetIds = new Set<string>((targetRes.data?.targets || []).map((t: any) => t.vacancy_id));
         setTargetedVacancyIds(targetIds);
+        const interestIds = new Set<string>(
+          (interestRes.data?.interests || [])
+            .filter((i: any) => i.interest_status === 'EXPRESSED')
+            .map((i: any) => i.vacancy_id)
+        );
+        setInterestedVacancyIds(interestIds);
       })
       .catch((err) => {
         console.error('Failed to load published vacancies:', err);
@@ -169,6 +177,7 @@ export default function CandidateVacanciesPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
           {vacancies.map((v) => {
             const isTargeted = targetedVacancyIds.has(v.id);
+            const isInterested = interestedVacancyIds.has(v.id);
 
             return (
               <div
@@ -179,8 +188,8 @@ export default function CandidateVacanciesPage() {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  border: isTargeted ? '1px solid rgba(212, 175, 55, 0.4)' : '1px solid var(--border)',
-                  background: isTargeted ? '#fffdf7' : '#ffffff',
+                  border: isTargeted ? '1px solid rgba(212, 175, 55, 0.4)' : isInterested ? '1px solid #fde68a' : '1px solid var(--border)',
+                  background: isTargeted ? '#fffdf7' : isInterested ? '#fefce8' : '#ffffff',
                 }}
               >
                 <div>
@@ -197,7 +206,7 @@ export default function CandidateVacanciesPage() {
                     >
                       {v.department_name || 'Engineering'}
                     </span>
-                    {isTargeted && (
+                    {isTargeted ? (
                       <span
                         style={{
                           fontSize: 10.5,
@@ -214,7 +223,25 @@ export default function CandidateVacanciesPage() {
                         <Target size={11} />
                         Targeted
                       </span>
-                    )}
+                    ) : isInterested ? (
+                      <span
+                        style={{
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          padding: '2px 8px',
+                          borderRadius: 99,
+                          background: '#fef3c7',
+                          color: '#b45309',
+                          border: '1px solid #fde68a',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        <Sparkles size={11} />
+                        Interested
+                      </span>
+                    ) : null}
                   </div>
 
                   <h3 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 4px', color: 'var(--text-primary)' }}>
@@ -261,11 +288,11 @@ export default function CandidateVacanciesPage() {
       ) : (
         <div style={{ textAlign: 'center', padding: '48px 20px', background: '#fafaf9', borderRadius: 12 }}>
           <Compass size={36} style={{ color: '#94a3b8', margin: '0 auto 12px' }} />
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#1e293b', marginBottom: 4 }}>
-            No Matching Vacancies Found
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>
+            No published vacancies are currently available.
           </div>
-          <p style={{ fontSize: 13, color: '#64748b', maxWidth: 420, margin: '0 auto 16px' }}>
-            Try adjusting your search terms or filters. Only verified, published vacancies from approved employers are listed here.
+          <p style={{ fontSize: 13, color: '#64748b', maxWidth: 440, margin: '0 auto 16px' }}>
+            Only verified, published vacancies from approved employers are listed here. Check back soon or reset your filters.
           </p>
           <button
             onClick={() => {

@@ -11,7 +11,7 @@ router.use(authenticate, requireCompany);
 // through each stage for a specific company vacancy.
 // Only the authenticated company can access its own vacancy.
 // ============================================================
-router.get('/:vacancyId/readiness-funnel', async (req, res) => {
+const handleReadinessFunnel = async (req, res) => {
   try {
     const companyId = req.companyMembership.company_id;
     const { vacancyId } = req.params;
@@ -35,6 +35,15 @@ router.get('/:vacancyId/readiness-funnel', async (req, res) => {
     const role = roleRes.rows[0];
 
     // ── 2. Stage queries (all scoped to vacancyId + companyId) ─────────
+
+    // Stage 0 — interestedCandidates: candidates who expressed interest in this vacancy
+    const interestRes = await pool.query(
+      `SELECT COUNT(DISTINCT ci.candidate_id)::int AS count
+       FROM candidate_interest ci
+       WHERE ci.vacancy_id = $1 AND ci.company_id = $2
+         AND ci.interest_status = 'EXPRESSED'`,
+      [vacancyId, companyId]
+    );
 
     // Stage 1 — targetsCreated: candidates who created a Target for this vacancy
     const targetsRes = await pool.query(
@@ -152,6 +161,7 @@ router.get('/:vacancyId/readiness-funnel', async (req, res) => {
     );
 
     const funnel = {
+      interestedCandidates: interestRes.rows[0]?.count    ?? 0,
       targetsCreated:       targetsRes.rows[0]?.count     ?? 0,
       preparationStarted:   prepRes.rows[0]?.count        ?? 0,
       practiceCompleted:    practiceRes.rows[0]?.count    ?? 0,
@@ -174,7 +184,10 @@ router.get('/:vacancyId/readiness-funnel', async (req, res) => {
     console.error('Readiness funnel error:', err);
     return res.status(500).json({ error: 'Failed to fetch readiness funnel' });
   }
-});
+};
+
+router.get('/:vacancyId/readiness-funnel', handleReadinessFunnel);
+router.get('/:vacancyId/readiness', handleReadinessFunnel);
 
 // ============================================================
 // GET /api/company/vacancies/:vacancyId/ready-candidates
@@ -257,6 +270,52 @@ router.get('/:vacancyId/ready-candidates', async (req, res) => {
   } catch (err) {
     console.error('Ready candidates error:', err);
     return res.status(500).json({ error: 'Failed to fetch ready candidates' });
+  }
+});
+
+// ============================================================
+// GET /api/company/vacancies/:vacancyId/interested-candidates
+// Returns list of candidates who expressed interest in this vacancy.
+// Filtered strictly by company_id and vacancy_id.
+// ============================================================
+router.get('/:vacancyId/interested-candidates', async (req, res) => {
+  try {
+    const companyId = req.companyMembership.company_id;
+    const { vacancyId } = req.params;
+
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(vacancyId);
+    if (!isUUID) {
+      return res.status(404).json({ error: 'Vacancy not found or access denied' });
+    }
+
+    const roleRes = await pool.query(
+      `SELECT cr.id, cr.title FROM company_roles cr WHERE cr.id = $1 AND cr.company_id = $2`,
+      [vacancyId, companyId]
+    );
+    if (roleRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Vacancy not found or access denied' });
+    }
+
+    const candidatesRes = await pool.query(
+      `SELECT c.id, c.first_name, c.last_name, c.email, c.location,
+              ci.id AS interest_id, ci.interest_status, ci.created_at AS interested_at,
+              t.id AS target_id, t.status AS target_status
+       FROM candidate_interest ci
+       JOIN candidates c ON c.id = ci.candidate_id
+       LEFT JOIN targets t ON t.vacancy_id = ci.vacancy_id AND t.candidate_id = ci.candidate_id
+       WHERE ci.vacancy_id = $1 AND ci.company_id = $2 AND ci.interest_status = 'EXPRESSED'
+       ORDER BY ci.created_at DESC`,
+      [vacancyId, companyId]
+    );
+
+    return res.json({
+      vacancyId,
+      candidates: candidatesRes.rows,
+      count: candidatesRes.rowCount,
+    });
+  } catch (err) {
+    console.error('Interested candidates error:', err);
+    return res.status(500).json({ error: 'Failed to fetch interested candidates' });
   }
 });
 

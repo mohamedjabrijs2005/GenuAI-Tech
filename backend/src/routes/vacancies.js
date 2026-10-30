@@ -150,7 +150,7 @@ router.post(
         assessmentConfig,
       } = req.body;
 
-      // 1. Resolve or auto-create department for company
+      // 1. Resolve or validate department for company
       let finalDeptId = departmentId;
       if (finalDeptId) {
         const deptCheck = await pool.query(
@@ -158,7 +158,19 @@ router.post(
           [finalDeptId, companyId]
         );
         if (deptCheck.rowCount === 0) {
-          finalDeptId = null;
+          return res.status(400).json({ error: 'Invalid department ID: Department does not belong to this company or does not exist.' });
+        }
+      }
+
+      const { roleId, roleMasterId } = req.body;
+      if (roleId || roleMasterId) {
+        const targetRoleId = roleId || roleMasterId;
+        const roleCheck = await pool.query(
+          'SELECT id FROM company_roles WHERE id = $1 AND company_id = $2',
+          [targetRoleId, companyId]
+        );
+        if (roleCheck.rowCount === 0) {
+          return res.status(400).json({ error: 'Invalid role ID: Role does not belong to this company or does not exist.' });
         }
       }
 
@@ -550,6 +562,25 @@ router.post('/:id/publish', async (req, res) => {
        WHERE id = $1 AND company_id = $2 RETURNING *`,
       [id, companyId]
     );
+
+    // Ensure vacancy_version is linked and set to Published
+    const existingVer = await client.query(
+      `SELECT id, version_number FROM vacancy_versions WHERE role_id = $1 ORDER BY version_number DESC LIMIT 1`,
+      [id]
+    );
+    if (existingVer.rowCount === 0) {
+      await client.query(
+        `INSERT INTO vacancy_versions (role_id, company_id, version_number, status, change_summary, published_at)
+         VALUES ($1, $2, 1, 'Published', 'Initial Published Version', NOW())`,
+        [id, companyId]
+      );
+    } else {
+      await client.query(
+        `UPDATE vacancy_versions SET status = 'Published', published_at = COALESCE(published_at, NOW()), updated_at = NOW()
+         WHERE id = $1`,
+        [existingVer.rows[0].id]
+      );
+    }
 
     await client.query(
       `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, metadata, old_value, new_value, ip_address)

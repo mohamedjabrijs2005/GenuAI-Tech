@@ -19,8 +19,12 @@ import {
   AlertCircle,
   FileCheck,
   BookOpen,
+  Sparkles,
+  Heart,
+  X,
 } from 'lucide-react';
 import api from '@/lib/api';
+import toast from 'react-hot-toast';
 
 export default function VacancyDetailPage() {
   const params = useParams();
@@ -30,8 +34,10 @@ export default function VacancyDetailPage() {
   const [vacancy, setVacancy] = useState<any>(null);
   const [requirements, setRequirements] = useState<any[]>([]);
   const [existingTarget, setExistingTarget] = useState<any>(null);
+  const [interest, setInterest] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [targeting, setTargeting] = useState(false);
+  const [submittingInterest, setSubmittingInterest] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -41,8 +47,9 @@ export default function VacancyDetailPage() {
     Promise.all([
       api.get(`/candidate-portal/vacancies/${vacancyId}`),
       api.get('/candidate-portal/targets').catch(() => ({ data: { targets: [] } })),
+      api.get('/candidate/interests').catch(() => ({ data: { interests: [] } })),
     ])
-      .then(([vacRes, targetRes]) => {
+      .then(([vacRes, targetRes, interestRes]) => {
         if (!isMounted) return;
         setVacancy(vacRes.data?.vacancy);
         setRequirements(vacRes.data?.requirements || []);
@@ -50,6 +57,11 @@ export default function VacancyDetailPage() {
         const matching = (targetRes.data?.targets || []).find((t: any) => t.vacancy_id === vacancyId);
         if (matching) {
           setExistingTarget(matching);
+        }
+
+        const matchInterest = (interestRes.data?.interests || []).find((i: any) => i.vacancy_id === vacancyId && i.interest_status === 'EXPRESSED');
+        if (matchInterest) {
+          setInterest(matchInterest);
         }
       })
       .catch((err) => {
@@ -64,6 +76,32 @@ export default function VacancyDetailPage() {
       isMounted = false;
     };
   }, [vacancyId]);
+
+  const handleExpressInterest = async () => {
+    setSubmittingInterest(true);
+    try {
+      const res = await api.post(`/candidate/vacancies/${vacancyId}/interest`);
+      setInterest(res.data?.interest || { interest_status: 'EXPRESSED' });
+      toast.success('Your interest in this role has been shared with the hiring team!');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to express interest in role');
+    } finally {
+      setSubmittingInterest(false);
+    }
+  };
+
+  const handleWithdrawInterest = async () => {
+    setSubmittingInterest(true);
+    try {
+      await api.delete(`/candidate/vacancies/${vacancyId}/interest`);
+      setInterest(null);
+      toast.success('Interest withdrawn successfully.');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to withdraw interest');
+    } finally {
+      setSubmittingInterest(false);
+    }
+  };
 
   const handleCreateTarget = async () => {
     setTargeting(true);
@@ -214,11 +252,46 @@ export default function VacancyDetailPage() {
                 <Target size={16} />
                 <span>Open Target Workspace</span>
               </Link>
+            ) : interest ? (
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <button
+                  onClick={handleCreateTarget}
+                  disabled={targeting}
+                  className="btn btn-gold"
+                  style={{
+                    padding: '10px 24px',
+                    fontSize: 13.5,
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <Target size={16} />
+                  <span>{targeting ? 'Creating Target...' : 'Create Target for this Role'}</span>
+                </button>
+                <button
+                  onClick={handleWithdrawInterest}
+                  disabled={submittingInterest}
+                  className="btn btn-secondary"
+                  style={{
+                    padding: '10px 16px',
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <X size={14} />
+                  <span>Withdraw Interest</span>
+                </button>
+              </div>
             ) : (
               <button
-                onClick={handleCreateTarget}
-                disabled={targeting}
-                className="btn btn-primary"
+                onClick={handleExpressInterest}
+                disabled={submittingInterest}
+                className="btn btn-gold"
                 style={{
                   padding: '10px 24px',
                   fontSize: 13.5,
@@ -228,31 +301,126 @@ export default function VacancyDetailPage() {
                   gap: 8,
                 }}
               >
-                <Target size={16} />
-                <span>{targeting ? 'Creating Target...' : 'Target This Role'}</span>
+                <Sparkles size={16} />
+                <span>{submittingInterest ? 'Recording Interest...' : 'Express Interest in Role'}</span>
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Target Explanation Box */}
+      {/* Onboarding-Style Step Progression Banner */}
       <div
         style={{
-          padding: '16px 20px',
-          background: 'rgba(212, 175, 55, 0.08)',
-          borderRadius: 10,
-          border: '1px solid rgba(212, 175, 55, 0.3)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          fontSize: 12.5,
-          color: '#854d0e',
+          background: '#ffffff',
+          borderRadius: 14,
+          border: '1px solid #e2e8f0',
+          padding: '20px 24px',
+          boxShadow: '0 2px 10px rgba(15, 23, 42, 0.04)',
         }}
       >
-        <FileCheck size={20} style={{ flexShrink: 0, color: '#d4af37' }} />
-        <div>
-          <strong>Target-Based Career Model:</strong> Creating a Target gives you a private workspace dedicated to this vacancy. You will review requirements, prepare, submit requirement-linked evidence, and track human recruiter review without automatic rejection algorithms.
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#b8860b', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 4 }}>
+              Recruitment Transparency Workflow
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a' }}>
+              From Interest to Human Decision
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {interest ? (
+              <span style={{
+                padding: '4px 12px', borderRadius: 99,
+                background: '#ecfdf5', border: '1px solid #a7f3d0',
+                fontSize: 11.5, fontWeight: 700, color: '#065f46',
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}>
+                <CheckCircle2 size={13} style={{ color: '#059669' }} />
+                Interest Confirmed
+              </span>
+            ) : (
+              <span style={{
+                padding: '4px 12px', borderRadius: 99,
+                background: '#fef3c7', border: '1px solid #fde68a',
+                fontSize: 11.5, fontWeight: 700, color: '#92400e',
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}>
+                <Sparkles size={13} style={{ color: '#b45309' }} />
+                Step 1: Express Interest
+              </span>
+            )}
+            {existingTarget && (
+              <span style={{
+                padding: '4px 12px', borderRadius: 99,
+                background: '#eff6ff', border: '1px solid #bfdbfe',
+                fontSize: 11.5, fontWeight: 700, color: '#1e40af',
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}>
+                <Target size={13} style={{ color: '#2563eb' }} />
+                Target Active
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* 4 Steps */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+          {[
+            {
+              step: '1', title: 'Express Interest',
+              desc: interest ? 'Recorded with company' : 'Signals your intent to hiring team',
+              done: Boolean(interest),
+              active: !interest,
+            },
+            {
+              step: '2', title: 'Create Target',
+              desc: existingTarget ? 'Target workspace active' : 'Launches private preparation room',
+              done: Boolean(existingTarget),
+              active: Boolean(interest && !existingTarget),
+            },
+            {
+              step: '3', title: 'Learn & Practice',
+              desc: 'Structured requirements & assessments',
+              done: false,
+              active: Boolean(existingTarget),
+            },
+            {
+              step: '4', title: 'Review & Decision',
+              desc: 'Direct human evaluation by company',
+              done: false,
+              active: false,
+            },
+          ].map((s) => (
+            <div
+              key={s.step}
+              style={{
+                padding: '12px 14px',
+                borderRadius: 10,
+                border: s.done ? '1px solid #a7f3d0' : s.active ? '1px solid #fde68a' : '1px solid #f1f5f9',
+                background: s.done ? '#f0fdf4' : s.active ? '#fffdf7' : '#f8fafc',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span
+                  style={{
+                    width: 22, height: 22, borderRadius: '50%',
+                    background: s.done ? '#059669' : s.active ? '#b8860b' : '#94a3b8',
+                    color: '#ffffff', fontSize: 11, fontWeight: 800,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  {s.done ? '✓' : s.step}
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: s.done ? '#065f46' : s.active ? '#854d0e' : '#475569' }}>
+                  {s.title}
+                </span>
+              </div>
+              <div style={{ fontSize: 11.5, color: '#64748b', paddingLeft: 30 }}>
+                {s.desc}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

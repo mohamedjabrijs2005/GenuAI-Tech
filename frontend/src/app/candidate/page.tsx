@@ -18,9 +18,14 @@ import {
   User,
   Info,
   RefreshCw,
+  Sparkles,
+  Building2,
+  MapPin,
+  Briefcase,
 } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import toast from 'react-hot-toast';
 
 interface DashboardData {
   candidate: any;
@@ -50,29 +55,71 @@ export default function CandidateDashboardPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
+  const [vacancies, setVacancies] = useState<any[]>([]);
+  const [interests, setInterests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
+  const [actionInProgressId, setActionInProgressId] = useState<string | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
+  const loadAll = () => {
     setLoading(true);
     setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
-    api
-      .get('/candidate-portal/dashboard')
-      .then((res) => {
-        if (!isMounted) return;
-        setData(res.data);
+    Promise.all([
+      api.get('/candidate-portal/dashboard'),
+      api.get('/candidate-portal/vacancies').catch(() => ({ data: { vacancies: [] } })),
+      api.get('/candidate/interests').catch(() => ({ data: { interests: [] } })),
+    ])
+      .then(([dashRes, vacRes, intRes]) => {
+        setData(dashRes.data);
+        setVacancies(vacRes.data?.vacancies || []);
+        setInterests(intRes.data?.interests || []);
       })
       .catch((err) => {
         console.error('Failed to load candidate dashboard metrics:', err);
       })
       .finally(() => {
-        if (isMounted) setLoading(false);
+        setLoading(false);
       });
+  };
 
-    return () => { isMounted = false; };
+  useEffect(() => {
+    loadAll();
   }, []);
+
+  const handleExpressInterest = async (vacancyId: string) => {
+    setActionInProgressId(vacancyId);
+    try {
+      await api.post(`/candidate/vacancies/${vacancyId}/interest`);
+      toast.success('Interest expressed successfully!');
+      loadAll();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to express interest');
+    } finally {
+      setActionInProgressId(null);
+    }
+  };
+
+  const handleCreateTarget = async (vacancyId: string) => {
+    setActionInProgressId(vacancyId);
+    try {
+      const res = await api.post('/candidate-portal/targets', { vacancyId });
+      const newTargetId = res.data?.target?.id;
+      toast.success('Target workspace created!');
+      if (newTargetId) {
+        router.push(`/candidate/targets/${newTargetId}`);
+      } else {
+        router.push('/candidate/targets');
+      }
+    } catch (err: any) {
+      if (err.response?.status === 409 && err.response?.data?.targetId) {
+        router.push(`/candidate/targets/${err.response.data.targetId}`);
+      } else {
+        toast.error(err.response?.data?.error || 'Failed to create target');
+        setActionInProgressId(null);
+      }
+    }
+  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -309,6 +356,149 @@ export default function CandidateDashboardPage() {
           }}>
             <CheckCircle2 size={16} />
             <span>All requirements and profile items are up to date. Explore new vacancies or review submitted evidence.</span>
+          </div>
+        )}
+      </div>
+
+      {/* ── Published Vacancies & Opportunities ── */}
+      <div className="card" style={{ padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                Discover Verified Vacancies
+              </h2>
+              <span style={{
+                fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 99,
+                background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0',
+                textTransform: 'uppercase', letterSpacing: '0.5px',
+              }}>
+                Live Roles
+              </span>
+            </div>
+            <div style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
+              Explore vacancies published by approved companies. Express interest to notify employers and unlock your target preparation workspace.
+            </div>
+          </div>
+          <Link
+            href="/candidate/vacancies"
+            className="btn btn-secondary"
+            style={{ fontSize: 12, padding: '6px 14px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}
+          >
+            <span>View All ({vacancies.length})</span>
+            <ArrowRight size={13} />
+          </Link>
+        </div>
+
+        {vacancies.length > 0 ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: 16 }}>
+            {vacancies.slice(0, 4).map((v) => {
+              const isTargeted = (data?.targets || []).some((t: any) => t.vacancy_id === v.id && !['WITHDRAWN', 'CLOSED'].includes(t.target_status));
+              const hasInterest = interests.some((i: any) => i.vacancy_id === v.id && i.interest_status === 'EXPRESSED');
+              const inProgress = actionInProgressId === v.id;
+
+              return (
+                <div
+                  key={v.id}
+                  style={{
+                    borderRadius: 12,
+                    border: isTargeted ? '1px solid #bfdbfe' : hasInterest ? '1px solid #fde68a' : '1px solid var(--border)',
+                    background: isTargeted ? '#f8faff' : hasInterest ? '#fffdf7' : 'var(--surface-container-low)',
+                    padding: '18px 20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: 14,
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: '#f1f5f9', color: '#475569' }}>
+                        {v.department_name || 'Engineering'}
+                      </span>
+                      {isTargeted ? (
+                        <span style={{ fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Target size={11} /> Target Active
+                        </span>
+                      ) : hasInterest ? (
+                        <span style={{ fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: '#fef3c7', color: '#854d0e', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Sparkles size={11} /> Interested
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <h3 style={{ fontSize: 15, fontWeight: 800, margin: '0 0 4px', color: 'var(--text-primary)' }}>
+                      <Link href={`/candidate/vacancies/${v.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                        {v.title}
+                      </Link>
+                    </h3>
+
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--primary)', marginBottom: 8 }}>
+                      {v.company_name}
+                    </div>
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: 11.5, color: '#64748b' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <MapPin size={12} /> {v.location || 'Remote'}
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <Briefcase size={12} /> {v.experience_level || 'Mid'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    <Link
+                      href={`/candidate/vacancies/${v.id}`}
+                      style={{ fontSize: 12, color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600 }}
+                    >
+                      View Details
+                    </Link>
+
+                    {isTargeted ? (
+                      <Link
+                        href={`/candidate/targets`}
+                        className="btn btn-secondary"
+                        style={{ fontSize: 11.5, padding: '5px 12px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <span>Target Workspace</span>
+                        <ArrowRight size={11} />
+                      </Link>
+                    ) : hasInterest ? (
+                      <button
+                        onClick={() => handleCreateTarget(v.id)}
+                        disabled={inProgress}
+                        className="btn btn-gold"
+                        style={{ fontSize: 11.5, padding: '5px 14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <Target size={12} />
+                        <span>{inProgress ? 'Creating...' : 'Create Target'}</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleExpressInterest(v.id)}
+                        disabled={inProgress}
+                        className="btn btn-gold"
+                        style={{ fontSize: 11.5, padding: '5px 14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <Sparkles size={12} />
+                        <span>{inProgress ? 'Recording...' : 'Express Interest'}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '36px 20px', background: 'var(--surface-container-low)', borderRadius: 10, border: '1px solid var(--border)' }}>
+            <Compass size={32} style={{ color: 'var(--text-muted)', margin: '0 auto 10px', display: 'block' }} />
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
+              No published vacancies are currently available.
+            </div>
+            <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', maxWidth: 440, margin: '0 auto', lineHeight: 1.5 }}>
+              Verified employer requisitions will appear here as soon as they are approved and published. Check back soon.
+            </p>
           </div>
         )}
       </div>

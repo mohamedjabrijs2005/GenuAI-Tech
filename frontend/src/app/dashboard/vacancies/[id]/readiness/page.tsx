@@ -21,11 +21,13 @@ import {
   BarChart3,
   Zap,
   Download,
+  Sparkles,
 } from 'lucide-react';
 import api from '@/lib/api';
 
 /* ─── Types ────────────────────────────────────────────────────── */
 interface FunnelData {
+  interestedCandidates?: number;
   targetsCreated: number;
   preparationStarted: number;
   practiceCompleted: number;
@@ -59,6 +61,15 @@ interface ReadyCandidate {
 
 /* ─── Funnel stage definitions ─────────────────────────────────── */
 const FUNNEL_STAGES = [
+  {
+    key: 'interestedCandidates' as keyof FunnelData,
+    label: 'Interested Candidates',
+    sublabel: 'Candidates who expressed interest in this role',
+    icon: Sparkles,
+    color: '#3b82f6',
+    bg: 'rgba(59,130,246,0.1)',
+    border: 'rgba(59,130,246,0.3)',
+  },
   {
     key: 'targetsCreated' as keyof FunnelData,
     label: 'Target Created',
@@ -237,7 +248,7 @@ export default function RoleReadinessFunnelPage() {
   }
 
   const funnelData = funnel.funnel;
-  const maxValue = funnelData.targetsCreated || 1;
+  const maxValue = Math.max(funnelData.interestedCandidates || 0, funnelData.targetsCreated || 1);
 
   /* ── Main render ─────────────────────────────────────────────── */
   return (
