@@ -74,6 +74,16 @@ export default function VacanciesPage() {
     }
   };
 
+  const handlePublishVacancy = async (v: Vacancy) => {
+    try {
+      await DataService.publishVacancy(v.id);
+      toast.success(`Vacancy "${v.title}" published successfully!`);
+      await loadVacancies();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to publish vacancy');
+    }
+  };
+
   const handleTogglePause = async (v: Vacancy) => {
     const nextStatus = v.status === 'paused' ? 'published' : 'paused';
     await DataService.updateVacancyStatus(v.id, nextStatus);
@@ -227,6 +237,17 @@ export default function VacanciesPage() {
                       >
                         <Shield size={12} />
                         <span>Submit</span>
+                      </button>
+                    )}
+                    {(v.status === 'verified' || v.raw_status === 'APPROVED') && (
+                      <button
+                        onClick={() => handlePublishVacancy(v)}
+                        className="btn btn-gold btn-sm"
+                        title="Publish Approved Vacancy"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', padding: '4px 9px' }}
+                      >
+                        <Play size={12} />
+                        <span>Publish</span>
                       </button>
                     )}
                     <Link href={`/dashboard/vacancies/${v.id}`} className="btn btn-secondary btn-sm" title="View Vacancy Details">

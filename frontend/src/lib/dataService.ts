@@ -140,7 +140,8 @@ export const DataService = {
           applications: 0,
           assessments: 0,
           interviews: 0,
-          status: (v.status || 'published').toLowerCase() as Vacancy['status'],
+          status: ((v.status||'').toUpperCase()==='APPROVED'?'verified':(v.status||'').toUpperCase()==='PENDING_ADMIN_REVIEW'?'pending':(v.status||'published').toLowerCase()) as Vacancy['status'],
+          raw_status: (v.status||'published').toUpperCase(),
           created: v.created_at ? v.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
           location: v.location || 'Remote',
           experience_level: v.experience_level || 'senior',
@@ -483,3 +484,4 @@ export const EvidenceService = {
     } catch { return null; }
   },
 };
+

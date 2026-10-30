@@ -58,7 +58,7 @@ router.get('/:vacancyId/readiness-funnel', async (req, res) => {
     const practiceRes = await pool.query(
       `SELECT COUNT(DISTINCT t.candidate_id)::int AS count
        FROM targets t
-       JOIN practice_attempts pa ON (pa.target_id = t.id OR pa.candidate_id = t.candidate_id)
+       JOIN practice_attempts pa ON (pa.target_id = t.id OR (pa.target_id IS NULL AND pa.candidate_id = t.candidate_id))
        WHERE t.vacancy_id = $1 AND t.company_id = $2
          AND (UPPER(pa.status) IN ('SUBMITTED', 'COMPLETED') OR pa.submitted_at IS NOT NULL)`,
       [vacancyId, companyId]

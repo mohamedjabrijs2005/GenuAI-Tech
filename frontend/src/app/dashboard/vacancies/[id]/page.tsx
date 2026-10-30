@@ -81,6 +81,21 @@ export default function VacancyDetailPage() {
     toast.success(`Vacancy status changed to ${nextStatus}`);
   };
 
+  const handlePublish = async () => {
+    if (!vacancy) return;
+    setIsSubmitting(true);
+    try {
+      await DataService.publishVacancy(vacancy.id);
+      toast.success('Vacancy published successfully!');
+      const updated = await DataService.getVacancyById(id);
+      if (updated) setVacancy(updated);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to publish vacancy');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmitForVerification = async () => {
     if (!vacancy) return;
     setIsSubmitting(true);
@@ -172,10 +187,23 @@ export default function VacancyDetailPage() {
                 <span>{isSubmitting ? 'Submitting...' : 'Submit for Verification'}</span>
               </button>
             )}
-            <button onClick={handleToggleStatus} className="btn btn-secondary btn-sm">
-              {vacancy.status === 'paused' ? <Play size={14} /> : <Pause size={14} />}
-              <span>{vacancy.status === 'paused' ? 'Resume Hiring' : 'Pause Vacancy'}</span>
-            </button>
+            {(vacancy.status === 'verified' || (vacancy as any).raw_status === 'APPROVED') && (
+              <button
+                onClick={handlePublish}
+                disabled={isSubmitting}
+                className="btn btn-gold btn-sm"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                <Play size={14} />
+                <span>{isSubmitting ? 'Publishing...' : 'Publish Vacancy'}</span>
+              </button>
+            )}
+            {(vacancy.status === 'published' || vacancy.status === 'paused') && (
+              <button onClick={handleToggleStatus} className="btn btn-secondary btn-sm">
+                {vacancy.status === 'paused' ? <Play size={14} /> : <Pause size={14} />}
+                <span>{vacancy.status === 'paused' ? 'Resume Hiring' : 'Pause Vacancy'}</span>
+              </button>
+            )}
             <Link href={`/dashboard/vacancies/${id}/readiness`} className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', background: 'linear-gradient(135deg, #1e1b4b, #4338ca)', color: '#fff', border: 'none' }}>
               <BarChart3 size={14} />
               <span>Role Readiness Funnel</span>
