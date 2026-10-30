@@ -14,6 +14,7 @@ const STATUS_BADGE: Record<string, string> = {
   published: 'badge-published',
   paused: 'badge-paused',
   closed: 'badge-closed',
+  changes_requested: 'badge-yellow',
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -23,6 +24,7 @@ const STATUS_LABEL: Record<string, string> = {
   published: 'Published',
   paused: 'Paused',
   closed: 'Closed',
+  changes_requested: 'Changes Requested',
 };
 
 export default function VacanciesPage() {

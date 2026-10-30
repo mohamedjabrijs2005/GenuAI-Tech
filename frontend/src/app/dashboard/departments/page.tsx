@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import axios from 'axios';
@@ -241,7 +242,12 @@ function RoleModal({
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="role-modal-title">
       <div className="modal" style={{ maxWidth: 620 }}>
         <div className="modal-header">
-          <h2 className="modal-title" id="role-modal-title">{isEdit ? 'Edit Role' : 'New Role'}</h2>
+          <div>
+            <h2 className="modal-title" id="role-modal-title">{isEdit ? 'Edit Role Master' : 'New Role Master Profile'}</h2>
+            <p style={{ margin: 0, fontSize: 11.5, color: 'var(--text-muted)' }}>
+              Organisational template for department structure. To publish an active hiring vacancy with requirements & verification, use the Vacancy Builder.
+            </p>
+          </div>
           <button className="modal-close" onClick={onClose} aria-label="Close"><X size={16} /></button>
         </div>
         <form onSubmit={handleSubmit}>
@@ -313,7 +319,7 @@ function RoleModal({
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary btn-sm" onClick={onClose} disabled={saving}>Cancel</button>
             <button id="save-role" type="submit" className="btn btn-primary btn-sm" disabled={saving}>
-              {saving ? <><Loader2 size={13} style={{animation:'spin 0.6s linear infinite'}}/> Saving...</> : isEdit ? 'Save Changes' : 'Save as Draft'}
+              {saving ? <><Loader2 size={13} style={{animation:'spin 0.6s linear infinite'}}/> Saving...</> : isEdit ? 'Save Changes' : 'Save Role Profile'}
             </button>
           </div>
         </form>
@@ -494,19 +500,31 @@ function DepartmentsPageInner() {
       <div className="page-header page-header-row">
         <div>
           <h1 className="page-title">Departments & Roles</h1>
-          <p className="page-subtitle">Structure your organisation and define your open roles.</p>
+          <p className="page-subtitle">Structure your organisation and define internal role profiles.</p>
         </div>
-        <button
-          id={activeTab === 'departments' ? 'add-dept-btn' : 'add-role-btn'}
-          className="btn btn-primary"
-          onClick={() => activeTab === 'departments'
-            ? setDeptModal({ open: true, dept: null })
-            : setRoleModal({ open: true, role: null })
-          }
-        >
-          <Plus size={15} />
-          {activeTab === 'departments' ? 'New Department' : 'New Role'}
-        </button>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          {activeTab === 'roles' && (
+            <Link
+              href="/dashboard/vacancies/builder"
+              className="btn btn-gold"
+              style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            >
+              <Briefcase size={15} />
+              Create Vacancy Requisition
+            </Link>
+          )}
+          <button
+            id={activeTab === 'departments' ? 'add-dept-btn' : 'add-role-btn'}
+            className={activeTab === 'departments' ? 'btn btn-primary' : 'btn btn-secondary'}
+            onClick={() => activeTab === 'departments'
+              ? setDeptModal({ open: true, dept: null })
+              : setRoleModal({ open: true, role: null })
+            }
+          >
+            <Plus size={15} />
+            {activeTab === 'departments' ? 'New Department' : 'New Role Master'}
+          </button>
+        </div>
       </div>
 
       {error && <div className="alert alert-error"><AlertCircle size={14} /> {error}</div>}
@@ -638,6 +656,39 @@ function DepartmentsPageInner() {
       {/* ── ROLES TAB ── */}
       {activeTab === 'roles' && (
         <>
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(212,175,55,0.08), rgba(184,134,11,0.03))',
+            border: '1px solid rgba(212,175,55,0.25)',
+            borderRadius: 10,
+            padding: '14px 18px',
+            marginBottom: 20,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 12,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Briefcase size={18} style={{ color: '#b8860b', flexShrink: 0 }} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+                  Role Master & Organisational Profiles
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                  Role profiles define internal department job architecture. To publish an active hiring requisition with requirements and verification, use the Vacancy Builder.
+                </div>
+              </div>
+            </div>
+            <Link
+              href="/dashboard/vacancies/builder"
+              className="btn btn-gold btn-sm"
+              style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
+            >
+              <Plus size={13} />
+              <span>Open Vacancy Builder</span>
+            </Link>
+          </div>
+
           {roles.length === 0 ? (
             <div className="table-wrapper">
               <div className="empty-state">
@@ -699,6 +750,14 @@ function DepartmentsPageInner() {
                             onClick={() => setViewRole(role)}>
                             <Eye size={13} />
                           </button>
+                          <Link
+                            href={`/dashboard/vacancies/${role.id}`}
+                            className="btn btn-ghost btn-sm"
+                            title="Manage as Vacancy"
+                            style={{ textDecoration: 'none' }}
+                          >
+                            <Briefcase size={13} />
+                          </Link>
                           {role.status !== 'DEACTIVATED' && (
                             <>
                               <button className="btn btn-ghost btn-sm" title="Edit"

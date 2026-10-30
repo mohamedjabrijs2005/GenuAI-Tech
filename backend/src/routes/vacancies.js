@@ -166,17 +166,17 @@ router.post(
         }
       }
 
-      const initialStatus = autoSubmit ? 'PENDING_ADMIN_REVIEW' : 'DRAFT';
-      const submittedAt = autoSubmit ? new Date() : null;
+      // Always create as DRAFT first — use /submit endpoint for proper validation
+      const initialStatus = 'DRAFT';
 
       const normExp = (experienceLevel || 'senior').toLowerCase();
-      const normEmp = (employmentType || 'full_time').toLowerCase().replace('-', '_');
+      const normEmp = (employmentType || 'full_time').toLowerCase().replace(/-/g, '_').replace(/\s+/g, '_');
 
       const result = await pool.query(
         `INSERT INTO company_roles
          (company_id, department_id, title, job_description, experience_level,
-          employment_type, location, work_mode, salary_range, vacancy_count, closing_date, status, submitted_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
+          employment_type, location, work_mode, salary_range, vacancy_count, closing_date, status)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
         [
           companyId,
           finalDeptId,
@@ -190,16 +190,13 @@ router.post(
           vacancyCount || 1,
           closingDate || null,
           initialStatus,
-          submittedAt,
         ]
       );
 
       const vacancy = result.rows[0];
 
-      // 2. Insert any initial requirements or auto-generate baseline requirement for submission rule
-      const reqList = Array.isArray(requirements) && requirements.length > 0
-        ? requirements
-        : (autoSubmit ? [{ name: `Core Competency — ${title}`, category: 'Technical', reqType: 'Required' }] : []);
+      // 2. Insert any initial requirements provided by the frontend
+      const reqList = Array.isArray(requirements) && requirements.length > 0 ? requirements : [];
 
       for (const r of reqList) {
         try {
@@ -229,10 +226,10 @@ router.post(
           companyId,
           req.user.id,
           req.user.role || 'COMPANY_OWNER',
-          autoSubmit ? 'VACANCY_SUBMITTED_FOR_REVIEW' : 'VACANCY_CREATED',
+          'VACANCY_CREATED',
           vacancy.id,
           initialStatus,
-          JSON.stringify({ title, autoSubmit: Boolean(autoSubmit) }),
+          JSON.stringify({ title }),
           null,
           JSON.stringify({ status: initialStatus, title }),
           req.ip || null,

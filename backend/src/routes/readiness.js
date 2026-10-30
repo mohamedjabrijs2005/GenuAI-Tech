@@ -16,6 +16,12 @@ router.get('/:vacancyId/readiness-funnel', async (req, res) => {
     const companyId = req.companyMembership.company_id;
     const { vacancyId } = req.params;
 
+    // Validate UUID format to prevent 500 query errors
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(vacancyId);
+    if (!isUUID) {
+      return res.status(404).json({ error: 'Vacancy not found or access denied' });
+    }
+
     // ── 1. Tenant-check: vacancy must belong to this company ──────────
     const roleRes = await pool.query(
       `SELECT cr.id, cr.title, cr.status
@@ -44,7 +50,7 @@ router.get('/:vacancyId/readiness-funnel', async (req, res) => {
        FROM targets t
        JOIN target_learning_progress tlp ON tlp.target_id = t.id
        WHERE t.vacancy_id = $1 AND t.company_id = $2
-         AND tlp.status IN ('IN_PROGRESS', 'COMPLETED')`,
+         AND (UPPER(tlp.status) IN ('IN_PROGRESS', 'COMPLETED') OR tlp.last_accessed_at IS NOT NULL)`,
       [vacancyId, companyId]
     );
 
@@ -52,29 +58,29 @@ router.get('/:vacancyId/readiness-funnel', async (req, res) => {
     const practiceRes = await pool.query(
       `SELECT COUNT(DISTINCT t.candidate_id)::int AS count
        FROM targets t
-       JOIN practice_attempts pa ON pa.target_id = t.id
+       JOIN practice_attempts pa ON (pa.target_id = t.id OR pa.candidate_id = t.candidate_id)
        WHERE t.vacancy_id = $1 AND t.company_id = $2
-         AND pa.status IN ('SUBMITTED', 'COMPLETED')`,
+         AND (UPPER(pa.status) IN ('SUBMITTED', 'COMPLETED') OR pa.submitted_at IS NOT NULL)`,
       [vacancyId, companyId]
     );
 
     // Stage 4 — assessmentSubmitted: candidates who submitted an official assessment attempt
-    //   Check both assessment_attempts (newer) and assessment_results (older schema)
     const assessRes = await pool.query(
       `SELECT COUNT(DISTINCT candidate_id)::int AS count FROM (
-         -- Newer schema: assessment_attempts table (target-linked)
-         SELECT t.candidate_id
-         FROM targets t
-         JOIN assessment_attempts aa ON aa.target_id = t.id
-         WHERE t.vacancy_id = $1 AND t.company_id = $2
-           AND aa.status IN ('SUBMITTED', 'COMPLETED', 'GRADED', 'GRADING_COMPLETE')
+         -- Assessment attempts linked via target or directly via role/company
+         SELECT aa.candidate_id
+         FROM assessment_attempts aa
+         LEFT JOIN targets t ON t.id = aa.target_id
+         WHERE (aa.role_id = $1 OR t.vacancy_id = $1)
+           AND (aa.company_id = $2 OR t.company_id = $2)
+           AND (UPPER(COALESCE(aa.status, '')) IN ('SUBMITTED', 'COMPLETED', 'GRADED', 'GRADING_COMPLETE') OR aa.submitted_at IS NOT NULL)
          UNION
          -- Older schema: assessment_results via applications table
          SELECT a.candidate_id
          FROM applications a
          JOIN assessment_results ar ON ar.application_id = a.id
          WHERE a.role_id = $1 AND a.company_id = $2
-           AND ar.status IN ('Completed')
+           AND UPPER(COALESCE(ar.status, '')) IN ('COMPLETED', 'SUBMITTED', 'GRADED')
        ) sub`,
       [vacancyId, companyId]
     );
@@ -82,25 +88,32 @@ router.get('/:vacancyId/readiness-funnel', async (req, res) => {
     // Stage 5 — evidenceSubmitted: candidates who submitted at least one evidence item
     const evidenceRes = await pool.query(
       `SELECT COUNT(DISTINCT candidate_id)::int AS count FROM (
-         -- evidence linked via target (newer approach)
+         -- Target-linked evidence (v5+)
          SELECT t.candidate_id
          FROM targets t
-         JOIN evidence e ON e.target_id = t.id
+         JOIN evidence e ON (e.target_id = t.id OR (e.candidate_id = t.candidate_id AND e.vacancy_id = t.vacancy_id))
          WHERE t.vacancy_id = $1 AND t.company_id = $2
-           AND e.status IN ('Supporting', 'Limited')
+           AND (
+             e.submitted_at IS NOT NULL
+             OR UPPER(COALESCE(e.review_status, '')) IN ('SUBMITTED', 'SUPPORTING', 'LIMITED', 'APPROVED', 'VERIFIED')
+             OR UPPER(COALESCE(e.status, '')) IN ('SUPPORTING', 'LIMITED', 'SUBMITTED')
+           )
          UNION
-         -- evidence linked via application (older approach)
+         -- Application-linked evidence
          SELECT a.candidate_id
          FROM applications a
          JOIN evidence e ON e.application_id = a.id
          WHERE a.role_id = $1 AND a.company_id = $2
-           AND e.status IN ('Supporting', 'Limited')
+           AND (
+             e.submitted_at IS NOT NULL
+             OR UPPER(COALESCE(e.review_status, '')) IN ('SUBMITTED', 'SUPPORTING', 'LIMITED', 'APPROVED', 'VERIFIED')
+             OR UPPER(COALESCE(e.status, '')) IN ('SUPPORTING', 'LIMITED', 'SUBMITTED')
+           )
        ) sub`,
       [vacancyId, companyId]
     );
 
     // Stage 6 — coverageQualified: candidates meeting minimum coverage threshold (>= 60%)
-    //   Checks target_coverage table for coverage_pct
     const coverageRes = await pool.query(
       `SELECT COUNT(DISTINCT tc.candidate_id)::int AS count
        FROM target_coverage tc
@@ -115,7 +128,7 @@ router.get('/:vacancyId/readiness-funnel', async (req, res) => {
       `SELECT COUNT(DISTINCT a.candidate_id)::int AS count
        FROM applications a
        WHERE a.role_id = $1 AND a.company_id = $2
-         AND a.status IN ('Review', 'Interview', 'Decision', 'Selected', 'Eligible', 'Verified', 'Invited', 'Assessed')`,
+         AND LOWER(a.status) IN ('review', 'interview', 'decision', 'selected', 'eligible', 'verified', 'invited', 'assessed', 'shortlisted')`,
       [vacancyId, companyId]
     );
 
@@ -125,7 +138,7 @@ router.get('/:vacancyId/readiness-funnel', async (req, res) => {
        FROM applications a
        JOIN interviews i ON i.application_id = a.id
        WHERE a.role_id = $1 AND a.company_id = $2
-         AND i.status IN ('Scheduled', 'Completed')`,
+         AND LOWER(i.status) IN ('scheduled', 'completed')`,
       [vacancyId, companyId]
     );
 
@@ -134,7 +147,7 @@ router.get('/:vacancyId/readiness-funnel', async (req, res) => {
       `SELECT COUNT(DISTINCT a.candidate_id)::int AS count
        FROM applications a
        WHERE a.role_id = $1 AND a.company_id = $2
-         AND a.status = 'Selected'`,
+         AND LOWER(a.status) IN ('selected', 'hired')`,
       [vacancyId, companyId]
     );
 
@@ -176,6 +189,12 @@ router.get('/:vacancyId/ready-candidates', async (req, res) => {
     const companyId = req.companyMembership.company_id;
     const { vacancyId } = req.params;
 
+    // Validate UUID format
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(vacancyId);
+    if (!isUUID) {
+      return res.status(404).json({ error: 'Vacancy not found or access denied' });
+    }
+
     // Tenant-check
     const roleCheck = await pool.query(
       'SELECT id, title FROM company_roles WHERE id = $1 AND company_id = $2',
@@ -208,18 +227,22 @@ router.get('/:vacancyId/ready-candidates', async (req, res) => {
          AND COALESCE(tc.coverage_pct, 0) >= 60
          AND EXISTS (
            SELECT 1 FROM assessment_attempts aa
-           WHERE aa.target_id = t.id
-             AND aa.status IN ('SUBMITTED', 'COMPLETED', 'GRADED', 'GRADING_COMPLETE')
+           WHERE (aa.target_id = t.id OR aa.role_id = t.vacancy_id)
+             AND (UPPER(COALESCE(aa.status, '')) IN ('SUBMITTED', 'COMPLETED', 'GRADED', 'GRADING_COMPLETE') OR aa.submitted_at IS NOT NULL)
            UNION
            SELECT 1 FROM applications ap
            JOIN assessment_results ar ON ar.application_id = ap.id
            WHERE ap.candidate_id = t.candidate_id AND ap.role_id = t.vacancy_id
-             AND ar.status IN ('Completed')
+             AND UPPER(COALESCE(ar.status, '')) IN ('COMPLETED', 'SUBMITTED', 'GRADED')
          )
          AND EXISTS (
            SELECT 1 FROM evidence e
            WHERE (e.target_id = t.id OR (a.id IS NOT NULL AND e.application_id = a.id))
-             AND e.status IN ('Supporting', 'Limited')
+             AND (
+               e.submitted_at IS NOT NULL
+               OR UPPER(COALESCE(e.review_status, '')) IN ('SUBMITTED', 'SUPPORTING', 'LIMITED', 'APPROVED', 'VERIFIED')
+               OR UPPER(COALESCE(e.status, '')) IN ('SUPPORTING', 'LIMITED', 'SUBMITTED')
+             )
          )
        ORDER BY COALESCE(tc.coverage_pct, 0) DESC, t.last_activity_at DESC`,
       [vacancyId, companyId]

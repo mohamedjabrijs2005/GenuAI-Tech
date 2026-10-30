@@ -577,15 +577,15 @@ export default function DashboardPage() {
               ))}
             </select>
 
-            {/* Primary Action Button (Controlled Gold) */}
-            <button
-              onClick={() => setIsModalOpen(true)}
+            {/* Primary Action Button (Unified Vacancy Builder) */}
+            <Link
+              href="/dashboard/vacancies/builder"
               className="btn btn-gold btn-sm"
-              style={{ gap: 6 }}
+              style={{ gap: 6, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
             >
               <Plus size={14} />
               <span>Create Vacancy</span>
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -616,14 +616,14 @@ export default function DashboardPage() {
                         : 'Try adjusting your search criteria or department filter.'}
                     </div>
                     {vacancies.length === 0 && (
-                      <button
-                        onClick={() => setIsModalOpen(true)}
+                      <Link
+                        href="/dashboard/vacancies/builder"
                         className="btn btn-gold btn-sm"
-                        style={{ margin: '0 auto' }}
+                        style={{ margin: '0 auto', gap: 6, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
                       >
                         <Plus size={14} />
                         <span>Create First Vacancy</span>
-                      </button>
+                      </Link>
                     )}
                   </td>
                 </tr>

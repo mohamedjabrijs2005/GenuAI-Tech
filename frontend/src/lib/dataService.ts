@@ -80,24 +80,33 @@ export const DataService = {
     try {
       const res = await api.get('/vacancies');
       if (res.data?.vacancies) {
-        const mapped = res.data.vacancies.map((v: any) => ({
-          id: v.id,
-          title: v.title,
-          dept: v.department_name || 'General',
-          openings: Number(v.vacancy_count) || 1,
-          applications: Number(v.applicant_count) || 0,
-          assessments: 0,
-          interviews: 0,
-          status: (v.status || 'published').toLowerCase(),
-          raw_status: v.status || 'PUBLISHED',
-          requirement_count: Number(v.requirement_count) || 0,
-          review_note: v.review_note || '',
-          created: v.created_at ? v.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
-          location: v.location || 'Remote',
-          experience_level: v.experience_level || 'senior',
-          employment_type: v.employment_type || 'full_time',
-          description: v.job_description,
-        }));
+        const mapped = res.data.vacancies.map((v: any) => {
+          // Normalize backend status to frontend display status
+          const rawStatus = (v.status || 'PUBLISHED').toUpperCase();
+          let displayStatus = rawStatus.toLowerCase();
+          if (rawStatus === 'PENDING_ADMIN_REVIEW') displayStatus = 'pending';
+          else if (rawStatus === 'CHANGES_REQUESTED') displayStatus = 'changes_requested';
+          else if (rawStatus === 'APPROVED') displayStatus = 'verified';
+
+          return {
+            id: v.id,
+            title: v.title,
+            dept: v.department_name || 'General',
+            openings: Number(v.vacancy_count) || 1,
+            applications: Number(v.applicant_count) || 0,
+            assessments: 0,
+            interviews: 0,
+            status: displayStatus,
+            raw_status: v.status || 'PUBLISHED',
+            requirement_count: Number(v.requirement_count) || 0,
+            review_note: v.review_note || '',
+            created: v.created_at ? v.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+            location: v.location || 'Remote',
+            experience_level: v.experience_level || 'senior',
+            employment_type: v.employment_type || 'full_time',
+            description: v.job_description,
+          };
+        });
         return mapped;
       }
     } catch (err) {
