@@ -49,17 +49,6 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [deptFilter, setDeptFilter] = useState<string>('ALL');
 
-  // Create Vacancy Modal Form State
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [formTitle, setFormTitle] = useState<string>('');
-  const [formDeptId, setFormDeptId] = useState<string>('');
-  const [formExpLevel, setFormExpLevel] = useState<string>('senior');
-  const [formEmpType, setFormEmpType] = useState<string>('full_time');
-  const [formLocation, setFormLocation] = useState<string>('');
-  const [formVacancyCount, setFormVacancyCount] = useState<number>(1);
-  const [formDesc, setFormDesc] = useState<string>('');
-
   // Fetch real data dynamically from PostgreSQL
   const fetchData = async () => {
     try {
@@ -76,9 +65,6 @@ export default function DashboardPage() {
 
       if (deptsRes?.data?.departments && deptsRes.data.departments.length > 0) {
         setDepartments(deptsRes.data.departments);
-        if (!formDeptId) {
-          setFormDeptId(deptsRes.data.departments[0]?.id || '');
-        }
       }
       setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     } catch (err) {
@@ -158,56 +144,6 @@ export default function DashboardPage() {
 
     return items;
   }, [changesRequestedCount, draftCount]);
-
-  // Handle Vacancy Creation
-  const handleCreateRole = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formTitle.trim()) {
-      toast.error('Position title is required');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const selectedDept = departments.find(d => d.id === formDeptId);
-      const res = await api.post('/vacancies', {
-        title: formTitle.trim(),
-        departmentId: formDeptId || undefined,
-        departmentName: selectedDept?.name || 'Engineering',
-        experienceLevel: formExpLevel,
-        employmentType: formEmpType,
-        location: formLocation.trim() || 'Remote',
-        vacancyCount: formVacancyCount,
-        jobDescription: formDesc.trim(),
-        autoSubmit: true, // Auto-submit to admin verification queue
-      });
-
-      // Broadcast real-time event to Admin verification console
-      try {
-        if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
-          const bc = new BroadcastChannel('genuai_status_sync');
-          bc.postMessage({ type: 'VACANCY_SUBMITTED', vacancyId: res.data?.vacancy?.id });
-          bc.close();
-        }
-      } catch (_) {}
-
-      toast.success('Vacancy requisition created and submitted for admin verification');
-      setIsModalOpen(false);
-
-      // Reset form
-      setFormTitle('');
-      setFormDesc('');
-      setFormVacancyCount(1);
-
-      // Refresh real data
-      await fetchData();
-    } catch (err: any) {
-      console.error('Failed to create vacancy', err);
-      toast.error(err.response?.data?.error || 'Failed to create vacancy');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   // Helper for Status Badge styling
   const renderStatusBadge = (statusStr: string, rawStatus?: string) => {
@@ -768,140 +704,6 @@ export default function DashboardPage() {
         </div>
 
       </div>
-
-      {/* ================= 6. CREATE VACANCY MODAL ================= */}
-      {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 540 }}>
-            <div className="modal-header">
-              <div>
-                <div className="modal-title">Create New Vacancy</div>
-                <div className="modal-subtitle">Define role details to initialize vacancy specification</div>
-              </div>
-              <button onClick={() => setIsModalOpen(false)} className="btn-icon" aria-label="Close modal">
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateRole} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div className="form-group">
-                  <label className="form-label">Position Title *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Backend Developer"
-                    value={formTitle}
-                    onChange={(e) => setFormTitle(e.target.value)}
-                    className="form-input"
-                  />
-                </div>
-
-                <div className="grid-2" style={{ gap: 12 }}>
-                  <div className="form-group">
-                    <label className="form-label">Department *</label>
-                    <select
-                      value={formDeptId}
-                      onChange={(e) => setFormDeptId(e.target.value)}
-                      className="form-select"
-                    >
-                      {departments.length === 0 && (
-                        <option value="">No departments configured</option>
-                      )}
-                      {departments.map((d) => (
-                        <option key={d.id} value={d.id}>{d.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Experience Level</label>
-                    <select
-                      value={formExpLevel}
-                      onChange={(e) => setFormExpLevel(e.target.value)}
-                      className="form-select"
-                    >
-                      <option value="entry">Entry Level</option>
-                      <option value="mid">Mid Level</option>
-                      <option value="senior">Senior Level</option>
-                      <option value="lead">Lead / Principal</option>
-                      <option value="executive">Executive</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid-2" style={{ gap: 12 }}>
-                  <div className="form-group">
-                    <label className="form-label">Employment Type</label>
-                    <select
-                      value={formEmpType}
-                      onChange={(e) => setFormEmpType(e.target.value)}
-                      className="form-select"
-                    >
-                      <option value="full_time">Full Time</option>
-                      <option value="part_time">Part Time</option>
-                      <option value="contract">Contract</option>
-                      <option value="internship">Internship</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Openings Count</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={50}
-                      value={formVacancyCount}
-                      onChange={(e) => setFormVacancyCount(Number(e.target.value))}
-                      className="form-input"
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Location</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Remote or London, UK"
-                    value={formLocation}
-                    onChange={(e) => setFormLocation(e.target.value)}
-                    className="form-input"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Role Overview & Description</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Summarize core responsibilities, deliverables, and domain scope..."
-                    value={formDesc}
-                    onChange={(e) => setFormDesc(e.target.value)}
-                    className="form-input"
-                  />
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="btn btn-secondary"
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-gold"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Creating...' : 'Create Vacancy'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
     </div>
   );

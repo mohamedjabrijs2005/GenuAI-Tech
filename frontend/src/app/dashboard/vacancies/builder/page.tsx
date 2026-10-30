@@ -159,25 +159,38 @@ export default function VacancyBuilderPage() {
   };
 
   const handleSubmitVerification = async () => {
-    // Validate all steps
+    if (isSubmitting || savedSuccess) return;
+    setStepErrors({});
+
+    // Step 1 Validation
     if (!basicInfo.title.trim()) {
-      toast.error('Please complete Role & Vacancy Information (Step 1).');
+      toast.error('Position title is required (Step 1).');
+      setStepErrors({ title: 'Position title is required' });
       setCurrentStep(1);
       return;
     }
+    if (!basicInfo.location.trim()) {
+      toast.error('Location is required (Step 1).');
+      setStepErrors({ location: 'Location is required' });
+      setCurrentStep(1);
+      return;
+    }
+
+    // Step 2 Validation: Requirements count >= 1
     if (requirements.length === 0) {
-      toast.error('Please add at least one requirement (Step 2).');
+      toast.error('Please add at least one requirement before submitting (Step 2).');
+      setStepErrors({ requirements: 'At least one requirement is required' });
       setCurrentStep(2);
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // 1. Create vacancy as DRAFT
+      // 1. Create vacancy as DRAFT only (Requirement 5 & 4)
       const createRes = await api.post('/vacancies', {
         title: basicInfo.title.trim(),
         departmentId: basicInfo.departmentId || undefined,
-        departmentName: basicInfo.departmentName || basicInfo.title.split(' ')[0] || 'General',
+        departmentName: basicInfo.departmentName || basicInfo.title.split(' ')[0] || 'Engineering',
         location: basicInfo.location.trim() || 'Remote',
         workMode: basicInfo.workMode || 'Hybrid',
         employmentType: basicInfo.employmentType || 'full_time',
@@ -186,7 +199,7 @@ export default function VacancyBuilderPage() {
         salaryRange: basicInfo.salaryRange || null,
         closingDate: basicInfo.deadline || null,
         jobDescription: basicInfo.description || '',
-        autoSubmit: false,
+        assessmentConfig: assessmentConfig.required ? assessmentConfig : undefined,
         requirements: requirements.map((r) => ({
           name: r.name,
           category: r.category,
@@ -199,22 +212,25 @@ export default function VacancyBuilderPage() {
 
       const vacancy = createRes.data?.vacancy;
       if (!vacancy?.id) {
-        toast.error('Failed to create vacancy. Please try again.');
+        toast.error('Failed to create vacancy draft. Please try again.');
         setIsSubmitting(false);
         return;
       }
 
-      // 2. Submit for admin verification using proper endpoint
+      // 2. Submit for admin verification using proper POST /api/vacancies/:id/submit (Requirement 6)
       try {
         await api.post(`/vacancies/${vacancy.id}/submit`);
       } catch (submitErr: any) {
-        const errMsg = submitErr.response?.data?.error;
-        toast.error(errMsg || 'Vacancy created as draft, but submission failed. Please submit from the vacancies list.');
-        router.push('/dashboard/vacancies');
+        const errMsg = submitErr.response?.data?.error ||
+          (Array.isArray(submitErr.response?.data?.errors) ? submitErr.response.data.errors.map((e: any) => e.msg).join('; ') : '') ||
+          'Submission to platform verification queue failed.';
+        toast.error(errMsg);
+        setStepErrors({ submission: errMsg });
+        router.push(`/dashboard/vacancies/${vacancy.id}`);
         return;
       }
 
-      // 3. Broadcast to admin panel
+      // 3. Broadcast real-time status sync to admin verification queue
       try {
         if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
           const bc = new BroadcastChannel('genuai_status_sync');
@@ -224,26 +240,29 @@ export default function VacancyBuilderPage() {
       } catch (_) {}
 
       setSavedSuccess(true);
-      toast.success('Vacancy submitted for admin verification!');
+      toast.success('Vacancy successfully submitted for platform admin review!');
       setTimeout(() => {
         router.push(`/dashboard/vacancies/${vacancy.id}`);
       }, 1500);
     } catch (err: any) {
       console.error('Failed to create/submit vacancy', err);
-      const errMsg = err.response?.data?.error;
-      if (errMsg) {
-        toast.error(errMsg);
-      } else {
-        toast.error('Something went wrong. Please try again.');
-      }
+      const errMsg = err.response?.data?.error ||
+        (Array.isArray(err.response?.data?.errors) ? err.response.data.errors.map((e: any) => e.msg).join('; ') : '') ||
+        'Failed to initialize vacancy requisition.';
+      toast.error(errMsg);
+      setStepErrors({ submission: errMsg });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleSaveDraft = async () => {
+    if (isSubmitting || savedSuccess) return;
+    setStepErrors({});
+
     if (!basicInfo.title.trim()) {
       toast.error('Job title is required to save a draft.');
+      setStepErrors({ title: 'Job title is required' });
       setCurrentStep(1);
       return;
     }
@@ -253,7 +272,7 @@ export default function VacancyBuilderPage() {
       const createRes = await api.post('/vacancies', {
         title: basicInfo.title.trim(),
         departmentId: basicInfo.departmentId || undefined,
-        departmentName: basicInfo.departmentName || basicInfo.title.split(' ')[0] || 'General',
+        departmentName: basicInfo.departmentName || basicInfo.title.split(' ')[0] || 'Engineering',
         location: basicInfo.location.trim() || 'Remote',
         workMode: basicInfo.workMode || 'Hybrid',
         employmentType: basicInfo.employmentType || 'full_time',
@@ -262,7 +281,7 @@ export default function VacancyBuilderPage() {
         salaryRange: basicInfo.salaryRange || null,
         closingDate: basicInfo.deadline || null,
         jobDescription: basicInfo.description || '',
-        autoSubmit: false,
+        assessmentConfig: assessmentConfig.required ? assessmentConfig : undefined,
         requirements: requirements.map((r) => ({
           name: r.name,
           category: r.category,
@@ -277,7 +296,11 @@ export default function VacancyBuilderPage() {
       toast.success('Vacancy saved as Draft successfully!');
       router.push(`/dashboard/vacancies/${vacancy?.id || ''}`);
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to save draft.');
+      const errMsg = err.response?.data?.error ||
+        (Array.isArray(err.response?.data?.errors) ? err.response.data.errors.map((e: any) => e.msg).join('; ') : '') ||
+        'Failed to save draft.';
+      toast.error(errMsg);
+      setStepErrors({ submission: errMsg });
     } finally {
       setIsSubmitting(false);
     }
@@ -872,6 +895,13 @@ export default function VacancyBuilderPage() {
           {requirements.length === 0 && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-3 text-red-800 text-xs font-semibold flex items-center gap-2">
               <AlertCircle size={13} /> No requirements added. Go back to Step 2.
+            </div>
+          )}
+
+          {stepErrors.submission && (
+            <div className="p-3 bg-red-50 border border-red-300 rounded-lg mb-3 text-red-900 text-xs font-semibold flex items-center gap-2">
+              <AlertCircle size={14} className="text-red-600 flex-shrink-0" />
+              <span>{stepErrors.submission}</span>
             </div>
           )}
 

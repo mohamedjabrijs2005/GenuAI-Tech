@@ -6,6 +6,21 @@ const { authenticate, requireCompany } = require('../middleware/auth');
 const router = express.Router();
 router.use(authenticate, requireCompany);
 
+const EXPERIENCE_LEVELS = ['entry', 'mid', 'senior', 'lead', 'executive'];
+const EMPLOYMENT_TYPES = ['full_time', 'part_time', 'contract', 'internship', 'freelance'];
+
+function normalizeExperienceLevel(val) {
+  if (!val) return 'senior';
+  const s = String(val).toLowerCase().trim();
+  return EXPERIENCE_LEVELS.includes(s) ? s : 'senior';
+}
+
+function normalizeEmploymentType(val) {
+  if (!val) return 'full_time';
+  const s = String(val).toLowerCase().trim().replace(/[-\s]+/g, '_');
+  return EMPLOYMENT_TYPES.includes(s) ? s : 'full_time';
+}
+
 // ============================================================
 // GET /api/vacancies — List all vacancies for authenticated company
 // ============================================================
@@ -131,8 +146,8 @@ router.post(
         salaryRange,
         vacancyCount,
         closingDate,
-        autoSubmit,
         requirements,
+        assessmentConfig,
       } = req.body;
 
       // 1. Resolve or auto-create department for company
@@ -166,11 +181,10 @@ router.post(
         }
       }
 
-      // Always create as DRAFT first — use /submit endpoint for proper validation
+      // STRICT: POST /api/vacancies always creates DRAFT only
       const initialStatus = 'DRAFT';
-
-      const normExp = (experienceLevel || 'senior').toLowerCase();
-      const normEmp = (employmentType || 'full_time').toLowerCase().replace(/-/g, '_').replace(/\s+/g, '_');
+      const normExp = normalizeExperienceLevel(experienceLevel);
+      const normEmp = normalizeEmploymentType(employmentType);
 
       const result = await pool.query(
         `INSERT INTO company_roles
@@ -182,8 +196,8 @@ router.post(
           finalDeptId,
           title,
           jobDescription || null,
-          ['entry', 'mid', 'senior', 'lead', 'executive'].includes(normExp) ? normExp : 'senior',
-          ['full_time', 'part_time', 'contract', 'internship', 'freelance'].includes(normEmp) ? normEmp : 'full_time',
+          normExp,
+          normEmp,
           location || 'Remote',
           workMode || 'Hybrid',
           salaryRange || null,
@@ -203,7 +217,7 @@ router.post(
           await pool.query(
             `INSERT INTO requirements
              (role_id, company_id, name, description, category, req_type, priority, proficiency, eval_method, importance, weight)
-             VALUES ($1, $2, $3, $4, $5, $6, 'High', 'Intermediate', 'Official Technical Assessment', 'REQUIRED', 1.0)`,
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'REQUIRED', 1.0)`,
             [
               vacancy.id,
               companyId,
@@ -211,6 +225,9 @@ router.post(
               r.description || null,
               r.category || 'Technical',
               r.type || r.reqType || 'Required',
+              r.priority || 'High',
+              r.proficiency || 'Intermediate',
+              r.method || 'Official Technical Assessment',
             ]
           );
         } catch (rErr) {
@@ -218,7 +235,26 @@ router.post(
         }
       }
 
-      // 3. Audit log
+      // 3. Assessment linkage setup if configured
+      if (assessmentConfig) {
+        try {
+          await pool.query(
+            `INSERT INTO assessment_groups (role_id, company_id, name, type, duration, description)
+             VALUES ($1, $2, $3, 'Official Technical Assessment', $4, $5)`,
+            [
+              vacancy.id,
+              companyId,
+              `${title} — Technical Assessment`,
+              assessmentConfig.duration || 60,
+              `Official technical assessment for ${title}`,
+            ]
+          );
+        } catch (aErr) {
+          console.warn('Assessment group insertion note:', aErr.message);
+        }
+      }
+
+      // 4. Audit log
       await pool.query(
         `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, new_status, metadata, old_value, new_value, ip_address)
          VALUES ($1, $2, $3, $4, 'Vacancy', $5, $6, $7, $8, $9, $10)`,
@@ -298,7 +334,7 @@ router.put('/:id', handleUpdateVacancy);
 router.patch('/:id', handleUpdateVacancy);
 
 // ============================================================
-// POST /api/vacancies/:id/submit — Submit for admin review
+// POST /api/vacancies/:id/submit — Submit for admin review (Requirement 6, 7, 9, 10)
 // ============================================================
 router.post('/:id/submit', async (req, res) => {
   let client;
@@ -312,9 +348,15 @@ router.post('/:id/submit', async (req, res) => {
     const companyId = req.companyMembership.company_id;
     const { id } = req.params;
 
+    // Validate UUID format
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+    if (!isUUID) {
+      return res.status(404).json({ error: 'Vacancy not found or access denied' });
+    }
+
     await client.query('BEGIN');
 
-    // 1. Lock and verify vacancy ownership and status
+    // 1. Lock and verify vacancy ownership and status (Tenant Isolation)
     const vacRes = await client.query(
       `SELECT cr.*, c.verification_status AS company_status
        FROM company_roles cr
@@ -326,20 +368,57 @@ router.post('/:id/submit', async (req, res) => {
 
     if (vacRes.rowCount === 0) {
       await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Vacancy not found' });
+      return res.status(404).json({ error: 'Vacancy not found or access denied' });
     }
 
     const vacancy = vacRes.rows[0];
 
-    // Status check
+    // 2. Prevent duplicate submission (Requirement 10)
+    if (vacancy.status === 'PENDING_ADMIN_REVIEW') {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        error: 'Vacancy requisition is already submitted and pending admin review. Duplicate submissions are not allowed.',
+        status: vacancy.status,
+      });
+    }
+
+    if (['APPROVED', 'PUBLISHED'].includes(vacancy.status)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        error: `Vacancy is already ${vacancy.status.toLowerCase()} and cannot be re-submitted.`,
+        status: vacancy.status,
+      });
+    }
+
     if (!['DRAFT', 'CHANGES_REQUESTED'].includes(vacancy.status)) {
       await client.query('ROLLBACK');
       return res.status(400).json({
         error: `Cannot submit vacancy in '${vacancy.status}' status. Only DRAFT or CHANGES_REQUESTED vacancies can be submitted.`,
+        status: vacancy.status,
       });
     }
 
-    // 2. Requirement Rule: Every vacancy must have at least 1 requirement before submission
+    // 3. Validate required fields (Requirement 7 & 9)
+    const missingFields = [];
+    if (!vacancy.title || !vacancy.title.trim()) missingFields.push('title');
+    if (!vacancy.department_id) missingFields.push('department');
+    if (!vacancy.experience_level || !EXPERIENCE_LEVELS.includes(vacancy.experience_level.toLowerCase())) {
+      missingFields.push('experience_level');
+    }
+    if (!vacancy.employment_type || !EMPLOYMENT_TYPES.includes(vacancy.employment_type.toLowerCase())) {
+      missingFields.push('employment_type');
+    }
+    if (!vacancy.location || !vacancy.location.trim()) missingFields.push('location');
+
+    if (missingFields.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(422).json({
+        error: `Cannot submit vacancy: missing or invalid required fields (${missingFields.join(', ')}). Please complete all required role details before submitting.`,
+        missingFields,
+      });
+    }
+
+    // 4. Validate requirements (Requirement 7 & 9): at least 1 requirement is required
     const reqCountRes = await client.query(
       'SELECT COUNT(*)::int AS count FROM requirements WHERE role_id = $1 AND company_id = $2',
       [id, companyId]
@@ -349,12 +428,28 @@ router.post('/:id/submit', async (req, res) => {
     if (reqCount < 1) {
       await client.query('ROLLBACK');
       return res.status(400).json({
-        error: 'Vacancy cannot be submitted without requirements. Please add at least 1 requirement (Java, SQL, REST APIs, etc.) before submitting.',
+        error: 'Vacancy cannot be submitted without requirements. Please add at least 1 requirement before submitting.',
         requirementsCount: 0,
       });
     }
 
-    // 3. Update status to PENDING_ADMIN_REVIEW
+    // 5. Validate and guarantee assessment linkage (Requirement 7)
+    const assessGroupRes = await client.query(
+      'SELECT id, name FROM assessment_groups WHERE role_id = $1 AND company_id = $2 LIMIT 1',
+      [id, companyId]
+    );
+    let assessmentGroupId = assessGroupRes.rows[0]?.id;
+    if (!assessmentGroupId) {
+      const newAg = await client.query(
+        `INSERT INTO assessment_groups (role_id, company_id, name, type, duration, description)
+         VALUES ($1, $2, $3, 'Official Technical Assessment', 60, $4)
+         RETURNING id`,
+        [id, companyId, `${vacancy.title} — Technical Assessment`, `Official assessment linkage for ${vacancy.title}`]
+      );
+      assessmentGroupId = newAg.rows[0]?.id;
+    }
+
+    // 6. Update status to PENDING_ADMIN_REVIEW
     const updateRes = await client.query(
       `UPDATE company_roles SET
          status = 'PENDING_ADMIN_REVIEW',
@@ -364,7 +459,7 @@ router.post('/:id/submit', async (req, res) => {
       [id, companyId]
     );
 
-    // 4. Record audit log
+    // 7. Record audit log
     await client.query(
       `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, old_status, new_status, reason, metadata, old_value, new_value, ip_address)
        VALUES ($1, $2, $3, 'VACANCY_SUBMITTED', 'Vacancy', $4, $5, 'PENDING_ADMIN_REVIEW', 'Submitted for platform admin governance review', $6, $7, $8, $9)`,
@@ -374,7 +469,7 @@ router.post('/:id/submit', async (req, res) => {
         req.user.role || 'COMPANY_OWNER',
         id,
         vacancy.status,
-        JSON.stringify({ requirementsCount: reqCount, title: vacancy.title }),
+        JSON.stringify({ requirementsCount: reqCount, assessmentGroupId, title: vacancy.title }),
         JSON.stringify({ status: vacancy.status }),
         JSON.stringify({ status: 'PENDING_ADMIN_REVIEW' }),
         req.ip || null,
@@ -386,6 +481,7 @@ router.post('/:id/submit', async (req, res) => {
     return res.json({
       success: true,
       vacancy: updateRes.rows[0],
+      assessmentGroupId,
       message: 'Vacancy successfully submitted for admin review',
     });
   } catch (err) {
