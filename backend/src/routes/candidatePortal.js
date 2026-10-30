@@ -102,6 +102,8 @@ router.get('/vacancies', async (req, res) => {
       WHERE cr.status = 'PUBLISHED'
         AND (c.verification_status = 'APPROVED' OR c.verification_status = 'ACTIVE')
         AND c.suspended_at IS NULL
+        AND c.onboarding_submitted = TRUE
+        AND c.name IS NOT NULL AND c.name != 'N/A' AND TRIM(c.name) != ''
         AND (cr.closing_date IS NULL OR cr.closing_date >= CURRENT_DATE)
         AND (cr.application_deadline IS NULL OR cr.application_deadline >= CURRENT_DATE)
     `;
@@ -164,6 +166,8 @@ router.get('/vacancies/:id', async (req, res) => {
          AND cr.status = 'PUBLISHED'
          AND (c.verification_status = 'APPROVED' OR c.verification_status = 'ACTIVE')
          AND c.suspended_at IS NULL
+         AND c.onboarding_submitted = TRUE
+         AND c.name IS NOT NULL AND c.name != 'N/A' AND TRIM(c.name) != ''
          AND (cr.closing_date IS NULL OR cr.closing_date >= CURRENT_DATE)
          AND (cr.application_deadline IS NULL OR cr.application_deadline >= CURRENT_DATE)`,
       [id]

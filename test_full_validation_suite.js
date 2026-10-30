@@ -776,6 +776,31 @@ async function main() {
     assert(auditActions.includes('VACANCY_APPROVED'), 'Audit log contains VACANCY_APPROVED');
     assert(auditActions.includes('VACANCY_PUBLISHED'), 'Audit log contains VACANCY_PUBLISHED');
 
+    // Teardown: Clean up test companies and users so DB stays clean
+    try {
+      await pool.query(
+        `DELETE FROM audit_logs WHERE company_id IN ($1, $2);
+         DELETE FROM evidence_coverage WHERE company_id IN ($1, $2);
+         DELETE FROM evidence WHERE company_id IN ($1, $2);
+         DELETE FROM assessment_requirement_scores WHERE attempt_id IN (SELECT id FROM assessment_attempts WHERE company_id IN ($1, $2));
+         DELETE FROM assessment_attempts WHERE company_id IN ($1, $2);
+         DELETE FROM practice_attempts WHERE target_id IN (SELECT id FROM targets WHERE company_id IN ($1, $2));
+         DELETE FROM target_learning_progress WHERE target_id IN (SELECT id FROM targets WHERE company_id IN ($1, $2));
+         DELETE FROM target_coverage WHERE target_id IN (SELECT id FROM targets WHERE company_id IN ($1, $2));
+         DELETE FROM candidate_interest WHERE company_id IN ($1, $2);
+         DELETE FROM targets WHERE company_id IN ($1, $2);
+         DELETE FROM requirements WHERE company_id IN ($1, $2);
+         DELETE FROM vacancy_versions WHERE company_id IN ($1, $2);
+         DELETE FROM company_roles WHERE company_id IN ($1, $2);
+         DELETE FROM departments WHERE company_id IN ($1, $2);
+         DELETE FROM company_members WHERE company_id IN ($1, $2);
+         DELETE FROM companies WHERE id IN ($1, $2);
+         DELETE FROM candidates WHERE id = $3;
+         DELETE FROM users WHERE id IN ($4, $5, $6);`,
+        [companyAId, companyBId, candidateId, regA.data.user.id, regB.data.user.id, candUser.id]
+      );
+    } catch (_) {}
+
     console.log('\n========================================================================');
     console.log(`📊 FINAL SUMMARY: ${passed} PASSED, ${failed} FAILED`);
     console.log('========================================================================\n');

@@ -433,6 +433,23 @@ async function run() {
     'Next.js 16 build passed exit code 0; Schema V22 active.'
   );
 
+  // Teardown: Clean up temporary test companies & users
+  try {
+    await pool.query(
+      `DELETE FROM candidate_interest WHERE company_id IN ($1, $2);
+       DELETE FROM targets WHERE company_id IN ($1, $2);
+       DELETE FROM requirements WHERE company_id IN ($1, $2);
+       DELETE FROM vacancy_versions WHERE company_id IN ($1, $2);
+       DELETE FROM company_roles WHERE company_id IN ($1, $2);
+       DELETE FROM departments WHERE company_id IN ($1, $2);
+       DELETE FROM company_members WHERE company_id IN ($1, $2);
+       DELETE FROM companies WHERE id IN ($1, $2);
+       DELETE FROM candidates WHERE id = $3;
+       DELETE FROM users WHERE id IN ($4, $5, $6);`,
+      [companyAId, companyBId, candId, regA.data.user.id, regB.data.user.id, candUserRes.rows[0].id]
+    );
+  } catch (_) {}
+
   console.log('\n========================================================================');
   console.log(`🏁 TEST SUMMARY: ${passed} PASSED, ${failed} FAILED (Total ${passed + failed})`);
   console.log('========================================================================');

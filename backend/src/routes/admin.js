@@ -154,7 +154,7 @@ router.get('/companies', async (req, res) => {
       LEFT JOIN company_roles cr ON cr.company_id = c.id AND cr.status = 'PUBLISHED'
       LEFT JOIN company_members cm ON cm.company_id = c.id
       LEFT JOIN users u ON u.id = c.verification_reviewed_by
-      WHERE 1=1
+      WHERE c.name IS NOT NULL AND c.name != 'N/A' AND TRIM(c.name) != '' AND c.onboarding_submitted = TRUE
     `;
     const params = [];
 
@@ -381,7 +381,7 @@ router.get('/vacancies', async (req, res) => {
       LEFT JOIN requirements r ON r.role_id = cr.id
       LEFT JOIN applications a ON a.role_id = cr.id
       LEFT JOIN users u ON u.id = cr.reviewed_by
-      WHERE 1=1
+      WHERE c.name IS NOT NULL AND c.name != 'N/A' AND TRIM(c.name) != '' AND c.onboarding_submitted = TRUE
     `;
     const params = [];
 
