@@ -358,8 +358,8 @@ export default function AssessmentsPage() {
 
       {activeTab === 'grading' ? (
         <div>
-          {/* Stats Bar */}
-          <div className="stats-grid" style={{ marginBottom: 20 }}>
+          {/* Stats Bar (3 Columns matching 3 Cards for perfect grid alignment) */}
+          <div className="grid-3" style={{ marginBottom: 20 }}>
             <div className="stat-card stat-card-gold" style={{ padding: '16px 20px' }}>
               <div className="stat-label">Pending Recruiter Evaluation</div>
               <div className="stat-value" style={{ fontSize: 26 }}>{pendingCount}</div>
