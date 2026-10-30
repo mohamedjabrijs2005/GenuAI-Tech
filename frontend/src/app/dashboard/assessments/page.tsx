@@ -275,7 +275,7 @@ export default function AssessmentsPage() {
   });
 
   return (
-    <div>
+    <div className="page-content">
       <div className="page-header">
         <div className="breadcrumbs">
           <span>Assessments</span>
