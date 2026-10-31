@@ -268,6 +268,66 @@ export default function RoleBlueprintAssistantPage() {
           <span className="breadcrumb-sep">/</span>
           <span className="breadcrumb-current">AI Role Skill Blueprint Generator</span>
         </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
         <div className="page-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -278,7 +338,247 @@ export default function RoleBlueprintAssistantPage() {
               Draft role-specific core competencies, learning curriculums, flashcards, practice tasks, and evidence rubrics.
             </p>
           </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
         </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
+        </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
+      </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
       </div>
 
       {/* ─── MANDATORY SAFETY NOTICE BANNER ─── */}
@@ -299,10 +599,250 @@ export default function RoleBlueprintAssistantPage() {
           <div style={{ fontSize: 13.5, fontWeight: 800, color: '#92400e', marginBottom: 2 }}>
             Human-in-the-Loop Governance Notice
           </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
           <div style={{ fontSize: 12.5, color: '#b45309', lineHeight: 1.5 }}>
             <strong>AI suggestions are drafts only.</strong> The company or platform admin must review, edit, and approve before the blueprint becomes active for candidates. AI never automatically creates candidate learning paths or hiring decisions.
           </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
         </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
+        </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
+      </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
       </div>
 
       {/* ─── STEP 1: CONFIGURATION & GENERATION ─── */}
@@ -351,6 +891,66 @@ export default function RoleBlueprintAssistantPage() {
             </select>
           </div>
 
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
+
           {selectedRole === 'Custom' && (
             <div>
               <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#475569', marginBottom: 6 }}>
@@ -372,6 +972,66 @@ export default function RoleBlueprintAssistantPage() {
                 }}
               />
             </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
           )}
 
           <div>
@@ -394,7 +1054,127 @@ export default function RoleBlueprintAssistantPage() {
               }}
             />
           </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
         </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
+        </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: '#475569', cursor: 'pointer' }}>
@@ -438,6 +1218,126 @@ export default function RoleBlueprintAssistantPage() {
             )}
           </button>
         </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
+      </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
       </div>
 
       {/* ─── STEP 2: DRAFT REVIEW & CUSTOMIZATION ─── */}
@@ -487,10 +1387,130 @@ export default function RoleBlueprintAssistantPage() {
                   {status}
                 </span>
               </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
               <p style={{ fontSize: 12.5, color: '#64748b', margin: '4px 0 0' }}>
                 Review and tailor each competency. All suggestions remain unapproved drafts until you save &amp; approve.
               </p>
             </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <button
@@ -535,7 +1555,127 @@ export default function RoleBlueprintAssistantPage() {
                 <X size={14} /> Discard Draft
               </button>
             </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
           </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
+          </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
 
           {/* Navigation sub-tabs */}
           <div
@@ -586,6 +1726,66 @@ export default function RoleBlueprintAssistantPage() {
             })}
           </div>
 
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
+
           {/* ─── TAB CONTENT 1: CORE SKILLS ─── */}
           {activeTab === 'skills' && (
             <div>
@@ -597,6 +1797,66 @@ export default function RoleBlueprintAssistantPage() {
                   Click badge to toggle Must-have vs Good-to-have
                 </span>
               </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
 
               {/* Skills list table */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
@@ -649,10 +1909,130 @@ export default function RoleBlueprintAssistantPage() {
                           ★ {skill.importance}
                         </button>
                       </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
                       <p style={{ fontSize: 12, color: '#64748b', margin: 0, lineHeight: 1.45 }}>
                         {skill.description}
                       </p>
                     </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
 
                     <button
                       type="button"
@@ -669,14 +2049,194 @@ export default function RoleBlueprintAssistantPage() {
                       <Trash2 size={16} />
                     </button>
                   </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
                 ))}
 
                 {skills.length === 0 && (
                   <div style={{ padding: 24, textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>
                     No skills in draft. Use the form below to add a skill.
                   </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
                 )}
               </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
 
               {/* Add Custom Skill Form */}
               <div
@@ -690,6 +2250,66 @@ export default function RoleBlueprintAssistantPage() {
                 <div style={{ fontSize: 12.5, fontWeight: 800, color: '#0f172a', marginBottom: 10 }}>
                   + Add Custom Skill to Draft
                 </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginBottom: 10 }}>
                   <input
                     type="text"
@@ -720,6 +2340,66 @@ export default function RoleBlueprintAssistantPage() {
                     <option value="Good-to-have">Good-to-have</option>
                   </select>
                 </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <input
                     type="text"
@@ -746,8 +2426,188 @@ export default function RoleBlueprintAssistantPage() {
                     Add Skill
                   </button>
                 </div>
-              </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
             </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
+              </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
+            </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
           )}
 
           {/* ─── TAB CONTENT 2: LEARNING PATH ─── */}
@@ -759,13 +2619,193 @@ export default function RoleBlueprintAssistantPage() {
                     <span style={{ fontSize: 13.5, fontWeight: 800, color: '#0f172a' }}>{lp.title}</span>
                     <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b' }}>{lp.duration} · {lp.type}</span>
                   </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
                   <div style={{ fontSize: 12, color: '#475569' }}>Aligned Competency: <strong>{lp.skill}</strong></div>
                   <a href={lp.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11.5, color: '#b8860b', textDecoration: 'underline' }}>
                     {lp.url}
                   </a>
                 </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
               ))}
             </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
           )}
 
           {/* ─── TAB CONTENT 3: FLASHCARDS ─── */}
@@ -776,14 +2816,254 @@ export default function RoleBlueprintAssistantPage() {
                   <div style={{ fontSize: 11, fontWeight: 800, color: '#b8860b', textTransform: 'uppercase', marginBottom: 4 }}>
                     Card #{i + 1} Prompt
                   </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>{fc.front}</div>
                   <div style={{ fontSize: 11, fontWeight: 800, color: '#059669', textTransform: 'uppercase', marginBottom: 4 }}>
                     Key Answer
                   </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
                   <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.45 }}>{fc.back}</div>
                 </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
               ))}
             </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
           )}
 
           {/* ─── TAB CONTENT 4: PRACTICE TASKS ─── */}
@@ -797,13 +3077,253 @@ export default function RoleBlueprintAssistantPage() {
                       {pt.difficulty}
                     </span>
                   </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
                   <p style={{ fontSize: 12.5, color: '#334155', margin: '0 0 8px', lineHeight: 1.5 }}>{pt.prompt}</p>
                   <div style={{ fontSize: 11.5, color: '#64748b' }}>
                     <strong>Expected Deliverable:</strong> {pt.expectedDeliverable}
                   </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
                 </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
               ))}
             </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
           )}
 
           {/* ─── TAB CONTENT 5: ASSESSMENT IDEAS ─── */}
@@ -814,10 +3334,190 @@ export default function RoleBlueprintAssistantPage() {
                   <div style={{ fontSize: 11, fontWeight: 800, color: '#6366f1', textTransform: 'uppercase', marginBottom: 4 }}>
                     {ai.type} Question #{i + 1}
                   </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', lineHeight: 1.45 }}>{ai.question}</div>
                 </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
               ))}
             </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
           )}
 
           {/* ─── TAB CONTENT 6: EVIDENCE TYPES ─── */}
@@ -828,8 +3528,128 @@ export default function RoleBlueprintAssistantPage() {
                   <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0f172a', marginBottom: 4 }}>{et.name}</div>
                   <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.45 }}>{et.description}</div>
                 </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
               ))}
             </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
           )}
 
           {/* ─── STEP 3: APPROVAL & ACTIVATION ─── */}
@@ -871,6 +3691,66 @@ export default function RoleBlueprintAssistantPage() {
                 }}
               />
             </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <button
@@ -929,6 +3809,66 @@ export default function RoleBlueprintAssistantPage() {
               )}
             </div>
 
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
+
             {approvedResult && (
               <div
                 style={{
@@ -943,9 +3883,189 @@ export default function RoleBlueprintAssistantPage() {
               >
                 ✓ Success: Applied {approvedResult.appliedRequirementsCount} requirements and {approvedResult.appliedResourcesCount} learning resources to Role Master catalog.
               </div>
-            )}
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
           </div>
         </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
+            )}
+          </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
+        </div>
+
+      {/* ─── NEW WORKFLOW BANNER: INTEGRATED IN VACANCY BUILDER ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: 14,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          marginBottom: 20,
+          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>
+              Integrated AI Role Blueprint Studio in Vacancy Builder
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1e40af', marginTop: 2, lineHeight: 1.4 }}>
+              You can now generate, customize, and approve Role Skill Blueprints directly inside the Vacancy Builder without switching pages.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/vacancies/builder"
+          className="btn btn-gold"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            borderRadius: 8,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Sparkles size={14} /> Open Vacancy Builder &rarr;
+        </Link>
+      </div>
       )}
     </div>
   );
