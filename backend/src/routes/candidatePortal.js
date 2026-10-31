@@ -2587,4 +2587,213 @@ router.post('/submit-onboarding', authenticate, requireCandidate, async (req, re
   }
 });
 
+// ============================================================
+// GET /api/candidate-portal/targets/:id/requirement-status
+// Per-requirement learn/practice/assessment/evidence/coverage status
+// Used by the Candidate Target Dashboard checklist
+// ============================================================
+router.get('/targets/:id/requirement-status', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id || !/^[0-9a-f-]{36}$/i.test(id)) {
+      return res.status(404).json({ error: 'Target not found.' });
+    }
+
+    const candRes = await pool.query('SELECT id FROM candidates WHERE email = $1', [req.user.email]);
+    if (candRes.rowCount === 0) return res.status(404).json({ error: 'Candidate not found' });
+    const candidateId = candRes.rows[0].id;
+
+    // Verify target ownership
+    const tRes = await pool.query(
+      'SELECT t.id, t.status, t.vacancy_id, t.vacancy_version_id FROM targets t WHERE t.id=$1 AND t.candidate_id=$2',
+      [id, candidateId]
+    );
+    if (tRes.rowCount === 0) return res.status(403).json({ error: 'Access denied.' });
+    const target = tRes.rows[0];
+
+    // All requirements for this role
+    const reqRes = await pool.query(
+      `SELECT id, name, description, importance, eval_method, evaluation_methods, weight, display_order
+       FROM requirements WHERE role_id = $1 ORDER BY COALESCE(display_order, 999), created_at ASC`,
+      [target.vacancy_id]
+    );
+    const reqs = reqRes.rows;
+    if (reqs.length === 0) return res.json({ requirements: [], coveragePct: 0 });
+
+    const reqIds = reqs.map(r => r.id);
+    const reqNames = reqs.map(r => r.name.toLowerCase().trim());
+
+    // Learn status per requirement
+    const learnRes = await pool.query(
+      `SELECT lrrm.requirement_id,
+              COUNT(DISTINCT lr.id) AS total,
+              COUNT(DISTINCT CASE WHEN tlp.status='COMPLETED' THEN tlp.resource_id END) AS completed
+       FROM learning_resources lr
+       JOIN learning_resource_requirement_map lrrm ON lrrm.resource_id = lr.id AND lrrm.requirement_id = ANY($1)
+       LEFT JOIN target_learning_progress tlp ON tlp.resource_id = lr.id AND tlp.target_id = $2 AND tlp.candidate_id = $3
+       WHERE (lr.status IS NULL OR lr.status = 'PUBLISHED')
+       GROUP BY lrrm.requirement_id`,
+      [reqIds, id, candidateId]
+    );
+    const learnMap: Record<string, { total: number; completed: number }> = {};
+    for (const row of learnRes.rows) {
+      learnMap[row.requirement_id] = { total: parseInt(row.total), completed: parseInt(row.completed) };
+    }
+
+    // Practice status per requirement (latest attempt per req)
+    const practiceRes = await pool.query(
+      `SELECT COALESCE(pa.requirement_id, r.id) AS req_id,
+              COUNT(*) AS attempts,
+              MAX(CASE WHEN pa.status='COMPLETED' THEN 1 ELSE 0 END) AS has_completed,
+              MAX(pa.score) AS best_score,
+              MAX(pa.submitted_at) AS last_submitted
+       FROM practice_attempts pa
+       LEFT JOIN requirements r ON LOWER(TRIM(r.name)) = LOWER(TRIM(pa.requirement_name)) AND r.id = ANY($3)
+       WHERE pa.target_id=$1 AND pa.candidate_id=$2
+         AND (pa.requirement_id = ANY($3) OR r.id IS NOT NULL)
+       GROUP BY COALESCE(pa.requirement_id, r.id)`,
+      [id, candidateId, reqIds]
+    );
+    const practiceMap: Record<string, { attempts: number; hasCompleted: boolean; bestScore: number | null }> = {};
+    for (const row of practiceRes.rows) {
+      if (row.req_id) {
+        practiceMap[row.req_id] = {
+          attempts: parseInt(row.attempts),
+          hasCompleted: row.has_completed === 1,
+          bestScore: row.best_score ? parseFloat(row.best_score) : null,
+        };
+      }
+    }
+
+    // Evidence per requirement
+    const evidenceRes = await pool.query(
+      `SELECT requirement_id,
+              COUNT(*) AS total,
+              COUNT(*) FILTER (WHERE review_status IN ('APPROVED','ACCEPTED')) AS approved,
+              COUNT(*) FILTER (WHERE review_status IN ('SUBMITTED','PENDING_REVIEW','UNDER_REVIEW')) AS pending
+       FROM evidence
+       WHERE target_id=$1 AND candidate_id=$2 AND requirement_id = ANY($3)
+       GROUP BY requirement_id`,
+      [id, candidateId, reqIds]
+    );
+    const evidenceMap: Record<string, { total: number; approved: number; pending: number }> = {};
+    for (const row of evidenceRes.rows) {
+      evidenceMap[row.requirement_id] = {
+        total: parseInt(row.total),
+        approved: parseInt(row.approved),
+        pending: parseInt(row.pending),
+      };
+    }
+
+    // Assessment attempt (single attempt covers all reqs)
+    const aRes = await pool.query(
+      `SELECT status, grading_status, score FROM assessment_attempts
+       WHERE target_id=$1 AND candidate_id=$2 ORDER BY created_at DESC LIMIT 1`,
+      [id, candidateId]
+    );
+    const assessment = aRes.rows[0] || null;
+    const assessmentStatus = assessment
+      ? (assessment.grading_status === 'FULLY_GRADED' ? 'FULLY_GRADED'
+        : assessment.status === 'SUBMITTED' ? 'SUBMITTED'
+        : assessment.status === 'IN_PROGRESS' ? 'IN_PROGRESS'
+        : 'AVAILABLE')
+      : 'AVAILABLE';
+
+    // Build per-requirement result
+    const result = reqs.map(req => {
+      const learn = learnMap[req.id] || { total: 0, completed: 0 };
+      const practice = practiceMap[req.id] || { attempts: 0, hasCompleted: false, bestScore: null };
+      const ev = evidenceMap[req.id] || { total: 0, approved: 0, pending: 0 };
+
+      const learnStatus = learn.total === 0 ? 'N/A'
+        : learn.completed === learn.total ? 'COMPLETED'
+        : learn.completed > 0 ? 'IN_PROGRESS'
+        : 'NOT_STARTED';
+
+      const practiceStatus = practice.hasCompleted ? 'COMPLETED'
+        : practice.attempts > 0 ? 'IN_PROGRESS'
+        : 'NOT_STARTED';
+
+      const evidenceStatus = ev.approved > 0 ? 'APPROVED'
+        : ev.pending > 0 ? 'SUBMITTED'
+        : ev.total > 0 ? 'SUBMITTED'
+        : 'NOT_STARTED';
+
+      // Overall req status: COMPLETED if evidence approved, IN_PROGRESS if any activity, else NOT_STARTED
+      const reqStatus = ev.approved > 0 ? 'COMPLETED'
+        : (practice.hasCompleted || ev.total > 0 || learn.completed > 0 || assessmentStatus === 'FULLY_GRADED') ? 'IN_PROGRESS'
+        : 'NOT_STARTED';
+
+      return {
+        id: req.id,
+        name: req.name,
+        description: req.description,
+        importance: req.importance || 'REQUIRED',
+        weight: req.weight || 1,
+        status: reqStatus,
+        learn: {
+          total: learn.total,
+          completed: learn.completed,
+          status: learnStatus,
+        },
+        practice: {
+          attempts: practice.attempts,
+          hasCompleted: practice.hasCompleted,
+          bestScore: practice.bestScore,
+          status: practiceStatus,
+        },
+        assessment: {
+          status: assessmentStatus,
+          score: assessment?.score || null,
+        },
+        evidence: {
+          total: ev.total,
+          approved: ev.approved,
+          pending: ev.pending,
+          status: evidenceStatus,
+        },
+      };
+    });
+
+    // Coverage % = requirements with approved evidence / total
+    const completedCount = result.filter(r => r.status === 'COMPLETED').length;
+    const inProgressCount = result.filter(r => r.status === 'IN_PROGRESS').length;
+    const coveragePct = reqs.length > 0 ? Math.round((completedCount / reqs.length) * 100) : 0;
+
+    // Next best action: first NOT_STARTED or IN_PROGRESS req
+    const nextReq = result.find(r => r.status !== 'COMPLETED');
+    let nextAction = null;
+    if (nextReq) {
+      if (nextReq.learn.status === 'NOT_STARTED' && nextReq.learn.total > 0) {
+        nextAction = { label: `Start Learning: ${nextReq.name}`, link: `/candidate/targets/${id}/learn`, type: 'LEARN' };
+      } else if (nextReq.practice.status === 'NOT_STARTED') {
+        nextAction = { label: `Practice: ${nextReq.name}`, link: `/candidate/targets/${id}/practice`, type: 'PRACTICE' };
+      } else if (nextReq.evidence.status === 'NOT_STARTED') {
+        nextAction = { label: `Submit Evidence: ${nextReq.name}`, link: `/candidate/targets/${id}/evidence`, type: 'EVIDENCE' };
+      } else if (assessmentStatus === 'AVAILABLE') {
+        nextAction = { label: 'Take Official Assessment', link: `/candidate/targets/${id}/assessment`, type: 'ASSESSMENT' };
+      }
+    } else {
+      nextAction = { label: 'View Coverage Matrix', link: `/candidate/targets/${id}/coverage`, type: 'COVERAGE' };
+    }
+
+    return res.json({
+      requirements: result,
+      summary: {
+        total: reqs.length,
+        completed: completedCount,
+        inProgress: inProgressCount,
+        notStarted: reqs.length - completedCount - inProgressCount,
+        coveragePct,
+      },
+      nextAction,
+      assessmentStatus,
+    });
+  } catch (err) {
+    console.error('Requirement status error:', err);
+    return res.status(500).json({ error: 'Failed to fetch requirement status' });
+  }
+});
+
 module.exports = router;
+
