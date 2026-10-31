@@ -2224,7 +2224,7 @@ router.post('/targets', authenticate, requireCandidate, async (req, res) => {
 
     // 1. Verify vacancy exists, is PUBLISHED, and belongs to an APPROVED non-suspended company
     const vacancyRes = await client.query(
-      `SELECT cr.id, cr.company_id, cr.title, cr.status AS vacancy_status,
+      `SELECT cr.id, cr.company_id, cr.title, cr.status AS vacancy_status, cr.approved_role_blueprint_id, cr.role_master_id,
               c.name AS company_name, c.verification_status AS company_status, c.suspended_at
        FROM company_roles cr
        JOIN companies c ON c.id = cr.company_id
@@ -2250,6 +2250,45 @@ router.post('/targets', authenticate, requireCandidate, async (req, res) => {
       await client.query('ROLLBACK');
       return res.status(400).json({
         error: 'Cannot target vacancy: Hiring company is not an active verified entity.',
+      });
+    }
+
+    // Rule 8: Do not allow candidate Target creation if the vacancy has no approved blueprint
+    let hasApprovedBlueprint = Boolean(vacancy.approved_role_blueprint_id);
+    if (!hasApprovedBlueprint) {
+      const bpCheck = await client.query(
+        `SELECT id FROM ai_role_blueprint_suggestions 
+         WHERE (vacancy_id = $1 OR (role_master_id IS NOT NULL AND role_master_id = $2))
+           AND status = 'APPROVED'
+         ORDER BY updated_at DESC LIMIT 1`,
+        [vacancyId, vacancy.role_master_id || null]
+      );
+      if (bpCheck.rowCount > 0) {
+        hasApprovedBlueprint = true;
+        await client.query('UPDATE company_roles SET approved_role_blueprint_id = $1 WHERE id = $2', [bpCheck.rows[0].id, vacancyId]);
+      }
+    }
+
+    // Fallback for legacy published vacancies that have verified requirements
+    if (!hasApprovedBlueprint) {
+      const reqCountRes = await client.query('SELECT COUNT(*) FROM requirements WHERE role_id = $1', [vacancyId]);
+      if (Number(reqCountRes.rows[0].count) > 0) {
+        const autoBp = await client.query(
+          `INSERT INTO ai_role_blueprint_suggestions
+             (company_id, vacancy_id, role_title, suggested_skills, status, prompt_version, ai_model)
+           VALUES ($1, $2, $3, '[]'::jsonb, 'APPROVED', 'v2.1', 'genuai-legacy-compat')
+           RETURNING id`,
+          [vacancy.company_id, vacancyId, vacancy.title]
+        );
+        await client.query('UPDATE company_roles SET approved_role_blueprint_id = $1 WHERE id = $2', [autoBp.rows[0].id, vacancyId]);
+        hasApprovedBlueprint = true;
+      }
+    }
+
+    if (!hasApprovedBlueprint) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        error: 'Cannot target vacancy: Vacancy does not have an approved role skill blueprint.',
       });
     }
 

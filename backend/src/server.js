@@ -20,7 +20,7 @@ const candidateAssessmentRoutes = require('./routes/candidateAssessments');
 const candidatePortalRoutes = require('./routes/candidatePortal');
 const candidateInterestRoutes = require('./routes/candidateInterest');
 const readinessRoutes = require('./routes/readiness');
-const roleBlueprintRoutes = require('./routes/roleBlueprints');
+const { router: roleBlueprintRoutes } = require('./routes/roleBlueprints');
 
 const app = express();
 
@@ -81,11 +81,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/company', companyRoutes);
 app.use('/api/company/role-blueprints', roleBlueprintRoutes);
-app.use('/api/company/ai-suggestions', (req, res, next) => {
-  // Map /api/company/ai-suggestions to roleBlueprintRoutes for unified company access
-  req.url = `/ai-suggestions${req.url}`;
-  return roleBlueprintRoutes(req, res, next);
-});
+app.use('/api/company', roleBlueprintRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/vacancies', vacancyRoutes);

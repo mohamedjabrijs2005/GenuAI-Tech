@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, ArrowRight, Check, Plus, Trash2, Shield, AlertCircle,
-  FileText, Target, ClipboardList, Users as UsersIcon, CheckCircle2, Loader2
+  FileText, Target, ClipboardList, Users as UsersIcon, CheckCircle2, Loader2, Sparkles
 } from 'lucide-react';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -59,12 +59,35 @@ export default function VacancyBuilderPage() {
 
   // Departments loaded from API
   const [departments, setDepartments] = useState<Department[]>([]);
+  // Approved blueprints loaded from API
+  const [approvedBlueprints, setApprovedBlueprints] = useState<any[]>([]);
 
   useEffect(() => {
     api.get('/departments').then(res => {
       setDepartments((res.data?.departments || []).filter((d: Department) => d.is_active));
     }).catch(() => {});
+
+    api.get('/company/role-blueprints/approved').then(res => {
+      setApprovedBlueprints(res.data?.blueprints || []);
+    }).catch(() => {});
   }, []);
+
+  const importBlueprintSkills = (bpId: string) => {
+    const bp = approvedBlueprints.find(b => b.id === bpId);
+    if (!bp) return;
+    const skills = Array.isArray(bp.suggested_skills) ? bp.suggested_skills : [];
+    const newItems: Requirement[] = skills.map((s: any, idx: number) => ({
+      id: `req-bp-${Date.now()}-${idx}`,
+      name: s.name || s.title || 'Required Skill',
+      category: (s.category || 'Technical') as any,
+      type: (s.importance === 'Must-have' ? 'Required' : 'Preferred') as any,
+      priority: (s.importance === 'Must-have' ? 'High' : 'Medium') as any,
+      proficiency: 'Advanced' as any,
+      method: 'Official Technical Assessment' as any,
+    }));
+    setRequirements(prev => [...prev, ...newItems]);
+    toast.success(`Imported ${newItems.length} verified competencies from ${bp.role_title} blueprint!`);
+  };
 
   // STEP 1 State
   const [basicInfo, setBasicInfo] = useState({
@@ -554,6 +577,41 @@ export default function VacancyBuilderPage() {
           {stepErrors.requirements && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-4 text-red-800 text-xs font-semibold flex items-center gap-2">
               <AlertCircle size={13} /> {stepErrors.requirements}
+            </div>
+          )}
+
+          {/* Quick Import from Approved AI Role Blueprints */}
+          {approvedBlueprints.length > 0 && (
+            <div className="p-3 bg-amber-50/60 border border-amber-200/80 rounded-xl mb-4 flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Sparkles size={16} className="text-amber-700" />
+                <span className="text-xs font-bold text-amber-900">
+                  Import from Approved Role Blueprint:
+                </span>
+                <select
+                  className="form-select text-xs py-1 h-8 bg-white border-amber-300"
+                  onChange={e => {
+                    if (e.target.value) {
+                      importBlueprintSkills(e.target.value);
+                      e.target.value = '';
+                    }
+                  }}
+                  defaultValue=""
+                >
+                  <option value="" disabled>Select approved blueprint...</option>
+                  {approvedBlueprints.map(bp => (
+                    <option key={bp.id} value={bp.id}>
+                      {bp.role_title} (Approved {new Date(bp.approved_at).toLocaleDateString()})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Link
+                href="/dashboard/blueprints"
+                className="text-xs font-semibold text-amber-800 hover:text-amber-950 underline flex items-center gap-1"
+              >
+                Open Blueprint Assistant →
+              </Link>
             </div>
           )}
 

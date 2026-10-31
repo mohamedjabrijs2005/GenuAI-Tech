@@ -19,6 +19,7 @@ router.get('/', async (req, res) => {
     const result = await pool.query(
       `SELECT r.id, r.title, r.job_description, r.experience_level,
               r.employment_type, r.location, r.vacancy_count, r.status,
+              r.approved_role_blueprint_id, r.role_master_id,
               r.created_at, r.updated_at,
               d.id AS department_id, d.name AS department_name
        FROM company_roles r

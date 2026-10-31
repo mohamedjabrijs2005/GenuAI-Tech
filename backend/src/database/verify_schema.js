@@ -37,7 +37,9 @@ const REQUIRED_COLUMNS = [
   { table: 'assessment_requirement_scores', column: 'scenario_max_score' },
   { table: 'assessment_requirement_scores', column: 'required_scenario_evaluation' },
   { table: 'assessment_requirement_scores', column: 'grading_revision_count' },
-  { table: 'assessment_requirement_scores', column: 'last_graded_at' }
+  { table: 'assessment_requirement_scores', column: 'last_graded_at' },
+  { table: 'company_roles', column: 'role_master_id' },
+  { table: 'company_roles', column: 'approved_role_blueprint_id' }
 ];
 
 async function verifySchema() {
