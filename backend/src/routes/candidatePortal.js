@@ -25,7 +25,7 @@ async function requireCandidate(req, res, next) {
       if (cRes.rowCount > 0) {
         req.candidateId = cRes.rows[0].id;
       }
-    } catch (_) {}
+    } catch (_) { }
   }
   next();
 }
@@ -306,7 +306,7 @@ router.get('/dashboard', authenticate, requireCandidate, async (req, res) => {
       if (interviewRes.rowCount > 0) {
         upcomingSchedule = interviewRes.rows[0];
       }
-    } catch (_) {}
+    } catch (_) { }
 
     // 5. Action Required items (honest, real tasks)
     const actionRequired = [];
@@ -537,7 +537,7 @@ const handleProfileUpdate = async (req, res) => {
       completion,
     });
   } catch (err) {
-    try { await client.query('ROLLBACK'); } catch (_) {}
+    try { await client.query('ROLLBACK'); } catch (_) { }
     console.error('Update candidate profile error:', err);
     return res.status(500).json({ error: 'Failed to update candidate profile' });
   } finally {
@@ -1899,14 +1899,13 @@ router.post('/targets/:id/assessment/start', authenticate, requireCandidate, asy
 
     // Fresh 45-minute attempt
     const durationMinutes = 45;
-    const startedAt = new Date();
-    const expiresAt = new Date(startedAt.getTime() + durationMinutes * 60 * 1000);
+    // Enforce server-side 45-minute interval: NOW() + ($5 || ' minutes')::interval
     const insertRes = await pool.query(
       `INSERT INTO assessment_attempts
         (target_id, candidate_id, role_id, company_id, status, duration_minutes, started_at, expires_at)
-       VALUES ($1, $2, $3, $4, 'IN_PROGRESS', $5, $6, $7)
+       VALUES ($1, $2, $3, $4, 'IN_PROGRESS', $5, NOW(), NOW() + ($5 || ' minutes')::interval)
        RETURNING id, status, duration_minutes, started_at, expires_at, answers`,
-      [id, candidateId, target.vacancy_id, target.company_id, durationMinutes, startedAt, expiresAt]
+      [id, candidateId, target.vacancy_id, target.company_id, durationMinutes]
     );
 
     return res.status(201).json({ attempt: insertRes.rows[0], resumed: false });
@@ -2321,7 +2320,7 @@ router.post('/targets', authenticate, requireCandidate, async (req, res) => {
        VALUES ($1, $2, $3, $3, $4, 'EXPRESSED', NOW(), NOW())
        ON CONFLICT DO NOTHING`,
       [candidateId, vacancy.company_id, vacancyId, vacancyVersionId]
-    ).catch(() => {});
+    ).catch(() => { });
 
     // 6. Record TARGET_CREATED audit log
     await client.query(
@@ -2351,14 +2350,14 @@ router.post('/targets', authenticate, requireCandidate, async (req, res) => {
 
     try {
       await recomputeTargetCoverage(pool, target.id);
-    } catch (_) {}
+    } catch (_) { }
 
     return res.status(201).json({
       message: 'Target created successfully',
       target,
     });
   } catch (err) {
-    try { await client.query('ROLLBACK'); } catch (_) {}
+    try { await client.query('ROLLBACK'); } catch (_) { }
     console.error('Target creation error:', err);
     return res.status(500).json({ error: 'Failed to create role target' });
   } finally {
@@ -2439,7 +2438,7 @@ router.post('/targets/:id/withdraw', authenticate, requireCandidate, async (req,
       target: { ...target, status: 'WITHDRAWN' },
     });
   } catch (err) {
-    try { await client.query('ROLLBACK'); } catch (_) {}
+    try { await client.query('ROLLBACK'); } catch (_) { }
     console.error('Target withdrawal error:', err);
     return res.status(500).json({ error: 'Failed to withdraw target' });
   } finally {
@@ -2600,7 +2599,7 @@ router.post('/targets/:targetId/evidence', authenticate, requireCandidate, async
       coverage,
     });
   } catch (err) {
-    try { await client.query('ROLLBACK'); } catch (_) {}
+    try { await client.query('ROLLBACK'); } catch (_) { }
     console.error('Evidence submission error:', err);
     return res.status(500).json({ error: 'Failed to submit evidence' });
   } finally {
@@ -2663,7 +2662,7 @@ router.post('/targets/:targetId/evidence/:evidenceId/withdraw', authenticate, re
       coverage,
     });
   } catch (err) {
-    try { await client.query('ROLLBACK'); } catch (_) {}
+    try { await client.query('ROLLBACK'); } catch (_) { }
     console.error('Evidence withdrawal error:', err);
     return res.status(500).json({ error: 'Failed to withdraw evidence' });
   } finally {
@@ -2726,7 +2725,7 @@ router.get('/targets/:targetId/interview', authenticate, requireCandidate, async
         [targetId, candRes.rows[0].id]
       );
       interviews = intRes.rows;
-    } catch (_) {}
+    } catch (_) { }
 
     return res.json({
       target: targetRes.rows[0],
@@ -2770,7 +2769,7 @@ router.get('/targets/:targetId/assessment', authenticate, requireCandidate, asyn
         [target.vacancy_id]
       );
       assessments = assRes.rows;
-    } catch (_) {}
+    } catch (_) { }
 
     return res.json({
       target,
@@ -2972,7 +2971,7 @@ router.post('/accommodations', authenticate, requireCandidate, async (req, res) 
       accommodation: requestItem,
     });
   } catch (err) {
-    try { await client.query('ROLLBACK'); } catch (_) {}
+    try { await client.query('ROLLBACK'); } catch (_) { }
     console.error('Accommodation request error:', err);
     return res.status(500).json({ error: 'Failed to submit accommodation request' });
   } finally {
@@ -3110,8 +3109,8 @@ router.get('/targets/:id/requirement-status', authenticate, requireCandidate, as
     const assessmentStatus = assessment
       ? (assessment.grading_status === 'FULLY_GRADED' ? 'FULLY_GRADED'
         : assessment.status === 'SUBMITTED' ? 'SUBMITTED'
-        : assessment.status === 'IN_PROGRESS' ? 'IN_PROGRESS'
-        : 'AVAILABLE')
+          : assessment.status === 'IN_PROGRESS' ? 'IN_PROGRESS'
+            : 'AVAILABLE')
       : 'AVAILABLE';
 
     // Build per-requirement result
@@ -3122,22 +3121,22 @@ router.get('/targets/:id/requirement-status', authenticate, requireCandidate, as
 
       const learnStatus = learn.total === 0 ? 'N/A'
         : learn.completed === learn.total ? 'COMPLETED'
-        : learn.completed > 0 ? 'IN_PROGRESS'
-        : 'NOT_STARTED';
+          : learn.completed > 0 ? 'IN_PROGRESS'
+            : 'NOT_STARTED';
 
       const practiceStatus = practice.hasCompleted ? 'COMPLETED'
         : practice.attempts > 0 ? 'IN_PROGRESS'
-        : 'NOT_STARTED';
+          : 'NOT_STARTED';
 
       const evidenceStatus = ev.approved > 0 ? 'APPROVED'
         : ev.pending > 0 ? 'SUBMITTED'
-        : ev.total > 0 ? 'SUBMITTED'
-        : 'NOT_STARTED';
+          : ev.total > 0 ? 'SUBMITTED'
+            : 'NOT_STARTED';
 
       // Overall req status: COMPLETED if evidence approved, IN_PROGRESS if any activity, else NOT_STARTED
       const reqStatus = ev.approved > 0 ? 'COMPLETED'
         : (practice.hasCompleted || ev.total > 0 || learn.completed > 0 || assessmentStatus === 'FULLY_GRADED') ? 'IN_PROGRESS'
-        : 'NOT_STARTED';
+          : 'NOT_STARTED';
 
       return {
         id: req.id,
