@@ -21,6 +21,10 @@ const REQUIRED_TABLES = [
   'recruiter_reviews',
   'human_decisions',
   'audit_logs',
+  'ai_role_blueprint_suggestions',
+  'role_blueprint_approval',
+  'assessment_sessions',
+  'official_assessment_questions',
   'schema_migrations'
 ];
 

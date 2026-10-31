@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Target, FileCheck, TrendingUp, AlertTriangle, Clock, CheckCircle2,
-  ShieldCheck, ArrowRight, RefreshCw, BarChart2,
+  ShieldCheck, ArrowRight, RefreshCw, BarChart2, Sparkles,
   Users, Briefcase, Eye, ChevronRight, Hash
 } from 'lucide-react';
 import { DataService, Candidate, Vacancy } from '@/lib/dataService';
@@ -65,10 +65,16 @@ export default function IntelligencePage() {
               Structured multi-modal competency proof — requirement coverage, verified evidence, and zero disqualification bias.
             </p>
           </div>
-          <Link href="/dashboard/intelligence/role-intelligence" className="btn btn-gold">
-            <BarChart2 size={16} />
-            Cross-Company Role Analysis →
-          </Link>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Link href="/dashboard/blueprints" className="btn btn-gold">
+              <Sparkles size={16} />
+              AI Role Skill Blueprint Generator →
+            </Link>
+            <Link href="/dashboard/intelligence/role-intelligence" className="btn btn-secondary">
+              <BarChart2 size={16} />
+              Cross-Company Role Analysis
+            </Link>
+          </div>
         </div>
       </div>
 

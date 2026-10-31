@@ -20,6 +20,7 @@ const candidateAssessmentRoutes = require('./routes/candidateAssessments');
 const candidatePortalRoutes = require('./routes/candidatePortal');
 const candidateInterestRoutes = require('./routes/candidateInterest');
 const readinessRoutes = require('./routes/readiness');
+const roleBlueprintRoutes = require('./routes/roleBlueprints');
 
 const app = express();
 
@@ -79,6 +80,12 @@ app.use(express.json({ limit: '10mb' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/company', companyRoutes);
+app.use('/api/company/role-blueprints', roleBlueprintRoutes);
+app.use('/api/company/ai-suggestions', (req, res, next) => {
+  // Map /api/company/ai-suggestions to roleBlueprintRoutes for unified company access
+  req.url = `/ai-suggestions${req.url}`;
+  return roleBlueprintRoutes(req, res, next);
+});
 app.use('/api/departments', departmentRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/vacancies', vacancyRoutes);
@@ -159,22 +166,25 @@ app.use((err, req, res, next) => {
 const { verifySchema } = require('./database/verify_schema');
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, '0.0.0.0', async () => {
-  console.log(`🚀 GenuAI API v2.0 running on http://127.0.0.1:${PORT} and http://localhost:${PORT}`);
-  console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
+let serverInstance = null;
+if (require.main === module || !module.parent) {
+  serverInstance = app.listen(PORT, '0.0.0.0', async () => {
+    console.log(`🚀 GenuAI API v2.0 running on http://127.0.0.1:${PORT} and http://localhost:${PORT}`);
+    console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
 
-  try {
-    await verifySchema();
-    console.log('✅ Deployment schema validated successfully.');
-  } catch (err) {
-    console.error('❌ Schema validation error on startup:', err.message);
-    if (process.env.NODE_ENV === 'production') {
-      console.error('FATAL: Production server refusing to operate with unverified schema. Run npm run migrate:all first.');
-      process.exit(1);
-    } else {
-      console.warn('⚠️ Non-production environment: continuing despite schema warning.');
+    try {
+      await verifySchema();
+      console.log('✅ Deployment schema validated successfully.');
+    } catch (err) {
+      console.error('❌ Schema validation error on startup:', err.message);
+      if (process.env.NODE_ENV === 'production') {
+        console.error('FATAL: Production server refusing to operate with unverified schema. Run npm run migrate:all first.');
+        process.exit(1);
+      } else {
+        console.warn('⚠️ Non-production environment: continuing despite schema warning.');
+      }
     }
-  }
-});
+  });
+}
 
 module.exports = app;

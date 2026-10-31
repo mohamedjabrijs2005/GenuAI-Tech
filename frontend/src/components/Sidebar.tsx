@@ -31,6 +31,7 @@ const NAV: NavSection[] = [
     section: 'Recruitment',
     items: [
       { label: 'Vacancies', href: '/dashboard/vacancies', icon: Briefcase },
+      { label: 'Role Blueprints (AI)', href: '/dashboard/blueprints', icon: Target },
       { label: 'Role Readiness', href: '/dashboard/readiness', icon: BarChart3 },
       { label: 'Candidates', href: '/dashboard/candidates', icon: Users },
     ],

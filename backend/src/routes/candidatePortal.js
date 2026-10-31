@@ -3,6 +3,11 @@ const pool = require('../database/pool');
 const { authenticate } = require('../middleware/auth');
 const { recomputeTargetCoverage } = require('./evidenceService');
 const { sendEmail } = require('../services/email');
+const {
+  ensureOfficialQuestionsForRole,
+  sanitizeQuestionsForCandidate,
+  checkAssessmentEligibility,
+} = require('../services/officialAssessmentService');
 
 const router = express.Router();
 
@@ -1379,6 +1384,390 @@ function generateQuestionsForRequirements(requirements) {
   });
 }
 
+// ============================================================
+// OFFICIAL ASSESSMENT FLOW (V24): ELIGIBILITY, SESSIONS, QUESTIONS
+// ============================================================
+
+// GET /api/candidate-portal/targets/:id/assessment/eligibility
+router.get('/targets/:id/assessment/eligibility', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const candRes = await pool.query('SELECT id FROM candidates WHERE email = $1', [req.user.email]);
+    if (candRes.rowCount === 0) return res.status(404).json({ error: 'Candidate profile not found' });
+    const candidateId = candRes.rows[0].id;
+
+    const result = await checkAssessmentEligibility(candidateId, id);
+    if (!result.found) {
+      return res.status(404).json({ error: result.error });
+    }
+    return res.json(result);
+  } catch (err) {
+    console.error('Assessment eligibility error:', err);
+    return res.status(500).json({ error: 'Failed to check assessment eligibility' });
+  }
+});
+
+// GET /api/candidate-portal/targets/:id/assessment/sessions
+router.get('/targets/:id/assessment/sessions', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const candRes = await pool.query('SELECT id FROM candidates WHERE email = $1', [req.user.email]);
+    if (candRes.rowCount === 0) return res.status(404).json({ error: 'Candidate profile not found' });
+    const candidateId = candRes.rows[0].id;
+
+    const targetRes = await pool.query('SELECT id FROM targets WHERE id = $1 AND candidate_id = $2', [id, candidateId]);
+    if (targetRes.rowCount === 0) return res.status(404).json({ error: 'Target not found' });
+
+    const sessionsRes = await pool.query(
+      `SELECT id, attempt_number, status, score, pass_fail, time_limit_minutes, started_at, expires_at, submitted_at, result_summary
+       FROM assessment_sessions
+       WHERE target_id = $1 AND candidate_id = $2
+       ORDER BY attempt_number DESC, created_at DESC`,
+      [id, candidateId]
+    );
+
+    return res.json({ sessions: sessionsRes.rows });
+  } catch (err) {
+    console.error('List assessment sessions error:', err);
+    return res.status(500).json({ error: 'Failed to list assessment sessions' });
+  }
+});
+
+// GET /api/candidate-portal/targets/:id/assessment/session/:sessionId
+router.get('/targets/:id/assessment/session/:sessionId', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const { id, sessionId } = req.params;
+    const candRes = await pool.query('SELECT id FROM candidates WHERE email = $1', [req.user.email]);
+    if (candRes.rowCount === 0) return res.status(404).json({ error: 'Candidate profile not found' });
+    const candidateId = candRes.rows[0].id;
+
+    const sessionRes = await pool.query(
+      `SELECT s.*, t.vacancy_id
+       FROM assessment_sessions s
+       JOIN targets t ON t.id = s.target_id
+       WHERE s.id = $1 AND s.target_id = $2 AND s.candidate_id = $3`,
+      [sessionId, id, candidateId]
+    );
+
+    if (sessionRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Assessment session not found' });
+    }
+
+    const session = sessionRes.rows[0];
+
+    // If still in progress, return sanitized questions only
+    if (session.status === 'IN_PROGRESS' && new Date() < new Date(session.expires_at)) {
+      const qRes = await pool.query(
+        `SELECT id, requirement_id, question_text, question_type, options, marks, display_order
+         FROM official_assessment_questions
+         WHERE role_id = $1
+         ORDER BY display_order ASC`,
+        [session.vacancy_id]
+      );
+      return res.json({
+        session: {
+          id: session.id,
+          target_id: session.target_id,
+          status: session.status,
+          started_at: session.started_at,
+          expires_at: session.expires_at,
+          time_limit_minutes: session.time_limit_minutes,
+          attempt_number: session.attempt_number,
+        },
+        questions: sanitizeQuestionsForCandidate(qRes.rows),
+      });
+    }
+
+    // Finished or expired session: full details
+    return res.json({ session });
+  } catch (err) {
+    console.error('Get assessment session error:', err);
+    return res.status(500).json({ error: 'Failed to fetch assessment session' });
+  }
+});
+
+// POST /api/candidate-portal/targets/:id/assessment/session/start
+router.post('/targets/:id/assessment/session/start', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const candRes = await pool.query('SELECT id FROM candidates WHERE email = $1', [req.user.email]);
+    if (candRes.rowCount === 0) return res.status(404).json({ error: 'Candidate profile not found' });
+    const candidateId = candRes.rows[0].id;
+
+    const eligibility = await checkAssessmentEligibility(candidateId, id);
+    if (!eligibility.found) {
+      return res.status(404).json({ error: eligibility.error });
+    }
+
+    const targetRes = await pool.query('SELECT id, vacancy_id, company_id, status FROM targets WHERE id = $1', [id]);
+    const target = targetRes.rows[0];
+
+    // Resume existing unexpired session if one exists
+    if (eligibility.activeSession) {
+      const questions = await pool.query(
+        `SELECT id, requirement_id, question_text, question_type, options, marks, display_order
+         FROM official_assessment_questions
+         WHERE role_id = $1
+         ORDER BY display_order ASC`,
+        [target.vacancy_id]
+      );
+      return res.json({
+        resumed: true,
+        session: eligibility.activeSession,
+        questions: sanitizeQuestionsForCandidate(questions.rows),
+      });
+    }
+
+    // Auto-expire any expired in-progress sessions for this target/candidate
+    await pool.query(
+      `UPDATE assessment_sessions
+       SET status = 'EXPIRED', updated_at = NOW()
+       WHERE target_id = $1 AND candidate_id = $2 AND status = 'IN_PROGRESS' AND expires_at <= NOW()`,
+      [id, candidateId]
+    );
+
+    // Re-check attempt limits
+    if (!eligibility.checks.attemptsAvailable) {
+      return res.status(403).json({
+        error: `Maximum assessment attempts (${eligibility.maxAttempts}) reached.`,
+        reasons: eligibility.reasons,
+      });
+    }
+
+    if (!eligibility.eligible) {
+      return res.status(400).json({
+        error: 'Assessment prerequisites not satisfied.',
+        reasons: eligibility.reasons,
+        checks: eligibility.checks,
+      });
+    }
+
+    // Configurable time limit (10 to 60 mins, default 20)
+    let timeLimitMinutes = 20;
+    if (req.body && req.body.timeLimitMinutes) {
+      const parsed = parseInt(req.body.timeLimitMinutes, 10);
+      if (!isNaN(parsed) && parsed >= 10 && parsed <= 60) {
+        timeLimitMinutes = parsed;
+      }
+    }
+
+    // Ensure questions are seeded
+    const reqRes = await pool.query(
+      `SELECT id, name, importance, weight FROM requirements WHERE role_id = $1 ORDER BY created_at ASC`,
+      [target.vacancy_id]
+    );
+    const questions = await ensureOfficialQuestionsForRole(target.vacancy_id, reqRes.rows);
+
+    const attemptNumber = eligibility.attemptsUsed + 1;
+    const startedAt = new Date();
+    const expiresAt = new Date(startedAt.getTime() + timeLimitMinutes * 60 * 1000);
+
+    // Create session in assessment_sessions
+    const sessionRes = await pool.query(
+      `INSERT INTO assessment_sessions
+         (candidate_id, target_id, time_limit_minutes, started_at, expires_at, status, attempt_number)
+       VALUES ($1, $2, $3, $4, $5, 'IN_PROGRESS', $6)
+       RETURNING id, candidate_id, target_id, time_limit_minutes, started_at, expires_at, status, attempt_number`,
+      [candidateId, id, timeLimitMinutes, startedAt, expiresAt, attemptNumber]
+    );
+    const session = sessionRes.rows[0];
+
+    return res.status(201).json({
+      resumed: false,
+      session,
+      questions: sanitizeQuestionsForCandidate(questions),
+    });
+  } catch (err) {
+    console.error('Start assessment session error:', err);
+    return res.status(500).json({ error: 'Failed to start assessment session' });
+  }
+});
+
+// POST /api/candidate-portal/targets/:id/assessment/session/submit
+router.post('/targets/:id/assessment/session/submit', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { sessionId, answers = {} } = req.body;
+    if (!sessionId) {
+      return res.status(400).json({ error: 'Session ID is required' });
+    }
+
+    const candRes = await pool.query('SELECT id, first_name, last_name, email FROM candidates WHERE email = $1', [req.user.email]);
+    if (candRes.rowCount === 0) return res.status(404).json({ error: 'Candidate profile not found' });
+    const candidate = candRes.rows[0];
+
+    // Find session
+    const sessionRes = await pool.query(
+      `SELECT s.*, t.vacancy_id, t.company_id, cr.title as vacancy_title
+       FROM assessment_sessions s
+       JOIN targets t ON t.id = s.target_id
+       JOIN company_roles cr ON cr.id = t.vacancy_id
+       WHERE s.id = $1 AND s.target_id = $2 AND s.candidate_id = $3`,
+      [sessionId, id, candidate.id]
+    );
+
+    if (sessionRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Assessment session not found or access denied.' });
+    }
+
+    const session = sessionRes.rows[0];
+
+    // Idempotent submission: if already SUBMITTED, return recorded result
+    if (session.status === 'SUBMITTED' || (session.status === 'EXPIRED' && session.score !== null)) {
+      return res.json({
+        success: true,
+        sessionId: session.id,
+        status: session.status,
+        score: Number(session.score),
+        passFail: session.pass_fail,
+        submittedAt: session.submitted_at,
+        resultSummary: session.result_summary,
+        message: 'Assessment already completed. Returning recorded result.',
+      });
+    }
+
+    // Check expiration
+    const isExpired = new Date() > new Date(session.expires_at);
+
+    // Fetch official questions with correct answers
+    const qRes = await pool.query(
+      `SELECT id, requirement_id, question_text, question_type, options,
+              correct_answer, explanation, marks, display_order
+       FROM official_assessment_questions
+       WHERE role_id = $1
+       ORDER BY display_order ASC`,
+      [session.vacancy_id]
+    );
+    const questions = qRes.rows;
+
+    let totalMarks = 0;
+    let earnedMarks = 0;
+    const questionsReview = [];
+    const requirementScoreMap = {};
+
+    for (const q of questions) {
+      const qMarks = Number(q.marks) || 10;
+      totalMarks += qMarks;
+
+      const givenAnswer = answers[q.id];
+      let isCorrect = false;
+      let marksAwarded = 0;
+
+      if (q.question_type === 'MCQ' || q.question_type === 'TRUE_FALSE') {
+        if (givenAnswer && String(givenAnswer).trim().toUpperCase() === String(q.correct_answer).trim().toUpperCase()) {
+          isCorrect = true;
+          marksAwarded = qMarks;
+        }
+      } else if (q.question_type === 'SHORT_ANSWER') {
+        if (givenAnswer && String(givenAnswer).trim().length >= 10) {
+          isCorrect = true;
+          marksAwarded = qMarks;
+        } else if (givenAnswer && String(givenAnswer).trim().length > 0) {
+          marksAwarded = Math.round(qMarks * 0.5 * 10) / 10;
+        }
+      }
+
+      earnedMarks += marksAwarded;
+
+      if (q.requirement_id) {
+        if (!requirementScoreMap[q.requirement_id]) {
+          requirementScoreMap[q.requirement_id] = { earned: 0, total: 0 };
+        }
+        requirementScoreMap[q.requirement_id].earned += marksAwarded;
+        requirementScoreMap[q.requirement_id].total += qMarks;
+      }
+
+      questionsReview.push({
+        id: q.id,
+        question_text: q.question_text,
+        question_type: q.question_type,
+        options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
+        candidate_answer: givenAnswer || null,
+        correct_answer: q.correct_answer,
+        explanation: q.explanation,
+        marks_awarded: marksAwarded,
+        max_marks: qMarks,
+        is_correct: isCorrect,
+      });
+    }
+
+    const scorePct = totalMarks > 0 ? Math.round((earnedMarks / totalMarks) * 10000) / 100 : 0;
+    const passFail = scorePct >= 60 ? 'PASS' : 'FAIL';
+    const finalStatus = isExpired ? 'EXPIRED' : 'SUBMITTED';
+    const submittedAt = new Date().toISOString();
+    const timeTakenSeconds = Math.max(0, Math.round((new Date(submittedAt) - new Date(session.started_at)) / 1000));
+
+    const resultSummary = {
+      score: scorePct,
+      passFail,
+      totalQuestions: questions.length,
+      correctCount: questionsReview.filter(r => r.is_correct).length,
+      timeTakenSeconds,
+      submittedAt,
+      questionsReview,
+    };
+
+    // Update assessment_sessions
+    await pool.query(
+      `UPDATE assessment_sessions
+       SET status = $1, submitted_at = NOW(), score = $2, pass_fail = $3,
+           answers = $4, result_summary = $5, updated_at = NOW()
+       WHERE id = $6`,
+      [finalStatus, scorePct, passFail, JSON.stringify(answers), JSON.stringify(resultSummary), session.id]
+    );
+
+    // Sync to assessment_attempts for recruiter dashboard & evidenceService
+    const attemptRes = await pool.query(
+      `INSERT INTO assessment_attempts
+         (target_id, candidate_id, role_id, company_id, status, duration_minutes,
+          started_at, expires_at, submitted_at, score, max_score, answers, grading_status, evaluation_notes)
+       VALUES ($1, $2, $3, $4, 'SUBMITTED', $5, $6, $7, NOW(), $8, 100, $9, 'FULLY_GRADED', $10)
+       RETURNING id`,
+      [
+        id,
+        candidate.id,
+        session.vacancy_id,
+        session.company_id,
+        session.time_limit_minutes,
+        session.started_at,
+        session.expires_at,
+        scorePct,
+        JSON.stringify(answers),
+        `Official Assessment ${passFail} (${scorePct}%). Objective and domain questions verified.`
+      ]
+    );
+    const attemptId = attemptRes.rows[0].id;
+
+    // Record per-requirement scores
+    for (const [reqId, scores] of Object.entries(requirementScoreMap)) {
+      const reqEarned = scores.total > 0 ? Math.round((scores.earned / scores.total) * 10000) / 100 : 0;
+      await pool.query(
+        `INSERT INTO assessment_requirement_scores
+           (attempt_id, requirement_id, score, max_score, objective_score, objective_max_score, evaluation_status, scoring_source)
+         VALUES ($1, $2, $3, 100, $3, 100, 'EVALUATED', 'OFFICIAL_ASSESSMENT')`,
+        [attemptId, reqId, reqEarned]
+      );
+    }
+
+    // Recompute Target coverage
+    const updatedCoverage = await recomputeTargetCoverage(pool, id);
+
+    return res.json({
+      success: true,
+      sessionId: session.id,
+      status: finalStatus,
+      score: scorePct,
+      passFail,
+      timeTakenSeconds,
+      resultSummary,
+      coverage: updatedCoverage ? { ...updatedCoverage, coverage_pct: updatedCoverage.coveragePct } : null,
+    });
+  } catch (err) {
+    console.error('Submit assessment session error:', err);
+    return res.status(500).json({ error: 'Failed to submit assessment session' });
+  }
+});
+
 // GET /api/candidate-portal/targets/:id/assessment
 router.get('/targets/:id/assessment', authenticate, requireCandidate, async (req, res) => {
   try {
@@ -1387,7 +1776,13 @@ router.get('/targets/:id/assessment', authenticate, requireCandidate, async (req
     if (candRes.rowCount === 0) return res.status(404).json({ error: 'Candidate profile not found' });
     const candidateId = candRes.rows[0].id;
 
-    // Fetch target
+    // Eligibility check
+    const eligibility = await checkAssessmentEligibility(candidateId, id);
+    if (!eligibility.found) {
+      return res.status(404).json({ error: eligibility.error });
+    }
+
+    // Target
     const targetRes = await pool.query(
       `SELECT t.id, t.status AS target_status, t.targeted_at,
               cr.id AS vacancy_id, cr.title AS vacancy_title,
@@ -1404,7 +1799,7 @@ router.get('/targets/:id/assessment', authenticate, requireCandidate, async (req
     }
     const target = targetRes.rows[0];
 
-    // Fetch requirements
+    // Requirements
     const reqRes = await pool.query(
       `SELECT id, name, description, requirement_type, importance, weight
        FROM requirements
@@ -1414,7 +1809,31 @@ router.get('/targets/:id/assessment', authenticate, requireCandidate, async (req
     );
     const requirements = reqRes.rows;
 
-    // Fetch active or latest attempt
+    // Official sessions
+    const sessionsRes = await pool.query(
+      `SELECT id, attempt_number, status, score, pass_fail, time_limit_minutes, started_at, expires_at, submitted_at, result_summary
+       FROM assessment_sessions
+       WHERE target_id = $1 AND candidate_id = $2
+       ORDER BY attempt_number DESC, created_at DESC`,
+      [id, candidateId]
+    );
+    const sessions = sessionsRes.rows;
+    const latestSession = sessions.length > 0 ? sessions[0] : null;
+
+    // Questions: if active session exists, return sanitized questions from official questions
+    let sanitizedQuestions = [];
+    if (eligibility.activeSession) {
+      const qRes = await pool.query(
+        `SELECT id, requirement_id, question_text, question_type, options, marks, display_order
+         FROM official_assessment_questions
+         WHERE role_id = $1
+         ORDER BY display_order ASC`,
+        [target.vacancy_id]
+      );
+      sanitizedQuestions = sanitizeQuestionsForCandidate(qRes.rows);
+    }
+
+    // Latest attempt compatibility
     const attemptRes = await pool.query(
       `SELECT id, status, duration_minutes, started_at, expires_at, submitted_at, score, max_score, answers
        FROM assessment_attempts
@@ -1424,27 +1843,15 @@ router.get('/targets/:id/assessment', authenticate, requireCandidate, async (req
     );
     const attempt = attemptRes.rowCount > 0 ? attemptRes.rows[0] : null;
 
-    let requirementScores = [];
-    if (attempt && attempt.id) {
-      const scoreRes = await pool.query(
-        `SELECT ars.requirement_id, ars.score, ars.max_score, ars.assessment_notes, r.name as requirement_name
-         FROM assessment_requirement_scores ars
-         JOIN requirements r ON r.id = ars.requirement_id
-         WHERE ars.attempt_id = $1`,
-        [attempt.id]
-      );
-      requirementScores = scoreRes.rows;
-    }
-
-    const rawQuestions = generateQuestionsForRequirements(requirements);
-    const sanitizedQuestions = rawQuestions.map(({ correctOption, ...q }) => q);
-
     return res.json({
       target,
       isConfigured: requirements.length > 0,
+      eligibility,
+      activeSession: eligibility.activeSession,
+      latestSession,
+      sessions,
       attempt,
       requirements,
-      requirementScores,
       questions: sanitizedQuestions,
     });
   } catch (err) {
@@ -1495,7 +1902,7 @@ router.post('/targets/:id/assessment/start', authenticate, requireCandidate, asy
     const insertRes = await pool.query(
       `INSERT INTO assessment_attempts
         (target_id, candidate_id, role_id, company_id, status, duration_minutes, started_at, expires_at)
-       VALUES ($1, $2, $3, $4, 'IN_PROGRESS', $5, NOW(), NOW() + ($5 || ' minutes')::interval)
+       VALUES ($1, $2, $3, $4, 'IN_PROGRESS', $5, NOW(), NOW() + ($5 * INTERVAL '1 minute'))
        RETURNING id, status, duration_minutes, started_at, expires_at, answers`,
       [id, candidateId, target.vacancy_id, target.company_id, durationMinutes]
     );

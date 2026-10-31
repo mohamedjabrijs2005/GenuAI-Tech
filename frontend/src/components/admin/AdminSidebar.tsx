@@ -89,6 +89,11 @@ export function AdminSidebar({ isMobileOpen = false, onCloseMobile }: { isMobile
           href: '/admin/verification/assessments',
           icon: ClipboardList,
         },
+        {
+          label: 'AI Role Blueprints',
+          href: '/admin/blueprints',
+          icon: ScrollText,
+        },
       ],
     },
     {

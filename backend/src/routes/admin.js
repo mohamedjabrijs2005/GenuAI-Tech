@@ -1059,5 +1059,94 @@ router.patch('/content/practice-questions/:id/status', async (req, res) => {
   }
 });
 
+// ============================================================
+// 14. AI ROLE BLUEPRINT GOVERNANCE & AUDIT CONSOLE
+// Admins review platform-level AI suggestions and approval records
+// ============================================================
+
+// GET /api/admin/ai-suggestions
+router.get('/ai-suggestions', async (req, res) => {
+  try {
+    const { status, companyId } = req.query;
+    let query = `
+      SELECT s.*, c.name AS company_name, c.verification_status AS company_status,
+             u.first_name AS reviewer_first, u.last_name AS reviewer_last
+      FROM ai_role_blueprint_suggestions s
+      JOIN companies c ON c.id = s.company_id
+      LEFT JOIN users u ON u.id = s.reviewed_by
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (status) {
+      params.push(status.toUpperCase());
+      query += ` AND s.status = $${params.length}`;
+    }
+
+    if (companyId) {
+      params.push(companyId);
+      query += ` AND s.company_id = $${params.length}`;
+    }
+
+    query += ' ORDER BY s.created_at DESC LIMIT 100';
+
+    const result = await pool.query(query, params);
+    return res.json({ suggestions: result.rows });
+  } catch (err) {
+    console.error('Admin list AI suggestions error:', err);
+    return res.status(500).json({ error: 'Failed to fetch AI blueprint suggestions' });
+  }
+});
+
+// POST /api/admin/ai-suggestions/:id/review
+router.post('/ai-suggestions/:id/review', async (req, res) => {
+  const { id } = req.params;
+  const { status, reviewNotes } = req.body;
+  const ALLOWED_STATUSES = ['APPROVED', 'REJECTED', 'DRAFT'];
+
+  if (!status || !ALLOWED_STATUSES.includes(status.toUpperCase())) {
+    return res.status(400).json({ error: `Invalid status. Allowed: ${ALLOWED_STATUSES.join(', ')}` });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE ai_role_blueprint_suggestions
+       SET status = $1,
+           review_notes = $2,
+           reviewed_by = $3,
+           reviewed_at = NOW(),
+           updated_at = NOW()
+       WHERE id = $4
+       RETURNING *`,
+      [status.toUpperCase(), reviewNotes || 'Platform governance review applied', req.user.id, id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'AI blueprint suggestion not found' });
+    }
+
+    const updated = result.rows[0];
+
+    // Audit log
+    await pool.query(
+      `INSERT INTO audit_logs (company_id, actor_user_id, actor_role, action, entity_type, entity_id, new_status, reason, metadata)
+       VALUES ($1, $2, 'SUPER_ADMIN', 'ADMIN_AI_BLUEPRINT_REVIEWED', 'ai_role_blueprint_suggestions', $3, $4, $5, $6)`,
+      [
+        updated.company_id,
+        req.user.id,
+        id,
+        status.toUpperCase(),
+        reviewNotes || 'Platform governance review',
+        JSON.stringify({ roleTitle: updated.role_title, newStatus: status }),
+      ]
+    );
+
+    return res.json({ message: 'Blueprint suggestion reviewed by platform admin', suggestion: updated });
+  } catch (err) {
+    console.error('Admin review AI suggestion error:', err);
+    return res.status(500).json({ error: 'Failed to record blueprint review' });
+  }
+});
+
 module.exports = router;
 
