@@ -205,7 +205,11 @@ export default function RoleReadinessFunnelPage() {
     loadFunnel();
   }, [loadFunnel]);
 
-  const handleViewReadyCandidates = async (filter = '') => {
+  const handleViewReadyCandidates = async (filter: string = '') => {
+    if (showCandidates && filter === activeFilter) {
+      setShowCandidates(false);
+      return;
+    }
     setCandidatesLoading(true);
     setShowCandidates(true);
     try {
@@ -307,7 +311,7 @@ export default function RoleReadinessFunnelPage() {
               Refresh
             </button>
             <button
-              onClick={handleViewReadyCandidates}
+              onClick={() => handleViewReadyCandidates(activeFilter)}
               disabled={candidatesLoading}
               className="btn btn-gold"
               style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 20px' }}
@@ -404,9 +408,9 @@ export default function RoleReadinessFunnelPage() {
           {/* Stage rows */}
           <div style={{ padding: '8px 0' }}>
             {FUNNEL_STAGES.map((stage, idx) => {
-              const stageVal = funnelData[stage.key];
+              const stageVal = funnelData[stage.key] ?? 0;
               const nextStage = FUNNEL_STAGES[idx + 1];
-              const nextVal = nextStage ? funnelData[nextStage.key] : null;
+              const nextVal = nextStage ? (funnelData[nextStage.key] ?? null) : null;
               const width = barWidth(stageVal, maxValue);
               const Icon = stage.icon;
 
@@ -506,7 +510,7 @@ export default function RoleReadinessFunnelPage() {
         marginBottom: 28,
       }}>
         {FUNNEL_STAGES.map((stage) => {
-          const val = funnelData[stage.key];
+          const val = funnelData[stage.key] ?? 0;
           const Icon = stage.icon;
           return (
             <div key={stage.key} style={{
