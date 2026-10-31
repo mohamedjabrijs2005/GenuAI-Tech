@@ -670,18 +670,30 @@ export default function RoleReadinessFunnelPage() {
                             </span>
                           </td>
                           <td style={{ padding: '12px 14px' }}>
-                            <select
-                              defaultValue=""
-                              onChange={e => { if (e.target.value) handleDecision(c.target_id, e.target.value); e.target.value = ''; }}
-                              style={{ fontSize: 11, padding: '5px 8px', borderRadius: 6, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer' }}
-                            >
-                              <option value="">Set decision…</option>
-                              <option value="SHORTLISTED">Shortlist</option>
-                              <option value="INTERVIEW_SCHEDULED">Schedule Interview</option>
-                              <option value="REJECTED">Reject</option>
-                              <option value="HIRED">Hire</option>
-                              <option value="PENDING_REVIEW">Reset to Pending</option>
-                            </select>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <Link
+                                href={`/dashboard/vacancies/${vacancyId}/candidates/${c.target_id}`}
+                                className="btn btn-secondary btn-xs"
+                                style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', fontSize: 11 }}
+                              >
+                                <ExternalLink size={11} /> Review
+                              </Link>
+                              <select
+                                defaultValue=""
+                                onChange={e => { if (e.target.value) handleDecision(c.target_id, e.target.value); e.target.value = ''; }}
+                                style={{ fontSize: 11, padding: '4px 6px', borderRadius: 6, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer' }}
+                              >
+                                <option value="">Action…</option>
+                                <option value="SHORTLISTED">Shortlist</option>
+                                <option value="REQUEST_MORE_EVIDENCE">Request Evidence</option>
+                                <option value="INTERVIEW_SCHEDULED">Schedule Interview</option>
+                                <option value="INTERVIEWED">Mark Interviewed</option>
+                                <option value="OFFERED">Offer</option>
+                                <option value="HIRED">Hire</option>
+                                <option value="REJECTED">Reject</option>
+                                <option value="PENDING_REVIEW">Reset</option>
+                              </select>
+                            </div>
                           </td>
                         </tr>
                       );

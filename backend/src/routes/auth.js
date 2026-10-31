@@ -12,13 +12,17 @@ const { OAuth2Client } = require('google-auth-library');
 const router = express.Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET || JWT_SECRET === 'genuai-super-secret-jwt-key-change-in-production') {
-  console.error('FATAL: JWT_SECRET is missing or using the insecure default. Set a strong secret in .env');
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? '' : 'local-development-only-jwt-secret');
+if (!JWT_SECRET || (process.env.NODE_ENV === 'production' && JWT_SECRET.length < 32)) {
+  throw new Error('JWT_SECRET must be configured with at least 32 characters in production.');
 }
 
 function hashToken(raw) {
   return crypto.createHash('sha256').update(String(raw)).digest('hex');
+}
+
+function generateToken(userId, user = {}) {
+  return signToken({ id: userId, token_version: user.token_version || user.tokenVersion || 1 });
 }
 
 function signToken(user) {
@@ -617,7 +621,7 @@ router.post(
         [newHash, req.user.id]
       );
       const updatedVersion = updateResult.rows[0].token_version;
-      const newToken = generateToken(req.user.id, { token_version: updatedVersion });
+      const newToken = signToken({ id: req.user.id, token_version: updatedVersion });
 
       return res.json({
         success: true,
@@ -638,6 +642,9 @@ router.post('/google', loginLimiter, async (req, res) => {
   const { idToken, requestedRole, companyName } = req.body;
   if (!idToken) {
     return res.status(400).json({ error: 'Google ID token is required' });
+  }
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    return res.status(503).json({ error: 'Google Sign-In is not configured on this server.' });
   }
 
   try {

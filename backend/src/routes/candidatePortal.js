@@ -9,10 +9,18 @@ const router = express.Router();
 /**
  * Middleware: Ensure the authenticated user has role = 'CANDIDATE' or 'APPLICANT'
  */
-function requireCandidate(req, res, next) {
+async function requireCandidate(req, res, next) {
   const role = (req.user?.role || '').toUpperCase();
   if (role !== 'CANDIDATE' && role !== 'APPLICANT' && role !== 'USER') {
     return res.status(403).json({ error: 'Forbidden: Requires Candidate account.' });
+  }
+  if (!req.candidateId && req.user?.email) {
+    try {
+      const cRes = await pool.query('SELECT id FROM candidates WHERE LOWER(email) = LOWER($1)', [req.user.email]);
+      if (cRes.rowCount > 0) {
+        req.candidateId = cRes.rows[0].id;
+      }
+    } catch (_) {}
   }
   next();
 }
@@ -2076,16 +2084,14 @@ router.get('/targets/:targetId/evidence', authenticate, requireCandidate, async 
 // Submit or save draft evidence for a specific requirement on this target
 router.post('/targets/:targetId/evidence', authenticate, requireCandidate, async (req, res) => {
   const { targetId } = req.params;
-  const {
-    requirementId,
-    evidenceType = 'PROJECT',
-    title,
-    description,
-    externalUrl,
-    fileUrl,
-    fileHash,
-    action = 'SUBMIT',
-  } = req.body;
+  const requirementId = req.body.requirementId || req.body.requirement_id;
+  const evidenceType = req.body.evidenceType || req.body.evidence_type || 'PROJECT';
+  const title = req.body.title;
+  const description = req.body.description;
+  const externalUrl = req.body.externalUrl || req.body.url;
+  const fileUrl = req.body.fileUrl || req.body.file_url;
+  const fileHash = req.body.fileHash || req.body.file_hash;
+  const action = req.body.action || 'SUBMIT';
 
   if (!targetId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId)) {
     return res.status(404).json({ error: 'Target not found' });
@@ -2635,7 +2641,7 @@ router.get('/targets/:id/requirement-status', authenticate, requireCandidate, as
        GROUP BY lrrm.requirement_id`,
       [reqIds, id, candidateId]
     );
-    const learnMap: Record<string, { total: number; completed: number }> = {};
+    const learnMap = {};
     for (const row of learnRes.rows) {
       learnMap[row.requirement_id] = { total: parseInt(row.total), completed: parseInt(row.completed) };
     }
@@ -2654,7 +2660,7 @@ router.get('/targets/:id/requirement-status', authenticate, requireCandidate, as
        GROUP BY COALESCE(pa.requirement_id, r.id)`,
       [id, candidateId, reqIds]
     );
-    const practiceMap: Record<string, { attempts: number; hasCompleted: boolean; bestScore: number | null }> = {};
+    const practiceMap = {};
     for (const row of practiceRes.rows) {
       if (row.req_id) {
         practiceMap[row.req_id] = {
@@ -2676,7 +2682,7 @@ router.get('/targets/:id/requirement-status', authenticate, requireCandidate, as
        GROUP BY requirement_id`,
       [id, candidateId, reqIds]
     );
-    const evidenceMap: Record<string, { total: number; approved: number; pending: number }> = {};
+    const evidenceMap = {};
     for (const row of evidenceRes.rows) {
       evidenceMap[row.requirement_id] = {
         total: parseInt(row.total),

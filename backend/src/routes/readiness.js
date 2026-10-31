@@ -319,4 +319,306 @@ router.get('/:vacancyId/interested-candidates', async (req, res) => {
   }
 });
 
+// ============================================================
+// GET /api/company/vacancies/:vacancyId/candidates/:targetId
+// Full candidate review profile for company recruiter
+// Security: Company B cannot access Company A candidate
+// ============================================================
+router.get('/:vacancyId/candidates/:targetId', async (req, res) => {
+  try {
+    const companyId = req.companyMembership.company_id;
+    const { vacancyId, targetId } = req.params;
+
+    const isUUID = /^[0-9a-f-]{36}$/i.test(vacancyId) && /^[0-9a-f-]{36}$/i.test(targetId);
+    if (!isUUID) return res.status(404).json({ error: 'Candidate profile not found or access denied.' });
+
+    // Validate vacancy belongs to company
+    const roleRes = await pool.query(
+      `SELECT cr.id, cr.title, cr.experience_level, cr.employment_type, cr.location, cr.work_mode,
+              d.name AS department_name
+       FROM company_roles cr
+       LEFT JOIN departments d ON d.id = cr.department_id
+       WHERE cr.id = $1 AND cr.company_id = $2`,
+      [vacancyId, companyId]
+    );
+    if (roleRes.rowCount === 0) return res.status(404).json({ error: 'Vacancy not found or access denied.' });
+    const vacancy = roleRes.rows[0];
+
+    // Validate target belongs to vacancy and company
+    const targetRes = await pool.query(
+      `SELECT t.id AS target_id, t.candidate_id, t.company_id, t.vacancy_id, t.status AS target_status,
+              t.targeted_at, t.last_activity_at, t.recruiter_notes, t.recruiter_decision, t.recruiter_decided_at,
+              c.first_name, c.last_name, c.email, c.phone, c.location AS candidate_location,
+              c.education, c.experience_summary, c.general_skills, c.resume_url, c.github_url, c.portfolio_url, c.linkedin_url,
+              tc.coverage_pct, tc.supported_count, tc.limited_count, tc.gap_count, tc.pending_count
+       FROM targets t
+       JOIN candidates c ON c.id = t.candidate_id
+       LEFT JOIN target_coverage tc ON tc.target_id = t.id
+       WHERE t.id = $1 AND t.vacancy_id = $2 AND t.company_id = $3`,
+      [targetId, vacancyId, companyId]
+    );
+    if (targetRes.rowCount === 0) return res.status(404).json({ error: 'Target not found or access denied.' });
+    const targetData = targetRes.rows[0];
+
+    // Fetch requirements with coverage
+    const reqRes = await pool.query(
+      `SELECT r.id, r.name, r.description, r.importance, r.eval_method, r.evaluation_methods, r.weight
+       FROM requirements r
+       WHERE r.role_id = $1
+       ORDER BY r.created_at ASC`,
+      [vacancyId]
+    );
+
+    // Fetch evidence submitted for this target
+    const evRes = await pool.query(
+      `SELECT id, requirement_id, title, evidence_type, file_url, external_url,
+              description, review_status, reviewer_note, submitted_at, reviewed_at
+       FROM evidence
+       WHERE target_id = $1 AND candidate_id = $2
+       ORDER BY submitted_at DESC`,
+      [targetId, targetData.candidate_id]
+    );
+
+    // Fetch assessment attempts
+    const assessRes = await pool.query(
+      `SELECT id, status, grading_status, score, objective_score, scenario_score,
+              submitted_at, created_at
+       FROM assessment_attempts
+       WHERE (target_id = $1 OR (candidate_id = $2 AND role_id = $3))
+       ORDER BY created_at DESC LIMIT 5`,
+      [targetId, targetData.candidate_id, vacancyId]
+    );
+
+    // Fetch practice attempts summary
+    const practiceRes = await pool.query(
+      `SELECT COUNT(*) AS total_attempts,
+              COUNT(DISTINCT requirement_name) AS completed_sets,
+              MAX(score) AS best_score,
+              MAX(submitted_at) AS last_submitted_at
+       FROM practice_attempts
+       WHERE (target_id = $1 OR (candidate_id = $2 AND requirement_name IS NOT NULL))`,
+      [targetId, targetData.candidate_id]
+    );
+
+    // Map requirements with evidence support status
+    const evidenceList = evRes.rows;
+    const requirementsWithStatus = reqRes.rows.map(reqItem => {
+      const matchedEv = evidenceList.filter(e => e.requirement_id === reqItem.id && e.review_status !== 'WITHDRAWN');
+      const isApproved = matchedEv.some(e => ['APPROVED', 'ACCEPTED'].includes((e.review_status || '').toUpperCase()));
+      const isPending = matchedEv.some(e => ['SUBMITTED', 'PENDING_REVIEW'].includes((e.review_status || '').toUpperCase()));
+      return {
+        ...reqItem,
+        status: isApproved ? 'SUPPORTED' : isPending ? 'PENDING' : 'GAP',
+        evidenceCount: matchedEv.length,
+      };
+    });
+
+    return res.json({
+      target: targetData,
+      vacancy,
+      candidate: {
+        id: targetData.candidate_id,
+        first_name: targetData.first_name,
+        last_name: targetData.last_name,
+        email: targetData.email,
+        phone: targetData.phone,
+        location: targetData.candidate_location,
+        education: targetData.education || [],
+        experience_summary: targetData.experience_summary,
+        general_skills: targetData.general_skills || [],
+        resume_url: targetData.resume_url,
+        github_url: targetData.github_url,
+        portfolio_url: targetData.portfolio_url,
+        linkedin_url: targetData.linkedin_url,
+      },
+      coverage: {
+        coverage_pct: targetData.coverage_pct || 0,
+        supported_count: targetData.supported_count || 0,
+        limited_count: targetData.limited_count || 0,
+        gap_count: targetData.gap_count || 0,
+        pending_count: targetData.pending_count || 0,
+      },
+      requirements: requirementsWithStatus,
+      evidence: evidenceList,
+      assessment: assessRes.rows[0] || null,
+      assessmentHistory: assessRes.rows,
+      practice: practiceRes.rows[0] || { total_attempts: 0, completed_sets: 0, best_score: null },
+      recruiterNotes: targetData.recruiter_notes || '',
+      recruiterDecision: targetData.recruiter_decision || 'PENDING_REVIEW',
+      recruiterDecidedAt: targetData.recruiter_decided_at || null,
+    });
+  } catch (err) {
+    console.error('Candidate review detail error:', err);
+    return res.status(500).json({ error: 'Failed to fetch candidate profile' });
+  }
+});
+
+// ============================================================
+// POST /api/company/vacancies/:vacancyId/candidates/:targetId/decision
+// Human recruiter makes decision:
+// SHORTLISTED | REQUEST_MORE_EVIDENCE | REJECTED | INTERVIEW_SCHEDULED | INTERVIEWED | OFFERED | HIRED
+// Audit log generated for all actions.
+// ============================================================
+router.post('/:vacancyId/candidates/:targetId/decision', async (req, res) => {
+  try {
+    const companyId = req.companyMembership.company_id;
+    const userId = req.user?.id;
+    const { vacancyId, targetId } = req.params;
+    const { decision, notes } = req.body;
+
+    const VALID_DECISIONS = [
+      'SHORTLISTED',
+      'REQUEST_MORE_EVIDENCE',
+      'REJECTED',
+      'INTERVIEW_SCHEDULED',
+      'INTERVIEWED',
+      'OFFERED',
+      'HIRED',
+      'PENDING_REVIEW'
+    ];
+
+    if (!VALID_DECISIONS.includes(decision)) {
+      return res.status(400).json({
+        error: `Invalid decision. Must be one of: ${VALID_DECISIONS.join(', ')}`
+      });
+    }
+
+    // Verify target belongs to this company's vacancy
+    const tRes = await pool.query(
+      `SELECT t.id, t.candidate_id, t.status AS old_status, c.email AS candidate_email
+       FROM targets t
+       JOIN candidates c ON c.id = t.candidate_id
+       WHERE t.id = $1 AND t.vacancy_id = $2 AND t.company_id = $3`,
+      [targetId, vacancyId, companyId]
+    );
+    if (tRes.rowCount === 0) return res.status(404).json({ error: 'Target not found or access denied' });
+    const target = tRes.rows[0];
+
+    // Update target status and recruiter decision
+    await pool.query(
+      `UPDATE targets
+       SET status = $1,
+           recruiter_decision = $1,
+           recruiter_notes = COALESCE($2, recruiter_notes),
+           recruiter_decided_at = NOW(),
+           updated_at = NOW()
+       WHERE id = $3`,
+      [decision, notes || null, targetId]
+    );
+
+    // Update application table if present
+    await pool.query(
+      `UPDATE applications
+       SET status = $1, recruiter_notes = COALESCE($2, recruiter_notes), updated_at = NOW()
+       WHERE candidate_id = $3 AND role_id = $4 AND company_id = $5`,
+      [decision, notes || null, target.candidate_id, vacancyId, companyId]
+    ).catch(() => {});
+
+    // Create Audit Log
+    const actorName = `${req.user.firstName || req.user.first_name || 'Recruiter'} ${req.user.lastName || req.user.last_name || ''}`.trim();
+    await pool.query(
+      `INSERT INTO audit_logs (company_id, user_id, actor_name, actor_email, actor_role, action, entity_type, entity_id, old_status, new_status, reason, details)
+       VALUES ($1, $2, $3, $4, 'RECRUITER', $5, 'Target', $6, $7, $8, $9, $10)`,
+      [
+        companyId,
+        userId,
+        actorName,
+        req.user.email,
+        `RECRUITER_DECISION_${decision}`,
+        targetId,
+        target.old_status,
+        decision,
+        notes || `Recruiter set candidate decision to ${decision}`,
+        JSON.stringify({
+          candidateId: target.candidate_id,
+          candidateEmail: target.candidate_email,
+          vacancyId,
+          decision,
+          timestamp: new Date().toISOString()
+        })
+      ]
+    );
+
+    // Send candidate notification (without private recruiter notes)
+    const notificationMessages = {
+      SHORTLISTED: 'Congratulations! You have been shortlisted for this role.',
+      REQUEST_MORE_EVIDENCE: 'The recruiter has requested additional evidence for your target.',
+      INTERVIEW_SCHEDULED: 'An interview has been scheduled for this role.',
+      INTERVIEWED: 'Interview status has been updated to completed.',
+      OFFERED: 'Congratulations! A job offer has been extended to you.',
+      HIRED: 'Welcome aboard! You have been selected and hired.',
+      REJECTED: 'Thank you for your interest. The company has decided not to proceed at this time.',
+    };
+
+    if (notificationMessages[decision]) {
+      await pool.query(
+        `INSERT INTO candidate_notifications (candidate_id, title, message, type, link)
+         VALUES ($1, $2, $3, 'INFO', $4)`,
+        [
+          target.candidate_id,
+          `Application Update: ${decision.replace(/_/g, ' ')}`,
+          notificationMessages[decision],
+          `/candidate/targets/${targetId}`
+        ]
+      ).catch(() => {});
+    }
+
+    return res.json({
+      success: true,
+      targetId,
+      decision,
+      status: decision,
+      decidedAt: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error('Recruiter decision error:', err);
+    return res.status(500).json({ error: 'Failed to record decision' });
+  }
+});
+
+// ============================================================
+// POST /api/company/vacancies/:vacancyId/candidates/:targetId/evidence/:evidenceId/review
+// Recruiter reviews candidate evidence (APPROVE or REJECT)
+// ============================================================
+router.post('/:vacancyId/candidates/:targetId/evidence/:evidenceId/review', async (req, res) => {
+  try {
+    const companyId = req.companyMembership.company_id;
+    const userId = req.user?.id;
+    const { vacancyId, targetId, evidenceId } = req.params;
+    const { reviewStatus, note } = req.body; // 'APPROVED' or 'REJECTED'
+
+    if (!['APPROVED', 'REJECTED', 'LIMITED'].includes(reviewStatus)) {
+      return res.status(400).json({ error: 'Invalid review status. Must be APPROVED, REJECTED, or LIMITED.' });
+    }
+
+    const tRes = await pool.query(
+      `SELECT t.id, t.candidate_id FROM targets t WHERE t.id = $1 AND t.vacancy_id = $2 AND t.company_id = $3`,
+      [targetId, vacancyId, companyId]
+    );
+    if (tRes.rowCount === 0) return res.status(404).json({ error: 'Target not found or access denied.' });
+
+    const evUpdate = await pool.query(
+      `UPDATE evidence
+       SET review_status = $1, reviewer_note = COALESCE($2, reviewer_note), reviewed_by = $3, reviewed_at = NOW()
+       WHERE id = $4 AND target_id = $5
+       RETURNING *`,
+      [reviewStatus, note || null, userId, evidenceId, targetId]
+    );
+    if (evUpdate.rowCount === 0) return res.status(404).json({ error: 'Evidence not found.' });
+
+    // Recompute target coverage
+    const { recomputeTargetCoverage } = require('./evidenceService');
+    const updatedCoverage = await recomputeTargetCoverage(pool, targetId).catch(() => null);
+
+    return res.json({
+      success: true,
+      evidence: evUpdate.rows[0],
+      coverage: updatedCoverage,
+    });
+  } catch (err) {
+    console.error('Review evidence error:', err);
+    return res.status(500).json({ error: 'Failed to review evidence' });
+  }
+});
+
 module.exports = router;

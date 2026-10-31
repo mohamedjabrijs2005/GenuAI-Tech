@@ -27,10 +27,50 @@ const app = express();
 // Security & Parsing
 // ============================================================
 app.use(helmet({ crossOriginResourcePolicy: false }));
-app.use(cors({
-  origin: true,
+
+// CORS configuration supporting local dev, Vercel preview/production domains, and FRONTEND_URL
+const configuredOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
+function isOriginAllowed(origin) {
+  if (!origin) return true; // allow same-origin, curl, server-to-server
+  const cleanOrigin = origin.trim().replace(/\/+$/, '');
+
+  // Exact match from FRONTEND_URL or defaults
+  if (configuredOrigins.includes(cleanOrigin)) return true;
+  if (cleanOrigin === 'http://localhost:3000' || cleanOrigin === 'http://127.0.0.1:3000') return true;
+
+  // Allow all Vercel deployments (*.vercel.app)
+  try {
+    const parsed = new URL(cleanOrigin);
+    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') return true;
+    if (parsed.hostname.endsWith('.vercel.app')) return true;
+  } catch (_) {}
+
+  return false;
+}
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (isOriginAllowed(origin)) {
+      return callback(null, true);
+    }
+    // Return false instead of Error so Express doesn't crash on preflight and responds cleanly
+    return callback(null, false);
+  },
   credentials: true,
-}));
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400, // 24 hours preflight cache
+};
+
+app.use(cors(corsOptions));
+// In Express 5, handle all OPTIONS preflight requests using a RegExp path or router-level cors
+app.options(/(.*)/, cors(corsOptions));
+
 app.use(express.json({ limit: '10mb' }));
 
 // ============================================================
@@ -92,7 +132,6 @@ app.use((err, req, res, next) => {
     (Array.isArray(err.errors) && err.errors.some(e => e.code === 'ECONNREFUSED'));
 
   if (isDbOffline) {
-    console.warn(`[DB OFFLINE] ${req.method} ${req.path} — returning empty response`);
     if (req.method === 'GET') {
       // Return sensible empty payloads per route prefix
       const path = req.path;
