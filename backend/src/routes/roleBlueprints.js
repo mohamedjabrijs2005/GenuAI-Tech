@@ -386,7 +386,7 @@ router.post(
               skill.category || 'Technical',
               isMustHave ? 'Required' : 'Preferred',
               isMustHave ? 'High' : 'Medium',
-              'Proficient',
+              'Advanced',
               'Work Product Evidence & Objective Evaluation',
               isMustHave ? 'REQUIRED' : 'PREFERRED',
               isMustHave ? 1.5 : 1.0,
@@ -403,16 +403,17 @@ router.post(
         if (lp.title && lp.skill) {
           await client.query(
             `INSERT INTO learning_resources
-               (title, resource_type, url, requirement_name, difficulty, est_minutes)
-             VALUES ($1, $2, $3, $4, $5, $6)
+               (requirement_name, title, description, source, resource_type, language, estimated_duration_mins, url)
+             VALUES ($1, $2, $3, $4, $5, 'English', $6, $7)
              ON CONFLICT DO NOTHING`,
             [
-              lp.title,
-              lp.type || 'GUIDE',
-              lp.url || 'https://genuai.io/learn',
               lp.skill,
-              'INTERMEDIATE',
+              lp.title,
+              `Curriculum resource for ${lp.skill}`,
+              'Curated Learning Curriculum',
+              lp.type || 'GUIDE',
               parseInt(lp.duration, 10) || 45,
+              lp.url || 'https://genuai.io/learn',
             ]
           );
           appliedResources++;

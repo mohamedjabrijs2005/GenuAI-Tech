@@ -186,7 +186,7 @@ export default function AdminBlueprintsPage() {
             No blueprint suggestions found matching current filters.
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', divideY: '1px solid #f1f5f9' }}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             {filtered.map((s) => {
               const isExpanded = expandedId === s.id;
               const skillsCount = Array.isArray(s.suggested_skills) ? s.suggested_skills.length : 0;

@@ -23,8 +23,6 @@ require('./backend/node_modules/dotenv').config({ path: require('path').join(__d
 const pool = require('./backend/src/database/pool');
 const bcrypt = require('./backend/node_modules/bcryptjs');
 
-const BACKEND_URL = 'http://127.0.0.1:4000/api';
-
 let passed = 0;
 let failed = 0;
 
@@ -38,28 +36,32 @@ function assert(condition, message, details = '') {
   }
 }
 
-async function apiRequest(endpoint, options = {}) {
-  const url = `${BACKEND_URL}${endpoint}`;
-  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
-  const config = {
-    method: options.method || 'GET',
-    headers,
-  };
-  if (options.body) {
-    config.body = JSON.stringify(options.body);
-  }
-  const res = await fetch(url, config);
-  let data = null;
-  try {
-    data = await res.json();
-  } catch (_) { }
-  return { status: res.status, ok: res.ok, data };
-}
-
 async function run() {
   console.log('========================================================================');
   console.log('🧪 GENUAI — AI ROLE SKILL BLUEPRINT GENERATOR TEST SUITE');
   console.log('========================================================================\n');
+
+  const app = require('./backend/src/server');
+  const server = app.listen(4099, '127.0.0.1');
+  const BACKEND_URL = 'http://127.0.0.1:4099/api';
+
+  async function apiRequest(endpoint, options = {}) {
+    const url = `${BACKEND_URL}${endpoint}`;
+    const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+    const config = {
+      method: options.method || 'GET',
+      headers,
+    };
+    if (options.body) {
+      config.body = JSON.stringify(options.body);
+    }
+    const res = await fetch(url, config);
+    let data = null;
+    try {
+      data = await res.json();
+    } catch (_) { }
+    return { status: res.status, ok: res.ok, data };
+  }
 
   const ts = Date.now();
   const companyAEmail = `blueprint_comp_a_${ts}@genuai.test`;
@@ -303,12 +305,12 @@ async function run() {
     // TEST 8: Candidate sees learning paths only AFTER blueprint approval
     // -------------------------------------------------------------
     console.log('\n📋 TEST 8: Candidate visibility scoping');
-    // Verify candidate cannot see draft blueprint suggestions directly
-    const candDraftCheck = await pool.query(
-      "SELECT id FROM ai_role_blueprint_suggestions WHERE status = 'DRAFT' AND id = $1",
+    // Verify rejected suggestion has REJECTED status in DB
+    const rejStatusCheck = await pool.query(
+      "SELECT id, status FROM ai_role_blueprint_suggestions WHERE id = $1",
       [rejId]
     );
-    assert(candDraftCheck.rowCount > 0, 'Draft suggestion exists in DB');
+    assert(rejStatusCheck.rows[0]?.status === 'REJECTED', 'Rejected suggestion is marked REJECTED in DB');
     // Ensure learning paths for unapproved draft are not active in candidate catalog
     const unapprovedLpCheck = await pool.query(
       "SELECT id FROM learning_resources WHERE requirement_name = 'Draft Skill Never Approved'"
@@ -387,11 +389,13 @@ async function run() {
         await pool.query('DELETE FROM company_members WHERE company_id IN ($1, $2)', [companyAId, companyBId]);
         await pool.query('DELETE FROM companies WHERE id IN ($1, $2)', [companyAId, companyBId]);
       }
-    } catch (_) {}
+    } catch (_) { }
 
     if (failed > 0) {
+      server.close();
       process.exit(1);
     } else {
+      server.close();
       process.exit(0);
     }
   } catch (err) {

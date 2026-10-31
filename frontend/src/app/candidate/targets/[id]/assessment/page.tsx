@@ -72,6 +72,37 @@ export default function TargetOfficialAssessmentPage() {
     }
   }, [targetId]);
 
+  // Submit assessment answers
+  const submitSessionAnswers = async (autoExpire = false) => {
+    if (!activeSession?.id) return;
+    setSubmitting(true);
+    try {
+      const res = await api.post(`/candidate-portal/targets/${targetId}/assessment/session/submit`, {
+        sessionId: activeSession.id,
+        answers,
+      });
+
+      toast.success(`Assessment submitted! Score: ${res.data.score}% (${res.data.passFail})`);
+      setResultSummary(res.data.resultSummary || res.data);
+      setActiveSession(null);
+      setSecondsRemaining(null);
+
+      // Refresh workspace data
+      await loadWorkspace();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to submit assessment answers');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Auto-submit when timer expires
+  const handleAutoSubmit = async () => {
+    if (!activeSession?.id || submitting) return;
+    toast('Time has expired! Auto-submitting answers...', { icon: '⏰' });
+    await submitSessionAnswers(true);
+  };
+
   // Countdown timer effect
   useEffect(() => {
     if (secondsRemaining === null || secondsRemaining <= 0 || !activeSession) {
@@ -94,13 +125,6 @@ export default function TargetOfficialAssessmentPage() {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [activeSession, secondsRemaining]);
-
-  // Auto-submit when timer expires
-  const handleAutoSubmit = async () => {
-    if (!activeSession?.id || submitting) return;
-    toast('Time has expired! Auto-submitting answers...', { icon: '⏰' });
-    await submitSessionAnswers(true);
-  };
 
   // Start official assessment
   const handleStart = async () => {
