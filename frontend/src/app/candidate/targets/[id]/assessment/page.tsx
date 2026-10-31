@@ -155,30 +155,6 @@ export default function TargetOfficialAssessmentPage() {
     }
   };
 
-  // Submit assessment answers
-  const submitSessionAnswers = async (autoExpire = false) => {
-    if (!activeSession?.id) return;
-    setSubmitting(true);
-    try {
-      const res = await api.post(`/candidate-portal/targets/${targetId}/assessment/session/submit`, {
-        sessionId: activeSession.id,
-        answers,
-      });
-
-      toast.success(`Assessment submitted! Score: ${res.data.score}% (${res.data.passFail})`);
-      setResultSummary(res.data.resultSummary || res.data);
-      setActiveSession(null);
-      setSecondsRemaining(null);
-
-      // Refresh workspace data
-      await loadWorkspace();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to submit assessment answers');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const handleManualSubmit = () => {
     const answeredCount = Object.keys(answers).length;
     const totalCount = questions.length;
