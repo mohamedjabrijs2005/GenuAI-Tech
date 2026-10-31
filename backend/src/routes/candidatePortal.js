@@ -1899,12 +1899,14 @@ router.post('/targets/:id/assessment/start', authenticate, requireCandidate, asy
 
     // Fresh 45-minute attempt
     const durationMinutes = 45;
+    const startedAt = new Date();
+    const expiresAt = new Date(startedAt.getTime() + durationMinutes * 60 * 1000);
     const insertRes = await pool.query(
       `INSERT INTO assessment_attempts
         (target_id, candidate_id, role_id, company_id, status, duration_minutes, started_at, expires_at)
-       VALUES ($1, $2, $3, $4, 'IN_PROGRESS', $5, NOW(), NOW() + ($5 * INTERVAL '1 minute'))
+       VALUES ($1, $2, $3, $4, 'IN_PROGRESS', $5, $6, $7)
        RETURNING id, status, duration_minutes, started_at, expires_at, answers`,
-      [id, candidateId, target.vacancy_id, target.company_id, durationMinutes]
+      [id, candidateId, target.vacancy_id, target.company_id, durationMinutes, startedAt, expiresAt]
     );
 
     return res.status(201).json({ attempt: insertRes.rows[0], resumed: false });

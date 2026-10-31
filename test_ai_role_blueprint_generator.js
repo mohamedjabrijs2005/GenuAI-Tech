@@ -52,7 +52,7 @@ async function apiRequest(endpoint, options = {}) {
   let data = null;
   try {
     data = await res.json();
-  } catch (_) {}
+  } catch (_) { }
   return { status: res.status, ok: res.ok, data };
 }
 
@@ -378,6 +378,16 @@ async function run() {
     console.log('\n========================================================================');
     console.log(`TEST SUITE RESULTS: ${passed} PASSED, ${failed} FAILED`);
     console.log('========================================================================');
+
+    // Clean up test companies and blueprint suggestions
+    try {
+      if (companyAId && companyBId) {
+        await pool.query('DELETE FROM role_blueprint_approval WHERE company_id IN ($1, $2)', [companyAId, companyBId]);
+        await pool.query('DELETE FROM ai_role_blueprint_suggestions WHERE company_id IN ($1, $2)', [companyAId, companyBId]);
+        await pool.query('DELETE FROM company_members WHERE company_id IN ($1, $2)', [companyAId, companyBId]);
+        await pool.query('DELETE FROM companies WHERE id IN ($1, $2)', [companyAId, companyBId]);
+      }
+    } catch (_) {}
 
     if (failed > 0) {
       process.exit(1);

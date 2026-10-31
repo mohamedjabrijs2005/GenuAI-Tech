@@ -372,7 +372,7 @@ router.post(
         for (const skill of skills) {
           const skillName = skill.name || skill.title || 'Required Skill';
           const isMustHave = (skill.importance || '').toLowerCase() === 'must-have';
-          
+
           await client.query(
             `INSERT INTO requirements
                (role_id, company_id, name, description, category, req_type, priority, proficiency, eval_method, importance, weight)

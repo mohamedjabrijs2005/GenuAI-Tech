@@ -309,7 +309,7 @@ const COMMON_SKILLS = [
  */
 function matchRole(roleTitle = '') {
   const normalized = roleTitle.trim().toLowerCase();
-  
+
   if (normalized.includes('backend') || normalized.includes('back-end') || normalized.includes('api developer') || normalized.includes('server engineer')) {
     return 'Backend Developer';
   }

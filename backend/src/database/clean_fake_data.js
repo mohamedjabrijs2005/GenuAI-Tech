@@ -2,13 +2,15 @@ require('dotenv').config({ path: require('path').join(__dirname, '../../.env') }
 const pool = require('./pool');
 
 async function clean() {
-  console.log('🧹 Cleaning fake vacancies and unregistered / test companies...');
+  console.log('🧹 Purging all fake/mock/test companies, roles, and test users...');
 
+  // The ONLY real companies: Zoho and Accenture
   const realCompanyIds = [
     '3e85a949-5e9a-4e5d-986f-b383d1c47942', // Zoho
     '8c30ab6c-7cde-4f82-ae7e-ca70559d38e2', // Accenture
   ];
 
+  // Whitelisted real user emails
   const realEmails = [
     'surya2006@gmail.com',
     'zohocompany1@gmail.com',
@@ -32,7 +34,7 @@ async function clean() {
     console.log(`Found ${fakeCompanyIds.length} test/fake companies to remove.`);
 
     if (fakeCompanyIds.length > 0) {
-      // 2. Identify fake vacancies
+      // 2. Identify fake vacancies / roles
       const fakeVacsRes = await client.query(
         `SELECT id, title FROM company_roles WHERE company_id = ANY($1::uuid[])`,
         [fakeCompanyIds]
@@ -42,27 +44,33 @@ async function clean() {
 
       if (fakeVacIds.length > 0) {
         // Clean related vacancy records
+        await client.query(`DELETE FROM assessment_sessions WHERE target_id IN (SELECT id FROM targets WHERE role_id = ANY($1::uuid[]) OR vacancy_id = ANY($1::uuid[]))`, [fakeVacIds]);
+        await client.query(`DELETE FROM official_assessment_questions WHERE role_id = ANY($1::uuid[])`, [fakeVacIds]);
         await client.query(`DELETE FROM candidate_interest WHERE vacancy_id = ANY($1::uuid[]) OR role_id = ANY($1::uuid[])`, [fakeVacIds]);
-        await client.query(`DELETE FROM target_learning_progress WHERE target_id IN (SELECT id FROM targets WHERE role_id = ANY($1::uuid[]))`, [fakeVacIds]);
-        await client.query(`DELETE FROM practice_attempts WHERE target_id IN (SELECT id FROM targets WHERE role_id = ANY($1::uuid[]))`, [fakeVacIds]);
-        await client.query(`DELETE FROM assessment_requirement_scores WHERE attempt_id IN (SELECT id FROM assessment_attempts WHERE target_id IN (SELECT id FROM targets WHERE role_id = ANY($1::uuid[])))`, [fakeVacIds]);
-        await client.query(`DELETE FROM assessment_attempts WHERE target_id IN (SELECT id FROM targets WHERE role_id = ANY($1::uuid[]))`, [fakeVacIds]);
+        await client.query(`DELETE FROM target_learning_progress WHERE target_id IN (SELECT id FROM targets WHERE role_id = ANY($1::uuid[]) OR vacancy_id = ANY($1::uuid[]))`, [fakeVacIds]);
+        await client.query(`DELETE FROM practice_attempts WHERE target_id IN (SELECT id FROM targets WHERE role_id = ANY($1::uuid[]) OR vacancy_id = ANY($1::uuid[]))`, [fakeVacIds]);
+        await client.query(`DELETE FROM assessment_requirement_scores WHERE attempt_id IN (SELECT id FROM assessment_attempts WHERE target_id IN (SELECT id FROM targets WHERE role_id = ANY($1::uuid[]) OR vacancy_id = ANY($1::uuid[])))`, [fakeVacIds]);
+        await client.query(`DELETE FROM assessment_attempts WHERE target_id IN (SELECT id FROM targets WHERE role_id = ANY($1::uuid[]) OR vacancy_id = ANY($1::uuid[]))`, [fakeVacIds]);
         await client.query(`DELETE FROM evidence_coverage WHERE company_id = ANY($1::uuid[])`, [fakeCompanyIds]);
-        await client.query(`DELETE FROM evidence WHERE vacancy_id = ANY($1::uuid[]) OR target_id IN (SELECT id FROM targets WHERE role_id = ANY($1::uuid[]))`, [fakeVacIds]);
-        await client.query(`DELETE FROM target_coverage WHERE target_id IN (SELECT id FROM targets WHERE role_id = ANY($1::uuid[]))`, [fakeVacIds]);
+        await client.query(`DELETE FROM evidence WHERE vacancy_id = ANY($1::uuid[]) OR target_id IN (SELECT id FROM targets WHERE role_id = ANY($1::uuid[]) OR vacancy_id = ANY($1::uuid[]))`, [fakeVacIds]);
+        await client.query(`DELETE FROM target_coverage WHERE target_id IN (SELECT id FROM targets WHERE role_id = ANY($1::uuid[]) OR vacancy_id = ANY($1::uuid[]))`, [fakeVacIds]);
         await client.query(`DELETE FROM human_decisions WHERE company_id = ANY($1::uuid[])`, [fakeCompanyIds]);
-        await client.query(`DELETE FROM targets WHERE role_id = ANY($1::uuid[])`, [fakeVacIds]);
+        await client.query(`DELETE FROM targets WHERE role_id = ANY($1::uuid[]) OR vacancy_id = ANY($1::uuid[])`, [fakeVacIds]);
         await client.query(`DELETE FROM applications WHERE role_id = ANY($1::uuid[])`, [fakeVacIds]);
         await client.query(`DELETE FROM learning_resource_requirement_map WHERE requirement_id IN (SELECT id FROM requirements WHERE role_id = ANY($1::uuid[]))`, [fakeVacIds]);
         await client.query(`DELETE FROM practice_question_requirement_map WHERE requirement_id IN (SELECT id FROM requirements WHERE role_id = ANY($1::uuid[]))`, [fakeVacIds]);
         await client.query(`DELETE FROM requirements WHERE role_id = ANY($1::uuid[])`, [fakeVacIds]);
         await client.query(`DELETE FROM vacancy_versions WHERE role_id = ANY($1::uuid[])`, [fakeVacIds]);
+        await client.query(`DELETE FROM role_blueprint_approval WHERE company_id = ANY($1::uuid[])`, [fakeCompanyIds]);
+        await client.query(`DELETE FROM ai_role_blueprint_suggestions WHERE company_id = ANY($1::uuid[]) OR role_master_id = ANY($1::uuid[])`, [fakeCompanyIds]);
         await client.query(`DELETE FROM audit_logs WHERE entity_type = 'Vacancy' AND entity_id = ANY($1::text[])`, [fakeVacIds.map(String)]);
         await client.query(`DELETE FROM company_roles WHERE id = ANY($1::uuid[])`, [fakeVacIds]);
         console.log('✅ Deleted all fake vacancies and linked candidate records.');
       }
 
-      // Clean related company records
+      // Clean remaining company records
+      await client.query(`DELETE FROM role_blueprint_approval WHERE company_id = ANY($1::uuid[])`, [fakeCompanyIds]);
+      await client.query(`DELETE FROM ai_role_blueprint_suggestions WHERE company_id = ANY($1::uuid[])`, [fakeCompanyIds]);
       await client.query(`DELETE FROM audit_logs WHERE company_id = ANY($1::uuid[])`, [fakeCompanyIds]);
       await client.query(`DELETE FROM recruiter_reviews WHERE company_id = ANY($1::uuid[])`, [fakeCompanyIds]);
       await client.query(`DELETE FROM agreements WHERE company_id = ANY($1::uuid[])`, [fakeCompanyIds]);
@@ -73,7 +81,14 @@ async function clean() {
       console.log('✅ Deleted all test/unregistered companies.');
     }
 
-    // 3. Clean test users
+    // 3. Clean test candidates & test users
+    const delCandRes = await client.query(
+      `DELETE FROM candidates WHERE email NOT IN ($1, $2, $3, $4, $5, $6, $7)
+       AND (email LIKE '%@genuai.test' OR email LIKE '%@test.com' OR email LIKE '%@co.test' OR email LIKE '%@example.com')`,
+      realEmails
+    );
+    console.log(`✅ Deleted ${delCandRes.rowCount} test candidates.`);
+
     const delUsersRes = await client.query(
       `DELETE FROM users WHERE email NOT IN ($1, $2, $3, $4, $5, $6, $7)
        AND (email LIKE '%@genuai.test' OR email LIKE '%@test.com' OR email LIKE '%@co.test' OR email LIKE '%@example.com')`,
@@ -81,7 +96,7 @@ async function clean() {
     );
     console.log(`✅ Deleted ${delUsersRes.rowCount} test users.`);
 
-    // 4. Ensure Zoho vacancies have Published status and vacancy_versions record so candidates see them
+    // 4. Ensure Zoho vacancies have Published status and vacancy_versions record
     const zohoVacs = await client.query(
       `SELECT id, title, status FROM company_roles WHERE company_id = $1`,
       [realCompanyIds[0]]
@@ -101,14 +116,19 @@ async function clean() {
     console.log(`✅ Verified and published ${zohoVacs.rows.length} real vacancies for Zoho.`);
 
     await client.query('COMMIT');
-    console.log('🎉 Cleanup completed successfully!');
+    console.log('🎉 Cleanup completed successfully! Database has ONLY real companies and real roles.');
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Cleanup failed:', err);
+    throw err;
   } finally {
     client.release();
-    pool.end();
+    await pool.end();
   }
 }
 
-clean();
+if (require.main === module) {
+  clean().then(() => process.exit(0)).catch(() => process.exit(1));
+}
+
+module.exports = clean;

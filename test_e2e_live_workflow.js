@@ -495,8 +495,23 @@ async function run() {
     // -------------------------------------------------------------------------
     // CLEANUP
     // -------------------------------------------------------------------------
-    await pool.query('DELETE FROM candidates WHERE id = $1', [candidateUserId]);
-    await pool.query('DELETE FROM companies WHERE id IN ($1, $2)', [companyAId, companyBId]);
+    if (companyAId && companyBId) {
+      await pool.query('DELETE FROM human_decisions WHERE company_id IN ($1, $2)', [companyAId, companyBId]).catch(() => {});
+      await pool.query('DELETE FROM audit_logs WHERE company_id IN ($1, $2)', [companyAId, companyBId]).catch(() => {});
+      await pool.query('DELETE FROM recruiter_reviews WHERE company_id IN ($1, $2)', [companyAId, companyBId]).catch(() => {});
+      await pool.query('DELETE FROM evidence WHERE company_id IN ($1, $2)', [companyAId, companyBId]).catch(() => {});
+      await pool.query('DELETE FROM targets WHERE company_id IN ($1, $2)', [companyAId, companyBId]).catch(() => {});
+      await pool.query('DELETE FROM practice_attempts WHERE company_id IN ($1, $2)', [companyAId, companyBId]).catch(() => {});
+      await pool.query('DELETE FROM assessment_attempts WHERE company_id IN ($1, $2)', [companyAId, companyBId]).catch(() => {});
+      await pool.query('DELETE FROM requirements WHERE company_id IN ($1, $2)', [companyAId, companyBId]).catch(() => {});
+      await pool.query('DELETE FROM vacancy_versions WHERE company_id IN ($1, $2)', [companyAId, companyBId]).catch(() => {});
+      await pool.query('DELETE FROM company_roles WHERE company_id IN ($1, $2)', [companyAId, companyBId]).catch(() => {});
+      await pool.query('DELETE FROM departments WHERE company_id IN ($1, $2)', [companyAId, companyBId]).catch(() => {});
+      await pool.query('DELETE FROM company_members WHERE company_id IN ($1, $2)', [companyAId, companyBId]).catch(() => {});
+      await pool.query('DELETE FROM companies WHERE id IN ($1, $2)', [companyAId, companyBId]).catch(() => {});
+    }
+    await pool.query('DELETE FROM candidates WHERE id = $1', [candidateUserId]).catch(() => {});
+    await pool.query('DELETE FROM users WHERE id = $1', [candidateUserId]).catch(() => {});
 
   } catch (err) {
     console.error('Fatal error during validation test:', err);

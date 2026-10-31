@@ -352,6 +352,25 @@ async function run() {
     assert(expSubmitRes.status === 200, 'Expired submission processed');
     assert(expSubmitRes.body.status === 'EXPIRED', `Session marked EXPIRED: ${expSubmitRes.body.status}`);
 
+    // Automatic cleanup of test artifacts so no mock companies/roles persist
+    if (companyId) {
+      await pool.query(`DELETE FROM assessment_sessions WHERE target_id IN (SELECT id FROM targets WHERE company_id = $1)`, [companyId]);
+      await pool.query(`DELETE FROM official_assessment_questions WHERE role_id = $1`, [roleId]);
+      await pool.query(`DELETE FROM assessment_requirement_scores WHERE attempt_id IN (SELECT id FROM assessment_attempts WHERE company_id = $1)`, [companyId]);
+      await pool.query(`DELETE FROM assessment_attempts WHERE company_id = $1`, [companyId]);
+      await pool.query(`DELETE FROM target_coverage WHERE company_id = $1`, [companyId]);
+      await pool.query(`DELETE FROM practice_attempts WHERE target_id IN (SELECT id FROM targets WHERE company_id = $1)`, [companyId]);
+      await pool.query(`DELETE FROM target_learning_progress WHERE target_id IN (SELECT id FROM targets WHERE company_id = $1)`, [companyId]);
+      await pool.query(`DELETE FROM targets WHERE company_id = $1`, [companyId]);
+      await pool.query(`DELETE FROM requirements WHERE role_id = $1`, [roleId]);
+      await pool.query(`DELETE FROM company_roles WHERE id = $1`, [roleId]);
+      await pool.query(`DELETE FROM departments WHERE company_id = $1`, [companyId]);
+      await pool.query(`DELETE FROM company_members WHERE company_id = $1`, [companyId]);
+      await pool.query(`DELETE FROM companies WHERE id = $1`, [companyId]);
+    }
+    await pool.query(`DELETE FROM candidates WHERE id IN ($1, $2)`, [candidate1Id, candidate2Id]);
+    await pool.query(`DELETE FROM users WHERE id IN ($1, $2, $3)`, [candidate1Id, candidate2Id, compUserId]);
+
     console.log('\n============================================================');
     console.log(`📊 TEST RESULTS: ${passed} PASSED | ${failed} FAILED`);
     console.log('============================================================');
