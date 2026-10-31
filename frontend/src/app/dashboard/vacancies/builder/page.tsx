@@ -798,30 +798,31 @@ export default function VacancyBuilderPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Role Master Selection */}
-            <div className="form-group md:col-span-2 p-3 bg-amber-50/50 border border-amber-200/80 rounded-xl">
-              <label className="form-label flex items-center justify-between text-amber-950 font-bold">
-                <span>Select Role Master (Base Role Template)</span>
-                <span className="text-[11px] font-medium text-amber-800">Links verified blueprints across vacancies</span>
-              </label>
+            {/* Role Master Selection — clean inline row */}
+            <div className="form-group md:col-span-2">
+              <div className="flex items-center justify-between mb-1">
+                <label className="form-label mb-0 text-slate-800 font-bold">
+                  Select Role Master <span className="text-xs font-normal text-slate-500">(optional — links verified blueprints across vacancies)</span>
+                </label>
+              </div>
               <select
-                className="form-select bg-white font-medium text-slate-800"
+                className="form-select"
                 value={selectedRoleMasterId}
                 onChange={e => handleSelectRoleMaster(e.target.value)}
               >
-                <option value="">— Select an existing Role Master or create a new one —</option>
+                <option value="">— None (create custom vacancy) —</option>
                 {roleMasters.map(rm => (
                   <option key={rm.id} value={rm.id}>
-                    {rm.title} {rm.department_name ? `(${rm.department_name})` : ''} {rm.approved_role_blueprint_id ? '★ Has Approved Blueprint' : ''}
+                    {rm.title} {rm.department_name ? `(${rm.department_name})` : ''} {rm.approved_role_blueprint_id ? '★' : ''}
                   </option>
                 ))}
               </select>
-              <div className="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1.5">
-                <Info size={12} className="text-amber-700 flex-shrink-0" />
-                <span>
-                  Selecting a Role Master will auto-fill role details and load any existing approved skill blueprints.
-                </span>
-              </div>
+              {selectedRoleMasterId && (
+                <div className="text-[11px] text-amber-700 mt-1 flex items-center gap-1">
+                  <Info size={11} className="flex-shrink-0" />
+                  Auto-filled role details. Any approved blueprint for this Role Master has been loaded in Step 2.
+                </div>
+              )}
             </div>
 
             <div className="form-group md:col-span-2">
@@ -1036,35 +1037,33 @@ export default function VacancyBuilderPage() {
 
             {/* Quick import from other approved blueprints */}
             {approvedBlueprints.length > 0 && !existingApprovedBlueprint && (
-              <div className="px-5 pt-3 pb-2 flex items-center justify-between flex-wrap gap-2 text-xs text-slate-600">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-slate-700">Or import existing approved blueprint:</span>
-                  <select
-                    className="form-select text-xs py-1 h-7 bg-white border-amber-300"
-                    onChange={e => {
-                      if (e.target.value) {
-                        importBlueprintSkills(e.target.value);
-                        e.target.value = '';
-                      }
-                    }}
-                    defaultValue=""
-                  >
-                    <option value="" disabled>Select approved blueprint...</option>
-                    {approvedBlueprints.map(bp => (
-                      <option key={bp.id} value={bp.id}>
-                        {bp.role_title} ({new Date(bp.approved_at || bp.updated_at).toLocaleDateString()})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <label className="flex items-center gap-1.5 cursor-pointer text-xs text-slate-600">
+              <div className="px-5 py-3 border-t border-slate-100 flex items-center gap-3 flex-wrap">
+                <span className="text-xs font-semibold text-slate-600 whitespace-nowrap">Import approved blueprint:</span>
+                <select
+                  className="form-select text-xs h-8 bg-white border-slate-300 flex-1 min-w-[200px] max-w-xs"
+                  onChange={e => {
+                    if (e.target.value) {
+                      importBlueprintSkills(e.target.value);
+                      e.target.value = '';
+                    }
+                  }}
+                  defaultValue=""
+                >
+                  <option value="" disabled>Select approved blueprint...</option>
+                  {approvedBlueprints.map(bp => (
+                    <option key={bp.id} value={bp.id}>
+                      {bp.role_title} ({new Date(bp.approved_at || bp.updated_at).toLocaleDateString()})
+                    </option>
+                  ))}
+                </select>
+                <label className="flex items-center gap-1.5 cursor-pointer text-xs text-slate-600 whitespace-nowrap ml-auto">
                   <input
                     type="checkbox"
                     checked={includeCommonSkills}
                     onChange={e => setIncludeCommonSkills(e.target.checked)}
                     className="rounded text-amber-600 focus:ring-amber-500"
                   />
-                  <span>Include foundational workplace competencies</span>
+                  <span>Include foundational competencies</span>
                 </label>
               </div>
             )}
