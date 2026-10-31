@@ -48,15 +48,23 @@ interface ReadinessFunnelResponse {
 }
 
 interface ReadyCandidate {
-  id: string;
+  candidate_id: string;
   first_name: string;
   last_name: string;
   email: string;
   target_id: string;
+  target_status: string;
   coverage_pct: number;
-  application_status: string | null;
+  assessment_status: string | null;
+  grading_status: string | null;
+  assessment_score: number | null;
+  assessment_submitted_at: string | null;
+  evidence_count: number;
+  evidence_approved_count: number;
   targeted_at: string;
   last_activity_at: string;
+  recruiter_decision: string | null;
+  recruiter_decided_at: string | null;
 }
 
 /* ─── Funnel stage definitions ─────────────────────────────────── */
@@ -177,6 +185,8 @@ export default function RoleReadinessFunnelPage() {
   const [loading, setLoading] = useState(true);
   const [candidatesLoading, setCandidatesLoading] = useState(false);
   const [error, setError] = useState('');
+  const [activeFilter, setActiveFilter] = useState('');
+  const [decidingTarget, setDecidingTarget] = useState<string | null>(null);
 
   const loadFunnel = useCallback(async () => {
     setLoading(true);
@@ -195,21 +205,27 @@ export default function RoleReadinessFunnelPage() {
     loadFunnel();
   }, [loadFunnel]);
 
-  const handleViewReadyCandidates = async () => {
-    if (showCandidates) {
-      setShowCandidates(false);
-      return;
-    }
+  const handleViewReadyCandidates = async (filter = '') => {
     setCandidatesLoading(true);
+    setShowCandidates(true);
     try {
-      const res = await api.get(`/company/vacancies/${vacancyId}/ready-candidates`);
+      const url = `/company/vacancies/${vacancyId}/ready-candidates${filter ? `?filter=${filter}` : ''}`;
+      const res = await api.get(url);
       setReadyCandidates(res.data.candidates || []);
-      setShowCandidates(true);
+      setActiveFilter(filter);
     } catch {
       setReadyCandidates([]);
-      setShowCandidates(true);
     } finally {
       setCandidatesLoading(false);
+    }
+  };
+
+  const handleDecision = async (targetId: string, decision: string) => {
+    try {
+      await api.post(`/company/vacancies/${vacancyId}/candidates/${targetId}/decision`, { decision });
+      await handleViewReadyCandidates(activeFilter);
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to save decision');
     }
   };
 
@@ -555,39 +571,50 @@ export default function RoleReadinessFunnelPage() {
               gap: 12,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{
-                  width: 38, height: 38, borderRadius: 10,
-                  background: 'rgba(184,134,11,0.15)',
-                  border: '1px solid rgba(184,134,11,0.3)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(184,134,11,0.15)', border: '1px solid rgba(184,134,11,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <UserCheck size={18} style={{ color: '#b8860b' }} />
                 </div>
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: 15, color: '#92400e' }}>
-                    Ready Candidates
-                  </div>
-                  <div style={{ fontSize: 12, color: '#a16207' }}>
-                    Created Target · Submitted Assessment · Submitted Evidence · ≥60% Coverage
-                  </div>
+                  <div style={{ fontWeight: 800, fontSize: 15, color: '#92400e' }}>Ready Candidates</div>
+                  <div style={{ fontSize: 12, color: '#a16207' }}>All candidates with a Target for this vacancy</div>
                 </div>
               </div>
-              <span style={{
-                padding: '4px 14px', borderRadius: 99,
-                background: '#b8860b', color: '#fff',
-                fontSize: 13, fontWeight: 800,
-              }}>
-                {readyCandidates.length} candidate{readyCandidates.length !== 1 ? 's' : ''}
+              <span style={{ padding: '4px 14px', borderRadius: 99, background: '#b8860b', color: '#fff', fontSize: 13, fontWeight: 800 }}>
+                {candidatesLoading ? '…' : `${readyCandidates.length} candidate${readyCandidates.length !== 1 ? 's' : ''}`}
               </span>
             </div>
 
+            {/* Filter bar */}
+            <div style={{ padding: '12px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Filter:</span>
+              {[
+                { key: '', label: 'All' },
+                { key: 'coverage_qualified', label: '≥60% Coverage' },
+                { key: 'assessment_submitted', label: 'Assessment Submitted' },
+                { key: 'evidence_submitted', label: 'Evidence Submitted' },
+                { key: 'pending_review', label: 'Pending Review' },
+                { key: 'shortlisted', label: 'Shortlisted' },
+              ].map(f => (
+                <button
+                  key={f.key}
+                  onClick={() => handleViewReadyCandidates(f.key)}
+                  className={`btn btn-xs ${activeFilter === f.key ? 'btn-gold' : 'btn-secondary'}`}
+                  style={{ fontSize: 11 }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
             {/* Candidates Table */}
-            {readyCandidates.length === 0 ? (
+            {candidatesLoading ? (
+              <div style={{ padding: '32px', textAlign: 'center' }}><div className="spinner" style={{ margin: '0 auto' }} /></div>
+            ) : readyCandidates.length === 0 ? (
               <div style={{ padding: '40px 24px', textAlign: 'center' }}>
                 <Users size={36} style={{ color: '#cbd5e1', marginBottom: 12 }} />
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#64748b', marginBottom: 6 }}>No ready candidates yet</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#64748b', marginBottom: 6 }}>No candidates found</div>
                 <div style={{ fontSize: 13, color: '#94a3b8', maxWidth: 400, margin: '0 auto' }}>
-                  Candidates appear here once they complete Target creation, assessment, evidence submission, and meet coverage requirements.
+                  {activeFilter ? 'No candidates match this filter.' : 'Candidates appear here once they create a Target for this vacancy.'}
                 </div>
               </div>
             ) : (
@@ -595,78 +622,70 @@ export default function RoleReadinessFunnelPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border)' }}>
-                      {['Candidate', 'Coverage', 'Application Status', 'Last Activity', 'Actions'].map((h) => (
-                        <th key={h} style={{
-                          padding: '10px 16px', textAlign: 'left',
-                          fontSize: 11, fontWeight: 700, color: '#64748b',
-                          textTransform: 'uppercase', letterSpacing: '0.5px',
-                          whiteSpace: 'nowrap',
-                        }}>{h}</th>
+                      {['Candidate', 'Coverage', 'Assessment', 'Evidence', 'Last Activity', 'Decision', 'Action'].map(h => (
+                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {readyCandidates.map((c) => (
-                      <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = '#fafafa'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}>
-                        <td style={{ padding: '14px 16px' }}>
-                          <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>
-                            {c.first_name} {c.last_name}
-                          </div>
-                          <div style={{ fontSize: 12, color: '#94a3b8' }}>{c.email}</div>
-                        </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{
-                              height: 6, width: 64, background: '#e2e8f0',
-                              borderRadius: 99, overflow: 'hidden',
-                            }}>
-                              <div style={{
-                                height: '100%',
-                                width: `${Math.min(100, c.coverage_pct)}%`,
-                                background: c.coverage_pct >= 80 ? '#059669' : c.coverage_pct >= 60 ? '#d97706' : '#ef4444',
-                                borderRadius: 99,
-                              }} />
+                    {readyCandidates.map((c: any) => {
+                      const decisionColors: Record<string, { bg: string; color: string }> = {
+                        SHORTLISTED: { bg: '#f0fdf4', color: '#166534' },
+                        INTERVIEW_SCHEDULED: { bg: '#eff6ff', color: '#1e40af' },
+                        HIRED: { bg: '#fef3c7', color: '#b45309' },
+                        REJECTED: { bg: '#fef2f2', color: '#b91c1c' },
+                        PENDING_REVIEW: { bg: '#f8fafc', color: '#64748b' },
+                      };
+                      const ds = decisionColors[c.recruiter_decision || 'PENDING_REVIEW'] || decisionColors.PENDING_REVIEW;
+                      return (
+                        <tr key={c.candidate_id || c.id} style={{ borderBottom: '1px solid #f1f5f9' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = '#fafafa'; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                          <td style={{ padding: '12px 14px' }}>
+                            <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>{c.first_name} {c.last_name}</div>
+                            <div style={{ fontSize: 11, color: '#94a3b8' }}>{c.email}</div>
+                          </td>
+                          <td style={{ padding: '12px 14px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <div style={{ height: 5, width: 56, background: '#e2e8f0', borderRadius: 99, overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${Math.min(100, c.coverage_pct)}%`, background: c.coverage_pct >= 80 ? '#059669' : c.coverage_pct >= 60 ? '#d97706' : '#ef4444', borderRadius: 99 }} />
+                              </div>
+                              <span style={{ fontSize: 13, fontWeight: 800, color: c.coverage_pct >= 80 ? '#059669' : c.coverage_pct >= 60 ? '#d97706' : '#ef4444' }}>{Math.round(c.coverage_pct)}%</span>
                             </div>
-                            <span style={{
-                              fontSize: 13, fontWeight: 800,
-                              color: c.coverage_pct >= 80 ? '#059669' : c.coverage_pct >= 60 ? '#d97706' : '#ef4444',
-                            }}>
-                              {Math.round(c.coverage_pct)}%
+                          </td>
+                          <td style={{ padding: '12px 14px' }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 4, background: '#f1f5f9', color: '#475569' }}>
+                              {c.assessment_status || 'Not Started'}{c.assessment_score != null ? ` · ${c.assessment_score}%` : ''}
                             </span>
-                          </div>
-                        </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          {c.application_status ? (
-                            <span style={{
-                              padding: '2px 10px', borderRadius: 99, fontSize: 12, fontWeight: 700,
-                              background: '#f1f5f9', color: '#475569',
-                              border: '1px solid #e2e8f0',
-                            }}>
-                              {c.application_status}
+                          </td>
+                          <td style={{ padding: '12px 14px', fontSize: 13, color: '#475569' }}>
+                            {c.evidence_count || 0} <span style={{ fontSize: 11, color: '#94a3b8' }}>({c.evidence_approved_count || 0} approved)</span>
+                          </td>
+                          <td style={{ padding: '12px 14px', fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>
+                            {c.last_activity_at ? new Date(c.last_activity_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                          </td>
+                          <td style={{ padding: '12px 14px' }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: ds.bg, color: ds.color }}>
+                              {(c.recruiter_decision || 'PENDING REVIEW').replace(/_/g, ' ')}
                             </span>
-                          ) : (
-                            <span style={{ color: '#94a3b8', fontSize: 12 }}>—</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '14px 16px', fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>
-                          {new Date(c.last_activity_at).toLocaleDateString('en-GB', {
-                            day: '2-digit', month: 'short', year: 'numeric',
-                          })}
-                        </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          <Link
-                            href={`/dashboard/candidates`}
-                            className="btn btn-secondary btn-sm"
-                            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}
-                          >
-                            <ExternalLink size={12} />
-                            View Profile
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td style={{ padding: '12px 14px' }}>
+                            <select
+                              defaultValue=""
+                              onChange={e => { if (e.target.value) handleDecision(c.target_id, e.target.value); e.target.value = ''; }}
+                              style={{ fontSize: 11, padding: '5px 8px', borderRadius: 6, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer' }}
+                            >
+                              <option value="">Set decision…</option>
+                              <option value="SHORTLISTED">Shortlist</option>
+                              <option value="INTERVIEW_SCHEDULED">Schedule Interview</option>
+                              <option value="REJECTED">Reject</option>
+                              <option value="HIRED">Hire</option>
+                              <option value="PENDING_REVIEW">Reset to Pending</option>
+                            </select>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

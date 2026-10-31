@@ -191,36 +191,29 @@ router.get('/:vacancyId/readiness', handleReadinessFunnel);
 
 // ============================================================
 // GET /api/company/vacancies/:vacancyId/ready-candidates
-// Returns candidates who are "ready" for recruiter review:
-//   - Created a Target
-//   - Submitted an assessment
-//   - Submitted evidence
-//   - Meet minimum coverage (>= 60%)
+// Returns ALL candidates with a Target for this vacancy,
+// with their assessment/evidence/decision status.
+// Filters via ?filter= query param.
+// Security: company can only see candidates for own vacancy.
 // ============================================================
 router.get('/:vacancyId/ready-candidates', async (req, res) => {
   try {
     const companyId = req.companyMembership.company_id;
     const { vacancyId } = req.params;
+    const { filter } = req.query;
 
-    // Validate UUID format
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(vacancyId);
-    if (!isUUID) {
-      return res.status(404).json({ error: 'Vacancy not found or access denied' });
-    }
+    const isUUID = /^[0-9a-f-]{36}$/i.test(vacancyId);
+    if (!isUUID) return res.status(404).json({ error: 'Vacancy not found or access denied' });
 
-    // Tenant-check
     const roleCheck = await pool.query(
       'SELECT id, title FROM company_roles WHERE id = $1 AND company_id = $2',
       [vacancyId, companyId]
     );
-    if (roleCheck.rowCount === 0) {
-      return res.status(404).json({ error: 'Vacancy not found or access denied' });
-    }
+    if (roleCheck.rowCount === 0) return res.status(404).json({ error: 'Vacancy not found or access denied' });
 
-    // Ready candidates: must satisfy all 4 criteria
     const result = await pool.query(
       `SELECT
-         c.id,
+         c.id AS candidate_id,
          c.first_name,
          c.last_name,
          c.email,
@@ -229,44 +222,51 @@ router.get('/:vacancyId/ready-candidates', async (req, res) => {
          t.targeted_at,
          t.last_activity_at,
          COALESCE(tc.coverage_pct, 0)::float AS coverage_pct,
-         a.status AS application_status,
-         a.id AS application_id
+         aa_latest.status AS assessment_status,
+         aa_latest.grading_status,
+         aa_latest.score AS assessment_score,
+         aa_latest.submitted_at AS assessment_submitted_at,
+         COALESCE(ev_counts.evidence_count, 0)::int AS evidence_count,
+         COALESCE(ev_counts.approved_count, 0)::int AS evidence_approved_count,
+         hd.decision AS recruiter_decision,
+         hd.decided_at AS recruiter_decided_at,
+         hd.rationale AS recruiter_notes
        FROM targets t
        JOIN candidates c ON c.id = t.candidate_id
        LEFT JOIN target_coverage tc ON tc.target_id = t.id
-       LEFT JOIN applications a ON a.candidate_id = t.candidate_id
-         AND a.role_id = t.vacancy_id
+       LEFT JOIN LATERAL (
+         SELECT status, grading_status, score, submitted_at
+         FROM assessment_attempts
+         WHERE (target_id = t.id OR (candidate_id = t.candidate_id AND role_id = t.vacancy_id))
+         ORDER BY created_at DESC LIMIT 1
+       ) aa_latest ON TRUE
+       LEFT JOIN LATERAL (
+         SELECT COUNT(*) AS evidence_count,
+                COUNT(*) FILTER (WHERE UPPER(COALESCE(review_status,'')) IN ('APPROVED','ACCEPTED')) AS approved_count
+         FROM evidence
+         WHERE target_id = t.id AND candidate_id = t.candidate_id
+       ) ev_counts ON TRUE
+       LEFT JOIN LATERAL (
+         SELECT hd2.decision, hd2.decided_at, hd2.rationale
+         FROM human_decisions hd2
+         JOIN applications a2 ON a2.id = hd2.application_id
+         WHERE a2.candidate_id = t.candidate_id AND a2.role_id = t.vacancy_id
+           AND hd2.company_id = $2
+         ORDER BY hd2.decided_at DESC LIMIT 1
+       ) hd ON TRUE
        WHERE t.vacancy_id = $1 AND t.company_id = $2
-         AND COALESCE(tc.coverage_pct, 0) >= 60
-         AND EXISTS (
-           SELECT 1 FROM assessment_attempts aa
-           WHERE (aa.target_id = t.id OR aa.role_id = t.vacancy_id)
-             AND (UPPER(COALESCE(aa.status, '')) IN ('SUBMITTED', 'COMPLETED', 'GRADED', 'GRADING_COMPLETE') OR aa.submitted_at IS NOT NULL)
-           UNION
-           SELECT 1 FROM applications ap
-           JOIN assessment_results ar ON ar.application_id = ap.id
-           WHERE ap.candidate_id = t.candidate_id AND ap.role_id = t.vacancy_id
-             AND UPPER(COALESCE(ar.status, '')) IN ('COMPLETED', 'SUBMITTED', 'GRADED')
-         )
-         AND EXISTS (
-           SELECT 1 FROM evidence e
-           WHERE (e.target_id = t.id OR (a.id IS NOT NULL AND e.application_id = a.id))
-             AND (
-               e.submitted_at IS NOT NULL
-               OR UPPER(COALESCE(e.review_status, '')) IN ('SUBMITTED', 'SUPPORTING', 'LIMITED', 'APPROVED', 'VERIFIED')
-               OR UPPER(COALESCE(e.status, '')) IN ('SUPPORTING', 'LIMITED', 'SUBMITTED')
-             )
-         )
        ORDER BY COALESCE(tc.coverage_pct, 0) DESC, t.last_activity_at DESC`,
       [vacancyId, companyId]
     );
 
-    return res.json({
-      vacancyId,
-      roleTitle:  roleCheck.rows[0].title,
-      candidates: result.rows,
-      count:      result.rowCount,
-    });
+    let candidates = result.rows;
+    if (filter === 'coverage_qualified') candidates = candidates.filter(c => c.coverage_pct >= 60);
+    else if (filter === 'assessment_submitted') candidates = candidates.filter(c => ['SUBMITTED','GRADED','FULLY_GRADED','COMPLETED'].includes((c.assessment_status || '').toUpperCase()));
+    else if (filter === 'evidence_submitted') candidates = candidates.filter(c => c.evidence_count > 0);
+    else if (filter === 'pending_review') candidates = candidates.filter(c => !c.recruiter_decision || c.recruiter_decision === 'PENDING_REVIEW');
+    else if (filter === 'shortlisted') candidates = candidates.filter(c => c.recruiter_decision === 'SHORTLISTED');
+
+    return res.json({ vacancyId, roleTitle: roleCheck.rows[0].title, candidates, count: candidates.length });
   } catch (err) {
     console.error('Ready candidates error:', err);
     return res.status(500).json({ error: 'Failed to fetch ready candidates' });
