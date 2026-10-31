@@ -1035,38 +1035,7 @@ export default function VacancyBuilderPage() {
               </div>
             )}
 
-            {/* Quick import from other approved blueprints */}
-            {approvedBlueprints.length > 0 && !existingApprovedBlueprint && (
-              <div className="px-5 py-3 border-t border-slate-100 flex items-center gap-3 flex-wrap">
-                <span className="text-xs font-semibold text-slate-600 whitespace-nowrap">Import approved blueprint:</span>
-                <select
-                  className="form-select text-xs h-8 bg-white border-slate-300 flex-1 min-w-[200px] max-w-xs"
-                  onChange={e => {
-                    if (e.target.value) {
-                      importBlueprintSkills(e.target.value);
-                      e.target.value = '';
-                    }
-                  }}
-                  defaultValue=""
-                >
-                  <option value="" disabled>Select approved blueprint...</option>
-                  {approvedBlueprints.map(bp => (
-                    <option key={bp.id} value={bp.id}>
-                      {bp.role_title} ({new Date(bp.approved_at || bp.updated_at).toLocaleDateString()})
-                    </option>
-                  ))}
-                </select>
-                <label className="flex items-center gap-1.5 cursor-pointer text-xs text-slate-600 whitespace-nowrap ml-auto">
-                  <input
-                    type="checkbox"
-                    checked={includeCommonSkills}
-                    onChange={e => setIncludeCommonSkills(e.target.checked)}
-                    className="rounded text-amber-600 focus:ring-amber-500"
-                  />
-                  <span>Include foundational competencies</span>
-                </label>
-              </div>
-            )}
+
 
             {/* STUDIO TABS: When draft skills exist */}
             {draftSkills.length > 0 && (
