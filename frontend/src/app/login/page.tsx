@@ -160,7 +160,11 @@ export default function AuthPage() {
         toast(msg, { icon: 'ℹ️' });
         return;
       }
-      const msg = e.response?.data?.error || e.message || 'Authentication failed. Please check your credentials.';
+      const msg = e.response?.data?.error || (
+        e.code === 'ERR_NETWORK'
+          ? 'Cannot reach the login service. Check that the backend is running and your API URL is configured.'
+          : e.message || 'Authentication failed. Please check your credentials.'
+      );
       setError(msg);
       toast.error(msg);
     } finally {

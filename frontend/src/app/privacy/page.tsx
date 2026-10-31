@@ -61,7 +61,7 @@ export default function PublicPrivacyPage() {
             </div>
 
             <p>
-              When a candidate creates a Target for Company A, Company A recruiters have access only to the evidence, assessments, and communications specifically submitted for Company A's vacancy. Company B cannot see whether a candidate has targeted Company A or what feedback was recorded.
+              When a candidate creates a Target for Company A, Company A recruiters have access only to the evidence, assessments, and communications specifically submitted for Company A&apos;s vacancy. Company B cannot see whether a candidate has targeted Company A or what feedback was recorded.
             </p>
 
             <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', margin: '12px 0 4px' }}>

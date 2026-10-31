@@ -91,7 +91,7 @@ export default function CandidatePrivacyPage() {
               <h3 style={{ fontSize: 14, fontWeight: 800, margin: 0 }}>Target for Company A</h3>
             </div>
             <p style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.5, margin: 0 }}>
-              Company A can review only evidence submitted for Company A's vacancy. They cannot see your application status with Company B.
+              Company A can review only evidence submitted for Company A&apos;s vacancy. They cannot see your application status with Company B.
             </p>
           </div>
 

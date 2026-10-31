@@ -580,7 +580,7 @@ export default function AssessmentsPage() {
                         {/* Candidate Scenario Answer */}
                         <div style={{ marginBottom: 14 }}>
                           <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748b', marginBottom: 6 }}>
-                            Candidate's Submitted Written Scenario Response:
+                            Candidate&apos;s Submitted Written Scenario Response:
                           </div>
                           <div style={{
                             padding: '12px 14px',

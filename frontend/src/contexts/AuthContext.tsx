@@ -82,13 +82,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setCompany(null);
         setCandidateOnboardingSubmitted(false);
       }
-    } catch {
-      localStorage.removeItem('genuai_token');
-      localStorage.removeItem('genuai_user');
-      localStorage.removeItem('genuai_company');
-      setUser(null);
-      setCompany(null);
-      setCandidateOnboardingSubmitted(false);
+    } catch (error: any) {
+      // A network outage should not silently discard an otherwise valid session.
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        localStorage.removeItem('genuai_token');
+        localStorage.removeItem('genuai_user');
+        localStorage.removeItem('genuai_company');
+        setUser(null);
+        setCompany(null);
+        setCandidateOnboardingSubmitted(false);
+      } else {
+        const storedUser = localStorage.getItem('genuai_user');
+        const storedCompany = localStorage.getItem('genuai_company');
+        if (storedUser) setUser(JSON.parse(storedUser));
+        if (storedCompany) setCompany(JSON.parse(storedCompany));
+      }
     } finally {
       setIsLoading(false);
     }

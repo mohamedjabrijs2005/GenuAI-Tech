@@ -63,7 +63,7 @@ const nextConfig: NextConfig = {
       { source: "/genuai-landing/terms", destination: "/terms" },
       { source: "/genuai-landing/trust", destination: "/trust" },
 
-      // ─── API Proxy Fallback (Prevents 404 in deployed sites) ─────────
+      // Keep API requests same-origin in the browser and proxy them to the deployed backend.
       {
         source: "/api/:path*",
         destination: `${process.env.BACKEND_URL || process.env.GENUAI_BACKEND_URL || "http://127.0.0.1:4000"}/api/:path*`,

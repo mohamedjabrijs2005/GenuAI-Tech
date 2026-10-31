@@ -534,7 +534,7 @@ export default function CompanyOnboardingPage() {
                     Why GenuAI Verifies Companies
                   </div>
                   <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
-                    Platform governance requires corporate verification prior to public vacancy publishing. This eliminates ghost jobs, fraudulent solicitations, and protects candidates' work submissions. Only platform compliance administrators review these details.
+                    Platform governance requires corporate verification prior to public vacancy publishing. This eliminates ghost jobs, fraudulent solicitations, and protects candidates&apos; work submissions. Only platform compliance administrators review these details.
                   </div>
                 </div>
               </div>

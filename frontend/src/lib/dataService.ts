@@ -109,8 +109,8 @@ export const DataService = {
         });
         return mapped;
       }
-    } catch (err) {
-      console.error('Failed to fetch vacancies from API', err);
+    } catch {
+      // The dashboard can render its empty state while the API is unavailable.
     }
     return [];
   },
@@ -121,8 +121,8 @@ export const DataService = {
       if (res.data?.activities) {
         return res.data.activities;
       }
-    } catch (err) {
-      console.error('Failed to fetch company activity', err);
+    } catch {
+      // Activity is optional; render the empty state when the API is unavailable.
     }
     return [];
   },
@@ -149,8 +149,8 @@ export const DataService = {
           description: v.job_description,
         };
       }
-    } catch (err) {
-      console.error('Failed to fetch vacancy by ID', err);
+    } catch {
+      // The caller handles a missing vacancy result.
     }
     return null;
   },
@@ -243,8 +243,8 @@ export const DataService = {
           notes: c.notes,
         }));
       }
-    } catch (err) {
-      console.error('Failed to fetch candidates', err);
+    } catch {
+      // The candidate list falls back to an empty state when offline.
     }
     return [];
   },
@@ -281,8 +281,8 @@ export const DataService = {
           reviewNote: s.review_note,
         }));
       }
-    } catch (err) {
-      console.error('Failed to fetch integrity records', err);
+    } catch {
+      // The integrity panel falls back to an empty state when offline.
     }
     return [];
   },
@@ -337,8 +337,8 @@ export const DataService = {
           notes: i.notes,
         }));
       }
-    } catch (err) {
-      console.error('Failed to fetch interviews', err);
+    } catch {
+      // The interview panel falls back to an empty state when offline.
     }
     return [];
   },
