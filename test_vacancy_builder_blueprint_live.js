@@ -315,7 +315,7 @@ async function run() {
     assert(targetId, 'Candidate Target initialized');
 
     // -------------------------------------------------------------
-    // TEST 9: Publication Gate: Vacancy WITHOUT approved blueprint cannot be published
+    // TEST 9: Submission & Publication Gate: Vacancy WITHOUT approved blueprint cannot be submitted or published
     // -------------------------------------------------------------
     console.log('\n--- Step 9: Enforcement Gate: Vacancy Without Approved Blueprint Blocked ---');
     // Create an unverified vacancy without approved blueprint
@@ -327,17 +327,28 @@ async function run() {
         departmentId: deptAId,
         location: 'Remote',
         experienceLevel: 'senior',
+        vacancyCount: 1,
         requirements: [{ name: 'Ad-hoc requirement', category: 'Technical', type: 'Required', priority: 'High', proficiency: 'Advanced', method: 'Official Technical Assessment' }],
       },
     });
+    console.log('unverifiedVacRes status:', unverifiedVacRes.status, unverifiedVacRes.data);
     const unverifiedVacId = unverifiedVacRes.data?.vacancy?.id;
 
-    // Try to publish directly without approved blueprint
+    // Try to submit for admin review without approved blueprint (blocked with 400)
+    const badSubmitRes = await apiRequest(`/vacancies/${unverifiedVacId}/submit`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${compAToken}` },
+    });
+    console.log('badSubmitRes status:', badSubmitRes.status, badSubmitRes.data);
+    assert(badSubmitRes.status === 400, 'Submission gate blocks vacancy without approved blueprint (returns 400)', `got ${badSubmitRes.status}`);
+
+    // Try to publish directly without approved blueprint (blocked with 400)
     const badPublishRes = await apiRequest(`/vacancies/${unverifiedVacId}/publish`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${compAToken}` },
     });
-    assert(badPublishRes.status === 400 || badPublishRes.status === 403, 'Publication gate blocks vacancy without approved blueprint (returns 400/403)');
+    console.log('badPublishRes status:', badPublishRes.status, badPublishRes.data);
+    assert(badPublishRes.status === 400 || badPublishRes.status === 403, 'Publication gate blocks vacancy without approved blueprint (returns 400/403)', `got ${badPublishRes.status}`);
 
     // -------------------------------------------------------------
     // TEST 10: Multi-Tenant Isolation: Company B Cannot Access Company A Blueprint

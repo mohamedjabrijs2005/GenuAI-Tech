@@ -151,6 +151,20 @@ router.post(
         approvedRoleBlueprintId,
       } = req.body;
 
+      // Application deadline must be in the future if provided
+      if (closingDate) {
+        const deadlineDate = new Date(closingDate);
+        if (isNaN(deadlineDate.getTime()) || deadlineDate <= new Date()) {
+          return res.status(400).json({ error: 'Application deadline must be a valid date in the future.' });
+        }
+      }
+
+      // Openings must be at least 1
+      const countNum = Number(vacancyCount);
+      if (isNaN(countNum) || countNum < 1) {
+        return res.status(400).json({ error: 'Number of openings must be at least 1.' });
+      }
+
       // 1. Resolve or validate department for company
       let finalDeptId = departmentId;
       if (finalDeptId) {
@@ -457,7 +471,34 @@ router.post('/:id/submit', async (req, res) => {
       });
     }
 
-    // 5. Validate and guarantee assessment linkage (Requirement 7)
+    // 5. Validate that vacancy has an approved Role Skill Blueprint before submitting for admin review
+    const bpRes = await client.query(
+      `SELECT approved_role_blueprint_id, role_master_id FROM company_roles WHERE id = $1 AND company_id = $2`,
+      [id, companyId]
+    );
+    let linkedBpId = bpRes.rows[0]?.approved_role_blueprint_id;
+    if (!linkedBpId) {
+      const bpCheck = await client.query(
+        `SELECT id FROM ai_role_blueprint_suggestions
+         WHERE (vacancy_id = $1 OR (role_master_id IS NOT NULL AND role_master_id = $2))
+           AND status = 'APPROVED'
+         ORDER BY updated_at DESC LIMIT 1`,
+        [id, bpRes.rows[0]?.role_master_id || null]
+      );
+      if (bpCheck.rowCount > 0) {
+        linkedBpId = bpCheck.rows[0].id;
+        await client.query('UPDATE company_roles SET approved_role_blueprint_id = $1 WHERE id = $2', [linkedBpId, id]);
+      }
+    }
+
+    if (!linkedBpId) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        error: 'Vacancy cannot be submitted for admin verification without an approved Role Skill Blueprint. Please generate and approve a blueprint in Step 2.',
+      });
+    }
+
+    // 6. Validate and guarantee assessment linkage (Requirement 7)
     const assessGroupRes = await client.query(
       'SELECT id, name FROM assessment_groups WHERE role_id = $1 AND company_id = $2 LIMIT 1',
       [id, companyId]
@@ -531,6 +572,11 @@ router.post('/:id/publish', async (req, res) => {
   try {
     const companyId = req.companyMembership.company_id;
     const { id } = req.params;
+
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id || '');
+    if (!isUUID) {
+      return res.status(404).json({ error: 'Vacancy not found or access denied' });
+    }
 
     await client.query('BEGIN');
 

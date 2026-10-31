@@ -161,7 +161,8 @@ export default function VacancyBuilderPage() {
     title: '',
     departmentId: '',
     departmentName: '',
-    location: '',
+    location: 'Remote',
+    city: '',
     workMode: 'Hybrid',
     employmentType: 'full_time',
     openings: 1,
@@ -169,6 +170,7 @@ export default function VacancyBuilderPage() {
     salaryRange: '',
     deadline: '',
     description: '',
+    companyDescription: '',
   });
 
   // STEP 2 State: Requirements
@@ -191,14 +193,33 @@ export default function VacancyBuilderPage() {
 
   // STEP 3 State: Assessment
   const [assessmentConfig, setAssessmentConfig] = useState({
-    required: false,
-    duration: 60,
+    enabled: true,
+    required: true,
+    duration: 20,
+    questionCount: 10,
     totalMarks: 100,
+    passMark: 60,
+    attemptsAllowed: 2,
+    questionTypes: ['MCQ', 'True/False', 'Short Answer'],
+    randomizeQuestions: true,
+    showExplanations: true,
+    instructions: 'Please answer all questions within the allocated time limit. Questions are timed and proctored.',
     scheduleMode: 'on_demand',
   });
 
   // STEP 4 State: Candidate Settings
   const [candidateSettings, setCandidateSettings] = useState({
+    candidateType: 'All', // All, Student, Experienced, Fresher
+    allowedDegrees: 'Any Degree / Relevant Equivalent',
+    allowedDepartments: 'All Engineering & Computer Science Disciplines',
+    minCgpa: '',
+    graduationYear: '',
+    requireLearn: true,
+    requirePractice: true,
+    requireAssessment: true,
+    requireEvidence: true,
+    minCoverage: 80,
+    allowCandidateMessaging: true,
     resumeRequired: false,
     approvalRequired: false,
     maxTargetsPerCandidate: 1,
@@ -508,14 +529,44 @@ export default function VacancyBuilderPage() {
     const errors: Record<string, string> = {};
 
     if (step === 1) {
-      if (!basicInfo.title.trim()) errors.title = 'Job title is required.';
-      if (!basicInfo.location.trim()) errors.location = 'Location is required.';
-      if (basicInfo.openings < 1) errors.openings = 'At least 1 opening required.';
+      if (!basicInfo.title.trim()) errors.title = 'Job / Role title is required.';
+      if (!basicInfo.location.trim()) errors.location = 'Work location is required.';
+      if (Number(basicInfo.openings) < 1) errors.openings = 'At least 1 opening is required.';
+      if (basicInfo.deadline) {
+        const d = new Date(basicInfo.deadline);
+        if (isNaN(d.getTime()) || d <= new Date()) {
+          errors.deadline = 'Application deadline must be a valid date in the future.';
+        }
+      }
     }
 
     if (step === 2) {
       if (requirements.length === 0 && draftSkills.length === 0) {
         errors.requirements = 'Please generate an AI Blueprint or add at least one requirement.';
+      }
+      if (blueprintStatus !== 'APPROVED') {
+        errors.blueprint = 'An approved Role Skill Blueprint is required. Please approve the blueprint above.';
+      }
+    }
+
+    if (step === 3) {
+      if (assessmentConfig.enabled) {
+        if (assessmentConfig.questionCount < 1) errors.questionCount = 'At least 1 question is required.';
+        if (assessmentConfig.duration < 5) errors.duration = 'Duration must be at least 5 minutes.';
+        if (assessmentConfig.passMark < 1 || assessmentConfig.passMark > 100) errors.passMark = 'Pass mark must be between 1% and 100%.';
+        if (assessmentConfig.attemptsAllowed < 1) errors.attemptsAllowed = 'Attempts allowed must be at least 1.';
+      }
+    }
+
+    if (step === 4) {
+      if (candidateSettings.minCgpa) {
+        const val = parseFloat(candidateSettings.minCgpa);
+        if (isNaN(val) || val < 0 || val > 10) {
+          errors.minCgpa = 'CGPA must be a valid number between 0 and 10.';
+        }
+      }
+      if (candidateSettings.minCoverage < 0 || candidateSettings.minCoverage > 100) {
+        errors.minCoverage = 'Minimum coverage must be between 0% and 100%.';
       }
     }
 
@@ -872,14 +923,24 @@ export default function VacancyBuilderPage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Location <span className="required">*</span></label>
+              <label className="form-label">Work Location <span className="required">*</span></label>
               <input
                 className={`form-input${stepErrors.location ? ' error' : ''}`}
                 value={basicInfo.location}
                 onChange={e => { setBasicInfo({...basicInfo, location: e.target.value}); setStepErrors(p => ({...p, location: ''})); }}
-                placeholder="e.g. London, UK or Remote"
+                placeholder="e.g. Remote, On-site, or Hybrid"
               />
               {stepErrors.location && <div className="form-error"><AlertCircle size={11}/> {stepErrors.location}</div>}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">City / Region</label>
+              <input
+                className="form-input"
+                value={basicInfo.city}
+                onChange={e => setBasicInfo({...basicInfo, city: e.target.value})}
+                placeholder="e.g. London, San Francisco, Bangalore"
+              />
             </div>
 
             <div className="form-group">
@@ -895,7 +956,7 @@ export default function VacancyBuilderPage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Experience Level <span className="required">*</span></label>
+              <label className="form-label">Experience Required <span className="required">*</span></label>
               <select
                 className="form-select"
                 value={basicInfo.experienceLevel}
@@ -917,12 +978,12 @@ export default function VacancyBuilderPage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Salary Range</label>
+              <label className="form-label">Salary or Stipend</label>
               <input
                 className="form-input"
                 value={basicInfo.salaryRange}
                 onChange={e => setBasicInfo({...basicInfo, salaryRange: e.target.value})}
-                placeholder="e.g. £60,000 – £80,000"
+                placeholder="e.g. $80,000 – $100,000 / year or $2,000/mo stipend"
               />
             </div>
 
@@ -930,22 +991,34 @@ export default function VacancyBuilderPage() {
               <label className="form-label">Application Deadline</label>
               <input
                 type="date"
-                className="form-input"
+                className={`form-input${stepErrors.deadline ? ' error' : ''}`}
                 value={basicInfo.deadline}
-                onChange={e => setBasicInfo({...basicInfo, deadline: e.target.value})}
+                onChange={e => { setBasicInfo({...basicInfo, deadline: e.target.value}); setStepErrors(p => ({...p, deadline: ''})); }}
+              />
+              {stepErrors.deadline && <div className="form-error"><AlertCircle size={11}/> {stepErrors.deadline}</div>}
+              <div className="form-hint">Must be in the future.</div>
+            </div>
+
+            <div className="form-group md:col-span-2">
+              <label className="form-label">Role / Vacancy Description</label>
+              <textarea
+                className="form-textarea"
+                rows={3}
+                value={basicInfo.description}
+                onChange={e => setBasicInfo({...basicInfo, description: e.target.value})}
+                placeholder="Describe role responsibilities, key projects, and expectations..."
               />
             </div>
 
             <div className="form-group md:col-span-2">
-              <label className="form-label">Job Description</label>
+              <label className="form-label">Company Description</label>
               <textarea
                 className="form-textarea"
-                rows={4}
-                value={basicInfo.description}
-                onChange={e => setBasicInfo({...basicInfo, description: e.target.value})}
-                placeholder="Describe role responsibilities, team context, and expectations..."
+                rows={2}
+                value={basicInfo.companyDescription}
+                onChange={e => setBasicInfo({...basicInfo, companyDescription: e.target.value})}
+                placeholder="Brief introduction about your company culture, mission, and benefits..."
               />
-              <div className="form-hint">At least 20 characters recommended to help the AI generator tailor competencies.</div>
             </div>
           </div>
         </div>
@@ -1705,79 +1778,162 @@ export default function VacancyBuilderPage() {
             <div>
               <h2 className="card-title flex items-center gap-2">
                 <ClipboardList size={18} className="text-amber-600" />
-                Step 3: Assessment Configuration
+                Step 3: Official Assessment Configuration
               </h2>
-              <p className="card-subtitle">Configure how candidates will be assessed for this vacancy.</p>
+              <p className="card-subtitle">Configure examination rules, attempt limits, passing benchmarks, and candidate instructions.</p>
             </div>
             <span className="badge badge-gold">Step 3 of 5</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="form-group md:col-span-2">
-              <label className="form-label">Assessment Required?</label>
+              <label className="form-label">Enable Official Assessment?</label>
               <div className="flex gap-4 mt-1">
                 <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
                   <input
                     type="radio"
-                    name="assessReq"
-                    checked={assessmentConfig.required}
-                    onChange={() => setAssessmentConfig({...assessmentConfig, required: true})}
-                    className="w-4 h-4"
+                    name="assessEnabled"
+                    checked={assessmentConfig.enabled}
+                    onChange={() => setAssessmentConfig({...assessmentConfig, enabled: true, required: true})}
+                    className="w-4 h-4 text-amber-600 focus:ring-amber-500"
                   />
-                  Yes — Candidates must complete an assessment
+                  Yes — Enable structured technical assessment
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
                   <input
                     type="radio"
-                    name="assessReq"
-                    checked={!assessmentConfig.required}
-                    onChange={() => setAssessmentConfig({...assessmentConfig, required: false})}
-                    className="w-4 h-4"
+                    name="assessEnabled"
+                    checked={!assessmentConfig.enabled}
+                    onChange={() => setAssessmentConfig({...assessmentConfig, enabled: false, required: false})}
+                    className="w-4 h-4 text-amber-600 focus:ring-amber-500"
                   />
                   No — Assessment is optional or not needed
                 </label>
               </div>
             </div>
 
-            {assessmentConfig.required && (
+            {assessmentConfig.enabled && (
               <>
                 <div className="form-group">
-                  <label className="form-label">Duration (minutes)</label>
+                  <label className="form-label">Number of Questions <span className="required">*</span></label>
                   <input
                     type="number"
-                    className="form-input"
-                    value={assessmentConfig.duration}
-                    onChange={e => setAssessmentConfig({...assessmentConfig, duration: parseInt(e.target.value) || 60})}
-                    min={10}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Total Marks</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={assessmentConfig.totalMarks}
-                    onChange={e => setAssessmentConfig({...assessmentConfig, totalMarks: parseInt(e.target.value) || 100})}
+                    className={`form-input${stepErrors.questionCount ? ' error' : ''}`}
+                    value={assessmentConfig.questionCount}
+                    onChange={e => { setAssessmentConfig({...assessmentConfig, questionCount: parseInt(e.target.value) || 10}); setStepErrors(p => ({...p, questionCount: ''})); }}
                     min={1}
+                    max={100}
                   />
+                  <div className="form-hint">Default: 10 questions</div>
+                  {stepErrors.questionCount && <div className="form-error"><AlertCircle size={11}/> {stepErrors.questionCount}</div>}
                 </div>
+
                 <div className="form-group">
-                  <label className="form-label">Schedule Mode</label>
-                  <select
-                    className="form-select"
-                    value={assessmentConfig.scheduleMode}
-                    onChange={e => setAssessmentConfig({...assessmentConfig, scheduleMode: e.target.value})}
-                  >
-                    <option value="on_demand">On-Demand (candidate chooses time)</option>
-                    <option value="scheduled">Scheduled (company sets time)</option>
-                  </select>
+                  <label className="form-label">Time Limit (minutes) <span className="required">*</span></label>
+                  <input
+                    type="number"
+                    className={`form-input${stepErrors.duration ? ' error' : ''}`}
+                    value={assessmentConfig.duration}
+                    onChange={e => { setAssessmentConfig({...assessmentConfig, duration: parseInt(e.target.value) || 20}); setStepErrors(p => ({...p, duration: ''})); }}
+                    min={5}
+                    max={180}
+                  />
+                  <div className="form-hint">Default: 20 minutes (timer strictly governed by backend)</div>
+                  {stepErrors.duration && <div className="form-error"><AlertCircle size={11}/> {stepErrors.duration}</div>}
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Pass Mark (%) <span className="required">*</span></label>
+                  <input
+                    type="number"
+                    className={`form-input${stepErrors.passMark ? ' error' : ''}`}
+                    value={assessmentConfig.passMark}
+                    onChange={e => { setAssessmentConfig({...assessmentConfig, passMark: parseInt(e.target.value) || 60}); setStepErrors(p => ({...p, passMark: ''})); }}
+                    min={1}
+                    max={100}
+                  />
+                  <div className="form-hint">Default: 60% minimum passing score</div>
+                  {stepErrors.passMark && <div className="form-error"><AlertCircle size={11}/> {stepErrors.passMark}</div>}
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Attempts Allowed <span className="required">*</span></label>
+                  <input
+                    type="number"
+                    className={`form-input${stepErrors.attemptsAllowed ? ' error' : ''}`}
+                    value={assessmentConfig.attemptsAllowed}
+                    onChange={e => { setAssessmentConfig({...assessmentConfig, attemptsAllowed: parseInt(e.target.value) || 2}); setStepErrors(p => ({...p, attemptsAllowed: ''})); }}
+                    min={1}
+                    max={10}
+                  />
+                  <div className="form-hint">Default: 2 attempts</div>
+                  {stepErrors.attemptsAllowed && <div className="form-error"><AlertCircle size={11}/> {stepErrors.attemptsAllowed}</div>}
+                </div>
+
+                <div className="form-group md:col-span-2">
+                  <label className="form-label">Supported Question Types</label>
+                  <div className="flex gap-4 flex-wrap mt-1">
+                    {['MCQ', 'True/False', 'Short Answer'].map(t => (
+                      <label key={t} className="flex items-center gap-1.5 text-xs text-slate-700 font-semibold cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={assessmentConfig.questionTypes.includes(t)}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setAssessmentConfig({...assessmentConfig, questionTypes: [...assessmentConfig.questionTypes, t]});
+                            } else {
+                              setAssessmentConfig({...assessmentConfig, questionTypes: assessmentConfig.questionTypes.filter(x => x !== t)});
+                            }
+                          }}
+                          className="rounded text-amber-600 focus:ring-amber-500"
+                        />
+                        <span>{t}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="form-group md:col-span-2">
+                  <div className="flex gap-6 flex-wrap">
+                    <label className="flex items-center gap-2 text-xs font-semibold text-slate-800 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={assessmentConfig.randomizeQuestions}
+                        onChange={e => setAssessmentConfig({...assessmentConfig, randomizeQuestions: e.target.checked})}
+                        className="rounded text-amber-600 focus:ring-amber-500"
+                      />
+                      <span>Randomize question order for integrity</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 text-xs font-semibold text-slate-800 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={assessmentConfig.showExplanations}
+                        onChange={e => setAssessmentConfig({...assessmentConfig, showExplanations: e.target.checked})}
+                        className="rounded text-amber-600 focus:ring-amber-500"
+                      />
+                      <span>Show answer explanations after submission</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="form-group md:col-span-2">
+                  <label className="form-label">Assessment Instructions</label>
+                  <textarea
+                    className="form-textarea"
+                    rows={2}
+                    value={assessmentConfig.instructions}
+                    onChange={e => setAssessmentConfig({...assessmentConfig, instructions: e.target.value})}
+                    placeholder="Instructions displayed to candidates prior to initiating timer..."
+                  />
                 </div>
               </>
             )}
 
-            <div className="md:col-span-2 p-4 bg-slate-50 border border-slate-200 rounded-xl">
-              <div className="text-xs text-slate-500 leading-relaxed">
-                <strong>Note:</strong> Detailed assessment questions and evaluation groups can be configured after vacancy approval from the vacancy details page. This step captures the high-level assessment configuration.
+            <div className="md:col-span-2 p-3 bg-amber-50/60 border border-amber-200/80 rounded-xl text-xs text-amber-900 leading-relaxed flex items-start gap-2">
+              <Info size={14} className="text-amber-700 flex-shrink-0 mt-0.5" />
+              <div>
+                <strong>Official Assessment Rules:</strong> Candidates must complete required Learn and Practice modules before the Official Assessment unlocks. Timers are authoritative and synchronized against the server <code>expires_at</code> timestamp.
               </div>
             </div>
           </div>
@@ -1791,35 +1947,145 @@ export default function VacancyBuilderPage() {
             <div>
               <h2 className="card-title flex items-center gap-2">
                 <UsersIcon size={18} className="text-amber-600" />
-                Step 4: Candidate Settings
+                Step 4: Candidate Eligibility &amp; Readiness Settings
               </h2>
-              <p className="card-subtitle">Configure who can apply and what is required from candidates.</p>
+              <p className="card-subtitle">Define candidate target requirements, completion gates, minimum coverage threshold, and academic filters.</p>
             </div>
             <span className="badge badge-gold">Step 4 of 5</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="form-group">
-              <label className="form-label">Resume Required?</label>
+              <label className="form-label">Candidate Type</label>
               <select
                 className="form-select"
-                value={candidateSettings.resumeRequired ? 'yes' : 'no'}
-                onChange={e => setCandidateSettings({...candidateSettings, resumeRequired: e.target.value === 'yes'})}
+                value={candidateSettings.candidateType}
+                onChange={e => setCandidateSettings({...candidateSettings, candidateType: e.target.value})}
               >
-                <option value="no">No — Resume is optional</option>
-                <option value="yes">Yes — Resume is required</option>
+                <option value="All">All Candidates (Students, Graduates &amp; Professionals)</option>
+                <option value="Fresher">Entry Level / Freshers</option>
+                <option value="Student">Current College / University Students</option>
+                <option value="Experienced">Experienced Industry Professionals</option>
               </select>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Candidate Approval Required?</label>
+              <label className="form-label">Allowed Degrees / Disciplines</label>
+              <input
+                className="form-input"
+                value={candidateSettings.allowedDegrees}
+                onChange={e => setCandidateSettings({...candidateSettings, allowedDegrees: e.target.value})}
+                placeholder="e.g. B.Tech / B.E., B.Sc CS, MCA, or Equivalent"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Allowed Departments</label>
+              <input
+                className="form-input"
+                value={candidateSettings.allowedDepartments}
+                onChange={e => setCandidateSettings({...candidateSettings, allowedDepartments: e.target.value})}
+                placeholder="e.g. Computer Science, Information Technology, AI/ML"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Graduation Year(s)</label>
+              <input
+                className="form-input"
+                value={candidateSettings.graduationYear}
+                onChange={e => setCandidateSettings({...candidateSettings, graduationYear: e.target.value})}
+                placeholder="e.g. 2024, 2025, 2026 or Any"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Minimum CGPA (Optional)</label>
+              <input
+                type="number"
+                step="0.1"
+                className={`form-input${stepErrors.minCgpa ? ' error' : ''}`}
+                value={candidateSettings.minCgpa}
+                onChange={e => { setCandidateSettings({...candidateSettings, minCgpa: e.target.value}); setStepErrors(p => ({...p, minCgpa: ''})); }}
+                placeholder="e.g. 6.5 (Leave blank for no CGPA barrier)"
+                min={0}
+                max={10}
+              />
+              <div className="form-hint">CGPA is optional and will not be used as the exclusive eligibility barrier.</div>
+              {stepErrors.minCgpa && <div className="form-error"><AlertCircle size={11}/> {stepErrors.minCgpa}</div>}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Minimum Coverage Threshold (%) <span className="required">*</span></label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min={50}
+                  max={100}
+                  step={5}
+                  value={candidateSettings.minCoverage}
+                  onChange={e => setCandidateSettings({...candidateSettings, minCoverage: parseInt(e.target.value) || 80})}
+                  className="w-full accent-amber-600 cursor-pointer"
+                />
+                <span className="font-extrabold text-amber-700 text-sm whitespace-nowrap min-w-[48px] text-right">
+                  {candidateSettings.minCoverage}%
+                </span>
+              </div>
+              <div className="form-hint">Minimum competency verification coverage needed to enter the Ready Candidates pool.</div>
+            </div>
+
+            {/* Verification Gates */}
+            <div className="form-group md:col-span-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+              <label className="form-label font-bold text-slate-800 mb-2">Mandatory Verification Milestones</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={candidateSettings.requireLearn}
+                    onChange={e => setCandidateSettings({...candidateSettings, requireLearn: e.target.checked})}
+                    className="rounded text-amber-600 focus:ring-amber-500"
+                  />
+                  <span>Require Learn completion (Curated Resources)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={candidateSettings.requirePractice}
+                    onChange={e => setCandidateSettings({...candidateSettings, requirePractice: e.target.checked})}
+                    className="rounded text-amber-600 focus:ring-amber-500"
+                  />
+                  <span>Require Practice completion (Hands-on tasks &amp; Flashcards)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={candidateSettings.requireAssessment}
+                    onChange={e => setCandidateSettings({...candidateSettings, requireAssessment: e.target.checked})}
+                    className="rounded text-amber-600 focus:ring-amber-500"
+                  />
+                  <span>Require Official Assessment (Proctored benchmark exam)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={candidateSettings.requireEvidence}
+                    onChange={e => setCandidateSettings({...candidateSettings, requireEvidence: e.target.checked})}
+                    className="rounded text-amber-600 focus:ring-amber-500"
+                  />
+                  <span>Require Evidence Submission (Verified artifacts &amp; repos)</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Allow Candidate In-App Messaging?</label>
               <select
                 className="form-select"
-                value={candidateSettings.approvalRequired ? 'yes' : 'no'}
-                onChange={e => setCandidateSettings({...candidateSettings, approvalRequired: e.target.value === 'yes'})}
+                value={candidateSettings.allowCandidateMessaging ? 'yes' : 'no'}
+                onChange={e => setCandidateSettings({...candidateSettings, allowCandidateMessaging: e.target.value === 'yes'})}
               >
-                <option value="no">No — Auto-approve candidates</option>
-                <option value="yes">Yes — Manual approval needed</option>
+                <option value="yes">Yes — Verified candidates can message recruiters</option>
+                <option value="no">No — Recruiter review only</option>
               </select>
             </div>
 
@@ -1832,7 +2098,6 @@ export default function VacancyBuilderPage() {
                 onChange={e => setCandidateSettings({...candidateSettings, maxTargetsPerCandidate: parseInt(e.target.value) || 1})}
                 min={1}
               />
-              <div className="form-hint">How many times a candidate can target this vacancy.</div>
             </div>
           </div>
         </div>
@@ -1855,27 +2120,34 @@ export default function VacancyBuilderPage() {
           <div className="p-5 bg-slate-50 border border-slate-200 rounded-xl mb-6 space-y-3 text-xs">
             <div className="flex justify-between border-b pb-2">
               <span className="text-slate-500">Vacancy Title:</span>
-              <span className="font-bold text-slate-900">{basicInfo.title || '—'}</span>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-900">{basicInfo.title || '—'}</span>
+                <button type="button" onClick={() => setCurrentStep(1)} className="text-amber-700 hover:underline text-[11px] font-semibold">Edit</button>
+              </div>
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="text-slate-500">Role Master:</span>
-              <span className="font-bold text-slate-900">
-                {selectedRoleMasterId
-                  ? roleMasters.find(r => r.id === selectedRoleMasterId)?.title || 'Selected Role Master'
-                  : 'Custom Requisition (Auto-generated)'}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-900">
+                  {selectedRoleMasterId
+                    ? roleMasters.find(r => r.id === selectedRoleMasterId)?.title || 'Selected Role Master'
+                    : 'Custom Requisition (Auto-generated)'}
+                </span>
+                <button type="button" onClick={() => setCurrentStep(1)} className="text-amber-700 hover:underline text-[11px] font-semibold">Edit</button>
+              </div>
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="text-slate-500">Approved Role Blueprint:</span>
-              <span className="font-bold">
+              <div className="flex items-center gap-2">
                 {approvedBlueprintId ? (
-                  <span className="text-emerald-700 flex items-center gap-1">
+                  <span className="text-emerald-700 font-bold flex items-center gap-1">
                     <CheckCircle2 size={13} /> Verified &amp; Linked ({approvedBlueprintId.substring(0, 8)}...)
                   </span>
                 ) : (
-                  <span className="text-amber-700">None linked (Blueprint can be approved in Step 2)</span>
+                  <span className="text-amber-700 font-bold">None linked (Blueprint must be approved in Step 2)</span>
                 )}
-              </span>
+                <button type="button" onClick={() => setCurrentStep(2)} className="text-amber-700 hover:underline text-[11px] font-semibold">Edit</button>
+              </div>
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="text-slate-500">Department:</span>
@@ -1886,8 +2158,8 @@ export default function VacancyBuilderPage() {
               </span>
             </div>
             <div className="flex justify-between border-b pb-2">
-              <span className="text-slate-500">Location:</span>
-              <span className="font-bold text-slate-900">{basicInfo.location || 'Remote'}</span>
+              <span className="text-slate-500">Work Location &amp; City:</span>
+              <span className="font-bold text-slate-900">{basicInfo.location} {basicInfo.city ? `(${basicInfo.city})` : ''}</span>
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="text-slate-500">Work Mode:</span>
@@ -1900,7 +2172,7 @@ export default function VacancyBuilderPage() {
               </span>
             </div>
             <div className="flex justify-between border-b pb-2">
-              <span className="text-slate-500">Experience Level:</span>
+              <span className="text-slate-500">Experience Required:</span>
               <span className="font-bold text-slate-900">
                 {EXP_OPTIONS.find(o => o.value === basicInfo.experienceLevel)?.label || basicInfo.experienceLevel}
               </span>
@@ -1910,16 +2182,50 @@ export default function VacancyBuilderPage() {
               <span className="font-bold text-slate-900">{basicInfo.openings}</span>
             </div>
             <div className="flex justify-between border-b pb-2">
-              <span className="text-slate-500">Active Requirements:</span>
-              <span className="font-bold text-amber-700">{requirements.length} requirement{requirements.length !== 1 ? 's' : ''}</span>
+              <span className="text-slate-500">Salary / Stipend:</span>
+              <span className="font-bold text-slate-900">{basicInfo.salaryRange || 'Competitive / Not specified'}</span>
             </div>
             <div className="flex justify-between border-b pb-2">
-              <span className="text-slate-500">Assessment:</span>
-              <span className="font-bold text-slate-900">{assessmentConfig.required ? `Yes — ${assessmentConfig.duration} mins, ${assessmentConfig.totalMarks} marks` : 'Not required'}</span>
+              <span className="text-slate-500">Application Deadline:</span>
+              <span className="font-bold text-slate-900">{basicInfo.deadline ? new Date(basicInfo.deadline).toLocaleDateString() : 'Open until filled'}</span>
+            </div>
+            <div className="flex justify-between border-b pb-2">
+              <span className="text-slate-500">Active Requirements:</span>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-amber-700">{requirements.length} requirement{requirements.length !== 1 ? 's' : ''}</span>
+                <button type="button" onClick={() => setCurrentStep(2)} className="text-amber-700 hover:underline text-[11px] font-semibold">Edit</button>
+              </div>
+            </div>
+            <div className="flex justify-between border-b pb-2">
+              <span className="text-slate-500">Assessment Settings:</span>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-900">
+                  {assessmentConfig.enabled
+                    ? `Enabled — ${assessmentConfig.questionCount} Qs (${assessmentConfig.questionTypes.join(', ')}), ${assessmentConfig.duration} mins, Pass mark: ${assessmentConfig.passMark}%, Attempts: ${assessmentConfig.attemptsAllowed}`
+                    : 'Disabled / Optional'}
+                </span>
+                <button type="button" onClick={() => setCurrentStep(3)} className="text-amber-700 hover:underline text-[11px] font-semibold">Edit</button>
+              </div>
+            </div>
+            <div className="flex justify-between border-b pb-2">
+              <span className="text-slate-500">Candidate Eligibility &amp; Coverage:</span>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-900">
+                  Target min coverage: {candidateSettings.minCoverage}% {candidateSettings.minCgpa ? `• Min CGPA: ${candidateSettings.minCgpa}` : ''} {candidateSettings.allowedDegrees ? `• ${candidateSettings.allowedDegrees}` : ''}
+                </span>
+                <button type="button" onClick={() => setCurrentStep(4)} className="text-amber-700 hover:underline text-[11px] font-semibold">Edit</button>
+              </div>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Resume Required:</span>
-              <span className="font-bold text-slate-900">{candidateSettings.resumeRequired ? 'Yes' : 'No'}</span>
+              <span className="text-slate-500">Verification Milestones:</span>
+              <span className="font-bold text-slate-900">
+                {[
+                  candidateSettings.requireLearn && 'Learn',
+                  candidateSettings.requirePractice && 'Practice',
+                  candidateSettings.requireAssessment && 'Assessment',
+                  candidateSettings.requireEvidence && 'Evidence',
+                ].filter(Boolean).join(' + ') || 'Flexible'}
+              </span>
             </div>
           </div>
 
@@ -1980,24 +2286,38 @@ export default function VacancyBuilderPage() {
         </div>
       )}
 
-      {/* Stepper Navigation */}
-      <div className="flex justify-between items-center mt-6">
-        <button
-          className="btn btn-secondary"
-          onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-          disabled={currentStep === 1}
-        >
-          <ArrowLeft size={16} /> Previous Step
-        </button>
-
-        {currentStep < 5 && (
+      {/* Sticky Bottom Navigation Bar */}
+      <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-200">
+        <div>
           <button
-            className="btn btn-gold"
-            onClick={handleNext}
+            type="button"
+            className="btn btn-secondary btn-sm"
+            disabled={!basicInfo.title.trim() || savedSuccess || isSubmitting}
+            onClick={handleSaveDraft}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
-            Next Step <ArrowRight size={16} />
+            {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />} Save as Draft
           </button>
-        )}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
+            disabled={currentStep === 1}
+          >
+            <ArrowLeft size={15} /> Back
+          </button>
+
+          {currentStep < 5 && (
+            <button
+              className="btn btn-gold btn-sm"
+              onClick={handleNext}
+            >
+              Next <ArrowRight size={15} />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
