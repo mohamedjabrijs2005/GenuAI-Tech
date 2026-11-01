@@ -269,8 +269,12 @@ export default function AuthPage() {
     }
 
     // Default OAuth 2.0 redirect flow via GET /api/auth/google
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || '/api';
-    const authUrl = `${apiBase.replace(/\/+$/, '')}/auth/google?role=${selectedRole}&returnTo=/login`;
+    // Use api.defaults.baseURL or NEXT_PUBLIC_API_URL or direct Render backend URL
+    const rawApiBase = process.env.NEXT_PUBLIC_API_URL || api.defaults.baseURL || '';
+    const apiBase = (rawApiBase && rawApiBase !== '/api')
+      ? rawApiBase.replace(/\/+$/, '')
+      : 'https://genuai-backend.onrender.com/api';
+    const authUrl = `${apiBase}/auth/google?role=${selectedRole}&returnTo=/login`;
     window.location.href = authUrl;
   };
 
