@@ -56,9 +56,12 @@ function ResetPasswordContent() {
         router.push('/login');
       }, 2500);
     } catch (err: any) {
-      const msg = err.response?.data?.error || 'Failed to reset password. The link may have expired.';
-      setError(msg);
-      toast.error(msg);
+      const rawMsg = err.response?.data?.error;
+      const msg = typeof rawMsg === 'string'
+        ? rawMsg
+        : (rawMsg && typeof rawMsg === 'object' ? (rawMsg.message || JSON.stringify(rawMsg)) : null) || 'Failed to reset password. The link may have expired.';
+      setError(String(msg));
+      toast.error(String(msg));
     } finally {
       setLoading(false);
     }

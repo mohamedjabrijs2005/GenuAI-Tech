@@ -31,7 +31,11 @@ function VerifyEmailContent() {
       .catch((err) => {
         if (!isMounted) return;
         setStatus('error');
-        setMessage(err.response?.data?.error || 'Verification link expired or invalid.');
+        const rawErr = err.response?.data?.error;
+        const errMsg = typeof rawErr === 'string'
+          ? rawErr
+          : (rawErr && typeof rawErr === 'object' ? (rawErr.message || JSON.stringify(rawErr)) : null) || 'Verification link expired or invalid.';
+        setMessage(String(errMsg));
       });
 
     return () => {

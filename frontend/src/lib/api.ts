@@ -5,14 +5,18 @@ const getBaseUrl = () => {
   if (configuredUrl) {
     return configuredUrl.replace(/\/+$/, '');
   }
+  // When running in production on Vercel without an env var, default directly to Render backend API
+  if (typeof window !== 'undefined' && window.location.hostname.endsWith('vercel.app')) {
+    return 'https://genuai-backend.onrender.com/api';
+  }
   if (typeof window !== 'undefined') {
     return '/api';
   }
-  const backendUrl = process.env.GENUAI_BACKEND_URL?.trim();
+  const backendUrl = process.env.GENUAI_BACKEND_URL?.trim() || process.env.BACKEND_URL?.trim();
   if (backendUrl) {
     return `${backendUrl.replace(/\/+$/, '')}/api`;
   }
-  return 'http://127.0.0.1:4000/api';
+  return 'https://genuai-backend.onrender.com/api';
 };
 
 const API_BASE = getBaseUrl();

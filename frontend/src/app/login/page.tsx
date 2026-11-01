@@ -192,13 +192,18 @@ export default function AuthPage() {
         toast(msg, { icon: 'ℹ️' });
         return;
       }
-      const msg = e.response?.data?.error || (
+      const rawError = e.response?.data?.error;
+      const errorText = typeof rawError === 'string'
+        ? rawError
+        : (rawError && typeof rawError === 'object' ? (rawError.message || JSON.stringify(rawError)) : null);
+
+      const msg = errorText || (
         e.code === 'ERR_NETWORK'
           ? 'Cannot reach the login service. Check that the backend is running and your API URL is configured.'
-          : e.message || 'Authentication failed. Please check your credentials.'
+          : (typeof e.message === 'string' ? e.message : 'Authentication failed. Please check your credentials.')
       );
-      setError(msg);
-      toast.error(msg);
+      setError(String(msg));
+      toast.error(String(msg));
     } finally {
       setLoading(false);
     }
@@ -220,7 +225,11 @@ export default function AuthPage() {
         setForgotEmail('');
       }, 3000);
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to submit reset request.');
+      const rawErr = err.response?.data?.error;
+      const errMsg = typeof rawErr === 'string'
+        ? rawErr
+        : (rawErr && typeof rawErr === 'object' ? (rawErr.message || JSON.stringify(rawErr)) : null);
+      toast.error(errMsg || err.message || 'Failed to submit reset request.');
     }
   };
 
