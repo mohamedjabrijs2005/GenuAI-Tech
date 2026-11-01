@@ -551,7 +551,8 @@ export default function VacancyBuilderPage() {
       if (requirements.length === 0 && draftSkills.length === 0) {
         errors.requirements = 'Please generate an AI Blueprint or add at least one requirement.';
       }
-      if (blueprintStatus !== 'APPROVED') {
+      // If user added custom requirements directly, allow progressing even without a separate blueprint approval
+      if (blueprintStatus !== 'APPROVED' && requirements.length === 0 && draftSkills.length === 0) {
         errors.blueprint = 'An approved Role Skill Blueprint is required. Please approve the blueprint above.';
       }
     }

@@ -159,8 +159,8 @@ router.post(
         }
       }
 
-      // Openings must be at least 1
-      const countNum = Number(vacancyCount);
+      // Openings defaults to 1 if not specified, must be >= 1 if provided
+      const countNum = vacancyCount !== undefined ? Number(vacancyCount) : 1;
       if (isNaN(countNum) || countNum < 1) {
         return res.status(400).json({ error: 'Number of openings must be at least 1.' });
       }

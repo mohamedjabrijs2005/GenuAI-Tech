@@ -229,11 +229,15 @@ export default function AuthPage() {
       toast.error('Google Sign-In is not available for admin accounts.');
       return;
     }
+
+    // Role to pass to Google OAuth flow
+    const selectedRole = persona === 'company' ? 'COMPANY' : 'CANDIDATE';
+
+    // If client ID is present and GSI is initialized, use GSI popup, otherwise redirect to backend /api/auth/google
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    if (!clientId) { toast.error('Google Sign-In is not configured.'); return; }
-    try {
-      setLoading(true);
-      if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
+    if (typeof window !== 'undefined' && (window as any).google?.accounts?.id && clientId) {
+      try {
+        setLoading(true);
         (window as any).google.accounts.id.initialize({
           client_id: clientId,
           callback: async (response: any) => {
@@ -258,14 +262,16 @@ export default function AuthPage() {
           },
         });
         (window as any).google.accounts.id.prompt();
-      } else {
-        toast.error('Google Sign-In is loading. Please try again.');
+        return;
+      } catch (_) {
+        // Fall back to server redirect
       }
-    } catch {
-      toast.error('Failed to initialize Google Sign-In.');
-    } finally {
-      setLoading(false);
     }
+
+    // Default OAuth 2.0 redirect flow via GET /api/auth/google
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || '/api';
+    const authUrl = `${apiBase.replace(/\/+$/, '')}/auth/google?role=${selectedRole}&returnTo=/login`;
+    window.location.href = authUrl;
   };
 
   const passStrength = getPasswordStrength(form.password);

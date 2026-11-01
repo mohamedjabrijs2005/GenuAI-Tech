@@ -25,11 +25,45 @@ export default function CandidateSettingsPage() {
   const [savingPassword, setSavingPassword] = useState(false);
 
   const [notifPreferences, setNotifPreferences] = useState({
-    targetMilestones: true,
-    evidenceReviews: true,
-    interviewInvites: true,
-    weeklyDigest: false,
+    assessment_invitation: true,
+    shortlist_update: true,
+    interview_schedule: true,
+    new_candidate_interest: true,
+    vacancy_updates: true,
+    product_updates: true,
   });
+  const [savingPrefs, setSavingPrefs] = useState(false);
+  const [prefsMsg, setPrefsMsg] = useState('');
+
+  React.useEffect(() => {
+    api.get('/auth/notification-preferences')
+      .then((res) => {
+        if (res.data?.preferences) {
+          setNotifPreferences({
+            assessment_invitation: res.data.preferences.assessment_invitation !== false,
+            shortlist_update: res.data.preferences.shortlist_update !== false,
+            interview_schedule: res.data.preferences.interview_schedule !== false,
+            new_candidate_interest: res.data.preferences.new_candidate_interest !== false,
+            vacancy_updates: res.data.preferences.vacancy_updates !== false,
+            product_updates: res.data.preferences.product_updates !== false,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleSavePreferences = async (updatedPrefs?: typeof notifPreferences) => {
+    const toSave = updatedPrefs || notifPreferences;
+    setSavingPrefs(true);
+    try {
+      await api.put('/auth/notification-preferences', toSave);
+      setPrefsMsg('Preferences updated successfully.');
+      setTimeout(() => setPrefsMsg(''), 3000);
+    } catch (_) {
+    } finally {
+      setSavingPrefs(false);
+    }
+  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -227,35 +261,100 @@ export default function CandidateSettingsPage() {
           <span>Notification Preferences</span>
         </h2>
 
+        <p style={{ fontSize: 12.5, color: '#64748b', margin: '0 0 16px', lineHeight: 1.5 }}>
+          Control which non-critical transactional emails GenuAI sends to your registered address.
+          Password reset, verification, and critical security alerts are always dispatched.
+        </p>
+
+        {prefsMsg && (
+          <div style={{ color: '#16a34a', fontSize: 12.5, fontWeight: 600, marginBottom: 12 }}>
+            ✓ {prefsMsg}
+          </div>
+        )}
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, color: '#334155' }}>
             <input
               type="checkbox"
-              checked={notifPreferences.targetMilestones}
-              onChange={(e) => setNotifPreferences({ ...notifPreferences, targetMilestones: e.target.checked })}
+              checked={notifPreferences.assessment_invitation}
+              onChange={(e) => {
+                const updated = { ...notifPreferences, assessment_invitation: e.target.checked };
+                setNotifPreferences(updated);
+                handleSavePreferences(updated);
+              }}
               style={{ width: 16, height: 16 }}
             />
-            <span>Target status and milestone updates</span>
+            <span>Assessment Invitations (Invitations to complete competency assessments)</span>
           </label>
 
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, color: '#334155' }}>
             <input
               type="checkbox"
-              checked={notifPreferences.evidenceReviews}
-              onChange={(e) => setNotifPreferences({ ...notifPreferences, evidenceReviews: e.target.checked })}
+              checked={notifPreferences.shortlist_update}
+              onChange={(e) => {
+                const updated = { ...notifPreferences, shortlist_update: e.target.checked };
+                setNotifPreferences(updated);
+                handleSavePreferences(updated);
+              }}
               style={{ width: 16, height: 16 }}
             />
-            <span>Recruiter evidence review feedback & requests for information</span>
+            <span>Shortlist Updates (Alerts when your verified evidence qualifies you for a shortlist)</span>
           </label>
 
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, color: '#334155' }}>
             <input
               type="checkbox"
-              checked={notifPreferences.interviewInvites}
-              onChange={(e) => setNotifPreferences({ ...notifPreferences, interviewInvites: e.target.checked })}
+              checked={notifPreferences.interview_schedule}
+              onChange={(e) => {
+                const updated = { ...notifPreferences, interview_schedule: e.target.checked };
+                setNotifPreferences(updated);
+                handleSavePreferences(updated);
+              }}
               style={{ width: 16, height: 16 }}
             />
-            <span>Interview invitations & scheduling changes</span>
+            <span>Interview Schedule (Invitations and schedule changes for role interviews)</span>
+          </label>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, color: '#334155' }}>
+            <input
+              type="checkbox"
+              checked={notifPreferences.new_candidate_interest}
+              onChange={(e) => {
+                const updated = { ...notifPreferences, new_candidate_interest: e.target.checked };
+                setNotifPreferences(updated);
+                handleSavePreferences(updated);
+              }}
+              style={{ width: 16, height: 16 }}
+            />
+            <span>Candidate Interest Alerts (Notifications when candidates target roles)</span>
+          </label>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, color: '#334155' }}>
+            <input
+              type="checkbox"
+              checked={notifPreferences.vacancy_updates}
+              onChange={(e) => {
+                const updated = { ...notifPreferences, vacancy_updates: e.target.checked };
+                setNotifPreferences(updated);
+                handleSavePreferences(updated);
+              }}
+              style={{ width: 16, height: 16 }}
+            />
+            <span>Vacancy Updates (Verification approval, publishing, and status changes)</span>
+          </label>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, color: '#334155' }}>
+            <input
+              type="checkbox"
+              checked={notifPreferences.product_updates}
+              onChange={(e) => {
+                const updated = { ...notifPreferences, product_updates: e.target.checked };
+                setNotifPreferences(updated);
+                handleSavePreferences(updated);
+              }}
+              style={{ width: 16, height: 16 }}
+            />
+            <span>Product Updates (Announcements and new governance features)</span>
           </label>
         </div>
       </div>

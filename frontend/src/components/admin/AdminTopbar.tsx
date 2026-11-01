@@ -26,14 +26,14 @@ export function AdminTopbar({ onToggleMobileSidebar }: AdminTopbarProps) {
   const { adminUser } = useAdminAuth();
   const [time, setTime] = useState('');
 
-  // Live clock — matches Company Dashboard topbar pattern
+  // Operational session clock — stable display updated every 30s
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      setTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      setTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     };
     updateTime();
-    const timer = setInterval(updateTime, 1000);
+    const timer = setInterval(updateTime, 30000);
     return () => clearInterval(timer);
   }, []);
 

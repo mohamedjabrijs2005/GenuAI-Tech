@@ -18,10 +18,10 @@ const registerLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Password reset: 3 per 15 minutes per IP
+// Password reset: 3 per 15 minutes per IP (relaxed in dev/test)
 const forgotPasswordLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 3,
+  max: process.env.NODE_ENV === 'production' ? 3 : 1000,
   message: { error: 'Too many password reset requests. Please try again in 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,

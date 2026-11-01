@@ -28,6 +28,10 @@ router.get('/overview', async (req, res) => {
           COUNT(*) FILTER (WHERE verification_status = 'REJECTED')::int AS rejected_companies,
           COUNT(*) FILTER (WHERE verification_status = 'SUSPENDED')::int AS suspended_companies
         FROM companies
+        WHERE (official_email IS NULL OR (official_email NOT LIKE '%@genuai.test' AND official_email NOT LIKE '%@test.com'))
+          AND name NOT ILIKE '%Test Corp%'
+          AND name NOT ILIKE '%Beta Corp%'
+          AND name NOT ILIKE '%Alpha Corp%'
       `),
       pool.query(`
         SELECT
@@ -37,13 +41,22 @@ router.get('/overview', async (req, res) => {
           COUNT(*) FILTER (WHERE status = 'PUBLISHED')::int AS published_vacancies,
           COUNT(*) FILTER (WHERE status = 'CHANGES_REQUESTED')::int AS changes_requested_vacancies,
           COUNT(*) FILTER (WHERE status = 'REJECTED')::int AS rejected_vacancies
-        FROM company_roles
+        FROM company_roles cr
+        JOIN companies c ON c.id = cr.company_id
+        WHERE (c.official_email IS NULL OR (c.official_email NOT LIKE '%@genuai.test' AND c.official_email NOT LIKE '%@test.com'))
       `),
-      pool.query('SELECT COUNT(*)::int AS total_users FROM users'),
+      pool.query(`
+        SELECT COUNT(*)::int AS total_users FROM users
+        WHERE email NOT LIKE '%@genuai.test' AND email NOT LIKE '%@test.com'
+      `),
       pool.query(`
         SELECT id, name, official_email, website, industry, location, verification_status, created_at
         FROM companies
         WHERE verification_status IN ('PENDING_VERIFICATION', 'UNDER_REVIEW', 'ADDITIONAL_INFORMATION_REQUIRED')
+          AND (official_email IS NULL OR (official_email NOT LIKE '%@genuai.test' AND official_email NOT LIKE '%@test.com'))
+          AND name NOT ILIKE '%Test Corp%'
+          AND name NOT ILIKE '%Beta Corp%'
+          AND name NOT ILIKE '%Alpha Corp%'
         ORDER BY created_at ASC
         LIMIT 10
       `),
@@ -154,7 +167,11 @@ router.get('/companies', async (req, res) => {
       LEFT JOIN company_roles cr ON cr.company_id = c.id AND cr.status = 'PUBLISHED'
       LEFT JOIN company_members cm ON cm.company_id = c.id
       LEFT JOIN users u ON u.id = c.verification_reviewed_by
-      WHERE c.name IS NOT NULL AND c.name != 'N/A' AND TRIM(c.name) != '' AND c.onboarding_submitted = TRUE
+      WHERE c.name IS NOT NULL AND c.name != 'N/A' AND TRIM(c.name) != ''
+        AND (c.official_email IS NULL OR (c.official_email NOT LIKE '%@genuai.test' AND c.official_email NOT LIKE '%@test.com'))
+        AND c.name NOT ILIKE '%Test Corp%'
+        AND c.name NOT ILIKE '%Beta Corp%'
+        AND c.name NOT ILIKE '%Alpha Corp%'
     `;
     const params = [];
 
@@ -175,12 +192,12 @@ router.get('/companies', async (req, res) => {
     const companies = result.rows.map((r) => ({
       id: r.id,
       name: r.name,
-      domain: r.website ? r.website.replace(/^https?:\/\//, '').replace(/\/.*$/, '') : 'company.io',
-      workEmail: r.official_email || 'contact@company.io',
-      industry: r.industry || 'Technology',
-      employeeCount: r.size || '50-250',
-      registrationNumber: 'REG-' + r.id.substring(0, 8).toUpperCase(),
-      country: r.location || 'Global',
+      domain: r.website ? r.website.replace(/^https?:\/\//, '').replace(/\/.*$/, '') : (r.official_email && r.official_email.includes('@') ? r.official_email.split('@')[1] : '—'),
+      workEmail: r.official_email || '—',
+      industry: r.industry || '—',
+      employeeCount: r.size || '—',
+      registrationNumber: r.registration_number || '—',
+      country: r.location || '—',
       website: r.website || '',
       description: r.description || '',
       verificationStatus: r.verification_status,
@@ -190,7 +207,7 @@ router.get('/companies', async (req, res) => {
       reviewNote: r.verification_review_note || '',
       activeVacanciesCount: Number(r.active_vacancies_count) || 0,
       totalAssessmentsCount: 0,
-      documents: [],
+      documents: r.verification_document_url ? [{ name: 'Corporate Verification File', type: 'PDF', url: r.verification_document_url, verified: r.verification_status === 'APPROVED' }] : [],
       history: [],
     }));
 

@@ -300,7 +300,7 @@ export default function CompanyVerificationPage() {
                     {comp.workEmail || '—'}
                   </td>
                   <td style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
-                    {comp.industry || 'Technology'}
+                    {comp.industry || '—'}
                   </td>
                   <td>
                     <StatusBadge status={comp.verificationStatus} />
@@ -397,7 +397,7 @@ export default function CompanyVerificationPage() {
                   </div>
                   <div style={{ padding: '10px', background: '#ffffff', border: '1px solid var(--border)', borderRadius: '6px' }}>
                     <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Location / Address</span>
-                    <strong>{companyDetails?.company?.location || selectedCompany.country || 'Global'}</strong>
+                    <strong>{companyDetails?.company?.location || selectedCompany.country || '—'}</strong>
                   </div>
                 </div>
               </div>

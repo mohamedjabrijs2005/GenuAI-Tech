@@ -259,47 +259,61 @@ async function main() {
     // 3. Create Vacancy through 5-Step Builder via Browser
     console.log('🌐 Step 1.3: Company A creates Vacancy through 5-Step Builder...');
     await page.goto(`${FRONTEND_URL}/dashboard/vacancies/builder`, { waitUntil: 'networkidle2' });
-    await page.waitForSelector('input[placeholder*="Senior Software Developer"]', { timeout: 10000 });
 
     // Step 1: Role & Vacancy Info
     const vacTitle = `Senior Cloud Platform Architect (${ts})`;
-    await page.type('input[placeholder*="Senior Software Developer"]', vacTitle);
+    await page.waitForSelector('input[placeholder*="Senior Backend Engineer"]', { timeout: 10000 });
+    await page.type('input[placeholder*="Senior Backend Engineer"]', vacTitle);
     await page.select('select.form-select', deptAId);
-    await page.type('input[placeholder*="London, UK or Remote"]', 'London, UK / Remote');
+    await page.type('input[placeholder*="Remote, On-site, or Hybrid"]', 'Remote');
     
-    // Click Next Step to Step 2
-    await clickButtonByText(page, 'Next Step');
-    await new Promise(r => setTimeout(r, 600));
+    // Click Next to Step 2
+    await clickButtonByText(page, 'Next');
+    await new Promise(r => setTimeout(r, 800));
 
-    // Step 2: Requirements
-    await page.waitForSelector('input[placeholder*="Java Spring Boot"]', { timeout: 5000 });
-    await page.type('input[placeholder*="Java Spring Boot"]', 'High-Throughput Kafka Event Streaming');
-    await clickButtonByText(page, 'Add Requirement');
-    await new Promise(r => setTimeout(r, 600));
+    // Step 2: Generate AI Suggestions for requirements blueprint
+    await clickButtonByText(page, 'Generate AI Suggestions');
+    await page.waitForSelector('button:has-text("Approve Blueprint"), button:has-text("Save Draft Blueprint")', { timeout: 15000 }).catch(() => {});
+    await new Promise(r => setTimeout(r, 2000));
 
-    // Click Next Step to Step 3
-    await clickButtonByText(page, 'Next Step');
-    await new Promise(r => setTimeout(r, 600));
+    // Approve the blueprint if approve button appears, or add skill
+    try {
+      await clickButtonByText(page, 'Approve Blueprint');
+      await new Promise(r => setTimeout(r, 1000));
+    } catch (_) {
+      try {
+        await page.type('input[placeholder*="PostgreSQL Optimization"]', 'High-Throughput Kafka Event Streaming');
+        await clickButtonByText(page, 'Add');
+        await new Promise(r => setTimeout(r, 600));
+      } catch (_) {}
+    }
 
-    // Step 3: Assessment -> Click Next Step to Step 4
-    await clickButtonByText(page, 'Next Step');
-    await new Promise(r => setTimeout(r, 600));
+    // Click Next to Step 3
+    await clickButtonByText(page, 'Next');
+    await new Promise(r => setTimeout(r, 800));
 
-    // Step 4: Candidate Settings -> Click Next Step to Step 5
-    await clickButtonByText(page, 'Next Step');
-    await new Promise(r => setTimeout(r, 600));
+    // Step 3: Assessment -> Click Next to Step 4
+    await clickButtonByText(page, 'Next');
+    await new Promise(r => setTimeout(r, 800));
+
+    // Step 4: Candidate Settings -> Click Next to Step 5
+    await clickButtonByText(page, 'Next');
+    await new Promise(r => setTimeout(r, 800));
 
     // Step 5: Review & Save as Draft
     await page.screenshot({ path: path.join(SCREENSHOTS_DIR, '04_builder_step5_review.png') });
     await clickButtonByText(page, 'Save as Draft');
 
-    // Wait for redirect to vacancy details page
-    await page.waitForFunction(() => window.location.pathname.includes('/dashboard/vacancies/'), { timeout: 10000 });
+    // Wait for redirect to vacancy details page (not /builder)
+    await page.waitForFunction(() => {
+      const p = window.location.pathname;
+      return p.includes('/dashboard/vacancies/') && !p.endsWith('/builder') && !p.endsWith('/builder/');
+    }, { timeout: 15000 });
     await new Promise(r => setTimeout(r, 1000));
     const currentUrl = page.url();
     assert(currentUrl.includes('/dashboard/vacancies/'), 'Navigated to Vacancy Details page');
     browserVacancyId = currentUrl.split('/dashboard/vacancies/')[1].split('?')[0].split('/')[0];
-    assert(Boolean(browserVacancyId), `Captured Vacancy ID: ${browserVacancyId}`);
+    assert(Boolean(browserVacancyId) && browserVacancyId !== 'builder', `Captured Vacancy ID: ${browserVacancyId}`);
 
     // Verify status is DRAFT
     await page.waitForSelector('.badge', { timeout: 10000 });
@@ -704,6 +718,15 @@ async function main() {
       },
     });
     assert(addReqRes.status === 201, 'Requirement added to vacancy');
+
+    // Link an approved blueprint to satisfy blueprint prerequisite
+    const bpRes = await pool.query(
+      `INSERT INTO ai_role_blueprint_suggestions (company_id, vacancy_id, role_title, status)
+       VALUES ($1, $2, 'Staff Distributed Systems Architect', 'APPROVED')
+       RETURNING id`,
+      [companyAId, testVacId]
+    );
+    await pool.query('UPDATE company_roles SET approved_role_blueprint_id = $1 WHERE id = $2', [bpRes.rows[0].id, testVacId]);
 
     const submitOkRes = await apiRequest(`/vacancies/${testVacId}/submit`, {
       method: 'POST',

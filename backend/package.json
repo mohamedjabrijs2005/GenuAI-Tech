@@ -10,7 +10,8 @@
     "migrate:all": "node src/database/migrate_all.js",
     "migrate:v2": "node src/database/migrate_v2.js",
     "seed": "node src/database/seed_dev.js",
-    "verify": "node src/database/verify_schema.js"
+    "verify": "node src/database/verify_schema.js",
+    "test": "node ../test_email_and_google_oauth_suite.js"
   },
   "keywords": [],
   "author": "GenuAI Technologies",
