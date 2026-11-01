@@ -195,7 +195,7 @@ router.post(
       await client.query('COMMIT');
 
       // Send verification email (async, don't block response)
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
       const verifyUrl = `${frontendUrl}/verify-email?token=${rawVerificationToken}`;
       sendEmail({
         to: email,
@@ -470,7 +470,7 @@ router.post('/resend-verification', authenticate, async (req, res) => {
       [hashedVerificationToken, verificationExpires, req.user.id]
     );
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
     const verifyUrl = `${frontendUrl}/verify-email?token=${rawVerificationToken}`;
 
     await sendEmail({
