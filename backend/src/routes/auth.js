@@ -6,7 +6,14 @@ const { body, validationResult } = require('express-validator');
 const pool = require('../database/pool');
 const { authenticate } = require('../middleware/auth');
 const { loginLimiter, registerLimiter, forgotPasswordLimiter } = require('../middleware/rateLimiter');
-const { sendEmail, emailVerificationTemplate, passwordResetTemplate } = require('../services/email');
+const {
+  sendEmail,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  sendPasswordResetConfirmationEmail,
+  emailVerificationTemplate,
+  passwordResetTemplate,
+} = require('../services/email');
 const { OAuth2Client } = require('google-auth-library');
 
 const router = express.Router();
@@ -510,22 +517,20 @@ router.post(
         const user = userResult.rows[0];
         const rawResetToken = crypto.randomBytes(32).toString('hex');
         const hashedResetToken = hashToken(rawResetToken);
-        const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+        const resetExpires = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
 
         await pool.query(
           `UPDATE users SET password_reset_token = $1, password_reset_expires = $2 WHERE id = $3`,
           [hashedResetToken, resetExpires, user.id]
         );
 
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
         const resetUrl = `${frontendUrl}/reset-password?token=${rawResetToken}`;
 
-        sendEmail({
+        sendPasswordResetEmail({
           to: user.email,
-          toName: `${user.first_name} ${user.last_name}`,
-          subject: 'Reset your GenuAI Technologies password',
-          html: passwordResetTemplate(user.first_name, resetUrl),
-          templateName: 'password_reset',
+          name: `${user.first_name} ${user.last_name}`.trim() || user.first_name,
+          resetUrl,
         }).catch(err => console.warn('Password reset email note:', err.message));
       }
 
@@ -565,13 +570,21 @@ router.post(
         `UPDATE users
          SET password_hash = $1, password_reset_token = NULL, password_reset_expires = NULL, token_version = token_version + 1
          WHERE password_reset_token = $2 AND password_reset_expires > NOW() AND is_active = TRUE
-         RETURNING id, email`,
+         RETURNING id, email, first_name, last_name`,
         [passwordHash, hashedToken]
       );
 
       if (result.rowCount === 0) {
         return res.status(400).json({ error: 'Invalid or expired reset token' });
       }
+
+      const updatedUser = result.rows[0];
+
+      // Send password reset confirmation email
+      sendPasswordResetConfirmationEmail({
+        to: updatedUser.email,
+        name: `${updatedUser.first_name || ''} ${updatedUser.last_name || ''}`.trim() || updatedUser.first_name || 'Member',
+      }).catch(err => console.warn('Password reset confirmation email note:', err.message));
 
       return res.json({ success: true, message: 'Password has been reset successfully. Please log in with your new password.' });
     } catch (err) {
@@ -634,6 +647,405 @@ router.post(
     }
   }
 );
+
+// ============================================================
+// Google OAuth 2.0 Web Client Setup
+// ============================================================
+function getGoogleOAuth2WebClient() {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const redirectUri = process.env.GOOGLE_CALLBACK_URL || `${process.env.APP_URL || 'http://localhost:4000'}/api/auth/google/callback`;
+
+  if (!clientId || !clientSecret) {
+    return null;
+  }
+
+  return new OAuth2Client(clientId, clientSecret, redirectUri);
+}
+
+// In-memory fallback state map for environments where oauth_states table is transient
+const memoryOAuthStates = new Map();
+
+async function storeOAuthState(state, metadata = {}) {
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  memoryOAuthStates.set(state, { ...metadata, expiresAt });
+  try {
+    await pool.query(
+      `INSERT INTO oauth_states (state, return_to, role, expires_at)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (state) DO UPDATE SET return_to = EXCLUDED.return_to, role = EXCLUDED.role, expires_at = EXCLUDED.expires_at`,
+      [state, metadata.returnTo || null, metadata.role || null, expiresAt]
+    );
+  } catch (_) {}
+}
+
+async function verifyAndConsumeOAuthState(state) {
+  if (!state) return null;
+
+  // 1. Try DB first
+  try {
+    const res = await pool.query(
+      `DELETE FROM oauth_states WHERE state = $1 AND expires_at > NOW() RETURNING return_to, role`,
+      [state]
+    );
+    if (res.rowCount > 0) {
+      memoryOAuthStates.delete(state);
+      return res.rows[0];
+    }
+  } catch (_) {}
+
+  // 2. Try in-memory fallback
+  if (memoryOAuthStates.has(state)) {
+    const item = memoryOAuthStates.get(state);
+    memoryOAuthStates.delete(state);
+    if (item.expiresAt > new Date()) {
+      return item;
+    }
+  }
+
+  return null;
+}
+
+// ============================================================
+// GET /api/auth/google
+// Initiate Google OAuth 2.0 redirect flow
+// Query params: role (CANDIDATE | COMPANY | COLLEGE), returnTo
+// ============================================================
+router.get('/google', loginLimiter, async (req, res) => {
+  const client = getGoogleOAuth2WebClient();
+  const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
+
+  if (!client) {
+    return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent('Google OAuth 2.0 is not configured on this server.')}`);
+  }
+
+  try {
+    const rawRole = (req.query.role || '').toString().toUpperCase();
+    const validRoles = ['CANDIDATE', 'COMPANY', 'COMPANY_OWNER', 'COLLEGE'];
+    const selectedRole = validRoles.includes(rawRole) ? rawRole : null;
+    const returnTo = req.query.returnTo || (req.query.role ? `/login?role=${req.query.role}` : '/login');
+
+    const state = crypto.randomBytes(32).toString('hex');
+    await storeOAuthState(state, { role: selectedRole, returnTo });
+
+    const authorizeUrl = client.generateAuthUrl({
+      access_type: 'offline',
+      scope: [
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/userinfo.email',
+      ],
+      state,
+      prompt: 'select_account',
+    });
+
+    return res.redirect(authorizeUrl);
+  } catch (err) {
+    console.error('Google OAuth init error:', err);
+    return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent('Failed to initiate Google authentication.')}`);
+  }
+});
+
+// ============================================================
+// Helper: Resolve or Create GenuAI user from verified Google profile
+// Used by both authorization-code callback and one-tap POST /api/auth/google
+// ============================================================
+async function resolveOrCreateGoogleUser({ googleId, email, firstName, lastName, profilePicture, requestedRole, organizationName }) {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // 1. First: Check if linked by provider_id
+  let userResult = await pool.query(
+    `SELECT id, email, first_name, last_name, role, is_active, email_verified, auth_provider, provider_id, token_version
+     FROM users
+     WHERE auth_provider = 'google' AND provider_id = $1`,
+    [googleId]
+  );
+
+  let user = null;
+  let companyData = null;
+  let collegeData = null;
+  let isNewUser = false;
+
+  if (userResult.rowCount > 0) {
+    user = userResult.rows[0];
+
+    if (user.is_active === false) {
+      throw new Error('ACCOUNT_DISABLED');
+    }
+
+    const roleUpper = (user.role || '').toUpperCase();
+    const isAdminRole = ['SUPER_ADMIN', 'VERIFICATION_ADMIN', 'SUPPORT_ADMIN', 'GENUAI_ADMIN'].includes(roleUpper);
+    if (isAdminRole) {
+      throw new Error('ADMIN_OAUTH_PROHIBITED');
+    }
+  } else {
+    // 2. Second: Check if user exists by email
+    const emailResult = await pool.query(
+      `SELECT id, email, first_name, last_name, role, is_active, email_verified, auth_provider, provider_id, token_version
+       FROM users
+       WHERE LOWER(email) = $1`,
+      [normalizedEmail]
+    );
+
+    if (emailResult.rowCount > 0) {
+      user = emailResult.rows[0];
+
+      if (user.is_active === false) {
+        throw new Error('ACCOUNT_DISABLED');
+      }
+
+      const roleUpper = (user.role || '').toUpperCase();
+      const isAdminRole = ['SUPER_ADMIN', 'VERIFICATION_ADMIN', 'SUPPORT_ADMIN', 'GENUAI_ADMIN'].includes(roleUpper);
+      if (isAdminRole) {
+        throw new Error('ADMIN_OAUTH_PROHIBITED');
+      }
+
+      // If already linked to a different google sub, reject
+      if (user.auth_provider === 'google' && user.provider_id && user.provider_id !== googleId) {
+        throw new Error('GOOGLE_IDENTITY_MISMATCH');
+      }
+
+      // Explicit link
+      await pool.query(
+        `UPDATE users SET auth_provider = 'google', provider_id = $1, email_verified = TRUE WHERE id = $2`,
+        [googleId, user.id]
+      );
+      user.auth_provider = 'google';
+      user.provider_id = googleId;
+      user.email_verified = true;
+    } else {
+      // 3. New user creation
+      isNewUser = true;
+      const normalizedRole = (requestedRole || 'CANDIDATE').toUpperCase();
+      let targetRole = 'CANDIDATE';
+      if (normalizedRole === 'COMPANY' || normalizedRole === 'COMPANY_OWNER') targetRole = 'COMPANY_OWNER';
+      else if (normalizedRole === 'COLLEGE') targetRole = 'COLLEGE';
+
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const insertUser = await client.query(
+          `INSERT INTO users (email, password_hash, first_name, last_name, role, email_verified, auth_provider, provider_id)
+           VALUES ($1, 'OAUTH_GOOGLE_USER', $2, $3, $4, TRUE, 'google', $5)
+           RETURNING id, email, first_name, last_name, role, token_version`,
+          [normalizedEmail, firstName || 'Google', lastName || 'User', targetRole, googleId]
+        );
+        user = insertUser.rows[0];
+
+        // Seed default notification preferences
+        try {
+          await client.query(
+            `INSERT INTO user_notification_preferences (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING`,
+            [user.id]
+          );
+        } catch (_) {}
+
+        if (targetRole === 'COMPANY_OWNER') {
+          const compResult = await client.query(
+            `INSERT INTO companies (name, official_email, verification_status)
+             VALUES ($1, $2, 'PENDING_VERIFICATION')
+             RETURNING id, name, verification_status, created_at`,
+            [organizationName || `${firstName || 'Company'}'s Organization`, normalizedEmail]
+          );
+          const comp = compResult.rows[0];
+          await client.query(
+            `INSERT INTO company_members (company_id, user_id, member_role)
+             VALUES ($1, $2, 'COMPANY_OWNER')`,
+            [comp.id, user.id]
+          );
+          companyData = {
+            id: comp.id,
+            name: comp.name,
+            verificationStatus: comp.verification_status,
+            createdAt: comp.created_at,
+          };
+        } else if (targetRole === 'COLLEGE') {
+          const colResult = await client.query(
+            `INSERT INTO colleges (name, official_email, verification_status)
+             VALUES ($1, $2, 'PENDING_VERIFICATION')
+             RETURNING id, name, verification_status, created_at`,
+            [organizationName || `${firstName || 'College'}'s Institution`, normalizedEmail]
+          );
+          const col = colResult.rows[0];
+          await client.query(
+            `INSERT INTO college_members (college_id, user_id, member_role)
+             VALUES ($1, $2, 'COLLEGE_ADMIN')`,
+            [col.id, user.id]
+          );
+          collegeData = {
+            id: col.id,
+            name: col.name,
+            verificationStatus: col.verification_status,
+          };
+        } else {
+          await client.query(
+            `INSERT INTO candidates (first_name, last_name, email, phone, location)
+             VALUES ($1, $2, $3, '—', 'Global')
+             ON CONFLICT (email) DO NOTHING`,
+            [firstName || 'Google', lastName || 'User', normalizedEmail]
+          );
+        }
+
+        await client.query('COMMIT');
+      } catch (insertErr) {
+        await client.query('ROLLBACK');
+        throw insertErr;
+      } finally {
+        client.release();
+      }
+    }
+  }
+
+  // Load company membership if available
+  if (!companyData) {
+    try {
+      const memberResult = await pool.query(
+        `SELECT cm.company_id, cm.member_role, c.name as company_name, c.verification_status, c.suspended_at, c.onboarding_submitted
+         FROM company_members cm
+         JOIN companies c ON c.id = cm.company_id
+         WHERE cm.user_id = $1
+         LIMIT 1`,
+        [user.id]
+      );
+      if (memberResult.rowCount > 0) {
+        companyData = {
+          id: memberResult.rows[0].company_id,
+          name: memberResult.rows[0].company_name,
+          verificationStatus: memberResult.rows[0].verification_status,
+          isSuspended: memberResult.rows[0].verification_status === 'SUSPENDED' || !!memberResult.rows[0].suspended_at,
+          onboardingSubmitted: memberResult.rows[0].onboarding_submitted === true,
+        };
+      }
+    } catch (_) {}
+  }
+
+  // Load college membership if available
+  if (!collegeData && user.role === 'COLLEGE') {
+    try {
+      const colRes = await pool.query(
+        `SELECT c.id, c.name, c.verification_status
+         FROM college_members cm
+         JOIN colleges c ON c.id = cm.college_id
+         WHERE cm.user_id = $1
+         LIMIT 1`,
+        [user.id]
+      );
+      if (colRes.rowCount > 0) {
+        collegeData = {
+          id: colRes.rows[0].id,
+          name: colRes.rows[0].name,
+          verificationStatus: colRes.rows[0].verification_status,
+        };
+      }
+    } catch (_) {}
+  }
+
+  return { user, companyData, collegeData, isNewUser };
+}
+
+// ============================================================
+// GET /api/auth/google/callback
+// Handles Google OAuth 2.0 authorization code redirect
+// ============================================================
+router.get('/google/callback', loginLimiter, async (req, res) => {
+  const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
+  const { code, state, error: googleError } = req.query;
+
+  // 1. Handle blocked or denied Google consent
+  if (googleError || !code) {
+    const errorMsg = googleError === 'access_denied'
+      ? 'Google Sign-In was cancelled or access was denied.'
+      : (googleError ? `Google authentication failed: ${googleError}` : 'Missing authorization code from Google.');
+    return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(errorMsg)}`);
+  }
+
+  // 2. Validate OAuth state parameter against stored state (CSRF protection)
+  const storedState = await verifyAndConsumeOAuthState(state);
+  if (!storedState) {
+    return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent('Invalid or expired OAuth state parameter. Please try signing in again.')}`);
+  }
+
+  const client = getGoogleOAuth2WebClient();
+  if (!client) {
+    return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent('Google OAuth is not configured on this server.')}`);
+  }
+
+  try {
+    // 3. Exchange authorization code for tokens
+    const { tokens } = await client.getToken(code.toString());
+    client.setCredentials(tokens);
+
+    // 4. Fetch Google profile using access token
+    const ticket = await client.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+
+    if (!payload || !payload.email) {
+      return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent('Google account has no associated email address.')}`);
+    }
+
+    // 5. Enforce verified email account
+    if (payload.email_verified !== true) {
+      return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent('Your Google account email has not been verified by Google.')}`);
+    }
+
+    const { email, sub: googleId, given_name: firstName, family_name: lastName, picture } = payload;
+
+    // 6. Resolve or create user with role
+    const requestedRole = storedState.role || 'CANDIDATE';
+    const { user, companyData, collegeData, isNewUser } = await resolveOrCreateGoogleUser({
+      googleId,
+      email,
+      firstName,
+      lastName,
+      profilePicture: picture,
+      requestedRole,
+    });
+
+    // 7. Create GenuAI JWT session token
+    const token = signToken(user);
+
+    // 8. Redirect user to frontend with auth payload
+    const redirectParams = new URLSearchParams({
+      token,
+      userId: user.id,
+      email: user.email,
+      firstName: user.first_name || '',
+      lastName: user.last_name || '',
+      role: user.role,
+      isNewUser: isNewUser ? 'true' : 'false',
+    });
+
+    if (companyData) {
+      redirectParams.set('company', JSON.stringify(companyData));
+    }
+    if (collegeData) {
+      redirectParams.set('college', JSON.stringify(collegeData));
+    }
+
+    let targetPath = '/candidate';
+    const roleUpper = (user.role || '').toUpperCase();
+    if (roleUpper === 'COMPANY_OWNER' || roleUpper === 'COMPANY') {
+      targetPath = companyData?.onboardingSubmitted ? '/dashboard' : '/dashboard/onboarding';
+    } else if (roleUpper === 'COLLEGE') {
+      targetPath = '/dashboard';
+    } else if (isNewUser && !storedState.role) {
+      targetPath = '/login?googleSelectRole=true';
+    }
+
+    redirectParams.set('target', targetPath);
+    return res.redirect(`${frontendUrl}/login?${redirectParams.toString()}`);
+  } catch (err) {
+    console.error('Google OAuth callback error:', err);
+    let errMsg = 'Google authentication failed. Please try again.';
+    if (err.message === 'ACCOUNT_DISABLED') errMsg = 'This account has been disabled. Please contact support.';
+    if (err.message === 'ADMIN_OAUTH_PROHIBITED') errMsg = 'Platform administrative accounts must authenticate via dedicated governance credentials.';
+    if (err.message === 'GOOGLE_IDENTITY_MISMATCH') errMsg = 'This email is already associated with a different Google account.';
+
+    return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(errMsg)}`);
+  }
+});
 // ============================================================
 // POST /api/auth/google
 // Verify Google ID token, find-or-create user, link account, issue JWT
@@ -837,6 +1249,162 @@ router.post('/google', loginLimiter, async (req, res) => {
     return res.status(500).json({ error: 'Google authentication failed' });
   }
 });
+
+// ============================================================
+// Notification Preferences Endpoints
+// GET /api/auth/notification-preferences
+// PUT /api/auth/notification-preferences
+// Critical emails (password reset and security emails) must always be sent.
+// Non-critical preferences can be toggled by the user:
+// - assessment_invitation
+// - shortlist_update
+// - interview_schedule
+// - new_candidate_interest
+// - vacancy_updates
+// - product_updates
+// ============================================================
+router.get('/notification-preferences', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT assessment_invitation, shortlist_update, interview_schedule,
+              new_candidate_interest, vacancy_updates, product_updates, updated_at
+       FROM user_notification_preferences
+       WHERE user_id = $1`,
+      [req.user.id]
+    );
+
+    if (result.rowCount === 0) {
+      // Create defaults
+      const defaults = await pool.query(
+        `INSERT INTO user_notification_preferences (user_id)
+         VALUES ($1)
+         ON CONFLICT (user_id) DO UPDATE SET updated_at = NOW()
+         RETURNING assessment_invitation, shortlist_update, interview_schedule,
+                   new_candidate_interest, vacancy_updates, product_updates, updated_at`,
+        [req.user.id]
+      );
+      return res.json({ preferences: defaults.rows[0] });
+    }
+
+    return res.json({ preferences: result.rows[0] });
+  } catch (err) {
+    console.error('Fetch notification preferences error:', err);
+    return res.status(500).json({ error: 'Failed to fetch notification preferences' });
+  }
+});
+
+router.put(
+  '/notification-preferences',
+  authenticate,
+  [
+    body('assessment_invitation').optional().isBoolean(),
+    body('shortlist_update').optional().isBoolean(),
+    body('interview_schedule').optional().isBoolean(),
+    body('new_candidate_interest').optional().isBoolean(),
+    body('vacancy_updates').optional().isBoolean(),
+    body('product_updates').optional().isBoolean(),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
+
+    const {
+      assessment_invitation,
+      shortlist_update,
+      interview_schedule,
+      new_candidate_interest,
+      vacancy_updates,
+      product_updates,
+    } = req.body;
+
+    try {
+      // Upsert preferences
+      const result = await pool.query(
+        `INSERT INTO user_notification_preferences (
+           user_id, assessment_invitation, shortlist_update, interview_schedule,
+           new_candidate_interest, vacancy_updates, product_updates, updated_at
+         )
+         VALUES (
+           $1,
+           COALESCE($2, TRUE),
+           COALESCE($3, TRUE),
+           COALESCE($4, TRUE),
+           COALESCE($5, TRUE),
+           COALESCE($6, TRUE),
+           COALESCE($7, TRUE),
+           NOW()
+         )
+         ON CONFLICT (user_id) DO UPDATE SET
+           assessment_invitation = COALESCE($2, user_notification_preferences.assessment_invitation),
+           shortlist_update = COALESCE($3, user_notification_preferences.shortlist_update),
+           interview_schedule = COALESCE($4, user_notification_preferences.interview_schedule),
+           new_candidate_interest = COALESCE($5, user_notification_preferences.new_candidate_interest),
+           vacancy_updates = COALESCE($6, user_notification_preferences.vacancy_updates),
+           product_updates = COALESCE($7, user_notification_preferences.product_updates),
+           updated_at = NOW()
+         RETURNING assessment_invitation, shortlist_update, interview_schedule,
+                   new_candidate_interest, vacancy_updates, product_updates, updated_at`,
+        [
+          req.user.id,
+          assessment_invitation !== undefined ? assessment_invitation : null,
+          shortlist_update !== undefined ? shortlist_update : null,
+          interview_schedule !== undefined ? interview_schedule : null,
+          new_candidate_interest !== undefined ? new_candidate_interest : null,
+          vacancy_updates !== undefined ? vacancy_updates : null,
+          product_updates !== undefined ? product_updates : null,
+        ]
+      );
+
+      return res.json({
+        success: true,
+        message: 'Notification preferences updated successfully',
+        preferences: result.rows[0],
+      });
+    } catch (err) {
+      console.error('Update notification preferences error:', err);
+      return res.status(500).json({ error: 'Failed to update notification preferences' });
+    }
+  }
+);
+
+// Optional mock helper endpoint in non-production for automated E2E testing of the Google callback
+if (process.env.NODE_ENV !== 'production') {
+  router.post('/google/test-login', loginLimiter, async (req, res) => {
+    const { email, firstName, lastName, role, organizationName, googleId } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    try {
+      const { user, companyData, collegeData, isNewUser } = await resolveOrCreateGoogleUser({
+        googleId: googleId || `google-sub-${crypto.randomBytes(8).toString('hex')}`,
+        email,
+        firstName: firstName || 'Test',
+        lastName: lastName || 'User',
+        requestedRole: role || 'CANDIDATE',
+        organizationName,
+      });
+
+      const token = signToken(user);
+      return res.json({
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          role: user.role,
+          emailVerified: true,
+        },
+        company: companyData,
+        college: collegeData,
+        isNewUser,
+      });
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+  });
+}
 
 module.exports = router;
 

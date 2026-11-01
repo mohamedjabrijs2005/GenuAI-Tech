@@ -237,76 +237,83 @@ export default function RoleReadinessPage() {
           <span className="breadcrumb-current">Role Readiness Funnel</span>
         </div>
 
-        <div className="page-header-row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <h1 className="page-title" style={{ margin: 0 }}>Company Role Readiness Funnel</h1>
-              <span style={{
-                padding: '3px 10px', borderRadius: 99,
-                background: 'rgba(5,150,105,0.08)',
-                border: '1px solid rgba(5,150,105,0.25)',
-                fontSize: 11.5, fontWeight: 700,
-                color: '#059669',
-              }}>
-                {companyDisplayName}
-              </span>
-            </div>
-            <p className="page-subtitle" style={{ marginTop: 6 }}>
-              {vacanciesLoading
-                ? 'Loading role readiness pipeline…'
-                : roleTitle
-                ? `${roleTitle} — candidate qualification pipeline`
-                : 'Track verified candidate readiness across your active vacancies'}
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-            {/* Vacancy selector dropdown */}
-            {vacancies.length > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-secondary)' }}>Select Role:</span>
-                <select
-                  value={selectedVacancyId}
-                  onChange={(e) => setSelectedVacancyId(e.target.value)}
-                  style={{
-                    padding: '7px 12px',
-                    borderRadius: 8,
-                    border: '1px solid var(--border)',
-                    background: '#fff',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: 'var(--text-primary)',
-                    cursor: 'pointer',
-                    maxWidth: 260,
-                  }}
-                >
-                  {vacancies.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.title} ({v.raw_status || v.status})
-                    </option>
-                  ))}
-                </select>
-
-                <button
-                  onClick={() => loadFunnelForRole(selectedVacancyId)}
-                  disabled={loading}
-                  className="btn btn-secondary btn-sm"
-                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                >
-                  <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-                  <span>Refresh</span>
-                </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 12 }}>
+          {/* Main Title & Action Row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+            <div style={{ minWidth: 280 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <h1 className="page-title" style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>Company Role Readiness Funnel</h1>
+                {companyDisplayName && (
+                  <span style={{
+                    padding: '3px 10px', borderRadius: 99,
+                    background: 'rgba(5,150,105,0.08)',
+                    border: '1px solid rgba(5,150,105,0.25)',
+                    fontSize: 11.5, fontWeight: 700,
+                    color: '#059669',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {companyDisplayName}
+                  </span>
+                )}
               </div>
-            )}
+              <p className="page-subtitle" style={{ marginTop: 4 }}>
+                {vacanciesLoading
+                  ? 'Loading role readiness pipeline…'
+                  : roleTitle
+                  ? `${roleTitle} — candidate qualification pipeline`
+                  : 'Track verified candidate readiness across your active vacancies'}
+              </p>
+            </div>
 
-            <Link
-              href="/dashboard/vacancies"
-              className="btn btn-gold btn-sm"
-              style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}
-            >
-              <Plus size={14} />
-              <span>Manage Vacancies</span>
-            </Link>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+              {/* Vacancy selector dropdown */}
+              {vacancies.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap' }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Select Role:</span>
+                  <select
+                    value={selectedVacancyId}
+                    onChange={(e) => setSelectedVacancyId(e.target.value)}
+                    style={{
+                      padding: '7px 12px',
+                      borderRadius: 8,
+                      border: '1px solid var(--border)',
+                      background: '#fff',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      cursor: 'pointer',
+                      minWidth: 200,
+                      maxWidth: 320,
+                    }}
+                  >
+                    {vacancies.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.title} ({v.raw_status || v.status})
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    onClick={() => loadFunnelForRole(selectedVacancyId)}
+                    disabled={loading}
+                    className="btn btn-secondary btn-sm"
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
+                  >
+                    <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+              )}
+
+              <Link
+                href="/dashboard/vacancies"
+                className="btn btn-gold btn-sm"
+                style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', whiteSpace: 'nowrap' }}
+              >
+                <Plus size={14} />
+                <span>Manage Vacancies</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

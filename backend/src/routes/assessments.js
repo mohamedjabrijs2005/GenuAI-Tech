@@ -482,4 +482,56 @@ router.post('/company/attempts/:attemptId/evaluate', async (req, res) => {
 });
 
 
+// ============================================================
+// POST /api/assessments/company/invite
+// Company recruiter invites a candidate to an assessment
+// ============================================================
+router.post('/company/invite', async (req, res) => {
+  const companyId = req.companyMembership.company_id;
+  const { candidateEmail, candidateName, vacancyId, targetId, durationMinutes } = req.body;
+
+  if (!candidateEmail || !vacancyId) {
+    return res.status(400).json({ error: 'candidateEmail and vacancyId are required' });
+  }
+
+  try {
+    const vacRes = await pool.query(
+      `SELECT cr.id, cr.title, c.name AS company_name
+       FROM company_roles cr
+       JOIN companies c ON c.id = cr.company_id
+       WHERE cr.id = $1 AND cr.company_id = $2`,
+      [vacancyId, companyId]
+    );
+
+    if (vacRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Vacancy not found for this company' });
+    }
+
+    const vac = vacRes.rows[0];
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
+    const assessmentUrl = targetId
+      ? `${frontendUrl}/candidate/targets/${targetId}/assessment`
+      : `${frontendUrl}/candidate/vacancies/${vacancyId}`;
+
+    const { sendAssessmentInvitation } = require('../services/email');
+    const result = await sendAssessmentInvitation({
+      to: candidateEmail,
+      name: candidateName || 'Candidate',
+      vacancyTitle: vac.title,
+      companyName: vac.company_name,
+      assessmentUrl,
+      durationMinutes: durationMinutes || 60,
+    });
+
+    return res.json({
+      success: true,
+      message: 'Assessment invitation email dispatched successfully',
+      delivery: result,
+    });
+  } catch (err) {
+    console.error('Invite assessment error:', err);
+    return res.status(500).json({ error: 'Failed to send assessment invitation' });
+  }
+});
+
 module.exports = router;

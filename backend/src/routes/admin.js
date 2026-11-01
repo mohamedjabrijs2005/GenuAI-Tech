@@ -614,6 +614,32 @@ const handleVacancyStatus = async (req, res) => {
 
     await client.query('COMMIT');
 
+    // Async notification for vacancy approved
+    if (normalizedStatus === 'APPROVED') {
+      try {
+        const companyUserRes = await pool.query(
+          `SELECT u.email, u.first_name, u.last_name
+           FROM company_members cm
+           JOIN users u ON u.id = cm.user_id
+           WHERE cm.company_id = $1 AND u.is_active = TRUE
+           LIMIT 1`,
+          [vacancy.company_id]
+        );
+        if (companyUserRes.rowCount > 0) {
+          const compUser = companyUserRes.rows[0];
+          const { sendVacancyApprovedNotification } = require('../services/email');
+          const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
+          sendVacancyApprovedNotification({
+            to: compUser.email,
+            companyUserName: `${compUser.first_name || ''} ${compUser.last_name || ''}`.trim() || 'Hiring Lead',
+            vacancyTitle: updatedVacancy.title,
+            companyName: vacancy.company_name || 'Your Organization',
+            actionUrl: `${frontendUrl}/dashboard/vacancies/${id}`,
+          }).catch(err => console.warn('Vacancy approved email note:', err.message));
+        }
+      } catch (_) {}
+    }
+
     return res.json({
       success: true,
       vacancy: {

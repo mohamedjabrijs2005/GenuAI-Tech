@@ -2391,6 +2391,30 @@ router.post('/targets', authenticate, requireCandidate, async (req, res) => {
       await recomputeTargetCoverage(pool, target.id);
     } catch (_) { }
 
+    // Dispatch async notification to company hiring team
+    try {
+      const companyUserRes = await pool.query(
+        `SELECT u.email, u.first_name, u.last_name
+         FROM company_members cm
+         JOIN users u ON u.id = cm.user_id
+         WHERE cm.company_id = $1 AND u.is_active = TRUE
+         LIMIT 1`,
+        [vacancy.company_id]
+      );
+      if (companyUserRes.rowCount > 0) {
+        const compUser = companyUserRes.rows[0];
+        const { sendNewCandidateInterestNotification } = require('../services/email');
+        const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
+        sendNewCandidateInterestNotification({
+          to: compUser.email,
+          companyUserName: `${compUser.first_name || ''} ${compUser.last_name || ''}`.trim() || 'Hiring Team',
+          candidateName: `${req.user.first_name || ''} ${req.user.last_name || ''}`.trim() || 'Candidate',
+          vacancyTitle: vacancy.title,
+          actionUrl: `${frontendUrl}/dashboard/vacancies/${vacancyId}/readiness`,
+        }).catch(err => console.warn('New candidate interest email note:', err.message));
+      }
+    } catch (_) {}
+
     return res.status(201).json({
       message: 'Target created successfully',
       target,

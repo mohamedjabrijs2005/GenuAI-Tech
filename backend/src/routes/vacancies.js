@@ -697,6 +697,19 @@ router.post('/:id/publish', async (req, res) => {
 
     await client.query('COMMIT');
 
+    // Async notification for vacancy published
+    try {
+      const { sendVacancyPublishedNotification } = require('../services/email');
+      const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
+      sendVacancyPublishedNotification({
+        to: req.user.email,
+        companyUserName: `${req.user.first_name || ''} ${req.user.last_name || ''}`.trim() || 'Hiring Lead',
+        vacancyTitle: vacancy.title,
+        companyName: req.companyMembership?.company_name || 'Your Organization',
+        actionUrl: `${frontendUrl}/dashboard/vacancies/${id}`,
+      }).catch(err => console.warn('Vacancy published email note:', err.message));
+    } catch (_) {}
+
     return res.json({
       success: true,
       vacancy: updateRes.rows[0],

@@ -561,6 +561,28 @@ router.post('/:vacancyId/candidates/:targetId/decision', async (req, res) => {
           `/candidate/targets/${targetId}`
         ]
       ).catch(() => {});
+
+      // If decision is SHORTLISTED, dispatch candidate shortlist email
+      if (decision === 'SHORTLISTED') {
+        try {
+          const candEmailRes = await pool.query(
+            `SELECT email, first_name, last_name FROM candidates WHERE id = $1`,
+            [target.candidate_id]
+          );
+          if (candEmailRes.rowCount > 0) {
+            const cand = candEmailRes.rows[0];
+            const { sendShortlistNotification } = require('../services/email');
+            const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
+            sendShortlistNotification({
+              to: cand.email,
+              name: `${cand.first_name || ''} ${cand.last_name || ''}`.trim() || 'Candidate',
+              vacancyTitle: target.vacancy_title,
+              companyName: target.company_name,
+              actionUrl: `${frontendUrl}/candidate/targets/${targetId}`,
+            }).catch(err => console.warn('Shortlist email note:', err.message));
+          }
+        } catch (_) {}
+      }
     }
 
     return res.json({

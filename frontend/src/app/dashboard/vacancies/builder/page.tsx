@@ -1037,75 +1037,74 @@ export default function VacancyBuilderPage() {
       {currentStep === 2 && (
         <div className="space-y-6">
           {/* Card: AI-Assisted Blueprint Studio */}
-          <div className="card border-2 border-amber-300/80 bg-gradient-to-b from-amber-50/40 via-white to-white">
-            <div className="card-header border-b border-amber-200/70">
-              {/* Top row: icon+title left, Generate button right */}
-              <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-600 to-amber-700 text-white flex items-center justify-center shadow-sm flex-shrink-0">
-                    <Sparkles size={20} />
+          <div className="card border-2 border-amber-300/80 bg-gradient-to-b from-amber-50/40 via-white to-white overflow-hidden shadow-sm">
+            {/* Custom Header: No CSS selector collision with .card-header flex rules */}
+            <div className="p-5 md:p-6 border-b border-amber-200/80 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent">
+              {/* Row 1: Left has Icon + Title + Badge + Subtitle; Right has "Generate AI Suggestions" button */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-white flex items-center justify-center shadow-md shadow-amber-500/20 flex-shrink-0">
+                    <Sparkles size={22} />
                   </div>
                   <div className="min-w-0">
-                    <h2 className="card-title text-base text-slate-900 flex flex-wrap items-center gap-2">
-                      AI-Assisted Role Skill Blueprint Generator
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h2 className="text-base font-bold text-slate-900 tracking-tight">AI-Assisted Role Skill Blueprint Generator</h2>
                       {blueprintStatus === 'APPROVED' && (
-                        <span className="badge badge-emerald flex items-center gap-1 text-[11px]">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold border border-emerald-200">
                           <CheckCircle2 size={12} /> Approved &amp; Linked
                         </span>
                       )}
                       {blueprintStatus === 'DRAFT' && (
-                        <span className="badge badge-amber text-[11px]">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-xs font-semibold border border-amber-300">
                           Draft — Review &amp; Approve Below
                         </span>
                       )}
-                    </h2>
-                    <p className="card-subtitle text-xs text-slate-600 mt-0.5">
+                    </div>
+                    <p className="text-xs text-slate-600 mt-1">
                       Generate, customize, and approve verified skill matrices, learning paths, flashcards, and assessments directly inside this vacancy.
                     </p>
                   </div>
                 </div>
-                <div className="flex-shrink-0">
+
+                {/* Generate button — positioned on right */}
+                <div className="flex-shrink-0 self-start sm:self-center">
                   <button
                     type="button"
-                    className="btn btn-gold btn-sm whitespace-nowrap"
+                    className="btn btn-gold btn-sm shadow-sm hover:shadow"
                     onClick={handleGenerateAiBlueprint}
                     disabled={aiGenerating}
                   >
                     {aiGenerating ? (
-                      <>
-                        <Loader2 size={14} className="animate-spin" /> Generating...
-                      </>
+                      <><Loader2 size={15} className="animate-spin mr-1.5" /> Generating AI Suggestions...</>
                     ) : (
-                      <>
-                        <Sparkles size={14} /> Generate AI Suggestions
-                      </>
+                      <><Sparkles size={15} className="mr-1.5" /> Generate AI Suggestions</>
                     )}
                   </button>
                 </div>
               </div>
 
-              {/* Bottom row: import selector + foundational checkbox */}
-              <div className="flex items-center gap-4 flex-wrap mt-4 pt-3 border-t border-amber-100">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <label className="text-xs font-medium text-slate-600 whitespace-nowrap">Import approved blueprint:</label>
+              {/* Row 2: Import dropdown + foundational competencies checkbox */}
+              <div className="flex flex-wrap items-center justify-between gap-4 mt-4 pt-3.5 border-t border-amber-200/60 text-xs">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className="font-semibold text-slate-700">Import approved blueprint:</span>
                   <select
-                    className="form-select text-xs h-8 py-1 min-w-[200px]"
+                    className="h-8 px-2.5 py-1 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent min-w-[240px] shadow-sm"
                     defaultValue=""
                     onChange={e => { if (e.target.value) importBlueprintSkills(e.target.value); }}
                   >
-                    <option value="">Select approved blueprint</option>
+                    <option value="">Select approved blueprint to load...</option>
                     {approvedBlueprints.map((bp: any) => (
                       <option key={bp.id} value={bp.id}>{bp.role_title}</option>
                     ))}
                   </select>
                 </div>
-                <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer whitespace-nowrap">
+                <label className="flex items-center gap-2 text-slate-700 cursor-pointer select-none font-medium">
                   <input
                     type="checkbox"
-                    className="rounded border-slate-300 text-amber-600 focus:ring-amber-500"
-                    defaultChecked={false}
+                    className="h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500 accent-amber-600"
+                    defaultChecked={true}
                   />
-                  Include foundational competencies
+                  Include foundational workplace competencies
                 </label>
               </div>
             </div>
@@ -1206,32 +1205,41 @@ export default function VacancyBuilderPage() {
                       </span>
                     </div>
 
-                    <div className="table-wrapper">
-                      <table>
-                        <thead>
+                    <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white">
+                      <table className="w-full min-w-[960px] text-sm border-collapse" style={{ tableLayout: 'fixed' }}>
+                        <colgroup>
+                          <col style={{ width: '48px' }} />
+                          <col style={{ width: '260px' }} />
+                          <col style={{ width: '150px' }} />
+                          <col style={{ width: '140px' }} />
+                          <col />
+                          <col style={{ width: '100px' }} />
+                        </colgroup>
+                        <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500 font-semibold border-b border-slate-200">
                           <tr>
-                            <th style={{ width: 40 }}>#</th>
-                            <th style={{ width: '25%' }}>Skill Name</th>
-                            <th style={{ width: '15%' }}>Category</th>
-                            <th style={{ width: '15%' }}>Importance</th>
-                            <th>Description</th>
-                            <th style={{ textAlign: 'right', width: 110 }}>Reorder / Actions</th>
+                            <th className="px-3 py-3 text-center">#</th>
+                            <th className="px-3 py-3 text-left">Skill Name</th>
+                            <th className="px-3 py-3 text-left">Category</th>
+                            <th className="px-3 py-3 text-left">Importance</th>
+                            <th className="px-3 py-3 text-left">Description</th>
+                            <th className="px-3 py-3 text-right">Actions</th>
                           </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-slate-100">
                           {draftSkills.map((skill, idx) => (
-                            <tr key={idx}>
-                              <td className="text-xs text-slate-400 font-mono">{idx + 1}</td>
-                              <td>
+                            <tr key={idx} className={idx % 2 === 0 ? 'bg-white hover:bg-slate-50/60' : 'bg-slate-50/40 hover:bg-slate-50/80'}>
+                              <td className="px-3 py-2.5 text-center text-xs text-slate-400 font-mono font-medium">{idx + 1}</td>
+                              <td className="px-3 py-2.5">
                                 <input
-                                  className="form-input text-xs py-1 h-8 font-semibold text-slate-900"
+                                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 shadow-xs"
                                   value={skill.name}
                                   onChange={e => handleUpdateSkillName(idx, e.target.value)}
+                                  placeholder="Skill name"
                                 />
                               </td>
-                              <td>
+                              <td className="px-3 py-2.5">
                                 <select
-                                  className="form-select text-xs py-1 h-8"
+                                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 shadow-xs"
                                   value={skill.category}
                                   onChange={e => handleUpdateSkillCategory(idx, e.target.value)}
                                 >
@@ -1242,33 +1250,33 @@ export default function VacancyBuilderPage() {
                                   <option>Infrastructure</option>
                                 </select>
                               </td>
-                              <td>
+                              <td className="px-3 py-2.5">
                                 <button
                                   type="button"
                                   onClick={() => handleToggleSkillImportance(idx)}
-                                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold border transition-colors ${
+                                  className={`inline-flex items-center justify-center gap-1 w-full px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all whitespace-nowrap shadow-xs ${
                                     skill.importance === 'Must-have'
-                                      ? 'bg-red-50 text-red-800 border-red-200 hover:bg-red-100'
-                                      : 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100'
+                                      ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+                                      : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
                                   }`}
                                   title="Click to toggle between Must-have and Good-to-have"
                                 >
-                                  {skill.importance === 'Must-have' ? '★ Must-have' : 'Good-to-have'}
+                                  {skill.importance === 'Must-have' ? '★ Must-have' : '◇ Good-to-have'}
                                 </button>
                               </td>
-                              <td>
+                              <td className="px-3 py-2.5">
                                 <input
-                                  className="form-input text-xs py-1 h-8 text-slate-600"
+                                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 shadow-xs"
                                   value={skill.description}
                                   onChange={e => handleUpdateSkillDescription(idx, e.target.value)}
-                                  placeholder="Skill competency description"
+                                  placeholder="Competency description..."
                                 />
                               </td>
-                              <td style={{ textAlign: 'right' }}>
+                              <td className="px-3 py-2.5">
                                 <div className="flex items-center justify-end gap-1">
                                   <button
                                     type="button"
-                                    className="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
+                                    className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-md transition-colors"
                                     onClick={() => handleMoveSkill(idx, 'up')}
                                     disabled={idx === 0}
                                     title="Move up"
@@ -1277,7 +1285,7 @@ export default function VacancyBuilderPage() {
                                   </button>
                                   <button
                                     type="button"
-                                    className="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
+                                    className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-md transition-colors"
                                     onClick={() => handleMoveSkill(idx, 'down')}
                                     disabled={idx === draftSkills.length - 1}
                                     title="Move down"
@@ -1286,7 +1294,7 @@ export default function VacancyBuilderPage() {
                                   </button>
                                   <button
                                     type="button"
-                                    className="p-1 text-red-600 hover:bg-red-50 rounded ml-1"
+                                    className="p-1.5 text-red-600 hover:bg-red-50 rounded-md ml-0.5 transition-colors"
                                     onClick={() => handleRemoveSkill(idx)}
                                     title="Remove skill"
                                   >

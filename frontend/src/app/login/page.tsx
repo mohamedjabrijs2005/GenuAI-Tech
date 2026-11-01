@@ -81,12 +81,44 @@ export default function AuthPage() {
       const params = new URLSearchParams(window.location.search);
       const roleParam = params.get('role');
       const modeParam = params.get('mode');
+      const errorParam = params.get('error');
+      const tokenParam = params.get('token');
+      const targetParam = params.get('target');
+
       if (modeParam === 'register') setIsLogin(false);
       if (roleParam === 'candidate') setPersona('candidate');
       else if (roleParam === 'company') setPersona('company');
       else if (roleParam === 'admin') setPersona('admin');
+
+      if (errorParam) {
+        setError(errorParam);
+        toast.error(errorParam);
+      }
+
+      // Handle OAuth redirect arrival with token
+      if (tokenParam) {
+        try {
+          localStorage.setItem('genuai_token', tokenParam);
+          const userId = params.get('userId') || '';
+          const email = params.get('email') || '';
+          const firstName = params.get('firstName') || '';
+          const lastName = params.get('lastName') || '';
+          const role = params.get('role') || 'CANDIDATE';
+          const userObj = { id: userId, email, firstName, lastName, role };
+          localStorage.setItem('genuai_user', JSON.stringify(userObj));
+
+          const compStr = params.get('company');
+          if (compStr) {
+            localStorage.setItem('genuai_company', compStr);
+          }
+
+          toast.success('Successfully authenticated with Google!');
+          const destination = targetParam || (role === 'COMPANY_OWNER' ? '/dashboard' : '/candidate');
+          router.replace(destination);
+        } catch (_) {}
+      }
     }
-  }, []);
+  }, [router]);
 
   const config = PERSONA_CONFIG[persona];
 

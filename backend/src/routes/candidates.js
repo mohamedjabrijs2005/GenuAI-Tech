@@ -196,6 +196,31 @@ router.post('/:appId/interviews', async (req, res) => {
       [appId, companyId]
     );
 
+    // Async notification for interview scheduled
+    try {
+      const appCandRes = await pool.query(
+        `SELECT c.email, c.first_name, c.last_name, cr.title AS vacancy_title, comp.name AS company_name
+         FROM applications a
+         JOIN candidates c ON c.id = a.candidate_id
+         JOIN company_roles cr ON cr.id = a.role_id
+         JOIN companies comp ON comp.id = a.company_id
+         WHERE a.id = $1`,
+        [appId]
+      );
+      if (appCandRes.rowCount > 0) {
+        const cand = appCandRes.rows[0];
+        const { sendInterviewScheduledNotification } = require('../services/email');
+        sendInterviewScheduledNotification({
+          to: cand.email,
+          name: `${cand.first_name || ''} ${cand.last_name || ''}`.trim() || 'Candidate',
+          vacancyTitle: cand.vacancy_title,
+          companyName: cand.company_name,
+          scheduledTime: scheduledAt ? new Date(scheduledAt).toLocaleString() : 'Check portal',
+          meetingLink: videoLink || location || null,
+        }).catch(err => console.warn('Interview scheduled email note:', err.message));
+      }
+    } catch (_) {}
+
     return res.status(201).json({ interview: result.rows[0] });
   } catch (err) {
     console.error('Schedule interview error:', err);
