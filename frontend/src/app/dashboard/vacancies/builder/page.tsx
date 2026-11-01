@@ -156,7 +156,10 @@ export default function VacancyBuilderPage() {
   const [newAssessment, setNewAssessment] = useState<AssessmentIdeaItem>({ question: '', type: 'Multiple Choice' });
   const [newEvidence, setNewEvidence] = useState<EvidenceTypeItem>({ name: '', description: '' });
 
-  // STEP 1 State
+  // STEP 1 State — deadline defaults to today + 30 days
+  const _defaultDeadline = (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d.toISOString().split('T')[0]; })();
+  const _minDeadline = new Date().toISOString().split('T')[0];
+  const _maxDeadline = (() => { const d = new Date(); d.setDate(d.getDate() + 180); return d.toISOString().split('T')[0]; })();
   const [basicInfo, setBasicInfo] = useState({
     title: '',
     departmentId: '',
@@ -168,7 +171,7 @@ export default function VacancyBuilderPage() {
     openings: 1,
     experienceLevel: 'senior',
     salaryRange: '',
-    deadline: '',
+    deadline: _defaultDeadline,
     description: '',
     companyDescription: '',
   });
@@ -533,9 +536,13 @@ export default function VacancyBuilderPage() {
       if (!basicInfo.location.trim()) errors.location = 'Work location is required.';
       if (Number(basicInfo.openings) < 1) errors.openings = 'At least 1 opening is required.';
       if (basicInfo.deadline) {
-        const d = new Date(basicInfo.deadline);
-        if (isNaN(d.getTime()) || d <= new Date()) {
-          errors.deadline = 'Application deadline must be a valid date in the future.';
+        const d = new Date(basicInfo.deadline + 'T00:00:00');
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + 180); maxDate.setHours(23, 59, 59, 999);
+        if (isNaN(d.getTime()) || d < today) {
+          errors.deadline = 'Application deadline must be today or a future date.';
+        } else if (d > maxDate) {
+          errors.deadline = 'Application deadline cannot be more than 180 days from today.';
         }
       }
     }
@@ -993,10 +1000,12 @@ export default function VacancyBuilderPage() {
                 type="date"
                 className={`form-input${stepErrors.deadline ? ' error' : ''}`}
                 value={basicInfo.deadline}
+                min={_minDeadline}
+                max={_maxDeadline}
                 onChange={e => { setBasicInfo({...basicInfo, deadline: e.target.value}); setStepErrors(p => ({...p, deadline: ''})); }}
               />
               {stepErrors.deadline && <div className="form-error"><AlertCircle size={11}/> {stepErrors.deadline}</div>}
-              <div className="form-hint">Must be in the future.</div>
+              <div className="form-hint">Today + 30 days by default. Max 180 days from today.</div>
             </div>
 
             <div className="form-group md:col-span-2">
@@ -1029,49 +1038,75 @@ export default function VacancyBuilderPage() {
         <div className="space-y-6">
           {/* Card: AI-Assisted Blueprint Studio */}
           <div className="card border-2 border-amber-300/80 bg-gradient-to-b from-amber-50/40 via-white to-white">
-            <div className="card-header pb-3 border-b border-amber-200/70">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-600 to-amber-700 text-white flex items-center justify-center shadow-sm">
-                  <Sparkles size={20} />
+            <div className="card-header border-b border-amber-200/70">
+              {/* Top row: icon+title left, Generate button right */}
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-600 to-amber-700 text-white flex items-center justify-center shadow-sm flex-shrink-0">
+                    <Sparkles size={20} />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="card-title text-base text-slate-900 flex flex-wrap items-center gap-2">
+                      AI-Assisted Role Skill Blueprint Generator
+                      {blueprintStatus === 'APPROVED' && (
+                        <span className="badge badge-emerald flex items-center gap-1 text-[11px]">
+                          <CheckCircle2 size={12} /> Approved &amp; Linked
+                        </span>
+                      )}
+                      {blueprintStatus === 'DRAFT' && (
+                        <span className="badge badge-amber text-[11px]">
+                          Draft — Review &amp; Approve Below
+                        </span>
+                      )}
+                    </h2>
+                    <p className="card-subtitle text-xs text-slate-600 mt-0.5">
+                      Generate, customize, and approve verified skill matrices, learning paths, flashcards, and assessments directly inside this vacancy.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="card-title text-base text-slate-900 flex items-center gap-2">
-                    AI-Assisted Role Skill Blueprint Generator
-                    {blueprintStatus === 'APPROVED' && (
-                      <span className="badge badge-emerald flex items-center gap-1 text-[11px]">
-                        <CheckCircle2 size={12} /> Approved &amp; Linked
-                      </span>
+                <div className="flex-shrink-0">
+                  <button
+                    type="button"
+                    className="btn btn-gold btn-sm whitespace-nowrap"
+                    onClick={handleGenerateAiBlueprint}
+                    disabled={aiGenerating}
+                  >
+                    {aiGenerating ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" /> Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={14} /> Generate AI Suggestions
+                      </>
                     )}
-                    {blueprintStatus === 'DRAFT' && (
-                      <span className="badge badge-amber text-[11px]">
-                        Draft — Review &amp; Approve Below
-                      </span>
-                    )}
-                  </h2>
-                  <p className="card-subtitle text-xs text-slate-600">
-                    Generate, customize, and approve verified skill matrices, learning paths, flashcards, and assessments directly inside this vacancy.
-                  </p>
+                  </button>
                 </div>
               </div>
 
-              {/* Action buttons on header */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="btn btn-gold btn-sm"
-                  onClick={handleGenerateAiBlueprint}
-                  disabled={aiGenerating}
-                >
-                  {aiGenerating ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" /> Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={14} /> Generate AI Suggestions
-                    </>
-                  )}
-                </button>
+              {/* Bottom row: import selector + foundational checkbox */}
+              <div className="flex items-center gap-4 flex-wrap mt-4 pt-3 border-t border-amber-100">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <label className="text-xs font-medium text-slate-600 whitespace-nowrap">Import approved blueprint:</label>
+                  <select
+                    className="form-select text-xs h-8 py-1 min-w-[200px]"
+                    defaultValue=""
+                    onChange={e => { if (e.target.value) importBlueprintSkills(e.target.value); }}
+                  >
+                    <option value="">Select approved blueprint</option>
+                    {approvedBlueprints.map((bp: any) => (
+                      <option key={bp.id} value={bp.id}>{bp.role_title}</option>
+                    ))}
+                  </select>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    className="rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                    defaultChecked={false}
+                  />
+                  Include foundational competencies
+                </label>
               </div>
             </div>
 
