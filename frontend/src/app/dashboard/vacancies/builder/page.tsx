@@ -1038,12 +1038,12 @@ export default function VacancyBuilderPage() {
       {currentStep === 2 && (
         <div className="space-y-6">
           {/* Card: AI-Assisted Blueprint Studio */}
-          <div className="card border-2 border-amber-300/80 bg-gradient-to-b from-amber-50/40 via-white to-white overflow-hidden shadow-sm">
+          <div className="rounded-2xl border-2 border-amber-300/80 bg-gradient-to-b from-amber-50/40 via-white to-white overflow-hidden shadow-sm">
             {/* Custom Header: No CSS selector collision with .card-header flex rules */}
             <div className="p-5 md:p-6 border-b border-amber-200/80 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent">
               {/* Row 1: Left has Icon + Title + Badge + Subtitle; Right has "Generate AI Suggestions" button */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3.5 min-w-0">
+                <div className="flex items-start sm:items-center gap-3.5 min-w-0">
                   <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-white flex items-center justify-center shadow-md shadow-amber-500/20 flex-shrink-0">
                     <Sparkles size={22} />
                   </div>
@@ -1071,14 +1071,14 @@ export default function VacancyBuilderPage() {
                 <div className="flex-shrink-0 self-start sm:self-center">
                   <button
                     type="button"
-                    className="btn btn-gold btn-sm shadow-sm hover:shadow"
+                    className="btn btn-gold btn-sm shadow-sm hover:shadow h-10 px-4 font-bold flex items-center gap-1.5"
                     onClick={handleGenerateAiBlueprint}
                     disabled={aiGenerating}
                   >
                     {aiGenerating ? (
-                      <><Loader2 size={15} className="animate-spin mr-1.5" /> Generating AI Suggestions...</>
+                      <><Loader2 size={15} className="animate-spin" /> Generating AI Suggestions...</>
                     ) : (
-                      <><Sparkles size={15} className="mr-1.5" /> Generate AI Suggestions</>
+                      <><Sparkles size={15} /> Generate AI Suggestions</>
                     )}
                   </button>
                 </div>
@@ -1089,7 +1089,7 @@ export default function VacancyBuilderPage() {
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <span className="font-semibold text-slate-700">Import approved blueprint:</span>
                   <select
-                    className="h-8 px-2.5 py-1 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent min-w-[240px] shadow-sm"
+                    className="h-10 px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 min-w-[260px] shadow-sm leading-normal"
                     defaultValue=""
                     onChange={e => { if (e.target.value) importBlueprintSkills(e.target.value); }}
                   >
@@ -1207,40 +1207,43 @@ export default function VacancyBuilderPage() {
                     </div>
 
                     <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white">
-                      <table className="w-full min-w-[960px] text-sm border-collapse" style={{ tableLayout: 'fixed' }}>
+                      <table className="w-full min-w-[1020px] text-sm border-collapse" style={{ tableLayout: 'fixed' }}>
                         <colgroup>
-                          <col style={{ width: '48px' }} />
-                          <col style={{ width: '260px' }} />
-                          <col style={{ width: '150px' }} />
-                          <col style={{ width: '140px' }} />
+                          <col style={{ width: '44px' }} />
+                          <col style={{ width: '280px' }} />
+                          <col style={{ width: '130px' }} />
+                          <col style={{ width: '135px' }} />
                           <col />
-                          <col style={{ width: '100px' }} />
+                          <col style={{ width: '95px' }} />
                         </colgroup>
-                        <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500 font-semibold border-b border-slate-200">
+                        <thead className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 font-bold border-b border-slate-200">
                           <tr>
-                            <th className="px-3 py-3 text-center">#</th>
-                            <th className="px-3 py-3 text-left">Skill Name</th>
-                            <th className="px-3 py-3 text-left">Category</th>
-                            <th className="px-3 py-3 text-left">Importance</th>
-                            <th className="px-3 py-3 text-left">Description</th>
-                            <th className="px-3 py-3 text-right">Actions</th>
+                            <th className="px-3 py-3 text-center" style={{ width: 44 }}>#</th>
+                            <th className="px-3 py-3 text-left" style={{ width: 280 }}>Skill Name</th>
+                            <th className="px-3 py-3 text-left" style={{ width: 130 }}>Category</th>
+                            <th className="px-3 py-3 text-center" style={{ width: 135 }}>Importance</th>
+                            <th className="px-3 py-3 text-left">Competency Description</th>
+                            <th className="px-3 py-3 text-center" style={{ width: 95 }}>Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {draftSkills.map((skill, idx) => (
                             <tr key={idx} className={idx % 2 === 0 ? 'bg-white hover:bg-slate-50/60' : 'bg-slate-50/40 hover:bg-slate-50/80'}>
-                              <td className="px-3 py-2.5 text-center text-xs text-slate-400 font-mono font-medium">{idx + 1}</td>
-                              <td className="px-3 py-2.5">
+                              <td className="text-center text-xs text-slate-400 font-mono font-medium" style={{ whiteSpace: 'normal', verticalAlign: 'middle', padding: '10px 8px' }}>
+                                {idx + 1}
+                              </td>
+                              <td style={{ whiteSpace: 'normal', verticalAlign: 'middle', padding: '10px 10px' }}>
                                 <input
-                                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 shadow-xs"
+                                  className="w-full h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
                                   value={skill.name}
                                   onChange={e => handleUpdateSkillName(idx, e.target.value)}
                                   placeholder="Skill name"
+                                  title={skill.name}
                                 />
                               </td>
-                              <td className="px-3 py-2.5">
+                              <td style={{ whiteSpace: 'normal', verticalAlign: 'middle', padding: '10px 8px' }}>
                                 <select
-                                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 shadow-xs"
+                                  className="w-full h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs font-medium"
                                   value={skill.category}
                                   onChange={e => handleUpdateSkillCategory(idx, e.target.value)}
                                 >
@@ -1251,30 +1254,31 @@ export default function VacancyBuilderPage() {
                                   <option>Infrastructure</option>
                                 </select>
                               </td>
-                              <td className="px-3 py-2.5">
+                              <td style={{ whiteSpace: 'normal', verticalAlign: 'middle', padding: '10px 8px' }}>
                                 <button
                                   type="button"
                                   onClick={() => handleToggleSkillImportance(idx)}
-                                  className={`inline-flex items-center justify-center gap-1 w-full px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all whitespace-nowrap shadow-xs ${
+                                  className={`inline-flex items-center justify-center gap-1 w-full h-9 px-2.5 rounded-lg text-xs font-bold border transition-all whitespace-nowrap shadow-xs ${
                                     skill.importance === 'Must-have'
-                                      ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
-                                      : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                                      ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+                                      : 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100'
                                   }`}
                                   title="Click to toggle between Must-have and Good-to-have"
                                 >
                                   {skill.importance === 'Must-have' ? '★ Must-have' : '◇ Good-to-have'}
                                 </button>
                               </td>
-                              <td className="px-3 py-2.5">
+                              <td style={{ whiteSpace: 'normal', verticalAlign: 'middle', padding: '10px 10px' }}>
                                 <input
-                                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 shadow-xs"
+                                  className="w-full h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
                                   value={skill.description}
                                   onChange={e => handleUpdateSkillDescription(idx, e.target.value)}
                                   placeholder="Competency description..."
+                                  title={skill.description}
                                 />
                               </td>
-                              <td className="px-3 py-2.5">
-                                <div className="flex items-center justify-end gap-1">
+                              <td style={{ whiteSpace: 'normal', verticalAlign: 'middle', padding: '10px 8px' }}>
+                                <div className="flex items-center justify-center gap-1">
                                   <button
                                     type="button"
                                     className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-md transition-colors"
@@ -1310,16 +1314,16 @@ export default function VacancyBuilderPage() {
                     </div>
 
                     {/* Add Custom Skill Row */}
-                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2 flex-wrap text-xs">
-                      <span className="font-bold text-slate-700">Add Skill:</span>
+                    <div className="p-3.5 bg-slate-50/80 border border-slate-200 rounded-xl flex items-center gap-2.5 flex-wrap text-xs shadow-xs">
+                      <span className="font-bold text-slate-700 whitespace-nowrap">Add Skill:</span>
                       <input
-                        className="form-input text-xs py-1 h-8 flex-1 min-w-[140px]"
+                        className="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1 min-w-[160px] shadow-xs"
                         placeholder="Skill title (e.g. PostgreSQL Optimization)"
                         value={newSkill.name}
                         onChange={e => setNewSkill({ ...newSkill, name: e.target.value })}
                       />
                       <select
-                        className="form-select text-xs py-1 h-8 w-32"
+                        className="h-9 px-2.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 w-32 shadow-xs font-medium"
                         value={newSkill.category}
                         onChange={e => setNewSkill({ ...newSkill, category: e.target.value as any })}
                       >
@@ -1330,7 +1334,7 @@ export default function VacancyBuilderPage() {
                         <option>Infrastructure</option>
                       </select>
                       <select
-                        className="form-select text-xs py-1 h-8 w-32"
+                        className="h-9 px-2.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 w-32 shadow-xs font-semibold"
                         value={newSkill.importance}
                         onChange={e => setNewSkill({ ...newSkill, importance: e.target.value as any })}
                       >
@@ -1338,17 +1342,17 @@ export default function VacancyBuilderPage() {
                         <option value="Good-to-have">Good-to-have</option>
                       </select>
                       <input
-                        className="form-input text-xs py-1 h-8 flex-1 min-w-[140px]"
+                        className="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1 min-w-[180px] shadow-xs"
                         placeholder="Optional description"
                         value={newSkill.description}
                         onChange={e => setNewSkill({ ...newSkill, description: e.target.value })}
                       />
                       <button
                         type="button"
-                        className="btn btn-secondary btn-sm"
+                        className="btn btn-secondary btn-sm h-9 px-3.5 font-bold flex items-center gap-1 shadow-xs"
                         onClick={handleAddCustomSkill}
                       >
-                        <Plus size={13} /> Add
+                        <Plus size={14} /> Add
                       </button>
                     </div>
                   </div>

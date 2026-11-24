@@ -21,6 +21,8 @@ const candidatePortalRoutes = require('./routes/candidatePortal');
 const candidateInterestRoutes = require('./routes/candidateInterest');
 const readinessRoutes = require('./routes/readiness');
 const { router: roleBlueprintRoutes } = require('./routes/roleBlueprints');
+const { router: shortlistRoutes } = require('./routes/shortlist');
+const { router: skillClaimRoutes } = require('./routes/skillClaims');
 
 const app = express();
 
@@ -96,6 +98,9 @@ app.use('/api/candidate-portal', candidateInterestRoutes);
 app.use('/api/candidate', candidateInterestRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/company/vacancies', readinessRoutes);
+// New GenuAI proof-level core: explainable shortlist + hiring outcomes + skill claims
+app.use('/api/company/vacancies', shortlistRoutes);
+app.use('/api/candidate/skill-claims', skillClaimRoutes);
 
 // Health check
 app.get('/', (req, res) => {
