@@ -138,7 +138,9 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   const requestId = req.id || `req_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
   const isDbOffline = err.code === 'ECONNREFUSED' ||
-    (Array.isArray(err.errors) && err.errors.some(e => e.code === 'ECONNREFUSED'));
+    err.code === 'ENOTFOUND' ||
+    err.code === 'EAI_AGAIN' ||
+    (Array.isArray(err.errors) && err.errors.some(e => e.code === 'ECONNREFUSED' || e.code === 'ENOTFOUND'));
 
   if (isDbOffline) {
     if (req.method === 'GET') {
@@ -186,12 +188,22 @@ if (require.main === module || !module.parent) {
     console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
 
     try {
-      await runAll();
-      await verifySchema();
-      console.log('✅ Deployment schema validated successfully.');
+      const migResult = await runAll();
+      if (migResult?.skippedBuildTime) {
+        console.warn('⚠️  Database host is not accessible in this environment yet (e.g. Render internal host during spin-up/build).');
+        console.warn('ℹ️  Server will continue running in read/safe mode. Schema verification deferred until database is reachable.');
+      } else {
+        await verifySchema();
+        console.log('✅ Deployment schema validated successfully.');
+      }
     } catch (err) {
       console.error('❌ Schema validation error on startup:', err.message);
-      if (process.env.NODE_ENV === 'production') {
+      // If the error is network/DNS resolution (e.g. Render internal hostname ENOTFOUND during initial boot or service linkage)
+      const isDnsOrNetwork = err.code === 'ENOTFOUND' || err.code === 'EAI_AGAIN' || err.code === 'ECONNREFUSED';
+      if (isDnsOrNetwork) {
+        console.warn('⚠️  Database is not reachable yet at startup (' + err.message + ').');
+        console.warn('ℹ️  Server keeping port open for Render health check. Database requests will retry gracefully.');
+      } else if (process.env.NODE_ENV === 'production') {
         console.error('FATAL: Production server refusing to operate with unverified schema. Run npm run migrate:all first.');
         process.exit(1);
       } else {
