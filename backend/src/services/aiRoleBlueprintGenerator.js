@@ -367,8 +367,8 @@ function generateRoleBlueprint(roleTitle, roleDescription = '', options = {}) {
         { name: 'Troubleshooting, Root Cause Analysis & Optimization', category: 'Technical', importance: 'Must-have', description: 'Systematic diagnosis of operational defects and process improvements.' }
       ],
       learningPaths: [
-        { skill: `${sanitizedTitle} Core Competency & Fundamentals`, title: `${sanitizedTitle} Foundational Curriculum & Best Practices`, url: 'https://genuai.io/learn', duration: '60 mins', type: 'GUIDE' },
-        { skill: 'Industry Safety, Compliance & Standards', title: 'Regulatory Compliance & Quality Standards Review', url: 'https://genuai.io/compliance', duration: '45 mins', type: 'STANDARDS_MANUAL' }
+        { skill: `${sanitizedTitle} Core Competency & Fundamentals`, title: `${sanitizedTitle} Foundational Curriculum & Best Practices`, url: null, duration: '60 mins', type: 'GUIDE' },
+        { skill: 'Industry Safety, Compliance & Standards', title: 'Regulatory Compliance & Quality Standards Review', url: null, duration: '45 mins', type: 'STANDARDS_MANUAL' }
       ],
       flashcards: [
         { front: `What is the primary operational objective of a ${sanitizedTitle}?`, back: 'To deliver verified domain outcomes safely, adhering to transparent quality benchmarks and business standards.' },
@@ -408,10 +408,11 @@ function generateRoleBlueprint(roleTitle, roleDescription = '', options = {}) {
     suggestedAssessmentIdeas: baseBlueprint.assessmentIdeas,
     suggestedEvidenceTypes: baseBlueprint.evidenceTypes,
     commonSkillsReference: COMMON_SKILLS,
-    aiModel: 'genuai-role-intelligence-v2',
+    aiModel: 'genuai-rule-based-draft-generator-v2',
+    generationMethod: 'RULE_BASED_TEMPLATE',
     promptVersion: 'v2.1',
     status: 'DRAFT',
-    safetyNotice: 'AI suggestions are drafts only. The company or platform admin must review, edit, and approve before the blueprint becomes active for candidates.'
+    safetyNotice: 'These are rule-based template suggestions (not a live AI provider). They are drafts only — the company or platform admin must review, edit, and approve before the blueprint becomes active for candidates.'
   };
 }
 

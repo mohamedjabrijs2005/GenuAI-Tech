@@ -244,7 +244,7 @@ async function checkAssessmentEligibility(candidateId, targetId) {
   // Check for currently active session
   const activeRes = await pool.query(
     `SELECT id, target_id, requirement_id, assessment_id, time_limit_minutes,
-            started_at, expires_at, status, attempt_number
+            started_at, expires_at, status, attempt_number, answers
      FROM assessment_sessions
      WHERE target_id = $1 AND candidate_id = $2 AND status = 'IN_PROGRESS' AND expires_at > NOW()
      ORDER BY created_at DESC LIMIT 1`,

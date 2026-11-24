@@ -12,6 +12,15 @@ const {
 const router = express.Router();
 
 /**
+ * Safely parse persisted autosave answers (may be JSON string or object).
+ */
+function safeParseAnswers(raw) {
+  if (!raw) return {};
+  if (typeof raw === 'object') return raw;
+  try { return JSON.parse(raw); } catch (_) { return {}; }
+}
+
+/**
  * Middleware: Ensure the authenticated user has role = 'CANDIDATE' or 'APPLICANT'
  */
 async function requireCandidate(req, res, next) {
@@ -831,14 +840,16 @@ router.get('/targets/:id/learn', authenticate, requireCandidate, async (req, res
     const reqIds = requirements.map(r => r.id);
     const reqNames = requirements.map(r => r.name);
 
-    // Fetch learning resources matching these requirements via versioned requirement mapping, with fallback to requirement_name
+    // Fetch learning resources matching these requirements via versioned requirement mapping, with fallback to requirement_name.
+    // Only PUBLISHED resources are shown — candidates never see draft/hidden curriculum.
     const resourcesRes = reqIds.length > 0 ? await pool.query(
       `SELECT DISTINCT lr.id, lr.requirement_name, lr.title, lr.description, lr.source, lr.resource_type, lr.language, lr.estimated_duration_mins, lr.url,
               COALESCE(lrrm.requirement_id, r.id) as mapped_requirement_id
        FROM learning_resources lr
        LEFT JOIN learning_resource_requirement_map lrrm ON lrrm.resource_id = lr.id AND lrrm.requirement_id = ANY($1)
        LEFT JOIN requirements r ON LOWER(TRIM(r.name)) = LOWER(TRIM(lr.requirement_name)) AND r.id = ANY($1)
-       WHERE lrrm.requirement_id IS NOT NULL OR r.id IS NOT NULL
+       WHERE (lrrm.requirement_id IS NOT NULL OR r.id IS NOT NULL)
+         AND (lr.status IS NULL OR lr.status = 'PUBLISHED')
        ORDER BY lr.title ASC`,
       [reqIds]
     ) : { rows: [] };
@@ -1486,6 +1497,42 @@ router.get('/targets/:id/assessment/session/:sessionId', authenticate, requireCa
   }
 });
 
+// POST /api/candidate-portal/targets/:id/assessment/session/autosave
+// Autosaves in-progress answers so refresh / network failure / browser close never loses work.
+// Safe to call repeatedly; rejects once the server-side deadline has passed.
+router.post('/targets/:id/assessment/session/autosave', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { sessionId, answers } = req.body;
+    if (!sessionId) return res.status(400).json({ error: 'Session ID is required', code: 'SESSION_ID_REQUIRED' });
+
+    const candRes = await pool.query('SELECT id FROM candidates WHERE email = $1', [req.user.email]);
+    if (candRes.rowCount === 0) return res.status(404).json({ error: 'Candidate profile not found', code: 'CANDIDATE_NOT_FOUND' });
+    const candidateId = candRes.rows[0].id;
+
+    const updateRes = await pool.query(
+      `UPDATE assessment_sessions
+       SET answers = $1, updated_at = NOW()
+       WHERE id = $2 AND target_id = $3 AND candidate_id = $4 AND status = 'IN_PROGRESS'
+         AND expires_at > NOW()
+       RETURNING expires_at`,
+      [JSON.stringify(answers || {}), sessionId, id, candidateId]
+    );
+
+    if (updateRes.rowCount === 0) {
+      return res.status(400).json({
+        error: 'Cannot autosave. Assessment session has expired, been submitted, or does not belong to you.',
+        code: 'SESSION_NOT_SAVABLE',
+      });
+    }
+
+    return res.json({ success: true, savedAt: new Date().toISOString(), expiresAt: updateRes.rows[0].expires_at, code: 'AUTOSAVE_OK' });
+  } catch (err) {
+    console.error('Autosave session error:', err);
+    return res.status(500).json({ error: 'Failed to autosave assessment answers', code: 'AUTOSAVE_FAILED' });
+  }
+});
+
 // POST /api/candidate-portal/targets/:id/assessment/session/start
 router.post('/targets/:id/assessment/session/start', authenticate, requireCandidate, async (req, res) => {
   try {
@@ -1514,6 +1561,7 @@ router.post('/targets/:id/assessment/session/start', authenticate, requireCandid
       return res.json({
         resumed: true,
         session: eligibility.activeSession,
+        restoredAnswers: eligibility.activeSession.answers ? safeParseAnswers(eligibility.activeSession.answers) : {},
         questions: sanitizeQuestionsForCandidate(questions.rows),
       });
     }
@@ -1612,6 +1660,9 @@ router.post('/targets/:id/assessment/session/submit', authenticate, requireCandi
 
     const session = sessionRes.rows[0];
 
+    // NOTE: Session answers are autosaved client-side via the draft endpoint below,
+    // so a browser refresh or network failure mid-session never loses work.
+
     // Idempotent submission: if already SUBMITTED, return recorded result
     if (session.status === 'SUBMITTED' || (session.status === 'EXPIRED' && session.score !== null)) {
       return res.json({
@@ -1694,6 +1745,7 @@ router.post('/targets/:id/assessment/session/submit', authenticate, requireCandi
     const scorePct = totalMarks > 0 ? Math.round((earnedMarks / totalMarks) * 10000) / 100 : 0;
     const passFail = scorePct >= 60 ? 'PASS' : 'FAIL';
     const finalStatus = isExpired ? 'EXPIRED' : 'SUBMITTED';
+    const errorCode = isExpired ? 'ASSESSMENT_EXPIRED' : null;
     const submittedAt = new Date().toISOString();
     const timeTakenSeconds = Math.max(0, Math.round((new Date(submittedAt) - new Date(session.started_at)) / 1000));
 
@@ -1756,6 +1808,7 @@ router.post('/targets/:id/assessment/session/submit', authenticate, requireCandi
       success: true,
       sessionId: session.id,
       status: finalStatus,
+      errorCode,
       score: scorePct,
       passFail,
       timeTakenSeconds,
@@ -1833,6 +1886,12 @@ router.get('/targets/:id/assessment', authenticate, requireCandidate, async (req
       sanitizedQuestions = sanitizeQuestionsForCandidate(qRes.rows);
     }
 
+    // Provide restored autosaved answers for active sessions (refresh/network recovery)
+    let restoredAnswers = {};
+    if (eligibility.activeSession && eligibility.activeSession.answers) {
+      restoredAnswers = safeParseAnswers(eligibility.activeSession.answers);
+    }
+
     // Latest attempt compatibility
     const attemptRes = await pool.query(
       `SELECT id, status, duration_minutes, started_at, expires_at, submitted_at, score, max_score, answers
@@ -1853,6 +1912,7 @@ router.get('/targets/:id/assessment', authenticate, requireCandidate, async (req
       attempt,
       requirements,
       questions: sanitizedQuestions,
+      restoredAnswers,
     });
   } catch (err) {
     console.error('Get target assessment error:', err);

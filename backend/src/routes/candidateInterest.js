@@ -78,15 +78,18 @@ router.post('/vacancies/:vacancyId/interest', async (req, res) => {
       });
     }
 
-    // Rule: Deadline check
-    const now = new Date();
-    if (vacancy.closing_date && new Date(vacancy.closing_date) < now) {
+    // Rule: Deadline check — DATE-only deadline means it stays open through 23:59:59
+    // of the closing day in the deadline cutoff timezone (default UTC).
+    const deadlineTz = process.env.DEADLINE_TZ || 'UTC';
+    const tzNow = new Date(new Date().toLocaleString('en-US', { timeZone: deadlineTz }));
+    const todayStr = tzNow.toISOString().slice(0, 10);
+    const deadlinePassed = (d) => d && String(d).slice(0, 10) < todayStr;
+    if (deadlinePassed(vacancy.closing_date) || deadlinePassed(vacancy.application_deadline)) {
       await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Cannot express interest: Application deadline has passed.' });
-    }
-    if (vacancy.application_deadline && new Date(vacancy.application_deadline) < now) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Cannot express interest: Application deadline has passed.' });
+      return res.status(400).json({
+        error: `Cannot express interest: Application deadline has passed (cutoff timezone ${deadlineTz}).`,
+        code: 'DEADLINE_PASSED',
+      });
     }
 
     // 2. Resolve active vacancy version

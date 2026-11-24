@@ -131,6 +131,7 @@ app.use((req, res) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
+  const requestId = req.id || `req_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
   const isDbOffline = err.code === 'ECONNREFUSED' ||
     (Array.isArray(err.errors) && err.errors.some(e => e.code === 'ECONNREFUSED'));
 
@@ -149,16 +150,27 @@ app.use((err, req, res, next) => {
       if (path.startsWith('/api/company')) return res.json({ company: null });
       return res.json({});
     }
-    return res.status(503).json({ error: 'Database temporarily unavailable. Please try again later.' });
+    return res.status(503).json({
+      error: 'Database temporarily unavailable. Please try again later.',
+      code: 'DB_UNAVAILABLE',
+      requestId,
+      guidance: 'Your data was not lost. Retry the request in a few moments.',
+    });
   }
 
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+  console.error(`[requestId=${requestId}] Unhandled error:`, err);
+  res.status(500).json({
+    error: 'Internal server error',
+    code: 'INTERNAL_ERROR',
+    requestId,
+    guidance: 'Please retry. If the problem persists, contact support with this request ID.',
+  });
 });
 
 // ============================================================
 // Start Server with Schema Verification (No Auto-Seeding)
 // ============================================================
+const { runAll } = require('./database/migrate_all');
 const { verifySchema } = require('./database/verify_schema');
 
 const PORT = process.env.PORT || 4000;
@@ -169,6 +181,7 @@ if (require.main === module || !module.parent) {
     console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
 
     try {
+      await runAll();
       await verifySchema();
       console.log('✅ Deployment schema validated successfully.');
     } catch (err) {

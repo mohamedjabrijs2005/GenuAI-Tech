@@ -156,10 +156,11 @@ export default function VacancyBuilderPage() {
   const [newAssessment, setNewAssessment] = useState<AssessmentIdeaItem>({ question: '', type: 'Multiple Choice' });
   const [newEvidence, setNewEvidence] = useState<EvidenceTypeItem>({ name: '', description: '' });
 
-  // STEP 1 State — deadline defaults to today + 30 days
-  const _defaultDeadline = (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d.toISOString().split('T')[0]; })();
-  const _minDeadline = new Date().toISOString().split('T')[0];
-  const _maxDeadline = (() => { const d = new Date(); d.setDate(d.getDate() + 180); return d.toISOString().split('T')[0]; })();
+  // STEP 1 State — deadline defaults to today + 30 days (local date, not UTC-shifted)
+  const _localDateStr = (offsetDays) => { const d = new Date(); d.setDate(d.getDate() + offsetDays); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  const _defaultDeadline = _localDateStr(30);
+  const _minDeadline = _localDateStr(0);
+  // No arbitrary upper deadline cap — any future date is allowed (product rule: none defined).
   const [basicInfo, setBasicInfo] = useState({
     title: '',
     departmentId: '',
@@ -1002,11 +1003,10 @@ export default function VacancyBuilderPage() {
                 className={`form-input${stepErrors.deadline ? ' error' : ''}`}
                 value={basicInfo.deadline}
                 min={_minDeadline}
-                max={_maxDeadline}
                 onChange={e => { setBasicInfo({...basicInfo, deadline: e.target.value}); setStepErrors(p => ({...p, deadline: ''})); }}
               />
               {stepErrors.deadline && <div className="form-error"><AlertCircle size={11}/> {stepErrors.deadline}</div>}
-              <div className="form-hint">Today + 30 days by default. Max 180 days from today.</div>
+              <div className="form-hint">Defaults to today + 30 days. The vacancy stays open through the end of this date.</div>
             </div>
 
             <div className="form-group md:col-span-2">

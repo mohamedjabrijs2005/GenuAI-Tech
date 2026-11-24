@@ -151,12 +151,28 @@ router.post(
         approvedRoleBlueprintId,
       } = req.body;
 
-      // Application deadline must be in the future if provided
+      // Application deadline must be in the future if provided.
+      // Date-only deadline: interpreted as end-of-day in the COMPANY's cutoff timezone
+      // (default UTC; configurable per deployment via DEADLINE_TZ). Deadline cutoff rule:
+      // a vacancy accepts interest through 23:59:59 of `closingDate` in the cutoff timezone.
+      const deadlineTz = process.env.DEADLINE_TZ || 'UTC';
+      let normalizedClosingDate = null;
       if (closingDate) {
-        const deadlineDate = new Date(closingDate);
-        if (isNaN(deadlineDate.getTime()) || deadlineDate <= new Date()) {
-          return res.status(400).json({ error: 'Application deadline must be a valid date in the future.' });
+        const deadlineDate = new Date(`${String(closingDate).slice(0, 10)}T23:59:59Z`);
+        if (isNaN(deadlineDate.getTime())) {
+          return res.status(400).json({
+            error: 'Application deadline must be a valid date (YYYY-MM-DD).',
+            code: 'INVALID_DEADLINE',
+          });
         }
+        const cutoffNow = new Date(new Date().toLocaleString('en-US', { timeZone: deadlineTz }));
+        if (deadlineDate < cutoffNow) {
+          return res.status(400).json({
+            error: `Application deadline must be today or later in the deadline cutoff timezone (${deadlineTz}).`,
+            code: 'DEADLINE_IN_PAST',
+          });
+        }
+        normalizedClosingDate = String(closingDate).slice(0, 10);
       }
 
       // Openings defaults to 1 if not specified, must be >= 1 if provided
@@ -216,9 +232,9 @@ router.post(
       const result = await pool.query(
         `INSERT INTO company_roles
          (company_id, department_id, title, job_description, experience_level,
-          employment_type, location, work_mode, salary_range, vacancy_count, closing_date, status,
+          employment_type, location, work_mode, salary_range, vacancy_count, closing_date, application_deadline, status,
           role_master_id, approved_role_blueprint_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
         [
           companyId,
           finalDeptId,
@@ -230,7 +246,8 @@ router.post(
           workMode || 'Hybrid',
           salaryRange || null,
           vacancyCount || 1,
-          closingDate || null,
+          closingDate ? normalizedClosingDate : null,
+          closingDate ? normalizedClosingDate : null,
           initialStatus,
           targetRoleId || null,
           approvedRoleBlueprintId || null,

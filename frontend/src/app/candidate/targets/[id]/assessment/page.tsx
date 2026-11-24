@@ -36,6 +36,8 @@ export default function TargetOfficialAssessmentPage() {
   // Countdown timer state
   const [secondsRemaining, setSecondsRemaining] = useState<number | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const autosaveRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedRef = useRef<string>('');
 
   // Load target assessment workspace & eligibility
   const loadWorkspace = async () => {
@@ -50,6 +52,12 @@ export default function TargetOfficialAssessmentPage() {
       if (session && session.status === 'IN_PROGRESS') {
         setActiveSession(session);
         setQuestions(res.data.questions || []);
+        // Restore autosaved answers (refresh / network recovery)
+        const restored = res.data?.restoredAnswers || {};
+        if (Object.keys(restored).length > 0) {
+          setAnswers(restored);
+          toast('Restored your saved answers from this session', { icon: '💾' });
+        }
 
         // Calculate timer
         const expiryMs = new Date(session.expires_at).getTime();
@@ -83,6 +91,9 @@ export default function TargetOfficialAssessmentPage() {
       });
 
       toast.success(`Assessment submitted! Score: ${res.data.score}% (${res.data.passFail})`);
+      if (res.data.errorCode === 'ASSESSMENT_EXPIRED') {
+        toast('This submission was recorded after the deadline and marked EXPIRED.', { icon: '⏰' });
+      }
       setResultSummary(res.data.resultSummary || res.data);
       setActiveSession(null);
       setSecondsRemaining(null);
@@ -90,7 +101,13 @@ export default function TargetOfficialAssessmentPage() {
       // Refresh workspace data
       await loadWorkspace();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to submit assessment answers');
+      const status = err.response?.status;
+      if (!status) {
+        // Network failure — keep session and answers intact so the candidate can retry
+        toast.error('Network error. Your answers are saved locally; please retry submission.', { duration: 6000 });
+      } else {
+        toast.error(err.response?.data?.error || 'Failed to submit assessment answers');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -126,6 +143,25 @@ export default function TargetOfficialAssessmentPage() {
     };
   }, [activeSession, secondsRemaining]);
 
+  // Autosave answers every 15 seconds while a session is active
+  useEffect(() => {
+    if (!activeSession?.id) return;
+    autosaveRef.current = setInterval(async () => {
+      const payload = JSON.stringify(answers);
+      if (payload === lastSavedRef.current) return; // skip no-change saves
+      try {
+        await api.post(`/candidate-portal/targets/${targetId}/assessment/session/autosave`, {
+          sessionId: activeSession.id,
+          answers,
+        });
+        lastSavedRef.current = payload;
+      } catch (_) {
+        // Silent: autosave failures must not interrupt the candidate; submit retries server-side anyway.
+      }
+    }, 15000);
+    return () => { if (autosaveRef.current) clearInterval(autosaveRef.current); };
+  }, [activeSession, answers, targetId]);
+
   // Start official assessment
   const handleStart = async () => {
     setStarting(true);
@@ -139,8 +175,13 @@ export default function TargetOfficialAssessmentPage() {
 
       setActiveSession(session);
       setQuestions(qList);
-      setAnswers({});
+      const restoredStart = res.data?.restoredAnswers || {};
+      setAnswers(restoredStart);
+      lastSavedRef.current = JSON.stringify(restoredStart);
       setResultSummary(null);
+      if (res.data?.resumed && Object.keys(restoredStart).length > 0) {
+        toast('Resumed session — restored your previously saved answers', { icon: '💾' });
+      }
 
       const expiryMs = new Date(session.expires_at).getTime();
       const diffSecs = Math.max(0, Math.floor((expiryMs - Date.now()) / 1000));

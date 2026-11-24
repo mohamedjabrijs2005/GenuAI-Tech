@@ -24,28 +24,6 @@ router.get('/supported-roles', (req, res) => {
 
 // ============================================================
 // GET /api/company/role-blueprints/approved
-// Returns all approved blueprints for the company
-// ============================================================
-router.get('/approved', async (req, res) => {
-  try {
-    const companyId = req.companyMembership.company_id;
-    const result = await pool.query(
-      `SELECT s.*, a.approved_at, a.approved_by, a.approval_notes
-       FROM ai_role_blueprint_suggestions s
-       LEFT JOIN role_blueprint_approval a ON a.role_blueprint_id = s.id
-       WHERE s.company_id = $1 AND s.status = 'APPROVED'
-       ORDER BY s.updated_at DESC`,
-      [companyId]
-    );
-    return res.json({ blueprints: result.rows });
-  } catch (err) {
-    console.error('Fetch approved blueprints error:', err);
-    return res.status(500).json({ error: 'Failed to fetch approved blueprints' });
-  }
-});
-
-// ============================================================
-// GET /api/company/role-blueprints/approved
 // Returns all approved blueprints for the authenticated company
 // for direct import into vacancy creation or role master
 // ============================================================
@@ -170,10 +148,11 @@ const handleAiSuggest = async (req, res) => {
   }
 
   if (!finalRoleTitle) {
-    return res.status(422).json({ error: 'Role title is required to generate AI suggestions.' });
+    return res.status(422).json({ error: 'Role title is required to generate AI suggestions.', code: 'ROLE_TITLE_REQUIRED' });
   }
 
   try {
+    // Guard: pre-try DB lookups may have thrown above for malformed UUIDs — wrap whole body
     // Generate AI draft blueprint
     const blueprint = generateRoleBlueprint(finalRoleTitle, finalDescription, { includeCommon });
 
@@ -213,7 +192,12 @@ const handleAiSuggest = async (req, res) => {
     });
   } catch (err) {
     console.error('AI suggest blueprint error:', err);
-    return res.status(500).json({ error: 'Failed to generate AI role blueprint suggestions' });
+    return res.status(500).json({
+      error: 'Failed to generate AI role blueprint suggestions',
+      code: 'AI_SUGGEST_FAILED',
+      requestId: `bp_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
+      guidance: 'Check that roleMasterId/vacancyId are valid UUIDs owned by your company, then retry.',
+    });
   }
 };
 
@@ -559,6 +543,29 @@ const handleApproveSuggestion = async (req, res) => {
     let targetRoleId = incomingRoleMasterId || suggestion.role_master_id;
     let targetVacancyId = incomingVacancyId || suggestion.vacancy_id;
 
+    // Tenant-isolation guard: any body-supplied role/vacancy link target MUST belong
+    // to this company before we attach an approved blueprint or create requirements.
+    if (targetRoleId) {
+      const ownRole = await client.query('SELECT id FROM company_roles WHERE id = $1 AND company_id = $2', [targetRoleId, companyId]);
+      if (ownRole.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({
+          error: 'roleMasterId does not belong to your company.',
+          code: 'CROSS_TENANT_ROLE_MASTER',
+        });
+      }
+    }
+    if (targetVacancyId) {
+      const ownVac = await client.query('SELECT id FROM company_roles WHERE id = $1 AND company_id = $2', [targetVacancyId, companyId]);
+      if (ownVac.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({
+          error: 'vacancyId does not belong to your company.',
+          code: 'CROSS_TENANT_VACANCY',
+        });
+      }
+    }
+
     // If requested or if role_master_id is missing, create a role master under the company
     if (!targetRoleId && createRoleMaster) {
       let deptId = departmentId;
@@ -680,7 +687,7 @@ const handleApproveSuggestion = async (req, res) => {
             'Curated Learning Curriculum',
             lp.type || 'GUIDE',
             parseInt(lp.duration, 10) || 45,
-            lp.url || 'https://genuai.io/learn',
+            lp.url && /^https?:\/\//.test(lp.url) ? lp.url : null,
           ]
         );
         appliedResources++;

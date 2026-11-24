@@ -562,6 +562,18 @@ router.post('/:vacancyId/candidates/:targetId/decision', async (req, res) => {
         ]
       ).catch(() => {});
 
+      // Mirror the event into the recruiter's company notification feed
+      await pool.query(
+        `INSERT INTO notifications (company_id, user_id, title, message, type, read)
+         VALUES ($1, $2, $3, $4, 'INFO', FALSE)`,
+        [
+          companyId,
+          userId,
+          `Decision recorded: ${decision.replace(/_/g, ' ')}`,
+          `You recorded a recruiting decision on a candidate target.`,
+        ]
+      ).catch(() => {});
+
       // If decision is SHORTLISTED, dispatch candidate shortlist email
       if (decision === 'SHORTLISTED') {
         try {

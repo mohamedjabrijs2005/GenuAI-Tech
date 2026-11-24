@@ -51,8 +51,21 @@ async function runAll() {
     }
   }
 
-  const client = await pool.connect();
+  let client;
   let lockAcquired = false;
+
+  try {
+    client = await pool.connect();
+  } catch (err) {
+    // If the database host cannot be resolved during the build phase (e.g., Render internal dpg-* URL)
+    if ((err.code === 'ENOTFOUND' || err.code === 'EAI_AGAIN') && (err.hostname?.includes('dpg-') || process.env.RENDER)) {
+      console.warn(`\n⚠️  NOTICE: Database host "${err.hostname || 'internal'}" is not accessible in this build container.`);
+      console.warn('ℹ️  On Render, internal database URLs (dpg-*) only resolve inside the private network at runtime.');
+      console.warn('ℹ️  Migrations will automatically execute when the server starts via startCommand.\n');
+      return { skippedBuildTime: true };
+    }
+    throw err;
+  }
 
   try {
     // Step 2: Acquire database advisory lock for deployment concurrency protection
@@ -110,7 +123,7 @@ async function runAll() {
     console.log('✅ ALL DATABASE MIGRATIONS UP TO DATE & RECORDED IN LEDGER');
     console.log('============================================================\n');
   } finally {
-    if (lockAcquired) {
+    if (lockAcquired && client) {
       try {
         await client.query('SELECT pg_advisory_unlock($1)', [ADVISORY_LOCK_ID]);
         console.log('🔓 Advisory lock released.');
@@ -118,7 +131,9 @@ async function runAll() {
         console.warn('Warning: Could not release advisory lock cleanly:', e.message);
       }
     }
-    client.release();
+    if (client) {
+      client.release();
+    }
     if (require.main === module) {
       await pool.end();
     }
@@ -126,7 +141,12 @@ async function runAll() {
 }
 
 if (require.main === module) {
-  runAll().catch(err => {
+  runAll().then((res) => {
+    if (res?.skippedBuildTime) {
+      console.log('✅ Build phase completed. Database migrations deferred to runtime start.\n');
+    }
+    process.exit(0);
+  }).catch(err => {
     console.error('Fatal migration ledger error:', err);
     process.exit(1);
   });

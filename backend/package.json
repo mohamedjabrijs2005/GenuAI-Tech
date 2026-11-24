@@ -4,7 +4,7 @@
   "description": "GenuAI Technologies - Company Dashboard Backend",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
+    "start": "node src/database/migrate_all.js && node src/server.js",
     "dev": "nodemon src/server.js",
     "migrate": "node src/database/migrate_all.js",
     "migrate:all": "node src/database/migrate_all.js",

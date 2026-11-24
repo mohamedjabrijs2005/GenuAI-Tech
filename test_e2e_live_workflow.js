@@ -219,12 +219,34 @@ async function run() {
     const req2 = reqsDb.rows[1] || reqsDb.rows[0];
 
     // =========================================================================
+    // STEP 3.5: Company A generates and approves an AI blueprint for the Role Master
+    //           (required by the submit gate: vacancies cannot be verified without one)
+    // =========================================================================
+    const aiSuggestRes = await apiRequest('/company/role-blueprints/ai-suggest', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${companyAToken}` },
+      body: { roleTitle: `Backend Engineer ${ts}`, roleMasterId },
+    });
+    const blueprintSuggestionId = aiSuggestRes.data?.suggestion?.id;
+    assert(Boolean(blueprintSuggestionId), 3, 'AI blueprint suggestion generated for Role Master', `SuggestionId: ${blueprintSuggestionId}`);
+    const bpApproveRes = await apiRequest(`/company/role-blueprints/ai-suggestions/${blueprintSuggestionId}/approve`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${companyAToken}` },
+      body: { roleMasterId, approvalNotes: 'E2E test blueprint approval' },
+    });
+    assert(bpApproveRes.status === 200, 3, 'AI blueprint approved for Role Master', `Status: ${bpApproveRes.status}`);
+
+    // =========================================================================
     // STEP 4: Company A submits vacancy for admin verification
     // =========================================================================
     const submitRes = await apiRequest(`/vacancies/${vacancyId}/submit`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${companyAToken}` },
     });
+    // Log the actual rejection reason so submit-gate regressions are diagnosable
+    if (submitRes.status !== 200) {
+      console.log('  [STEP 4 DEBUG] submit response:', submitRes.status, JSON.stringify(submitRes.data));
+    }
     assert(submitRes.status === 200, 4, 'Company A submits vacancy for admin verification', `Status: ${submitRes.status}, Status: ${submitRes.data?.vacancy?.status}`);
 
     // =========================================================================
