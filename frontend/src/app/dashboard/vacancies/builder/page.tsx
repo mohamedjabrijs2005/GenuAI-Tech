@@ -1386,36 +1386,36 @@ export default function VacancyBuilderPage() {
                       ))}
                     </div>
 
-                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2 flex-wrap text-xs">
-                      <span className="font-bold text-slate-700">Add Guide:</span>
+                    <div className="p-3.5 bg-slate-50/80 border border-slate-200 rounded-xl flex items-center gap-2.5 flex-wrap text-xs shadow-xs">
+                      <span className="font-bold text-slate-700 whitespace-nowrap">Add Guide:</span>
                       <input
-                        className="form-input text-xs py-1 h-8 flex-1 min-w-[140px]"
+                        className="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1 min-w-[160px] shadow-xs"
                         placeholder="Module title (e.g. Official Docker Tutorial)"
                         value={newLearning.title}
                         onChange={e => setNewLearning({ ...newLearning, title: e.target.value })}
                       />
                       <input
-                        className="form-input text-xs py-1 h-8 flex-1 min-w-[140px]"
+                        className="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1 min-w-[160px] shadow-xs"
                         placeholder="Resource URL (https://...)"
                         value={newLearning.url}
                         onChange={e => setNewLearning({ ...newLearning, url: e.target.value })}
                       />
                       <input
-                        className="form-input text-xs py-1 h-8 w-24"
+                        className="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 w-28 shadow-xs"
                         placeholder="45 mins"
                         value={newLearning.duration}
                         onChange={e => setNewLearning({ ...newLearning, duration: e.target.value })}
                       />
                       <button
                         type="button"
-                        className="btn btn-secondary btn-sm"
+                        className="btn btn-secondary btn-sm h-9 px-3.5 font-bold flex items-center gap-1 shadow-xs"
                         onClick={() => {
                           if (!newLearning.title.trim()) return toast.error('Title required');
                           setDraftLearningPaths(prev => [...prev, { ...newLearning, skill: draftSkills[0]?.name || 'General' }]);
                           setNewLearning({ skill: '', title: '', url: '', duration: '45 mins', type: 'GUIDE' });
                         }}
                       >
-                        <Plus size={13} /> Add
+                        <Plus size={14} /> Add
                       </button>
                     </div>
                   </div>
@@ -1443,30 +1443,30 @@ export default function VacancyBuilderPage() {
                       ))}
                     </div>
 
-                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2 flex-wrap text-xs">
-                      <span className="font-bold text-slate-700">Add Card:</span>
+                    <div className="p-3.5 bg-slate-50/80 border border-slate-200 rounded-xl flex items-center gap-2.5 flex-wrap text-xs shadow-xs">
+                      <span className="font-bold text-slate-700 whitespace-nowrap">Add Card:</span>
                       <input
-                        className="form-input text-xs py-1 h-8 flex-1 min-w-[140px]"
+                        className="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1 min-w-[160px] shadow-xs"
                         placeholder="Front / Question"
                         value={newFlashcard.front}
                         onChange={e => setNewFlashcard({ ...newFlashcard, front: e.target.value })}
                       />
                       <input
-                        className="form-input text-xs py-1 h-8 flex-1 min-w-[140px]"
+                        className="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1 min-w-[160px] shadow-xs"
                         placeholder="Back / Answer"
                         value={newFlashcard.back}
                         onChange={e => setNewFlashcard({ ...newFlashcard, back: e.target.value })}
                       />
                       <button
                         type="button"
-                        className="btn btn-secondary btn-sm"
+                        className="btn btn-secondary btn-sm h-9 px-3.5 font-bold flex items-center gap-1 shadow-xs"
                         onClick={() => {
                           if (!newFlashcard.front.trim() || !newFlashcard.back.trim()) return toast.error('Both front and back required');
                           setDraftFlashcards(prev => [...prev, { ...newFlashcard }]);
                           setNewFlashcard({ front: '', back: '' });
                         }}
                       >
-                        <Plus size={13} /> Add
+                        <Plus size={14} /> Add
                       </button>
                     </div>
                   </div>
@@ -1504,30 +1504,30 @@ export default function VacancyBuilderPage() {
                       ))}
                     </div>
 
-                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2 flex-wrap text-xs">
-                      <span className="font-bold text-slate-700">Add Task:</span>
+                    <div className="p-3.5 bg-slate-50/80 border border-slate-200 rounded-xl flex items-center gap-2.5 flex-wrap text-xs shadow-xs">
+                      <span className="font-bold text-slate-700 whitespace-nowrap">Add Task:</span>
                       <input
-                        className="form-input text-xs py-1 h-8 flex-1 min-w-[140px]"
+                        className="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1 min-w-[160px] shadow-xs"
                         placeholder="Task title"
                         value={newPractice.title}
                         onChange={e => setNewPractice({ ...newPractice, title: e.target.value })}
                       />
                       <input
-                        className="form-input text-xs py-1 h-8 flex-1 min-w-[180px]"
+                        className="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1 min-w-[180px] shadow-xs"
                         placeholder="Task prompt"
                         value={newPractice.prompt}
                         onChange={e => setNewPractice({ ...newPractice, prompt: e.target.value })}
                       />
                       <button
                         type="button"
-                        className="btn btn-secondary btn-sm"
+                        className="btn btn-secondary btn-sm h-9 px-3.5 font-bold flex items-center gap-1 shadow-xs"
                         onClick={() => {
                           if (!newPractice.title.trim()) return toast.error('Task title required');
                           setDraftPracticeTasks(prev => [...prev, { ...newPractice }]);
                           setNewPractice({ title: '', prompt: '', difficulty: 'Intermediate', expectedDeliverable: '' });
                         }}
                       >
-                        <Plus size={13} /> Add
+                        <Plus size={14} /> Add
                       </button>
                     </div>
                   </div>
@@ -1557,24 +1557,24 @@ export default function VacancyBuilderPage() {
                       ))}
                     </div>
 
-                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2 flex-wrap text-xs">
-                      <span className="font-bold text-slate-700">Add Question:</span>
+                    <div className="p-3.5 bg-slate-50/80 border border-slate-200 rounded-xl flex items-center gap-2.5 flex-wrap text-xs shadow-xs">
+                      <span className="font-bold text-slate-700 whitespace-nowrap">Add Question:</span>
                       <input
-                        className="form-input text-xs py-1 h-8 flex-1 min-w-[200px]"
+                        className="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1 min-w-[200px] shadow-xs"
                         placeholder="Evaluation question or scenario"
                         value={newAssessment.question}
                         onChange={e => setNewAssessment({ ...newAssessment, question: e.target.value })}
                       />
                       <button
                         type="button"
-                        className="btn btn-secondary btn-sm"
+                        className="btn btn-secondary btn-sm h-9 px-3.5 font-bold flex items-center gap-1 shadow-xs"
                         onClick={() => {
                           if (!newAssessment.question.trim()) return toast.error('Question required');
                           setDraftAssessmentIdeas(prev => [...prev, { ...newAssessment }]);
                           setNewAssessment({ question: '', type: 'Multiple Choice' });
                         }}
                       >
-                        <Plus size={13} /> Add
+                        <Plus size={14} /> Add
                       </button>
                     </div>
                   </div>
@@ -1602,30 +1602,30 @@ export default function VacancyBuilderPage() {
                       ))}
                     </div>
 
-                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2 flex-wrap text-xs">
-                      <span className="font-bold text-slate-700">Add Type:</span>
+                    <div className="p-3.5 bg-slate-50/80 border border-slate-200 rounded-xl flex items-center gap-2.5 flex-wrap text-xs shadow-xs">
+                      <span className="font-bold text-slate-700 whitespace-nowrap">Add Type:</span>
                       <input
-                        className="form-input text-xs py-1 h-8 flex-1 min-w-[140px]"
+                        className="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1 min-w-[160px] shadow-xs"
                         placeholder="Evidence name (e.g. GitHub PR Link)"
                         value={newEvidence.name}
                         onChange={e => setNewEvidence({ ...newEvidence, name: e.target.value })}
                       />
                       <input
-                        className="form-input text-xs py-1 h-8 flex-1 min-w-[180px]"
+                        className="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1 min-w-[180px] shadow-xs"
                         placeholder="Description of required proof"
                         value={newEvidence.description}
                         onChange={e => setNewEvidence({ ...newEvidence, description: e.target.value })}
                       />
                       <button
                         type="button"
-                        className="btn btn-secondary btn-sm"
+                        className="btn btn-secondary btn-sm h-9 px-3.5 font-bold flex items-center gap-1 shadow-xs"
                         onClick={() => {
                           if (!newEvidence.name.trim()) return toast.error('Name required');
                           setDraftEvidenceTypes(prev => [...prev, { ...newEvidence }]);
                           setNewEvidence({ name: '', description: '' });
                         }}
                       >
-                        <Plus size={13} /> Add
+                        <Plus size={14} /> Add
                       </button>
                     </div>
                   </div>

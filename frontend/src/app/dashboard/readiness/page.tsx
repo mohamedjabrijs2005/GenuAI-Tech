@@ -180,10 +180,18 @@ export default function RoleReadinessPage() {
     (async () => {
       try {
         const list = await DataService.getVacancies();
-        setVacancies(list);
-        if (list.length > 0) {
-          setSelectedVacancyId(list[0].id);
-          setRoleTitle(list[0].title);
+        // Sort active published vacancies to the top
+        const sortedList = [...list].sort((a, b) => {
+          const aPub = a.status === 'published' || a.status === 'verified' || a.raw_status === 'PUBLISHED';
+          const bPub = b.status === 'published' || b.status === 'verified' || b.raw_status === 'PUBLISHED';
+          if (aPub && !bPub) return -1;
+          if (!aPub && bPub) return 1;
+          return 0;
+        });
+        setVacancies(sortedList);
+        if (sortedList.length > 0) {
+          setSelectedVacancyId(sortedList[0].id);
+          setRoleTitle(sortedList[0].title);
         }
       } catch (err) {
         console.error('Failed to load vacancies:', err);
@@ -237,83 +245,66 @@ export default function RoleReadinessPage() {
           <span className="breadcrumb-current">Role Readiness Funnel</span>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 12 }}>
-          {/* Main Title & Action Row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-            <div style={{ minWidth: 280 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <h1 className="page-title" style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>Company Role Readiness Funnel</h1>
-                {companyDisplayName && (
-                  <span style={{
-                    padding: '3px 10px', borderRadius: 99,
-                    background: 'rgba(5,150,105,0.08)',
-                    border: '1px solid rgba(5,150,105,0.25)',
-                    fontSize: 11.5, fontWeight: 700,
-                    color: '#059669',
-                    whiteSpace: 'nowrap',
-                  }}>
-                    {companyDisplayName}
-                  </span>
-                )}
-              </div>
-              <p className="page-subtitle" style={{ marginTop: 4 }}>
-                {vacanciesLoading
-                  ? 'Loading role readiness pipeline…'
-                  : roleTitle
-                  ? `${roleTitle} — candidate qualification pipeline`
-                  : 'Track verified candidate readiness across your active vacancies'}
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-              {/* Vacancy selector dropdown */}
-              {vacancies.length > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap' }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Select Role:</span>
-                  <select
-                    value={selectedVacancyId}
-                    onChange={(e) => setSelectedVacancyId(e.target.value)}
-                    style={{
-                      padding: '7px 12px',
-                      borderRadius: 8,
-                      border: '1px solid var(--border)',
-                      background: '#fff',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: 'var(--text-primary)',
-                      cursor: 'pointer',
-                      minWidth: 200,
-                      maxWidth: 320,
-                    }}
-                  >
-                    {vacancies.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.title} ({v.raw_status || v.status})
-                      </option>
-                    ))}
-                  </select>
-
-                  <button
-                    onClick={() => loadFunnelForRole(selectedVacancyId)}
-                    disabled={loading}
-                    className="btn btn-secondary btn-sm"
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
-                  >
-                    <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-                    <span>Refresh</span>
-                  </button>
-                </div>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mt-3">
+          {/* Main Title & Workspace Badge */}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight m-0">
+                Company Role Readiness Funnel
+              </h1>
+              {companyDisplayName && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  {companyDisplayName}
+                </span>
               )}
-
-              <Link
-                href="/dashboard/vacancies"
-                className="btn btn-gold btn-sm"
-                style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', whiteSpace: 'nowrap' }}
-              >
-                <Plus size={14} />
-                <span>Manage Vacancies</span>
-              </Link>
             </div>
+            <p className="text-xs text-slate-500 mt-1 font-medium">
+              {vacanciesLoading
+                ? 'Loading role readiness pipeline…'
+                : roleTitle
+                ? `${roleTitle} — candidate qualification pipeline`
+                : 'Track verified candidate readiness across your active vacancies'}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Vacancy selector dropdown */}
+            {vacancies.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <span className="text-xs font-bold text-slate-600 whitespace-nowrap">Select Role:</span>
+                <select
+                  value={selectedVacancyId}
+                  onChange={(e) => setSelectedVacancyId(e.target.value)}
+                  className="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm min-w-[200px] max-w-[320px] leading-normal"
+                >
+                  {vacancies.map((v) => {
+                    const isPub = v.status === 'published' || v.status === 'verified' || v.raw_status === 'PUBLISHED';
+                    return (
+                      <option key={v.id} value={v.id}>
+                        {v.title} {isPub ? '(Active)' : `(${v.raw_status || v.status || 'Draft'})`}
+                      </option>
+                    );
+                  })}
+                </select>
+
+                <button
+                  onClick={() => loadFunnelForRole(selectedVacancyId)}
+                  disabled={loading}
+                  className="btn btn-secondary btn-sm h-9 px-3 flex items-center gap-1.5 font-semibold shadow-xs"
+                >
+                  <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+                  <span>Refresh</span>
+                </button>
+              </div>
+            )}
+
+            <Link
+              href="/dashboard/vacancies"
+              className="btn btn-gold btn-sm h-9 px-3.5 flex items-center gap-1.5 font-bold whitespace-nowrap shadow-xs"
+            >
+              <Plus size={14} />
+              <span>Manage Vacancies</span>
+            </Link>
           </div>
         </div>
       </div>
@@ -378,6 +369,29 @@ export default function RoleReadinessPage() {
         </div>
       ) : (
         <>
+          {/* Draft Notice if selected vacancy is not yet published */}
+          {(() => {
+            const currentV = vacancies.find(v => v.id === selectedVacancyId);
+            const isPub = currentV?.status === 'published' || currentV?.status === 'verified' || currentV?.raw_status === 'PUBLISHED';
+            if (!isPub && currentV) {
+              return (
+                <div className="mb-6 p-4 rounded-xl border border-amber-200 bg-amber-50/70 flex items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <AlertCircle size={16} className="text-amber-700 flex-shrink-0" />
+                    <div>
+                      <span className="font-bold text-amber-950">&ldquo;{currentV.title}&rdquo; is currently in {currentV.raw_status || currentV.status || 'DRAFT'} status.</span>
+                      <p className="text-amber-800 mt-0.5">Candidates will begin targeting this role and generating readiness metrics once verified and published.</p>
+                    </div>
+                  </div>
+                  <Link href="/dashboard/vacancies" className="btn btn-secondary btn-sm whitespace-nowrap font-bold">
+                    View Vacancies
+                  </Link>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
           {/* ── Executive Value Proposition Summary Card (Clean, light theme) ── */}
           <div style={{
             background: '#ffffff',
