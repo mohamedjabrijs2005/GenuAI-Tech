@@ -197,9 +197,12 @@ export default function AuthPage() {
         ? rawError
         : (rawError && typeof rawError === 'object' ? (rawError.message || JSON.stringify(rawError)) : null);
 
+      const isTimeout = e.code === 'ECONNABORTED' || String(e.message || '').includes('timeout');
       const msg = errorText || (
-        e.code === 'ERR_NETWORK'
-          ? 'Cannot reach the login service. Check that the backend is running and your API URL is configured.'
+        isTimeout
+          ? 'The cloud server took longer than expected to respond (it may be waking up from sleep). Please click sign in again.'
+          : e.code === 'ERR_NETWORK'
+          ? 'Cannot reach the login service. Check that the backend is running and your network connection is active.'
           : (typeof e.message === 'string' ? e.message : 'Authentication failed. Please check your credentials.')
       );
       setError(String(msg));

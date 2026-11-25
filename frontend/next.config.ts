@@ -66,7 +66,13 @@ const nextConfig: NextConfig = {
       // Keep API requests same-origin in the browser and proxy them to the deployed backend.
       {
         source: "/api/:path*",
-        destination: `${process.env.BACKEND_URL || process.env.GENUAI_BACKEND_URL || "http://127.0.0.1:4000"}/api/:path*`,
+        destination: `${
+          process.env.BACKEND_URL ||
+          process.env.GENUAI_BACKEND_URL ||
+          (process.env.NODE_ENV === "production"
+            ? "https://genuai-backend.onrender.com"
+            : "http://127.0.0.1:4000")
+        }/api/:path*`,
       },
     ];
   },
