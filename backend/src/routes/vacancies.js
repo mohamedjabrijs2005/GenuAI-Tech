@@ -2,6 +2,14 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const pool = require('../database/pool');
 const { authenticate, requireCompany } = require('../middleware/auth');
+const vacancyController = require('../controllers/vacancyController');
+const { uuidParam, handleValidationErrors } = require('../validators/common');
+const {
+  vacancyChecklistGenerateValidator,
+  vacancyChecklistActionValidator,
+  vacancyChecklistUpdateItemsValidator,
+  vacancyRequirementValidator,
+} = require('../validators/vacancyValidator');
 
 const router = express.Router();
 router.use(authenticate, requireCompany);
@@ -804,97 +812,23 @@ router.post('/:id/close', async (req, res) => {
 });
 
 // ============================================================
+// Vacancy Skill Checklist Workflow:
+//   draft -> ai_generated -> approved -> locked
+// ============================================================
+router.get('/:id/checklist', [uuidParam('id'), handleValidationErrors], vacancyController.getChecklist);
+router.post('/:id/checklist/generate', vacancyChecklistGenerateValidator, vacancyController.generateChecklist);
+router.put('/:id/checklist/items', vacancyChecklistUpdateItemsValidator, vacancyController.updateChecklistItems);
+router.post('/:id/checklist/approve', vacancyChecklistActionValidator, vacancyController.approveChecklist);
+router.post('/:id/checklist/lock', vacancyChecklistActionValidator, vacancyController.lockChecklist);
+
+// ============================================================
 // GET /api/vacancies/:id/requirements — List requirements
 // ============================================================
-router.get('/:id/requirements', async (req, res) => {
-  try {
-    const companyId = req.companyMembership.company_id;
-    const result = await pool.query(
-      `SELECT r.* FROM requirements r
-       JOIN company_roles cr ON cr.id = r.role_id
-       WHERE r.role_id = $1 AND cr.company_id = $2 ORDER BY r.created_at ASC`,
-      [req.params.id, companyId]
-    );
-    return res.json({ requirements: result.rows });
-  } catch (err) {
-    console.error('Get requirements error:', err);
-    return res.status(500).json({ error: 'Failed to fetch requirements' });
-  }
-});
+router.get('/:id/requirements', [uuidParam('id'), handleValidationErrors], vacancyController.getRequirements);
 
 // ============================================================
 // POST /api/vacancies/:id/requirements — Add requirement
 // ============================================================
-router.post(
-  '/:id/requirements',
-  [
-    body('name').trim().notEmpty().withMessage('Requirement name is required'),
-    body('category').optional().trim(),
-    body('reqType').optional().isIn(['Required', 'Preferred', 'Optional', 'REQUIRED', 'PREFERRED', 'OPTIONAL']),
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() });
-
-    try {
-      const companyId = req.companyMembership.company_id;
-      const roleId = req.params.id;
-      const {
-        name,
-        description,
-        category,
-        reqType,
-        priority,
-        proficiency,
-        evalMethod,
-        evaluationMethods,
-        requirementType,
-        importance,
-        weight,
-      } = req.body;
-
-      // Verify vacancy belongs to company
-      const vacCheck = await pool.query(
-        'SELECT id, status FROM company_roles WHERE id = $1 AND company_id = $2',
-        [roleId, companyId]
-      );
-      if (vacCheck.rowCount === 0) {
-        return res.status(404).json({ error: 'Vacancy not found in your company' });
-      }
-
-      const normalizedReqType = reqType || (importance ? (importance.toUpperCase() === 'REQUIRED' ? 'Required' : 'Preferred') : 'Required');
-      const normalizedImportance = importance || (reqType ? reqType.toUpperCase() : 'REQUIRED');
-      const normalizedType = requirementType || (category ? category.toUpperCase() : 'SKILL');
-      const normalizedEvalMethods = evaluationMethods || [evalMethod || 'ASSESSMENT'];
-
-      const result = await pool.query(
-        `INSERT INTO requirements
-         (role_id, company_id, name, description, category, req_type, priority,
-          proficiency, eval_method, requirement_type, importance, evaluation_methods, weight)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
-        [
-          roleId,
-          companyId,
-          name,
-          description || null,
-          category || 'Technical',
-          normalizedReqType,
-          priority || 'High',
-          proficiency || 'Intermediate',
-          evalMethod || 'Official Technical Assessment',
-          normalizedType,
-          normalizedImportance,
-          JSON.stringify(normalizedEvalMethods),
-          weight || 1.0,
-        ]
-      );
-
-      return res.status(201).json({ requirement: result.rows[0] });
-    } catch (err) {
-      console.error('Create requirement error:', err);
-      return res.status(500).json({ error: 'Failed to create requirement' });
-    }
-  }
-);
+router.post('/:id/requirements', vacancyRequirementValidator, vacancyController.createRequirement);
 
 module.exports = router;

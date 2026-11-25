@@ -36,6 +36,9 @@ function sanitizeErrorMessage(msg) {
 }
 
 function getTransporter() {
+  if (process.env.NODE_ENV === 'test' && process.env.ALLOW_TEST_EMAILS !== 'true') {
+    return null;
+  }
   if (transporter) return transporter;
 
   const user = process.env.SMTP_USER || process.env.GMAIL_USER;

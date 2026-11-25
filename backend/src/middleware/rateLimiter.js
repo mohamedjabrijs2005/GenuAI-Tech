@@ -1,7 +1,11 @@
 const rateLimit = require('express-rate-limit');
 
+const noopLimiter = (req, res, next) => next();
+
+const makeLimiter = (opts) => (process.env.NODE_ENV === 'test' ? noopLimiter : rateLimit(opts));
+
 // Login: 10 attempts per 15 minutes per IP (relaxed in dev/test)
-const loginLimiter = rateLimit({
+const loginLimiter = makeLimiter({
   windowMs: 15 * 60 * 1000,
   max: process.env.NODE_ENV === 'production' ? 10 : 1000,
   message: { error: 'Too many login attempts. Please try again in 15 minutes.' },
@@ -10,7 +14,7 @@ const loginLimiter = rateLimit({
 });
 
 // Registration: 5 per hour per IP (relaxed in dev/test)
-const registerLimiter = rateLimit({
+const registerLimiter = makeLimiter({
   windowMs: 60 * 60 * 1000,
   max: process.env.NODE_ENV === 'production' ? 5 : 1000,
   message: { error: 'Too many registration attempts. Please try again later.' },
@@ -19,7 +23,7 @@ const registerLimiter = rateLimit({
 });
 
 // Password reset: 3 per 15 minutes per IP (relaxed in dev/test)
-const forgotPasswordLimiter = rateLimit({
+const forgotPasswordLimiter = makeLimiter({
   windowMs: 15 * 60 * 1000,
   max: process.env.NODE_ENV === 'production' ? 3 : 1000,
   message: { error: 'Too many password reset requests. Please try again in 15 minutes.' },

@@ -11,6 +11,7 @@
     "migrate:v2": "node src/database/migrate_v2.js",
     "seed": "node src/database/seed_dev.js",
     "verify": "node src/database/verify_schema.js",
+    "test:core": "node --test tests/coreFlow.test.js",
     "test": "node ../test_email_and_google_oauth_suite.js"
   },
   "keywords": [],

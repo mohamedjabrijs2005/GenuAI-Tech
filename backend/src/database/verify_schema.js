@@ -33,6 +33,7 @@ const REQUIRED_TABLES = [
   'resumes',
   'parsed_resumes',
   'consent_records',
+  'shortlist_overrides',
   'schema_migrations'
 ];
 

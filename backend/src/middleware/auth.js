@@ -153,10 +153,49 @@ function requireGenuAIAdmin(req, res, next) {
   next();
 }
 
+/**
+ * Middleware: Ensure the authenticated user is a candidate and resolve req.candidateId.
+ * Must be used after authenticate().
+ */
+async function requireCandidate(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const role = (req.user.role || '').toUpperCase();
+  if (role !== 'CANDIDATE' && role !== 'APPLICANT' && role !== 'USER') {
+    return res.status(403).json({ error: 'Forbidden: Requires Candidate account.' });
+  }
+  try {
+    const existing = await pool.query(
+      'SELECT id FROM candidates WHERE LOWER(email) = LOWER($1) LIMIT 1',
+      [req.user.email]
+    );
+    if (existing.rowCount > 0) {
+      req.candidateId = existing.rows[0].id;
+      req.user.candidate_id = existing.rows[0].id;
+    } else {
+      const created = await pool.query(
+        `INSERT INTO candidates (first_name, last_name, email, phone, location)
+         VALUES ($1, $2, $3, '—', 'Global')
+         ON CONFLICT (email) DO UPDATE SET updated_at = NOW()
+         RETURNING id`,
+        [req.user.first_name || 'Candidate', req.user.last_name || 'User', req.user.email]
+      );
+      req.candidateId = created.rows[0].id;
+      req.user.candidate_id = created.rows[0].id;
+    }
+    return next();
+  } catch (err) {
+    console.error('Candidate lookup failed:', err.message);
+    return res.status(503).json({ error: 'Candidate profile service unavailable.' });
+  }
+}
+
 module.exports = {
   authenticate,
   requireCompany,
   requireApprovedCompany,
+  requireCandidate,
   requireRole,
   requireGenuAIAdmin,
 };

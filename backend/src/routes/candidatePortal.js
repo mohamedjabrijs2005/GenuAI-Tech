@@ -2,6 +2,7 @@ const express = require('express');
 const pool = require('../database/pool');
 const { authenticate } = require('../middleware/auth');
 const { recomputeTargetCoverage } = require('./evidenceService');
+const { computeTargetSkillProof } = require('../services/skillProofService');
 const { sendEmail } = require('../services/email');
 const {
   ensureOfficialQuestionsForRole,
@@ -2313,8 +2314,19 @@ router.post('/targets', authenticate, requireCandidate, async (req, res) => {
       });
     }
 
-    // Rule 8: Do not allow candidate Target creation if the vacancy has no approved blueprint
+    // Rule 8: Do not allow candidate Target creation if the vacancy has no approved checklist/blueprint
     let hasApprovedBlueprint = Boolean(vacancy.approved_role_blueprint_id);
+    if (!hasApprovedBlueprint) {
+      const checklistCheck = await client.query(
+        `SELECT id FROM vacancy_skill_checklists
+         WHERE vacancy_id = $1 AND status IN ('approved', 'locked')
+         ORDER BY version DESC LIMIT 1`,
+        [vacancyId]
+      );
+      if (checklistCheck.rowCount > 0) {
+        hasApprovedBlueprint = true;
+      }
+    }
     if (!hasApprovedBlueprint) {
       const bpCheck = await client.query(
         `SELECT id FROM ai_role_blueprint_suggestions 
@@ -2449,6 +2461,7 @@ router.post('/targets', authenticate, requireCandidate, async (req, res) => {
 
     try {
       await recomputeTargetCoverage(pool, target.id);
+      await computeTargetSkillProof(pool, target.id);
     } catch (_) { }
 
     // Dispatch async notification to company hiring team
