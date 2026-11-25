@@ -131,12 +131,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const onCustomSync = () => refreshAuth();
     window.addEventListener('genuai:company-status-updated', onCustomSync);
 
-    // 4. Periodic background poll every 6 seconds to detect live admin verification changes
+    // 4. Periodic background poll every 60 seconds to detect live admin verification changes
     const interval = setInterval(() => {
       if (typeof window !== 'undefined' && localStorage.getItem('genuai_token')) {
         refreshAuth();
       }
-    }, 6000);
+    }, 60000);
 
     return () => {
       window.removeEventListener('focus', onFocusOrVisible);

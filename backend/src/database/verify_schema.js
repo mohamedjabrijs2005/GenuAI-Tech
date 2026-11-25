@@ -25,6 +25,14 @@ const REQUIRED_TABLES = [
   'role_blueprint_approval',
   'assessment_sessions',
   'official_assessment_questions',
+  'skill_claims',
+  'target_skill_proof',
+  'match_explanations',
+  'hiring_outcomes',
+  'vacancy_skill_checklists',
+  'resumes',
+  'parsed_resumes',
+  'consent_records',
   'schema_migrations'
 ];
 
