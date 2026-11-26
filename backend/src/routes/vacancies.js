@@ -10,6 +10,7 @@ const {
   vacancyChecklistUpdateItemsValidator,
   vacancyRequirementValidator,
 } = require('../validators/vacancyValidator');
+const { trackEvent } = require('../services/analyticsService');
 
 const router = express.Router();
 router.use(authenticate, requireCompany);
@@ -334,6 +335,8 @@ router.post(
           req.ip || null,
         ]
       );
+
+      await trackEvent('vacancy_created', { userId: req.user.id, companyId, vacancyId: vacancy.id });
 
       return res.status(201).json({ vacancy });
     } catch (err) {

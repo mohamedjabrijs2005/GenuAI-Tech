@@ -9,6 +9,7 @@ import {
   ClipboardList, Shield, Download, Play, Pause, RefreshCw, Building2, Sparkles, Check, BarChart3
 } from 'lucide-react';
 import { DataService, Vacancy, Candidate, EvidenceService, VacancyVersion } from '@/lib/dataService';
+import { VacancyChecklistPanel } from '@/components/features/VacancyChecklistPanel';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 
@@ -221,7 +222,7 @@ export default function VacancyDetailPage() {
         <div className="stitch-tabs-list">
           {[
             { id: 'overview', label: 'Role Overview', icon: Briefcase },
-            { id: 'requirements', label: 'Requirements Matrix', icon: Target },
+            { id: 'requirements', label: 'Skill Checklist & Matrix', icon: Target },
             { id: 'assessments', label: 'Assessment Configuration', icon: ClipboardList },
             { id: 'applications', label: `Applicants (${candidates.length})`, icon: Users },
             { id: 'versions', label: `Versions (${versions.length})`, icon: CheckCircle2 },
@@ -286,27 +287,9 @@ export default function VacancyDetailPage() {
         </div>
       )}
 
-      {/* Tab 2: Requirements */}
+      {/* Tab 2: Skill Checklist & Matrix */}
       {activeTab === 'requirements' && (
-        <div className="grid-2" style={{ gap: 16 }}>
-          {[
-            { name: 'Distributed Concurrency & Algorithms', cat: 'Technical', weight: 'High', method: 'Proctored Technical Sandbox' },
-            { name: 'PostgreSQL Architecture & Query Optimization', cat: 'Technical', weight: 'High', method: 'SQL Schema & Query Execution' },
-            { name: 'Kafka & Event Streaming Pipelines', cat: 'Architecture', weight: 'Medium', method: 'Simulation Scenario' },
-            { name: 'Zero-Trust Microservice Security', cat: 'Security', weight: 'Medium', method: 'Security Code Audit' },
-            { name: 'Technical Communication & Rubric Defense', cat: 'Soft Skills', weight: 'High', method: 'Structured Calibrated Interview' },
-          ].map((r, i) => (
-            <div key={i} className="card" style={{ padding: 18, borderLeft: '4px solid #00236f' }}>
-              <div className="flex items-center justify-between" style={{ marginBottom: 6 }}>
-                <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>{r.name}</span>
-                <span className="badge badge-gray">{r.cat}</span>
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                Assessment Method: <strong>{r.method}</strong> • Priority: <strong>{r.weight}</strong>
-              </div>
-            </div>
-          ))}
-        </div>
+        <VacancyChecklistPanel vacancyId={id} />
       )}
 
       {/* Tab 3: Assessments */}

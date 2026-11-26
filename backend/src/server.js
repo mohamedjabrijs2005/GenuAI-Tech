@@ -1,5 +1,8 @@
 require('dotenv').config();
 
+const { validateBackendEnv } = require('./config/env');
+validateBackendEnv();
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -16,13 +19,15 @@ const interviewRoutes = require('./routes/interviews');
 const reportRoutes = require('./routes/reports');
 const adminRoutes = require('./routes/admin');
 const { router: evidenceRoutes } = require('./routes/evidence');
-const candidateAssessmentRoutes = require('./routes/candidateAssessments');
+
 const candidatePortalRoutes = require('./routes/candidatePortal');
 const candidateInterestRoutes = require('./routes/candidateInterest');
 const readinessRoutes = require('./routes/readiness');
 const { router: roleBlueprintRoutes } = require('./routes/roleBlueprints');
 const { router: shortlistRoutes } = require('./routes/shortlist');
 const { router: skillClaimRoutes } = require('./routes/skillClaims');
+
+const { requestLogger } = require('./middleware/requestLogger');
 
 const app = express();
 
@@ -75,6 +80,7 @@ app.use(cors(corsOptions));
 app.options(/(.*)/, cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
+app.use(requestLogger);
 
 // ============================================================
 // Routes
@@ -92,7 +98,7 @@ app.use('/api/assessments', assessmentRoutes);
 app.use('/api/integrity', integrityRoutes);
 app.use('/api/interviews', interviewRoutes);
 app.use('/api/evidence', evidenceRoutes);
-app.use('/api/candidate-assessments', candidateAssessmentRoutes);
+
 app.use('/api/candidate-portal', candidatePortalRoutes);
 app.use('/api/candidate-portal', candidateInterestRoutes);
 app.use('/api/candidate', candidateInterestRoutes);

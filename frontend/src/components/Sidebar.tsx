@@ -54,12 +54,6 @@ const NAV: NavSection[] = [
       { label: 'Reports', href: '/dashboard/reports', icon: FileText },
     ],
   },
-  {
-    section: 'Account',
-    items: [
-      { label: 'Subscription', href: '/dashboard/subscription', icon: CreditCard },
-    ],
-  },
 ];
 
 

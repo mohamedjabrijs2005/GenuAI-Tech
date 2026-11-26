@@ -2,6 +2,7 @@ const pool = require('../database/pool');
 const { computeTargetSkillProof, computeOverallFit } = require('./skillProofService');
 const { recomputeTargetCoverage } = require('../routes/evidenceService');
 const { logAudit } = require('./auditService');
+const { trackEvent } = require('./analyticsService');
 
 const FIT_ORDER = { strong: 0, promising: 1, partial: 2, not_ready: 3 };
 
@@ -151,6 +152,12 @@ async function getExplainableShortlist(vacancyId, companyId) {
     return (FIT_ORDER[a.overallFit] ?? 99) - (FIT_ORDER[b.overallFit] ?? 99);
   });
 
+  await trackEvent('shortlist_viewed', {
+    companyId,
+    vacancyId,
+    properties: { candidateCount: candidates.length },
+  });
+
   return {
     vacancyId,
     vacancyTitle: vacancy.title,
@@ -207,6 +214,13 @@ async function overrideShortlistRank(vacancyId, targetId, companyId, user, { ove
     });
 
     await client.query('COMMIT');
+    await trackEvent('hr_override_used', {
+      userId: user?.id || null,
+      companyId,
+      vacancyId,
+      targetId,
+      properties: { overrideRank, overrideFit },
+    });
     return upRes.rows[0];
   } catch (err) {
     try { await client.query('ROLLBACK'); } catch (_) {}
@@ -286,6 +300,13 @@ async function recordHiringOutcome(vacancyId, targetId, companyId, user, { decis
     });
 
     await client.query('COMMIT');
+    await trackEvent('hiring_outcome_recorded', {
+      userId: user?.id || null,
+      companyId,
+      vacancyId,
+      targetId,
+      properties: { decision: normalized, reasonCode },
+    });
     return insRes.rows[0];
   } catch (err) {
     try { await client.query('ROLLBACK'); } catch (_) {}

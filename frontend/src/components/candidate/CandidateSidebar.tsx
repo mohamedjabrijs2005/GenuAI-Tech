@@ -503,14 +503,6 @@ export function CandidateSidebar({
               <Sliders size={16} />
               <span>Settings</span>
             </Link>
-            <Link
-              href="/candidate/subscription"
-              onClick={onCloseMobile}
-              className={`sidebar-nav-item${isActive('/candidate/subscription') ? ' active' : ''}`}
-            >
-              <CreditCard size={16} />
-              <span>Subscription</span>
-            </Link>
           </div>
         </div>
       </nav>

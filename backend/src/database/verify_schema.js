@@ -34,6 +34,7 @@ const REQUIRED_TABLES = [
   'parsed_resumes',
   'consent_records',
   'shortlist_overrides',
+  'analytics_events',
   'schema_migrations'
 ];
 

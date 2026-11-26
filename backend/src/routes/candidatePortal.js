@@ -4,6 +4,7 @@ const { authenticate } = require('../middleware/auth');
 const { recomputeTargetCoverage } = require('./evidenceService');
 const { computeTargetSkillProof } = require('../services/skillProofService');
 const { sendEmail } = require('../services/email');
+const { trackEvent } = require('../services/analyticsService');
 const {
   ensureOfficialQuestionsForRole,
   sanitizeQuestionsForCandidate,
@@ -2458,6 +2459,13 @@ router.post('/targets', authenticate, requireCandidate, async (req, res) => {
     );
 
     await client.query('COMMIT');
+
+    await trackEvent('candidate_applied', {
+      userId: req.user.id,
+      companyId: vacancy.company_id,
+      vacancyId,
+      targetId: target.id,
+    });
 
     try {
       await recomputeTargetCoverage(pool, target.id);

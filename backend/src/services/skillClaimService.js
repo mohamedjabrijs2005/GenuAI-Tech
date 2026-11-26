@@ -1,6 +1,7 @@
 const pool = require('../database/pool');
 const { computeTargetSkillProof } = require('./skillProofService');
 const { logAudit } = require('./auditService');
+const { trackEvent } = require('./analyticsService');
 
 async function recomputeCandidateTargets(db, candidateId) {
   const targetsRes = await db.query(
@@ -99,6 +100,10 @@ async function confirmClaim(claimId, candidateId, user) {
     });
 
     await client.query('COMMIT');
+    await trackEvent('skill_claim_confirmed', {
+      userId: user?.id || null,
+      properties: { claimId, candidateId, skillName: upd.rows[0].skill_name },
+    });
     return upd.rows[0];
   } catch (err) {
     try { await client.query('ROLLBACK'); } catch (_) {}

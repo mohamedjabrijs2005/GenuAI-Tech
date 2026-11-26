@@ -7,6 +7,7 @@ const {
   adminCompanyStatusValidator,
   adminVacancyStatusValidator,
 } = require('../validators/adminValidator');
+const { getPilotFunnelSummary } = require('../services/analyticsService');
 
 // Protect all admin endpoints
 router.use(authenticate, requireGenuAIAdmin);
@@ -935,6 +936,19 @@ router.post('/ai-suggestions/:id/review', async (req, res) => {
   } catch (err) {
     console.error('Admin review AI suggestion error:', err);
     return res.status(500).json({ error: 'Failed to record blueprint review' });
+  }
+});
+
+// ============================================================
+// GET /api/admin/analytics/pilot-funnel
+// ============================================================
+router.get('/analytics/pilot-funnel', async (req, res) => {
+  try {
+    const data = await getPilotFunnelSummary(req.query.companyId || null);
+    return res.json({ funnel: data });
+  } catch (err) {
+    console.error('Pilot funnel analytics error:', err);
+    return res.status(500).json({ error: 'Failed to load pilot funnel analytics' });
   }
 });
 

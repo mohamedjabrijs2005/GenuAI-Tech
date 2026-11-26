@@ -24,6 +24,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import api from '@/lib/api';
+import { ExplainableShortlistPanel } from '@/components/features/ExplainableShortlistPanel';
 
 /* ─── Types ────────────────────────────────────────────────────── */
 interface FunnelData {
@@ -709,6 +710,9 @@ export default function RoleReadinessFunnelPage() {
           </div>
         </div>
       )}
+
+      {/* ── Explainable Shortlist (Phase 1 Proof Engine) ─────────── */}
+      <ExplainableShortlistPanel vacancyId={vacancyId} />
 
       {/* ── Business Value Explainer ─────────────────────────────── */}
       <div style={{

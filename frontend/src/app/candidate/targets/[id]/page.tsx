@@ -30,6 +30,7 @@ import {
   Minus,
 } from 'lucide-react';
 import api from '@/lib/api';
+import { CandidateSkillClaimsPanel } from '@/components/features/CandidateSkillClaimsPanel';
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 function statusBadge(status: string) {
@@ -238,6 +239,12 @@ export default function TargetWorkspacePage() {
           <TimelineStep label="Coverage" status={tlCoverage} icon={<Shield size={16} />} />
         </div>
       </div>
+
+      {/* ── Skill Claims & Live Proof Levels ────────────────────────────────── */}
+      <CandidateSkillClaimsPanel
+        targetId={targetId}
+        suggestedSkills={requirements.map((r: any) => r.name).filter(Boolean)}
+      />
 
       {/* ── Role Requirement Checklist ─────────────────────────────────────────── */}
       <div>

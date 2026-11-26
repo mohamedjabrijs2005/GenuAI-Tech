@@ -8,18 +8,16 @@ import {
 } from 'lucide-react';
 import api from '@/lib/api';
 
-const MOCK_LOGS = [
-  { id: '1', created_at: '2026-10-01T17:23:14Z', actor_name: 'Mohamed Jabri', actor_email: 'admin@company.io', entity_type: 'vacancy', entity_id: 'vac-001', action: 'submitted_for_verification', details: { title: 'Senior Software Developer' } },
-  { id: '2', created_at: '2026-10-01T15:10:02Z', actor_name: 'Mohamed Jabri', actor_email: 'admin@company.io', entity_type: 'application', entity_id: 'app-021', action: 'decision_made', details: { decision: 'Selected', candidate: 'James Okonkwo' } },
-  { id: '3', created_at: '2026-10-01T14:45:00Z', actor_name: 'Sara Chen', actor_email: 'recruiter@company.io', entity_type: 'interview', entity_id: 'int-009', action: 'feedback_submitted', details: { status: 'Completed', score: 9.2 } },
-  { id: '4', created_at: '2026-10-01T13:22:30Z', actor_name: 'Mohamed Jabri', actor_email: 'admin@company.io', entity_type: 'vacancy', entity_id: 'vac-002', action: 'created', details: { title: 'Product Designer' } },
-  { id: '5', created_at: '2026-10-01T11:58:00Z', actor_name: 'Sara Chen', actor_email: 'recruiter@company.io', entity_type: 'application', entity_id: 'app-018', action: 'status_changed', details: { status: 'Interview', candidate: 'Alex Rivera' } },
-  { id: '6', created_at: '2026-09-30T16:30:00Z', actor_name: 'GenuAI Admin', actor_email: 'admin@genuai.io', entity_type: 'company', entity_id: 'cmp-001', action: 'verified', details: { status: 'VERIFIED' } },
-  { id: '7', created_at: '2026-09-30T14:00:00Z', actor_name: 'Mohamed Jabri', actor_email: 'admin@company.io', entity_type: 'agreement', entity_id: 'agr-001', action: 'accepted', details: { type: 'Assessment Sharing Agreement' } },
-  { id: '8', created_at: '2026-09-30T10:15:00Z', actor_name: 'Kenji Watanabe', actor_email: 'interviewer@company.io', entity_type: 'interview', entity_id: 'int-007', action: 'feedback_submitted', details: { status: 'Completed', score: 7.8 } },
-  { id: '9', created_at: '2026-09-29T17:45:00Z', actor_name: 'Sara Chen', actor_email: 'recruiter@company.io', entity_type: 'application', entity_id: 'app-015', action: 'decision_made', details: { decision: 'Rejected', candidate: 'B. Kumar' } },
-  { id: '10', created_at: '2026-09-29T09:30:00Z', actor_name: 'Mohamed Jabri', actor_email: 'admin@company.io', entity_type: 'vacancy', entity_id: 'vac-001', action: 'updated', details: { field: 'closing_date' } },
-];
+interface AuditLogItem {
+  id: string;
+  created_at: string;
+  actor_name: string;
+  actor_email?: string;
+  entity_type: string;
+  entity_id?: string;
+  action: string;
+  details?: any;
+}
 
 const ENTITY_ICON: Record<string, React.ReactNode> = {
   vacancy: <Briefcase size={14} />,
@@ -52,7 +50,7 @@ function getInitials(name: string) {
 }
 
 export default function AuditTrailPage() {
-  const [logs, setLogs] = useState(MOCK_LOGS);
+  const [logs, setLogs] = useState<AuditLogItem[]>([]);
   const [search, setSearch] = useState('');
   const [entityFilter, setEntityFilter] = useState('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -61,8 +59,8 @@ export default function AuditTrailPage() {
   useEffect(() => {
     setIsLoading(true);
     api.get('/reports/audit')
-      .then(r => { if (r.data.logs?.length) setLogs(r.data.logs); })
-      .catch(() => {})
+      .then(r => { setLogs(Array.isArray(r.data?.logs) ? r.data.logs : []); })
+      .catch(() => { setLogs([]); })
       .finally(() => setIsLoading(false));
   }, []);
 

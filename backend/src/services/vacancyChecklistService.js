@@ -1,6 +1,7 @@
 const pool = require('../database/pool');
 const { generateRoleBlueprint } = require('./aiRoleBlueprintGenerator');
 const { logAudit } = require('./auditService');
+const { trackEvent } = require('./analyticsService');
 
 function mapRequirementRow(item, index = 0) {
   const impRaw = String(item.importance || item.reqType || 'REQUIRED').toUpperCase();
@@ -332,6 +333,12 @@ async function approveChecklist(vacancyId, companyId, user, { notes = null, lock
     });
 
     await client.query('COMMIT');
+    await trackEvent('checklist_approved', {
+      userId: user?.id || null,
+      companyId,
+      vacancyId,
+      properties: { checklistId: checklist.id, status: nextStatus, lockNow: Boolean(lockNow) },
+    });
     return { checklist };
   } catch (err) {
     try { await client.query('ROLLBACK'); } catch (_) {}
