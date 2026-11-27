@@ -55,6 +55,7 @@ function isOriginAllowed(origin) {
     const parsed = new URL(cleanOrigin);
     if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') return true;
     if (parsed.hostname.endsWith('.vercel.app')) return true;
+    if (parsed.hostname.endsWith('.onrender.com')) return true;
   } catch (_) {}
 
   return false;
