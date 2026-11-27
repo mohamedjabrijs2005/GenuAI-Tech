@@ -624,7 +624,7 @@ export default function HomePage() {
                   <div>
                     <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>Senior Backend Engineer</div>
                     <div style={{ fontSize: 12, color: '#64748b', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span>Alpha Technologies</span>
+                      <span>Your Company</span>
                       <span style={{ color: '#cbd5e1' }}>•</span>
                       <span style={{ color: '#059669', fontWeight: 600 }}>Verified Vacancy</span>
                     </div>
@@ -696,7 +696,7 @@ export default function HomePage() {
                 }}>
                   <Lock size={14} color="#b8860b" />
                   <span style={{ fontSize: 11.5, color: '#854d0e', fontWeight: 600 }}>
-                    Isolated to Alpha Technologies · Private from other employers
+                    Isolated to Your Company · Private from other employers
                   </span>
                 </div>
               </div>
@@ -737,7 +737,7 @@ export default function HomePage() {
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#f59e0b', opacity: 0.8 }} />
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981', opacity: 0.8 }} />
                   <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', marginLeft: 8 }}>
-                    Recruiter Decision Portal · Alpha Technologies
+                    Recruiter Decision Portal · Your Company
                   </span>
                 </div>
                 <span style={{
