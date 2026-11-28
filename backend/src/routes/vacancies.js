@@ -30,6 +30,15 @@ function normalizeEmploymentType(val) {
   return EMPLOYMENT_TYPES.includes(s) ? s : 'full_time';
 }
 
+function normalizeWorkMode(val) {
+  if (!val) return 'Hybrid';
+  const s = String(val).toLowerCase().trim().replace(/[\s_]+/g, '-');
+  if (s === 'remote') return 'Remote';
+  if (s === 'on-site' || s === 'onsite') return 'On-site';
+  if (s === 'hybrid') return 'Hybrid';
+  return 'Hybrid';
+}
+
 // ============================================================
 // GET /api/vacancies — List all vacancies for authenticated company
 // ============================================================
@@ -252,7 +261,7 @@ router.post(
           normExp,
           normEmp,
           location || 'Remote',
-          workMode || 'Hybrid',
+          normalizeWorkMode(workMode),
           salaryRange || null,
           vacancyCount || 1,
           closingDate ? normalizedClosingDate : null,
@@ -380,7 +389,7 @@ const handleUpdateVacancy = async (req, res) => {
          closing_date = COALESCE($6, closing_date),
          updated_at = NOW()
        WHERE id = $7 AND company_id = $8 RETURNING *`,
-      [title, jobDescription, workMode, salaryRange, vacancyCount, closingDate, id, companyId]
+      [title, jobDescription, workMode ? normalizeWorkMode(workMode) : null, salaryRange, vacancyCount, closingDate, id, companyId]
     );
 
     await pool.query(

@@ -536,4 +536,17 @@ describe('Integration: Core Product Spine & Tenant Isolation', () => {
     assert.equal(exportRes.status, 200);
     assert.ok(exportRes.data.exportedAt);
   });
+
+  test('8. Vacancy creation normalizes lowercase/variant workMode without 500', async () => {
+    const res = await requestJson(baseUrl, 'POST', '/api/vacancies', {
+      token: tokens.ownerA,
+      body: {
+        title: 'Normalized WorkMode Role',
+        employmentType: 'full_time',
+        workMode: 'remote',
+      },
+    });
+    assert.equal(res.status, 201, JSON.stringify(res.data));
+    assert.equal(res.data.vacancy.work_mode, 'Remote');
+  });
 });
