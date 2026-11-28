@@ -244,18 +244,81 @@ export default function Sidebar({ isMobileOpen = false, onCloseMobile }: Sidebar
       </nav>
 
       {/* User Footer */}
-      <div className="sidebar-footer">
-        <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', padding: '0 8px 6px' }}>
-          {user?.role?.replace('_', ' ') || 'Company Admin'}
-        </div>
-        <div className="sidebar-user" role="button" tabIndex={0} aria-label="User menu" onClick={logout}>
-          <div className="user-avatar">{initials}</div>
-          <div style={{ flex: 1, overflow: 'hidden' }}>
-            <div className="user-name">{displayName}</div>
-            <div className="user-email">{displayEmail}</div>
+      <div
+        className="sidebar-footer"
+        style={{
+          padding: '12px 14px',
+          borderTop: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: '#ffffff',
+          flexShrink: 0,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #1e293b, #334155)',
+              color: '#d4af37',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
+              fontSize: 13,
+              flexShrink: 0,
+            }}
+          >
+            {initials}
           </div>
-          <LogOut size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+          <div style={{ overflow: 'hidden' }}>
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#1e293b',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {displayName}
+            </div>
+            <div
+              style={{
+                fontSize: 10.5,
+                color: '#64748b',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {displayEmail || user?.role?.replace('_', ' ') || 'Company Admin'}
+            </div>
+          </div>
         </div>
+        <button
+          onClick={logout}
+          title="Log out"
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#94a3b8',
+            cursor: 'pointer',
+            padding: 6,
+            borderRadius: 6,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+          aria-label="Log Out"
+        >
+          <LogOut size={16} />
+        </button>
       </div>
     </aside>
   );

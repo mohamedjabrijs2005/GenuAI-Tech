@@ -2873,4 +2873,10 @@ a.btn,
   }
 }
 
+/* Hide native browser password reveal/clear icons so only custom Eye toggle renders */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
 

@@ -42,9 +42,14 @@ export default function InterviewsPage() {
   const filtered = interviews.filter(i => filter === 'all' || i.status === filter);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div className="page-content" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Header */}
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: 0 }}>
+        <div className="breadcrumbs">
+          <span>Company</span>
+          <span className="breadcrumb-sep">/</span>
+          <span className="breadcrumb-current">Interviews</span>
+        </div>
         <div className="page-header-row">
           <div>
             <h1 className="page-title">Interviews</h1>
@@ -69,11 +74,11 @@ export default function InterviewsPage() {
 
       {/* Content */}
       {loading && <div style={{ textAlign: 'center', padding: 40 }}><div className="spinner" style={{ margin: '0 auto' }} /></div>}
-      {error && <div className="card" style={{ padding: 24, textAlign: 'center', color: '#dc2626' }}><AlertCircle size={24} style={{ marginBottom: 8 }} /><p>{error}</p></div>}
+      {error && <div className="card" style={{ padding: 24, textAlign: 'center', color: '#dc2626' }}><AlertCircle size={24} style={{ margin: '0 auto 8px', display: 'block' }} /><p>{error}</p></div>}
 
       {!loading && !error && filtered.length === 0 && (
         <div className="card" style={{ padding: 48, textAlign: 'center' }}>
-          <Calendar size={36} style={{ color: 'var(--text-muted)', marginBottom: 12 }} />
+          <Calendar size={36} style={{ color: 'var(--text-muted)', margin: '0 auto 12px', display: 'block' }} />
           <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
             No {filter !== 'all' ? filter : ''} interviews yet. Invite candidates to assessment from the shortlist to schedule interviews.
           </p>

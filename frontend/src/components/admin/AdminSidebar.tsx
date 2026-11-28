@@ -284,32 +284,82 @@ export function AdminSidebar({ isMobileOpen = false, onCloseMobile }: { isMobile
         ))}
       </nav>
 
-      {/* User Footer — matches Company Dashboard footer exactly (single sign-out via LogOut icon) */}
+      {/* User Footer — matches Candidate Dashboard footer */}
       <div
         className="sidebar-footer"
-        style={{ flexShrink: 0 }}
+        style={{
+          padding: '12px 14px',
+          borderTop: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: '#ffffff',
+          flexShrink: 0,
+        }}
       >
-        <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', padding: '0 8px 6px' }}>
-          {adminUser.role || 'Super Admin'}
-        </div>
-        <div
-          className="sidebar-user"
-          role="button"
-          tabIndex={0}
-          onClick={logout}
-          onKeyDown={(e) => e.key === 'Enter' && logout()}
-          aria-label="Sign out"
-          title="Sign out"
-        >
-          <div className="user-avatar" style={{ background: '#b8860b', color: '#ffffff' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #1e293b, #334155)',
+              color: '#d4af37',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
+              fontSize: 13,
+              flexShrink: 0,
+            }}
+          >
             {adminUser.avatar}
           </div>
-          <div style={{ flex: 1, overflow: 'hidden' }}>
-            <div className="user-name">{adminUser.name}</div>
-            <div className="user-email">{adminUser.email}</div>
+          <div style={{ overflow: 'hidden' }}>
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#1e293b',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {adminUser.name}
+            </div>
+            <div
+              style={{
+                fontSize: 10.5,
+                color: '#64748b',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {adminUser.email || adminUser.role || 'Super Admin'}
+            </div>
           </div>
-          <LogOut size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
         </div>
+        <button
+          onClick={logout}
+          title="Log out"
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#94a3b8',
+            cursor: 'pointer',
+            padding: 6,
+            borderRadius: 6,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+          aria-label="Log Out"
+        >
+          <LogOut size={16} />
+        </button>
       </div>
     </aside>
   );
