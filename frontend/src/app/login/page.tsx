@@ -113,7 +113,7 @@ export default function AuthPage() {
           }
 
           toast.success('Successfully authenticated with Google!');
-          const destination = targetParam || (role === 'COMPANY_OWNER' ? '/dashboard' : '/candidate');
+          const destination = targetParam || (role === 'COMPANY_OWNER' ? '/company' : '/candidate');
           router.replace(destination);
         } catch (_) {}
       }
@@ -264,7 +264,7 @@ export default function AuthPage() {
                 localStorage.setItem('genuai_user', JSON.stringify(res.data.user));
                 if (res.data.company) localStorage.setItem('genuai_company', JSON.stringify(res.data.company));
                 toast.success('Signed in with Google!');
-                router.push(res.data.user?.role === 'COMPANY_OWNER' ? '/dashboard' : '/candidate');
+                router.push(res.data.user?.role === 'COMPANY_OWNER' ? '/company' : '/candidate');
               }
             } catch (err: any) {
               toast.error(err.response?.data?.error || 'Google authentication failed.');

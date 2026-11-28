@@ -13,20 +13,18 @@ export default function VerificationStatusPage() {
   const { company, user, refreshAuth } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchProfile = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await api.get('/company/profile').catch(() => null);
+      const res = await api.get('/company/profile');
       if (res?.data?.company) {
         setProfile(res.data.company);
-      } else {
-        const local = localStorage.getItem('genuai_company_profile');
-        if (local) setProfile(JSON.parse(local));
       }
     } catch {
-      const local = localStorage.getItem('genuai_company_profile');
-      if (local) setProfile(JSON.parse(local));
+      setError('Unable to load latest company verification profile.');
     } finally {
       setLoading(false);
     }

@@ -234,10 +234,10 @@ export default function ReportsPage() {
             <div className="card-header" style={{ marginBottom: 20 }}>
               <div className="card-title">Evidence Quality Overview</div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-              <DonutRing pct={Number(ev.coverage_pct) || 81} color="#059669" label="Coverage" />
-              <DonutRing pct={Math.round((Number(ev.supporting) / (Number(ev.total_evidence) || 1)) * 100) || 81} color="#2563eb" label="Supporting" />
-              <DonutRing pct={Math.round((1 - Number(ev.gap) / (Number(ev.total_evidence) || 1)) * 100) || 93} color="#d4af37" label="No Gaps" />
+            <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+              <DonutRing pct={Number(ev.coverage_pct) || 0} color="#059669" label="Coverage" />
+              <DonutRing pct={Number(ev.total_evidence) > 0 ? Math.round((Number(ev.supporting) / Number(ev.total_evidence)) * 100) : 0} color="#2563eb" label="Supporting" />
+              <DonutRing pct={Number(ev.total_evidence) > 0 ? Math.round((1 - Number(ev.gap) / Number(ev.total_evidence)) * 100) : 0} color="#d4af37" label="No Gaps" />
             </div>
             <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, textAlign: 'center' }}>
               {[
@@ -345,22 +345,13 @@ export default function ReportsPage() {
             ))}
           </div>
           <div className="card" style={{ padding: 20 }}>
-            <div className="card-header" style={{ marginBottom: 16 }}><div className="card-title">Signal Type Breakdown</div></div>
-            {[
-              { type: 'Tab Switch', count: 8, pct: 44 },
-              { type: 'Face Not Detected', count: 4, pct: 22 },
-              { type: 'Copy-Paste Detected', count: 3, pct: 17 },
-              { type: 'Multiple Faces', count: 2, pct: 11 },
-              { type: 'Unusual Timing', count: 1, pct: 6 },
-            ].map(s => (
-              <div key={s.type} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-                <div style={{ width: 160, fontSize: 13, fontWeight: 600 }}>{s.type}</div>
-                <Bar value={s.count} max={10} color="#dc2626" />
-                <div style={{ width: 40, textAlign: 'right', fontWeight: 700 }}>{s.count}</div>
-                <div style={{ width: 36, fontSize: 11, color: 'var(--text-muted)' }}>{s.pct}%</div>
-              </div>
-            ))}
-            <Link href="/company/integrity" className="btn btn-secondary btn-sm" style={{ marginTop: 12 }}>
+            <div className="card-header" style={{ marginBottom: 16 }}><div className="card-title">Integrity Signal Summary</div></div>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>
+              {Number(ig.total_signals) === 0
+                ? 'No integrity signals have been recorded across your candidate assessments.'
+                : `${ig.total_signals} total signal(s) recorded (${ig.new_signals} unreviewed, ${ig.high_severity} high severity). Review individual signals in the Integrity Review queue.`}
+            </p>
+            <Link href="/company/integrity" className="btn btn-secondary btn-sm">
               Review Signals <ChevronRight size={14} />
             </Link>
           </div>

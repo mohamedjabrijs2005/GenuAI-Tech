@@ -10,6 +10,8 @@ export default function CompanyProfilePage() {
   const { company, user } = useAuth();
   const [editing, setEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: '',
@@ -22,75 +24,54 @@ export default function CompanyProfilePage() {
     phone: '',
     hiringContactName: '',
     hiringContactEmail: '',
-    verificationStatus: 'UNVERIFIED' as 'VERIFIED' | 'UNDER_REVIEW' | 'UNVERIFIED',
+    verificationStatus: 'PENDING_VERIFICATION',
   });
 
   useEffect(() => {
-    let localData: any = null;
-    try {
-      const stored = localStorage.getItem('genuai_company_profile');
-      if (stored) localData = JSON.parse(stored);
-    } catch {}
-
-    if (company || localData) {
-      setForm(prev => ({
-        ...prev,
-        name: company?.name || prev.name,
-        industry: localData?.industry || prev.industry,
-        description: localData?.description || prev.description,
-        website: localData?.website || prev.website,
-        location: localData?.location || prev.location,
-        size: localData?.size || prev.size,
-        officialEmail: localData?.officialEmail || user?.email || prev.officialEmail,
-        phone: localData?.phone || prev.phone,
-        hiringContactName: localData?.hiringContactName || (user ? `${user.firstName} ${user.lastName}`.trim() : prev.hiringContactName),
-        hiringContactEmail: localData?.hiringContactEmail || user?.email || prev.hiringContactEmail,
-        verificationStatus: (company?.verificationStatus as any) || 'UNVERIFIED',
-      }));
-    }
-
-    // Try fetching live profile from backend
+    let active = true;
+    setIsLoading(true);
+    setLoadError(null);
     api.get('/company/profile')
       .then(res => {
-        if (res.data?.company) {
-          const c = res.data.company;
+        if (!active) return;
+        const c = res.data?.company;
+        if (c) {
           setForm({
             name: c.name || company?.name || '',
-            industry: c.industry || localData?.industry || '',
-            description: c.description || localData?.description || '',
-            website: c.website || localData?.website || '',
-            location: c.location || localData?.location || '',
-            size: c.size || localData?.size || '',
-            officialEmail: c.official_email || localData?.officialEmail || user?.email || '',
-            phone: c.hiring_contact_phone || localData?.phone || '',
-            hiringContactName: c.hiring_contact_name || localData?.hiringContactName || (user ? `${user.firstName} ${user.lastName}`.trim() : ''),
-            hiringContactEmail: c.hiring_contact_email || localData?.hiringContactEmail || user?.email || '',
-            verificationStatus: c.verification_status || 'UNVERIFIED',
+            industry: c.industry || '',
+            description: c.description || '',
+            website: c.website || '',
+            location: c.location || '',
+            size: c.size || '',
+            officialEmail: c.official_email || user?.email || '',
+            phone: c.hiring_contact_phone || '',
+            hiringContactName: c.hiring_contact_name || (user ? `${user.firstName} ${user.lastName}`.trim() : ''),
+            hiringContactEmail: c.hiring_contact_email || user?.email || '',
+            verificationStatus: (c.verification_status || company?.verificationStatus || 'PENDING_VERIFICATION').toUpperCase(),
           });
         }
       })
-      .catch(() => {});
+      .catch(err => {
+        if (!active) return;
+        const status = err?.response?.status;
+        if (status === 401 || status === 403) {
+          setLoadError('You do not have permission to view this company profile.');
+        } else {
+          setLoadError('Unable to load company profile. Please try again.');
+        }
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => { active = false; };
   }, [company, user]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      localStorage.setItem('genuai_company_profile', JSON.stringify({
-        industry: form.industry,
-        description: form.description,
-        website: form.website,
-        location: form.location,
-        size: form.size,
-        officialEmail: form.officialEmail,
-        phone: form.phone,
-        hiringContactName: form.hiringContactName,
-        hiringContactEmail: form.hiringContactEmail,
-      }));
-    } catch {}
-
-    try {
       await api.patch('/company/profile', {
+        name: form.name,
         industry: form.industry,
         description: form.description,
         website: form.website,
@@ -100,16 +81,18 @@ export default function CompanyProfilePage() {
         hiringContactName: form.hiringContactName,
         hiringContactEmail: form.hiringContactEmail,
         hiringContactPhone: form.phone,
-      }).catch(() => null);
+      });
 
       setEditing(false);
       toast.success('Company Profile updated successfully');
-    } catch {
-      toast.error('Failed to update profile');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Failed to update profile');
     } finally {
       setIsSaving(false);
     }
   };
+
+  const isVerified = form.verificationStatus === 'APPROVED' || form.verificationStatus === 'VERIFIED';
 
   return (
     <div className="page-content">
@@ -138,10 +121,22 @@ export default function CompanyProfilePage() {
       </div>
 
       {/* Verification Trust Banner */}
+      {loadError && (
+        <div className="card" style={{ borderLeft: '4px solid var(--danger)', marginBottom: 20, padding: '14px 18px', color: 'var(--danger)', fontSize: 13 }}>
+          {loadError}
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+          Loading company profile...
+        </div>
+      ) : (
+      <>
       <div
-        className="card"
+        className="card flex-mobile-col"
         style={{
-          borderLeft: '4px solid var(--success)',
+          borderLeft: `4px solid ${isVerified ? 'var(--success)' : 'var(--warning)'}`,
           marginBottom: 24,
           padding: '18px 22px',
           display: 'flex',
@@ -151,23 +146,27 @@ export default function CompanyProfilePage() {
         }}
       >
         <div className="flex items-center gap-3">
-          <div className="avatar avatar-md" style={{ background: '#dcfce7', color: '#059669' }}>
-            <CheckCircle size={22} />
+          <div className="avatar avatar-md" style={{ background: isVerified ? '#dcfce7' : '#fef3c7', color: isVerified ? '#059669' : '#b45309' }}>
+            {isVerified ? <CheckCircle size={22} /> : <Clock size={22} />}
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
-              Verified Enterprise Workspace
+              {isVerified ? 'Verified Enterprise Workspace' : 'Verification Status: ' + form.verificationStatus.replace(/_/g, ' ')}
             </div>
             <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 2 }}>
-              Your organization is verified for structured competency evaluations and transparent candidate assessment.
+              {isVerified
+                ? 'Your organization is verified for structured competency evaluations and transparent candidate assessment.'
+                : 'Your organization verification is reviewed by platform governance before public vacancy publishing.'}
             </div>
           </div>
         </div>
-        <span className="badge badge-green">VERIFIED</span>
+        <span className={`badge ${isVerified ? 'badge-green' : 'badge-warning'}`}>
+          {form.verificationStatus.replace(/_/g, ' ')}
+        </span>
       </div>
 
       {/* Profile Form / Display Grid */}
-      <form onSubmit={handleSave} className="grid-3" style={{ gap: 24, alignItems: 'flex-start' }}>
+      <form onSubmit={handleSave} className="grid-3 grid-mobile-1" style={{ gap: 24, alignItems: 'flex-start' }}>
         {/* Left: Organization Overview */}
         <div className="card" style={{ padding: 24, gridColumn: 'span 2' }}>
           <div className="card-title" style={{ marginBottom: 16 }}>Organization Details</div>
@@ -184,7 +183,7 @@ export default function CompanyProfilePage() {
               />
             </div>
 
-            <div className="grid-2" style={{ gap: 14 }}>
+            <div className="grid-2 grid-mobile-1" style={{ gap: 14 }}>
               <div className="form-group">
                 <label className="form-label">Industry &amp; Domain</label>
                 <input
@@ -281,6 +280,8 @@ export default function CompanyProfilePage() {
           </div>
         </div>
       </form>
+      </>
+      )}
     </div>
   );
 }

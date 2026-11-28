@@ -95,7 +95,6 @@ export function AdminSidebar({ isMobileOpen = false, onCloseMobile }: { isMobile
       title: 'OPERATIONS',
       items: [
         { label: 'Users', href: '/admin/users', icon: Users },
-        { label: 'Reports & Disputes', href: '/admin/disputes', icon: Gavel },
         { label: 'Integrity Review', href: '/admin/integrity', icon: ShieldCheck },
       ],
     },
@@ -103,12 +102,6 @@ export function AdminSidebar({ isMobileOpen = false, onCloseMobile }: { isMobile
       title: 'AUDIT & SECURITY',
       items: [
         { label: 'Audit Trail', href: '/admin/audit', icon: ScrollText },
-      ],
-    },
-    {
-      title: 'SYSTEM',
-      items: [
-        { label: 'Settings', href: '/admin/settings', icon: Settings },
       ],
     },
   ];

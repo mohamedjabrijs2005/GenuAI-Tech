@@ -407,14 +407,6 @@ export function CandidateSidebar({
                   <Shield size={16} />
                   <span>Coverage &amp; Gaps</span>
                 </Link>
-                <Link
-                  href={`/candidate/targets/${targetId}/interview`}
-                  onClick={onCloseMobile}
-                  className={`sidebar-nav-item${isActive(`/candidate/targets/${targetId}/interview`) ? ' active' : ''}`}
-                >
-                  <Calendar size={16} />
-                  <span>Interview</span>
-                </Link>
               </>
             ) : (
               <Link
@@ -486,14 +478,6 @@ export function CandidateSidebar({
             >
               <Shield size={16} />
               <span>Privacy & Data</span>
-            </Link>
-            <Link
-              href="/candidate/accessibility"
-              onClick={onCloseMobile}
-              className={`sidebar-nav-item${isActive('/candidate/accessibility') ? ' active' : ''}`}
-            >
-              <Accessibility size={16} />
-              <span>Accommodations</span>
             </Link>
             <Link
               href="/candidate/settings"
