@@ -2747,4 +2747,82 @@ a.btn,
   }
 }
 
+/* ── Mobile-first responsive utilities ───────────────────── */
+@media (max-width: 640px) {
+  /* Tables scroll horizontally, never overflow page */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Stack flex rows into columns on small screens */
+  .flex-mobile-col {
+    flex-direction: column !important;
+  }
+  /* Full-width buttons on mobile */
+  .btn-mobile-full {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  /* Card padding reduction on small screens */
+  .card {
+    padding: 14px 14px !important;
+  }
+  /* Page-level side padding */
+  .page-container {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+  /* Modals become full-screen sheets */
+  .modal-sheet {
+    position: fixed !important;
+    inset: 0 !important;
+    border-radius: 0 !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    overflow-y: auto !important;
+  }
+  /* Comparison side-by-side → stacked */
+  .comparison-grid {
+    grid-template-columns: 1fr !important;
+  }
+  /* Filter bar wraps into accordion */
+  .filter-bar {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  /* Minimum 44px touch targets */
+  .btn, button, a.btn, select, input[type="button"], input[type="submit"] {
+    min-height: 44px !important;
+  }
+  /* Prevent fixed-width columns from overflowing */
+  td, th {
+    white-space: normal !important;
+    word-break: break-word !important;
+  }
+  /* Hide secondary columns on mobile data tables */
+  .col-mobile-hide {
+    display: none !important;
+  }
+  /* Page header stack */
+  .page-header-row {
+    flex-direction: column !important;
+    gap: 12px !important;
+    align-items: flex-start !important;
+  }
+  /* Sidebar navigation remains accessible */
+  .sidebar-nav-label {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Medium breakpoint: tables wrap, comparison stacks */
+  .comparison-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .filter-bar {
+    flex-wrap: wrap !important;
+  }
+}
+
 
