@@ -1,23 +1,80 @@
 'use client';
 
-import React from 'react';
-import { Server, Clock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Server, CheckCircle2, AlertCircle, Clock, Database, RefreshCw } from 'lucide-react';
+import api from '@/lib/api';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import { PermissionDeniedState } from '@/components/admin/States';
 
-export default function AdminSystemComingSoonPage() {
+interface HealthData {
+  status: string;
+  database?: string;
+  migrationVersion?: number;
+  migrationCount?: number;
+  environment?: string;
+  timestamp?: string;
+}
+
+export default function AdminSystemPage() {
+  const { hasPermission } = useAdminAuth();
+  const [health, setHealth] = useState<HealthData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  if (!hasPermission('view_system')) {
+    return <PermissionDeniedState requiredRole="Super Admin" />;
+  }
+
+  const load = async () => {
+    setLoading(true); setError('');
+    try {
+      const res = await api.get('/health');
+      setHealth(res.data);
+    } catch (e: any) {
+      setError(e.response?.data?.error || 'Health check failed');
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const ok = health?.status === 'ok';
+
   return (
-    <div style={{ maxWidth: 720, margin: '40px auto', padding: '32px', background: '#ffffff', borderRadius: 16, border: '1px solid var(--border)', textAlign: 'center' }}>
-      <div style={{ width: 48, height: 48, borderRadius: 12, background: '#fffbeb', color: '#b45309', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-        <Server size={24} />
+    <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div className="page-header">
+        <div className="page-header-row">
+          <div><h1 className="page-title">System Status</h1><p className="page-subtitle">Live backend health and schema status.</p></div>
+          <button className="btn btn-secondary" onClick={load} style={{ minHeight: 44, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <RefreshCw size={14} /> Refresh
+          </button>
+        </div>
       </div>
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 99, background: '#f1f5f9', color: '#475569', fontSize: 11, fontWeight: 700, marginBottom: 12 }}>
-        <Clock size={12} /> COMING SOON
-      </div>
-      <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 8px', color: 'var(--text-primary)' }}>
-        System Telemetry &amp; Diagnostics
-      </h1>
-      <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
-        Full system diagnostics UI is coming soon. Live service health is available at the backend /api/health endpoint.
-      </p>
+
+      {loading && <div style={{ textAlign: 'center', padding: 40 }}><div className="spinner" style={{ margin: '0 auto' }} /></div>}
+      {error && <div className="card" style={{ padding: 24, textAlign: 'center', color: '#dc2626' }}><AlertCircle size={24} style={{ marginBottom: 8 }} /><p>{error}</p></div>}
+
+      {health && !loading && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[
+            { label: 'API Status', value: health.status?.toUpperCase() || '—', icon: <Server size={16} />, ok: ok },
+            { label: 'Database', value: health.database || '—', icon: <Database size={16} />, ok: health.database === 'connected' },
+            { label: 'Migration Version', value: `v${health.migrationVersion || '—'}`, icon: <CheckCircle2 size={16} />, ok: !!health.migrationVersion },
+            { label: 'Migration Count', value: health.migrationCount?.toString() || '—', icon: <CheckCircle2 size={16} />, ok: !!health.migrationCount },
+            { label: 'Environment', value: health.environment || '—', icon: <Clock size={16} />, ok: true },
+            { label: 'Last Checked', value: health.timestamp ? new Date(health.timestamp).toLocaleString() : new Date().toLocaleString(), icon: <Clock size={16} />, ok: true },
+          ].map(row => (
+            <div key={row.label} className="card" style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ color: row.ok ? '#059669' : '#dc2626' }}>{row.icon}</div>
+              <div style={{ flex: 1, fontSize: 13.5, fontWeight: 600, color: 'var(--text-primary)' }}>{row.label}</div>
+              <span style={{
+                fontSize: 13, fontWeight: 700, padding: '2px 10px', borderRadius: 20,
+                background: row.ok ? '#f0fdf4' : '#fef2f2',
+                color: row.ok ? '#059669' : '#dc2626',
+              }}>{row.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

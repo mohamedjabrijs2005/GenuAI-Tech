@@ -6,25 +6,25 @@ import { ShieldCheck, Menu } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const BREADCRUMB_MAP: Record<string, string> = {
-  '/dashboard': 'Dashboard Overview',
-  '/dashboard/company-profile': 'Company Profile',
-  '/dashboard/vacancies': 'Vacancies & Roles',
-  '/dashboard/readiness': 'Role Readiness Funnel',
-  '/dashboard/requirements': 'Role Requirements',
-  '/dashboard/assessments': 'Assessment Groups & Results',
-  '/dashboard/candidates': 'Candidates Pipeline',
-  '/dashboard/evidence': 'Evidence & Coverage',
-  '/dashboard/interviews': 'Interviews',
-  '/dashboard/integrity': 'Integrity Review',
-  '/dashboard/intelligence': 'Recruiter Intelligence',
-  '/dashboard/intelligence/role-intelligence': 'Cross-Company Role Intelligence',
-  '/dashboard/vacancies/builder': 'Guided Vacancy Builder',
-  '/dashboard/reports': 'Intelligence Reports',
-  '/dashboard/notifications': 'Live Notifications',
-  '/dashboard/agreement': 'Company Agreement',
-  '/dashboard/settings': 'Settings & Preferences',
-  '/dashboard/audit': 'Audit Log',
-  '/dashboard/departments': 'Departments',
+  '/company': 'Dashboard Overview',
+  '/company/company-profile': 'Company Profile',
+  '/company/vacancies': 'Vacancies & Roles',
+  '/company/readiness': 'Role Readiness Funnel',
+  '/company/requirements': 'Role Requirements',
+  '/company/assessments': 'Assessment Groups & Results',
+  '/company/candidates': 'Candidates Pipeline',
+  '/company/evidence': 'Evidence & Coverage',
+  '/company/interviews': 'Interviews',
+  '/company/integrity': 'Integrity Review',
+  '/company/intelligence': 'Recruiter Intelligence',
+  '/company/intelligence/role-intelligence': 'Cross-Company Role Intelligence',
+  '/company/vacancies/builder': 'Guided Vacancy Builder',
+  '/company/reports': 'Intelligence Reports',
+  '/company/notifications': 'Live Notifications',
+  '/company/agreement': 'Company Agreement',
+  '/company/settings': 'Settings & Preferences',
+  '/company/audit': 'Audit Log',
+  '/company/departments': 'Departments',
 };
 
 interface TopbarProps {
@@ -36,8 +36,8 @@ export default function Topbar({ onToggleMobileSidebar }: TopbarProps) {
   const { company } = useAuth();
 
   // Dynamic candidate detail route support
-  const candidateDetailMatch = pathname.match(/^\/dashboard\/candidates\/(c\d+|[\w-]+)$/);
-  const vacancyDetailMatch = pathname.match(/^\/dashboard\/vacancies\/([\w-]+)$/);
+  const candidateDetailMatch = pathname.match(/^\/company\/candidates\/(c\d+|[\w-]+)$/);
+  const vacancyDetailMatch = pathname.match(/^\/company\/vacancies\/([\w-]+)$/);
 
   const title = candidateDetailMatch
     ? `Candidate Detail`

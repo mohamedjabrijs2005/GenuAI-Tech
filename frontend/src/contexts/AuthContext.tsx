@@ -192,10 +192,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const onboardingSubmitted = data.company?.onboardingSubmitted === true;
       if (!onboardingSubmitted) {
         localStorage.removeItem(`genuai_onboarding_done_${userId}`);
-        router.push('/dashboard/onboarding');
+        router.push('/company/onboarding');
       } else {
         localStorage.setItem(`genuai_onboarding_done_${userId}`, 'true');
-        router.push('/dashboard');
+        router.push('/company');
       }
     }
   };
@@ -227,7 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else if (isCandidate) {
       router.push('/candidate/onboarding');
     } else {
-      router.push('/dashboard/onboarding');
+      router.push('/company/onboarding');
     }
   };
 

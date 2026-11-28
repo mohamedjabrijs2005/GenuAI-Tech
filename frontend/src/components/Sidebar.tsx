@@ -24,34 +24,32 @@ const NAV: NavSection[] = [
   {
     section: '',
     items: [
-      { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+      { label: 'Overview', href: '/company', icon: LayoutDashboard },
     ],
   },
   {
     section: 'Recruitment',
     items: [
-      { label: 'Vacancies', href: '/dashboard/vacancies', icon: Briefcase },
-      { label: 'Role Readiness', href: '/dashboard/readiness', icon: BarChart3 },
-      { label: 'Candidates', href: '/dashboard/candidates', icon: Users },
+      { label: 'Vacancies', href: '/company/vacancies', icon: Briefcase },
+      { label: 'Role Readiness', href: '/company/readiness', icon: BarChart3 },
+      { label: 'Candidates', href: '/company/candidates', icon: Users },
+      { label: 'Interviews', href: '/company/interviews', icon: Mic2 },
     ],
   },
   {
     section: 'Organization',
     items: [
-      { label: 'Departments', href: '/dashboard/departments', icon: Building2 },
-      { label: 'Company Profile', href: '/dashboard/company-profile', icon: Building2 },
-      { label: 'Settings', href: '/dashboard/settings', icon: Settings },
+      { label: 'Departments', href: '/company/departments', icon: Building2 },
+      { label: 'Company Profile', href: '/company/company-profile', icon: Building2 },
+      { label: 'Team & Access', href: '/company/settings', icon: Settings },
     ],
   },
   {
-    section: 'Review & Assessment',
+    section: 'Review',
     items: [
-      { label: 'Evidence Review', href: '/dashboard/evidence', icon: FileCheck },
-      { label: 'Coverage & Gaps', href: '/dashboard/evidence/coverage', icon: Shield },
-      { label: 'Assessment Setup', href: '/dashboard/assessments', icon: ClipboardList },
-      { label: 'Integrity Signals', href: '/dashboard/integrity', icon: Shield },
-      { label: 'Interviews', href: '/dashboard/interviews', icon: Mic2 },
-      { label: 'Reports', href: '/dashboard/reports', icon: FileText },
+      { label: 'Audit Log', href: '/company/audit', icon: ScrollText },
+      { label: 'Notifications', href: '/company/notifications', icon: Bell },
+      { label: 'Reports', href: '/company/reports', icon: FileText },
     ],
   },
 ];
@@ -70,16 +68,16 @@ export default function Sidebar({ isMobileOpen = false, onCloseMobile }: Sidebar
   const pathname = usePathname();
   const { user, company, logout } = useAuth();
 
-  const currentPath = (pathname || '/dashboard').replace(/\/$/, '') || '/';
+  const currentPath = (pathname || '/company').replace(/\/$/, '') || '/';
 
   // Compute all navigation item hrefs across sections
   const allHrefs = NAV.flatMap((section) => section.items.map((item) => item.href));
 
   // Determine the single most specific matching href for currentPath
-  const activeHref = currentPath === '/dashboard'
-    ? '/dashboard'
+  const activeHref = currentPath === '/company'
+    ? '/company'
     : allHrefs
-        .filter((h) => currentPath === h || (currentPath.startsWith(h + '/') && h !== '/dashboard'))
+        .filter((h) => currentPath === h || (currentPath.startsWith(h + '/') && h !== '/company'))
         .sort((a, b) => b.length - a.length)[0] || '';
 
   const isActive = (href: string) => href === activeHref;

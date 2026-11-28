@@ -1,0 +1,789 @@
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import {
+  ArrowLeft,
+  Target,
+  BookOpen,
+  Cpu,
+  FileCheck,
+  Shield,
+  Users,
+  Mic,
+  UserCheck,
+  TrendingDown,
+  RefreshCw,
+  AlertCircle,
+  ChevronRight,
+  ExternalLink,
+  BarChart3,
+  Zap,
+  Download,
+  Sparkles,
+} from 'lucide-react';
+import api from '@/lib/api';
+import { ExplainableShortlistPanel } from '@/components/features/ExplainableShortlistPanel';
+import { InterestedCandidatesPanel } from '@/components/features/InterestedCandidatesPanel';
+import { PilotFeedbackCard } from '@/components/features/PilotFeedbackCard';
+
+/* ─── Types ────────────────────────────────────────────────────── */
+interface FunnelData {
+  interestedCandidates?: number;
+  targetsCreated: number;
+  preparationStarted: number;
+  practiceCompleted: number;
+  assessmentSubmitted: number;
+  evidenceSubmitted: number;
+  coverageQualified: number;
+  shortlisted: number;
+  interviewed: number;
+  hired: number;
+}
+
+interface ReadinessFunnelResponse {
+  vacancyId: string;
+  roleTitle: string;
+  roleStatus: string;
+  companyId: string;
+  funnel: FunnelData;
+}
+
+interface ReadyCandidate {
+  candidate_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  target_id: string;
+  target_status: string;
+  coverage_pct: number;
+  assessment_status: string | null;
+  grading_status: string | null;
+  assessment_score: number | null;
+  assessment_submitted_at: string | null;
+  evidence_count: number;
+  evidence_approved_count: number;
+  targeted_at: string;
+  last_activity_at: string;
+  recruiter_decision: string | null;
+  recruiter_decided_at: string | null;
+}
+
+/* ─── Funnel stage definitions ─────────────────────────────────── */
+const FUNNEL_STAGES = [
+  {
+    key: 'interestedCandidates' as keyof FunnelData,
+    label: 'Interested Candidates',
+    sublabel: 'Candidates who expressed interest in this role',
+    icon: Sparkles,
+    color: '#3b82f6',
+    bg: 'rgba(59,130,246,0.1)',
+    border: 'rgba(59,130,246,0.3)',
+  },
+  {
+    key: 'targetsCreated' as keyof FunnelData,
+    label: 'Target Created',
+    sublabel: 'Candidates who committed to this role',
+    icon: Target,
+    color: '#6366f1',
+    bg: 'rgba(99,102,241,0.1)',
+    border: 'rgba(99,102,241,0.3)',
+  },
+  {
+    key: 'preparationStarted' as keyof FunnelData,
+    label: 'Preparation Started',
+    sublabel: 'Candidates who began learning resources',
+    icon: BookOpen,
+    color: '#8b5cf6',
+    bg: 'rgba(139,92,246,0.1)',
+    border: 'rgba(139,92,246,0.3)',
+  },
+  {
+    key: 'practiceCompleted' as keyof FunnelData,
+    label: 'Practice Completed',
+    sublabel: 'Candidates who submitted practice assessments',
+    icon: Cpu,
+    color: '#d97706',
+    bg: 'rgba(217,119,6,0.1)',
+    border: 'rgba(217,119,6,0.3)',
+  },
+  {
+    key: 'assessmentSubmitted' as keyof FunnelData,
+    label: 'Assessment Submitted',
+    sublabel: 'Candidates who completed official assessments',
+    icon: FileCheck,
+    color: '#0284c7',
+    bg: 'rgba(2,132,199,0.1)',
+    border: 'rgba(2,132,199,0.3)',
+  },
+  {
+    key: 'evidenceSubmitted' as keyof FunnelData,
+    label: 'Evidence Submitted',
+    sublabel: 'Candidates who provided capability evidence',
+    icon: Shield,
+    color: '#059669',
+    bg: 'rgba(5,150,105,0.1)',
+    border: 'rgba(5,150,105,0.3)',
+  },
+  {
+    key: 'coverageQualified' as keyof FunnelData,
+    label: 'Coverage Qualified',
+    sublabel: 'Candidates meeting ≥60% requirement coverage',
+    icon: BarChart3,
+    color: '#b8860b',
+    bg: 'rgba(184,134,11,0.1)',
+    border: 'rgba(184,134,11,0.3)',
+  },
+  {
+    key: 'shortlisted' as keyof FunnelData,
+    label: 'Shortlisted by Recruiter',
+    sublabel: 'Candidates advanced by recruiter decision',
+    icon: UserCheck,
+    color: '#be185d',
+    bg: 'rgba(190,24,93,0.1)',
+    border: 'rgba(190,24,93,0.3)',
+  },
+  {
+    key: 'interviewed' as keyof FunnelData,
+    label: 'Interviewed',
+    sublabel: 'Candidates who attended an interview',
+    icon: Mic,
+    color: '#7c3aed',
+    bg: 'rgba(124,58,237,0.1)',
+    border: 'rgba(124,58,237,0.3)',
+  },
+  {
+    key: 'hired' as keyof FunnelData,
+    label: 'Hired',
+    sublabel: 'Candidates selected for the role',
+    icon: Zap,
+    color: '#d4af37',
+    bg: 'rgba(212,175,55,0.1)',
+    border: 'rgba(212,175,55,0.35)',
+  },
+];
+
+/* ─── Helpers ──────────────────────────────────────────────────── */
+function dropPct(current: number, next: number): string {
+  if (current === 0) return '—';
+  const dropped = ((current - next) / current) * 100;
+  return `${dropped.toFixed(0)}% drop`;
+}
+
+function barWidth(value: number, max: number): number {
+  if (max === 0) return 0;
+  return Math.max(4, Math.round((value / max) * 100));
+}
+
+/* ─── Main Page ─────────────────────────────────────────────────── */
+export default function RoleReadinessFunnelPage() {
+  const params = useParams() as { id: string };
+  const router = useRouter();
+  const vacancyId = params?.id;
+
+  const [funnel, setFunnel] = useState<ReadinessFunnelResponse | null>(null);
+  const [readyCandidates, setReadyCandidates] = useState<ReadyCandidate[]>([]);
+  const [showCandidates, setShowCandidates] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [candidatesLoading, setCandidatesLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [activeFilter, setActiveFilter] = useState('');
+  const [decidingTarget, setDecidingTarget] = useState<string | null>(null);
+
+  const loadFunnel = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.get(`/company/vacancies/${vacancyId}/readiness-funnel`);
+      setFunnel(res.data);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to load readiness funnel.');
+    } finally {
+      setLoading(false);
+    }
+  }, [vacancyId]);
+
+  useEffect(() => {
+    loadFunnel();
+  }, [loadFunnel]);
+
+  const handleViewReadyCandidates = async (filter: string = '') => {
+    if (showCandidates && filter === activeFilter) {
+      setShowCandidates(false);
+      return;
+    }
+    setCandidatesLoading(true);
+    setShowCandidates(true);
+    try {
+      const url = `/company/vacancies/${vacancyId}/ready-candidates${filter ? `?filter=${filter}` : ''}`;
+      const res = await api.get(url);
+      setReadyCandidates(res.data.candidates || []);
+      setActiveFilter(filter);
+    } catch {
+      setReadyCandidates([]);
+    } finally {
+      setCandidatesLoading(false);
+    }
+  };
+
+  const handleDecision = async (targetId: string, decision: string) => {
+    try {
+      await api.post(`/company/vacancies/${vacancyId}/candidates/${targetId}/decision`, { decision });
+      await handleViewReadyCandidates(activeFilter);
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to save decision');
+    }
+  };
+
+  /* ── Loading ─────────────────────────────────────────────────── */
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', flexDirection: 'column', gap: 16 }}>
+        <div style={{
+          width: 44, height: 44, borderRadius: '50%',
+          border: '3px solid #e2e8f0',
+          borderTopColor: '#b8860b',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <p style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Loading Role Readiness Funnel…</p>
+      </div>
+    );
+  }
+
+  /* ── Error ───────────────────────────────────────────────────── */
+  if (error || !funnel) {
+    return (
+      <div style={{ maxWidth: 560, margin: '60px auto', textAlign: 'center', padding: '0 16px' }}>
+        <div style={{
+          background: '#fff', borderRadius: 14, padding: '36px 32px',
+          border: '1px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+        }}>
+          <AlertCircle size={40} style={{ color: '#ef4444', marginBottom: 12 }} />
+          <h2 style={{ fontSize: 17, fontWeight: 800, marginBottom: 8 }}>Funnel Unavailable</h2>
+          <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>{error || 'Vacancy not found or access denied.'}</p>
+          <Link href="/company/vacancies" className="btn btn-secondary" style={{ textDecoration: 'none' }}>
+            ← Back to Vacancies
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const funnelData = funnel.funnel;
+  const maxValue = Math.max(funnelData.interestedCandidates || 0, funnelData.targetsCreated || 1);
+
+  /* ── Main render ─────────────────────────────────────────────── */
+  return (
+    <div className="page-content">
+      {/* ── Page Header ─────────────────────────────────────────── */}
+      <div className="page-header" style={{ marginBottom: 24 }}>
+        <div className="breadcrumbs">
+          <Link href="/company/vacancies">Vacancies</Link>
+          <span className="breadcrumb-sep">/</span>
+          <Link href={`/company/vacancies/${vacancyId}`}>{funnel.roleTitle}</Link>
+          <span className="breadcrumb-sep">/</span>
+          <span className="breadcrumb-current">Role Readiness Funnel</span>
+        </div>
+
+        <div className="page-header-row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+            <Link href={`/company/vacancies/${vacancyId}`} className="btn btn-ghost btn-icon" style={{ marginTop: 4 }}>
+              <ArrowLeft size={18} />
+            </Link>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <h1 className="page-title" style={{ margin: 0 }}>Role Readiness Funnel</h1>
+                <span style={{
+                  padding: '2px 10px', borderRadius: 99,
+                  background: 'rgba(5,150,105,0.1)', border: '1px solid rgba(5,150,105,0.3)',
+                  fontSize: 11, fontWeight: 700, color: '#059669',
+                }}>
+                  LIVE
+                </span>
+              </div>
+              <p className="page-subtitle" style={{ marginTop: 6 }}>
+                {funnel.roleTitle} — track how candidates move from Target to Hire
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button onClick={loadFunnel} className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <RefreshCw size={13} />
+              Refresh
+            </button>
+            <button
+              onClick={() => handleViewReadyCandidates(activeFilter)}
+              disabled={candidatesLoading}
+              className="btn btn-gold"
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 20px' }}
+            >
+              <Users size={15} />
+              <span>{candidatesLoading ? 'Loading…' : showCandidates ? 'Hide Candidates' : 'View Ready Candidates'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Recruiter Efficiency Value Card ── */}
+      <div style={{
+        background: '#ffffff',
+        border: '1px solid var(--border)',
+        borderRadius: 12,
+        padding: '20px 24px',
+        marginBottom: 24,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 18,
+      }}>
+        <div style={{ flex: '1 1 320px', minWidth: 260 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            fontSize: 11.5, fontWeight: 700, color: '#b8860b',
+            textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 6,
+          }}>
+            <Zap size={13} style={{ color: '#b8860b' }} />
+            Recruiter Screening Efficiency
+          </div>
+          <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.35, letterSpacing: '-0.2px' }}>
+            Recruiter reviews only the <span style={{ color: '#059669', background: 'rgba(5,150,105,0.08)', padding: '1px 6px', borderRadius: 4 }}>{funnelData.coverageQualified} candidates meeting coverage</span>, not all {funnelData.targetsCreated}.
+          </div>
+          <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 6, lineHeight: 1.5 }}>
+            Candidates demonstrate capability through structured preparation and verifiable evidence before recruiter review.
+          </div>
+        </div>
+
+        <div style={{
+          display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center',
+        }}>
+          {[
+            { label: 'Targets Created', val: funnelData.targetsCreated, badgeBg: '#eff6ff', badgeColor: '#1d4ed8', border: '#bfdbfe' },
+            { label: 'Assessment Ready', val: funnelData.assessmentSubmitted, badgeBg: '#f0fdf4', badgeColor: '#15803d', border: '#bbf7d0' },
+            { label: 'Coverage Qualified', val: funnelData.coverageQualified, badgeBg: '#fefce8', badgeColor: '#a16207', border: '#fef08a' },
+            { label: 'Hired', val: funnelData.hired, badgeBg: '#faf5ff', badgeColor: '#7e22ce', border: '#e9d5ff' },
+          ].map(({ label, val, badgeBg, badgeColor, border }) => (
+            <div key={label} style={{
+              background: badgeBg,
+              border: `1px solid ${border}`,
+              borderRadius: 10,
+              padding: '12px 18px',
+              textAlign: 'center',
+              minWidth: 105,
+              flex: '1 1 auto',
+            }}>
+              <div style={{ fontSize: 24, fontWeight: 900, color: badgeColor, lineHeight: 1 }}>{val}</div>
+              <div style={{ fontSize: 11, color: '#475569', marginTop: 4, fontWeight: 600 }}>{label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Funnel Bars ─────────────────────────────────────────── */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{
+          background: '#fff',
+          border: '1px solid var(--border)',
+          borderRadius: 14,
+          overflow: 'hidden',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        }}>
+          {/* Header */}
+          <div style={{
+            padding: '18px 24px',
+            borderBottom: '1px solid var(--border)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+          }}>
+            <TrendingDown size={18} style={{ color: '#b8860b' }} />
+            <span style={{ fontWeight: 800, fontSize: 15, color: 'var(--text-primary)' }}>
+              Candidate Pipeline Funnel
+            </span>
+            <span style={{ marginLeft: 'auto', fontSize: 12, color: '#64748b', fontWeight: 600 }}>
+              {FUNNEL_STAGES.length} stages
+            </span>
+          </div>
+
+          {/* Stage rows */}
+          <div style={{ padding: '8px 0' }}>
+            {FUNNEL_STAGES.map((stage, idx) => {
+              const stageVal = funnelData[stage.key] ?? 0;
+              const nextStage = FUNNEL_STAGES[idx + 1];
+              const nextVal = nextStage ? (funnelData[nextStage.key] ?? null) : null;
+              const width = barWidth(stageVal, maxValue);
+              const Icon = stage.icon;
+
+              return (
+                <div
+                  key={stage.key}
+                  className="funnel-stage-row"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 16,
+                    padding: '14px 24px',
+                    borderBottom: idx < FUNNEL_STAGES.length - 1 ? '1px solid #f1f5f9' : 'none',
+                    transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                >
+                  {/* Step number + icon */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    minWidth: 32, flexShrink: 0,
+                  }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: 8,
+                      background: stage.bg,
+                      border: `1px solid ${stage.border}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      <Icon size={15} style={{ color: stage.color }} />
+                    </div>
+                  </div>
+
+                  {/* Label */}
+                  <div className="funnel-stage-label-wrap" style={{ minWidth: 0, flex: '0 0 220px', flexShrink: 1 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {stage.label}
+                    </div>
+                    <div className="funnel-stage-sublabel" style={{ fontSize: 11, color: '#94a3b8', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {stage.sublabel}
+                    </div>
+                  </div>
+
+                  {/* Bar */}
+                  <div className="funnel-stage-bar-wrap" style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      height: 12, background: '#f1f5f9', borderRadius: 99,
+                      overflow: 'hidden', position: 'relative',
+                    }}>
+                      <div style={{
+                        height: '100%',
+                        width: `${width}%`,
+                        background: `linear-gradient(90deg, ${stage.color}aa, ${stage.color})`,
+                        borderRadius: 99,
+                        transition: 'width 0.6s cubic-bezier(0.34,1.56,0.64,1)',
+                      }} />
+                    </div>
+                    {nextVal !== null && stageVal > 0 && (
+                      <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 3, fontWeight: 500 }}>
+                        <ChevronRight size={9} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 2 }} />
+                        {dropPct(stageVal, nextVal)} to next stage
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Count */}
+                  <div className="funnel-stage-count-wrap" style={{
+                    minWidth: 56, textAlign: 'right', flexShrink: 0,
+                  }}>
+                    <span style={{
+                      fontSize: 22,
+                      fontWeight: 900,
+                      color: stageVal > 0 ? stage.color : '#cbd5e1',
+                      fontVariantNumeric: 'tabular-nums',
+                      lineHeight: 1,
+                      display: 'block',
+                    }}>
+                      {stageVal}
+                    </span>
+                    <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600 }}>
+                      {maxValue > 0 ? Math.round((stageVal / maxValue) * 100) : 0}%
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Stage Cards Grid (mobile-friendly overview) ──────────── */}
+      <div className="stage-cards-auto-grid" style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+        gap: 12,
+        marginBottom: 28,
+      }}>
+        {FUNNEL_STAGES.map((stage) => {
+          const val = funnelData[stage.key] ?? 0;
+          const Icon = stage.icon;
+          return (
+            <div key={stage.key} style={{
+              background: '#fff',
+              border: `1px solid ${stage.border}`,
+              borderRadius: 12,
+              padding: '16px 18px',
+              transition: 'transform 0.15s, box-shadow 0.15s',
+              cursor: 'default',
+            }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = `0 6px 20px ${stage.color}20`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'none';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              <div style={{
+                width: 36, height: 36, borderRadius: 9,
+                background: stage.bg, border: `1px solid ${stage.border}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: 10,
+              }}>
+                <Icon size={17} style={{ color: stage.color }} />
+              </div>
+              <div style={{
+                fontSize: 28, fontWeight: 900, color: val > 0 ? stage.color : '#cbd5e1',
+                lineHeight: 1, marginBottom: 4,
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+                {val}
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                {stage.label}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── View Ready Candidates Panel ──────────────────────────── */}
+      {showCandidates && (
+        <div style={{ marginBottom: 28 }}>
+          <div style={{
+            background: '#fff',
+            border: '1px solid var(--border)',
+            borderRadius: 14,
+            overflow: 'hidden',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+          }}>
+            {/* Panel Header */}
+            <div style={{
+              padding: '18px 24px',
+              borderBottom: '1px solid var(--border)',
+              background: 'linear-gradient(135deg, #fffbeb, #fef3c7)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 12,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(184,134,11,0.15)', border: '1px solid rgba(184,134,11,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <UserCheck size={18} style={{ color: '#b8860b' }} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 15, color: '#92400e' }}>Ready Candidates</div>
+                  <div style={{ fontSize: 12, color: '#a16207' }}>All candidates with a Target for this vacancy</div>
+                </div>
+              </div>
+              <span style={{ padding: '4px 14px', borderRadius: 99, background: '#b8860b', color: '#fff', fontSize: 13, fontWeight: 800 }}>
+                {candidatesLoading ? '…' : `${readyCandidates.length} candidate${readyCandidates.length !== 1 ? 's' : ''}`}
+              </span>
+            </div>
+
+            {/* Filter bar */}
+            <div style={{ padding: '12px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Filter:</span>
+              {[
+                { key: '', label: 'All' },
+                { key: 'coverage_qualified', label: '≥60% Coverage' },
+                { key: 'assessment_submitted', label: 'Assessment Submitted' },
+                { key: 'evidence_submitted', label: 'Evidence Submitted' },
+                { key: 'pending_review', label: 'Pending Review' },
+                { key: 'shortlisted', label: 'Shortlisted' },
+              ].map(f => (
+                <button
+                  key={f.key}
+                  onClick={() => handleViewReadyCandidates(f.key)}
+                  className={`btn btn-xs ${activeFilter === f.key ? 'btn-gold' : 'btn-secondary'}`}
+                  style={{ fontSize: 11 }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Candidates Table */}
+            {candidatesLoading ? (
+              <div style={{ padding: '32px', textAlign: 'center' }}><div className="spinner" style={{ margin: '0 auto' }} /></div>
+            ) : readyCandidates.length === 0 ? (
+              <div style={{ padding: '40px 24px', textAlign: 'center' }}>
+                <Users size={36} style={{ color: '#cbd5e1', marginBottom: 12 }} />
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#64748b', marginBottom: 6 }}>No candidates found</div>
+                <div style={{ fontSize: 13, color: '#94a3b8', maxWidth: 400, margin: '0 auto' }}>
+                  {activeFilter ? 'No candidates match this filter.' : 'Candidates appear here once they create a Target for this vacancy.'}
+                </div>
+              </div>
+            ) : (
+              <div className="ready-candidates-table-wrap" style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border)' }}>
+                      {['Candidate', 'Coverage', 'Assessment', 'Evidence', 'Last Activity', 'Decision', 'Action'].map(h => (
+                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {readyCandidates.map((c: any) => {
+                      const decisionColors: Record<string, { bg: string; color: string }> = {
+                        SHORTLISTED: { bg: '#f0fdf4', color: '#166534' },
+                        INTERVIEW_SCHEDULED: { bg: '#eff6ff', color: '#1e40af' },
+                        HIRED: { bg: '#fef3c7', color: '#b45309' },
+                        REJECTED: { bg: '#fef2f2', color: '#b91c1c' },
+                        PENDING_REVIEW: { bg: '#f8fafc', color: '#64748b' },
+                      };
+                      const ds = decisionColors[c.recruiter_decision || 'PENDING_REVIEW'] || decisionColors.PENDING_REVIEW;
+                      return (
+                        <tr key={c.candidate_id || c.id} style={{ borderBottom: '1px solid #f1f5f9' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = '#fafafa'; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                          <td style={{ padding: '12px 14px' }}>
+                            <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>{c.first_name} {c.last_name}</div>
+                            <div style={{ fontSize: 11, color: '#94a3b8' }}>{c.email}</div>
+                          </td>
+                          <td style={{ padding: '12px 14px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <div style={{ height: 5, width: 56, background: '#e2e8f0', borderRadius: 99, overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${Math.min(100, c.coverage_pct)}%`, background: c.coverage_pct >= 80 ? '#059669' : c.coverage_pct >= 60 ? '#d97706' : '#ef4444', borderRadius: 99 }} />
+                              </div>
+                              <span style={{ fontSize: 13, fontWeight: 800, color: c.coverage_pct >= 80 ? '#059669' : c.coverage_pct >= 60 ? '#d97706' : '#ef4444' }}>{Math.round(c.coverage_pct)}%</span>
+                            </div>
+                          </td>
+                          <td style={{ padding: '12px 14px' }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 4, background: '#f1f5f9', color: '#475569' }}>
+                              {c.assessment_status || 'Not Started'}{c.assessment_score != null ? ` · ${c.assessment_score}%` : ''}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px 14px', fontSize: 13, color: '#475569' }}>
+                            {c.evidence_count || 0} <span style={{ fontSize: 11, color: '#94a3b8' }}>({c.evidence_approved_count || 0} approved)</span>
+                          </td>
+                          <td style={{ padding: '12px 14px', fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>
+                            {c.last_activity_at ? new Date(c.last_activity_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                          </td>
+                          <td style={{ padding: '12px 14px' }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: ds.bg, color: ds.color }}>
+                              {(c.recruiter_decision || 'PENDING REVIEW').replace(/_/g, ' ')}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px 14px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <Link
+                                href={`/company/vacancies/${vacancyId}/candidates/${c.target_id}`}
+                                className="btn btn-secondary btn-xs"
+                                style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', fontSize: 11 }}
+                              >
+                                <ExternalLink size={11} /> Review
+                              </Link>
+                              <select
+                                defaultValue=""
+                                onChange={e => { if (e.target.value) handleDecision(c.target_id, e.target.value); e.target.value = ''; }}
+                                style={{ fontSize: 11, padding: '4px 6px', borderRadius: 6, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer' }}
+                              >
+                                <option value="">Action…</option>
+                                <option value="SHORTLISTED">Shortlist</option>
+                                <option value="REQUEST_MORE_EVIDENCE">Request Evidence</option>
+                                <option value="INTERVIEW_SCHEDULED">Schedule Interview</option>
+                                <option value="INTERVIEWED">Mark Interviewed</option>
+                                <option value="OFFERED">Offer</option>
+                                <option value="HIRED">Hire</option>
+                                <option value="REJECTED">Reject</option>
+                                <option value="PENDING_REVIEW">Reset</option>
+                              </select>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Interested Candidates ───────────────────────────────── */}
+      <InterestedCandidatesPanel vacancyId={vacancyId} />
+
+      {/* ── Explainable Shortlist (Phase 1 Proof Engine) ─────────── */}
+      <ExplainableShortlistPanel vacancyId={vacancyId} />
+
+      {/* ── Pilot Feedback ──────────────────────────────────────── */}
+      <PilotFeedbackCard vacancyId={vacancyId} />
+
+      {/* ── Business Value Explainer ─────────────────────────────── */}
+      <div style={{
+        background: '#fff',
+        border: '1px solid var(--border)',
+        borderRadius: 14,
+        padding: '24px 28px',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          marginBottom: 16,
+        }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 9,
+            background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <BarChart3 size={17} style={{ color: '#6366f1' }} />
+          </div>
+          <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text-primary)' }}>
+            Why this funnel matters
+          </div>
+        </div>
+
+        <div className="value-explainer-grid" style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+          gap: 14,
+        }}>
+          {[
+            {
+              title: 'Without GenuAI',
+              desc: 'You receive 500+ resumes with no way to know who prepared for the role. Every candidate looks the same.',
+              color: '#ef4444',
+              bg: '#fef2f2',
+              border: '#fecaca',
+            },
+            {
+              title: 'With GenuAI',
+              desc: `You see exactly ${funnelData.coverageQualified} candidates who proved capability through preparation, assessment, and evidence.`,
+              color: '#059669',
+              bg: '#f0fdf4',
+              border: '#a7f3d0',
+            },
+            {
+              title: 'Recruiter Time Saved',
+              desc: `Instead of screening ${funnelData.targetsCreated} candidates, your recruiter focuses on ${funnelData.coverageQualified} evidence-backed candidates.`,
+              color: '#b8860b',
+              bg: '#fffbeb',
+              border: '#fde68a',
+            },
+          ].map(({ title, desc, color, bg, border }) => (
+            <div key={title} style={{
+              background: bg, border: `1px solid ${border}`,
+              borderRadius: 10, padding: '16px 18px',
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color, marginBottom: 6 }}>{title}</div>
+              <div style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.6 }}>{desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
