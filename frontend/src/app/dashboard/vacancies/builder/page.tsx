@@ -157,7 +157,7 @@ export default function VacancyBuilderPage() {
   const [newEvidence, setNewEvidence] = useState<EvidenceTypeItem>({ name: '', description: '' });
 
   // STEP 1 State — deadline defaults to today + 30 days (local date, not UTC-shifted)
-  const _localDateStr = (offsetDays) => { const d = new Date(); d.setDate(d.getDate() + offsetDays); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  const _localDateStr = (offsetDays: number) => { const d = new Date(); d.setDate(d.getDate() + offsetDays); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
   const _defaultDeadline = _localDateStr(30);
   const _minDeadline = _localDateStr(0);
   // No arbitrary upper deadline cap — any future date is allowed (product rule: none defined).

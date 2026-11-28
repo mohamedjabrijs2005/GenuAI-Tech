@@ -171,7 +171,7 @@ async function checkAssessmentEligibility(candidateId, targetId) {
     [targetId]
   );
   const completedLearnCount = parseInt(learnRes.rows[0].completed_learn, 10);
-  
+
   // Total available learn resources for this role
   const totalLearnRes = await pool.query(
     `SELECT COUNT(DISTINCT lr.id) as total_learn
@@ -182,7 +182,7 @@ async function checkAssessmentEligibility(candidateId, targetId) {
     [target.vacancy_id]
   );
   const totalLearnCount = parseInt(totalLearnRes.rows[0].total_learn, 10);
-  
+
   // If learning resources exist, require at least 1 completed (or all mapped completed)
   const learnCompleted = totalLearnCount === 0 || completedLearnCount > 0;
   if (!learnCompleted) {
