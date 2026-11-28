@@ -483,9 +483,9 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div className="flex-mobile-col mobile-full" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             {/* Search */}
-            <div className="search-box" style={{ width: 220 }}>
+            <div className="search-box mobile-full" style={{ width: 220 }}>
               <Search size={14} style={{ color: 'var(--text-muted)' }} />
               <input
                 type="text"
@@ -504,7 +504,7 @@ export default function DashboardPage() {
             <select
               value={deptFilter}
               onChange={(e) => setDeptFilter(e.target.value)}
-              className="form-select"
+              className="form-select mobile-full"
               style={{ width: 170, padding: '7px 28px 7px 12px', fontSize: 12.5 }}
             >
               <option value="ALL">All Departments</option>
@@ -516,7 +516,7 @@ export default function DashboardPage() {
             {/* Primary Action Button (Unified Vacancy Builder) */}
             <Link
               href="/company/vacancies/builder"
-              className="btn btn-gold btn-sm"
+              className="btn btn-gold btn-sm btn-mobile-full"
               style={{ gap: 6, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
             >
               <Plus size={14} />
@@ -525,8 +525,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Vacancy Table */}
-        <div className="table-wrapper">
+        {/* Vacancy Table (Desktop >= 769px) */}
+        <div className="table-wrapper desktop-table-only">
           <table>
             <thead>
               <tr>
@@ -607,10 +607,41 @@ export default function DashboardPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Vacancy Mobile Cards (< 768px) */}
+        <div className="mobile-cards-only" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {filteredVacancies.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '28px 12px', color: 'var(--text-secondary)', fontSize: 13 }}>
+              {vacancies.length === 0 ? 'No vacancies created yet.' : 'No matching vacancies found.'}
+            </div>
+          ) : (
+            filteredVacancies.map((v) => (
+              <div key={v.id} style={{ padding: 14, borderRadius: 10, border: '1px solid var(--border)', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' }}>
+                  <Link href={`/company/vacancies/${v.id}`} style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)', textDecoration: 'none', wordBreak: 'break-word' }}>
+                    {v.title}
+                  </Link>
+                  {renderStatusBadge(v.status, v.raw_status)}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                  {v.dept} · {v.location || 'Remote'} · {v.openings} opening{v.openings !== 1 ? 's' : ''}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 4 }}>
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                    {v.requirement_count ?? 0} reqs · {v.applications ?? 0} candidates
+                  </span>
+                  <Link href={`/company/vacancies/${v.id}`} className="btn btn-secondary btn-sm btn-mobile-full" style={{ fontSize: 12 }}>
+                    {v.status === 'draft' ? 'Continue' : 'View'}
+                  </Link>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* ================= 5. TWO-COLUMN OPERATIONAL BASE: ACTIVITY & TRACEABILITY ================= */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 24 }}>
         
         {/* Left: Recent Activity from Real Audit Logs */}
         <div style={{

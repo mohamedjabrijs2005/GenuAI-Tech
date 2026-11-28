@@ -109,17 +109,17 @@ export default function TargetEvidencePage() {
       </Link>
 
       {/* Header */}
-      <div style={{ background: '#fff', borderRadius: 12, padding: '26px 30px', border: '1px solid var(--border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
-          <div>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+      <div className="card" style={{ background: '#fff', borderRadius: 12, padding: '22px 26px', border: '1px solid var(--border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+        <div className="flex-mobile-col" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ minWidth: 0, flex: '1 1 240px' }}>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
               <span style={{ padding: '3px 10px', borderRadius: 99, background: '#fff7ed', border: '1px solid #fed7aa', fontSize: 11, fontWeight: 700, color: '#c2410c' }}>Evidence Locker</span>
               <span style={{ padding: '3px 10px', borderRadius: 99, background: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: 11, fontWeight: 700, color: '#166534' }}>{active.length} Submitted</span>
             </div>
             <h1 style={{ fontSize: 22, fontWeight: 800, margin: '4px 0 6px' }}>Evidence Locker</h1>
             <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Submit work samples, project links, certificates, and credentials linked to role requirements.</p>
           </div>
-          <button onClick={() => setShowForm(!showForm)} className="btn btn-gold" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <button onClick={() => setShowForm(!showForm)} className="btn btn-gold btn-mobile-full" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             {showForm ? <X size={14} /> : <Plus size={14} />} {showForm ? 'Cancel' : 'Add Evidence'}
           </button>
         </div>
@@ -136,7 +136,7 @@ export default function TargetEvidencePage() {
         <div className="card" style={{ padding: '24px 28px' }}>
           <h2 style={{ fontSize: 15, fontWeight: 800, margin: '0 0 18px' }}>Submit New Evidence</h2>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div className="grid-mobile-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 700, display: 'block', marginBottom: 4 }}>Evidence Title *</label>
                 <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. React E-commerce Project" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }} required />

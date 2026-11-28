@@ -406,7 +406,7 @@ export default function RoleReadinessPage() {
             flexWrap: 'wrap',
             gap: 18,
           }}>
-            <div style={{ flex: '1 1 320px', minWidth: 260 }}>
+            <div style={{ flex: '1 1 260px', minWidth: 0 }}>
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 fontSize: 11.5, fontWeight: 700, color: '#b8860b',
@@ -675,7 +675,8 @@ export default function RoleReadinessPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="table-wrapper" style={{ overflowX: 'auto' }}>
+                  <>
+                  <div className="table-wrapper desktop-table-only" style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
                         <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border)' }}>
@@ -748,6 +749,30 @@ export default function RoleReadinessPage() {
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Mobile Cards (< 768px) */}
+                  <div className="mobile-cards-only" style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {readyCandidates.map((c) => (
+                      <div key={c.id} style={{ padding: 14, borderRadius: 10, border: '1px solid var(--border)', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' }}>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)', wordBreak: 'break-word' }}>{c.first_name} {c.last_name}</div>
+                            <div style={{ fontSize: 11.5, color: '#94a3b8', wordBreak: 'break-all' }}>{c.email}</div>
+                          </div>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: c.coverage_pct >= 80 ? '#059669' : c.coverage_pct >= 60 ? '#d97706' : '#ef4444' }}>
+                            {Math.round(c.coverage_pct)}% coverage
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 12, color: '#64748b' }}>
+                          {c.application_status || 'Ready'} · {new Date(c.last_activity_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </div>
+                        <Link href="/company/candidates" className="btn btn-secondary btn-sm btn-mobile-full" style={{ textDecoration: 'none' }}>
+                          <ExternalLink size={12} /> View Profile
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                  </>
                 )}
               </div>
             </div>

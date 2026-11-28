@@ -95,7 +95,7 @@ export default function CandidatesPage() {
         </div>
 
         {/* Responsive Horizontal Pipeline Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 100px), 1fr))', gap: '10px' }}>
           {STAGES.map((s) => {
             const count = candidates.filter(c => c.stage === s).length;
             const isSelected = stageFilter === s;
@@ -127,8 +127,8 @@ export default function CandidatesPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="filter-bar">
-        <div className="search-box">
+      <div className="filter-bar flex-mobile-col">
+        <div className="search-box mobile-full">
           <Search size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           <input
             placeholder="Search candidate name or position..."
@@ -142,8 +142,8 @@ export default function CandidatesPage() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="table-wrapper">
+      {/* Table (Desktop >= 769px) */}
+      <div className="table-wrapper desktop-table-only">
         <table>
           <thead>
             <tr>
@@ -229,10 +229,44 @@ export default function CandidatesPage() {
         </table>
       </div>
 
+      {/* Mobile Cards (< 768px) */}
+      <div className="mobile-cards-only" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {filtered.length === 0 ? (
+          <div className="card">
+            <div className="empty-state">
+              <div className="empty-icon"><User size={22} /></div>
+              <div className="empty-title">No candidates match the filter</div>
+              <div className="empty-desc">Adjust the search query or pipeline filter above.</div>
+            </div>
+          </div>
+        ) : (
+          filtered.map((c) => (
+            <div key={c.id} className="card" style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
+                <div className="flex items-center gap-2.5" style={{ minWidth: 0, flex: 1 }}>
+                  <div className="avatar avatar-sm">{c.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 14, wordBreak: 'break-word' }}>{c.name}</div>
+                    <div className="td-muted" style={{ fontSize: 11.5, wordBreak: 'break-all' }}>{c.email || 'Verified Candidate'}</div>
+                  </div>
+                </div>
+                <span className={`badge ${STAGE_COLOR[c.stage] || 'badge-gray'}`}>{c.stage}</span>
+              </div>
+              <div style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
+                <strong>Role:</strong> {c.vacancy} · <strong>Score:</strong> {c.score !== null ? `${c.score}%` : '—'} · <strong>Evidence:</strong> {c.evidence}
+              </div>
+              <button onClick={() => setSelectedCandidate(c)} className="btn btn-secondary btn-sm btn-mobile-full">
+                <Eye size={13} /> <span>Review</span>
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+
       {/* Candidate Review Modal */}
       {selectedCandidate && (
         <div className="modal-overlay" onClick={() => setSelectedCandidate(null)}>
-          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 600 }}>
+          <div className="modal-card modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: 600 }}>
             <div className="modal-header">
               <div className="flex items-center gap-3">
                 <div className="avatar avatar-md">

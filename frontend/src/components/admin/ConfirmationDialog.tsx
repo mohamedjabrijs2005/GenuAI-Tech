@@ -95,6 +95,7 @@ export function ConfirmationDialog({
 
       {/* Dialog box */}
       <div
+        className="modal-sheet"
         style={{
           position: 'relative',
           width: '100%',

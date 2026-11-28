@@ -128,6 +128,7 @@ export default function AuditLogsPage() {
 
       {/* Primary Controls */}
       <div
+        className="filter-bar flex-mobile-col"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -140,7 +141,7 @@ export default function AuditLogsPage() {
           border: '1px solid var(--border)',
         }}
       >
-        <div style={{ position: 'relative', width: '100%', maxWidth: '380px' }}>
+        <div className="mobile-full" style={{ position: 'relative', width: '100%', maxWidth: '380px' }}>
           <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
           <input
             type="text"
@@ -148,19 +149,19 @@ export default function AuditLogsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="form-input"
-            style={{ paddingLeft: '36px', height: '38px' }}
+            style={{ paddingLeft: '36px', minHeight: '44px' }}
           />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="flex-mobile-col mobile-full" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
             Entity Filter:
           </span>
           <select
             value={entityFilter}
             onChange={(e) => setEntityFilter(e.target.value)}
-            className="form-select"
-            style={{ height: '38px', minWidth: '180px', fontSize: '13px' }}
+            className="form-select mobile-full"
+            style={{ minHeight: '44px', minWidth: '180px', fontSize: '13px' }}
           >
             <option value="ALL">All Entities</option>
             <option value="Company">Company</option>
@@ -178,8 +179,8 @@ export default function AuditLogsPage() {
         </div>
       )}
 
-      {/* Audit Log Table */}
-      <div className="table-wrapper">
+      {/* Audit Log Table (Desktop >= 769px) */}
+      <div className="table-wrapper desktop-table-only">
         <table>
           <thead>
             <tr>
@@ -275,6 +276,38 @@ export default function AuditLogsPage() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Cards (< 768px) */}
+      <div className="mobile-cards-only" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {loading ? (
+          <div className="card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            Loading audit logs from PostgreSQL...
+          </div>
+        ) : filteredLogs.length === 0 ? (
+          <div className="card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            No administrative activity has been recorded yet.
+          </div>
+        ) : (
+          filteredLogs.map((l) => (
+            <div key={l.id} className="card" style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', background: '#f1f5f9', color: '#0f172a', border: '1px solid #cbd5e1' }}>
+                  {l.action}
+                </span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{l.timestamp || '—'}</span>
+              </div>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', wordBreak: 'break-word' }}>
+                {l.entity} · {l.actor} ({l.role})
+              </div>
+              {l.companyName && <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Company: {l.companyName}</div>}
+              {l.reason && <div style={{ fontSize: '12px', color: 'var(--text-secondary)', wordBreak: 'break-word' }}>{l.reason}</div>}
+              <button type="button" onClick={() => setSelectedLog(l)} className="btn btn-secondary btn-sm btn-mobile-full">
+                <Eye size={13} /> View Details
+              </button>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Log Detail Drawer */}

@@ -106,7 +106,7 @@ export default function PlatformAnalyticsPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+      <div className="flex-mobile-col" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
@@ -147,7 +147,7 @@ export default function PlatformAnalyticsPage() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '16px' }}>
         <KPICard title="Vacancies Created" value={String(funnel.vacancy_created?.count ?? 0)} subtitle="Core vacancy events" icon={Briefcase} />
         <KPICard title="Checklists Approved" value={String(funnel.checklist_approved?.count ?? 0)} subtitle="Locked/approved matrices" icon={CheckCircle2} />
         <KPICard title="Candidate Applications" value={String(funnel.candidate_applied?.count ?? 0)} subtitle="Vacancy targets created" icon={UserCheck} highlight="gold" />

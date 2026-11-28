@@ -141,23 +141,23 @@ export default function CandidateTargetsPage() {
           justifyContent: 'space-between',
         }}
       >
-        <div style={{ position: 'relative', flex: 1, minWidth: 260 }}>
-          <Search size={16} style={{ position: 'absolute', left: 12, top: 12, color: '#94a3b8' }} />
+        <div className="mobile-full" style={{ position: 'relative', flex: '1 1 240px', minWidth: 0 }}>
+          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
           <input
             type="text"
             className="input-field"
             placeholder="Search targets by role or company..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ paddingLeft: 36 }}
+            style={{ paddingLeft: 36, minHeight: 44 }}
           />
         </div>
 
         <select
-          className="input-field"
+          className="input-field mobile-full"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          style={{ width: 180, cursor: 'pointer' }}
+          style={{ minWidth: 160, minHeight: 44, cursor: 'pointer' }}
         >
           <option value="ALL">All Statuses</option>
           <option value="TARGETED">TARGETED</option>
@@ -199,8 +199,8 @@ export default function CandidateTargetsPage() {
                   border: isWithdrawn ? '1px dashed #cbd5e1' : '1px solid var(--border)',
                 }}
               >
-                <div style={{ flex: 1, minWidth: 280 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <div style={{ flex: '1 1 240px', minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
                     <span
                       style={{
                         fontSize: 11,
@@ -284,11 +284,11 @@ export default function CandidateTargetsPage() {
                 </div>
 
                 {/* Actions */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div className="flex-mobile-col mobile-full" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   {!isWithdrawn && !isClosed && (
                     <button
                       onClick={() => setWithdrawingTarget(t)}
-                      className="btn btn-secondary"
+                      className="btn btn-secondary btn-mobile-full"
                       style={{ fontSize: 12, color: '#ef4444' }}
                       title="Withdraw target"
                     >
@@ -297,7 +297,7 @@ export default function CandidateTargetsPage() {
                   )}
                   <Link
                     href={`/candidate/targets/${t.target_id}`}
-                    className="btn btn-primary"
+                    className="btn btn-primary btn-mobile-full"
                     style={{ fontSize: 12.5, padding: '7px 16px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}
                   >
                     <span>Open Workspace</span>
@@ -326,6 +326,7 @@ export default function CandidateTargetsPage() {
       {/* Target Withdrawal Confirmation Modal */}
       {withdrawingTarget && (
         <div
+          className="modal-overlay"
           style={{
             position: 'fixed',
             top: 0,
@@ -337,11 +338,10 @@ export default function CandidateTargetsPage() {
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 999,
-            padding: 20,
           }}
         >
           <div
-            className="card"
+            className="card modal-sheet"
             style={{
               maxWidth: 480,
               width: '100%',

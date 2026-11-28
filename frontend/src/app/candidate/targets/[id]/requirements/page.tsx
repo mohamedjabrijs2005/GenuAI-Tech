@@ -112,9 +112,9 @@ export default function RequirementWorkspacePage() {
           boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        <div className="flex-mobile-col" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
+          <div style={{ minWidth: 0, flex: '1 1 240px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
               <span
                 style={{
                   padding: '3px 10px',
@@ -125,12 +125,13 @@ export default function RequirementWorkspacePage() {
                   fontWeight: 700,
                   color: '#2563eb',
                   textTransform: 'uppercase',
+                  wordBreak: 'break-word',
                 }}
               >
                 {target?.company_name} · {target?.vacancy_title}
               </span>
             </div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px', color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>
+            <h1 style={{ fontSize: 22, fontWeight: 800, margin: '4px 0 8px', color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>
               Requirement Workspace
             </h1>
             <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', margin: 0, maxWidth: 650 }}>
@@ -140,7 +141,7 @@ export default function RequirementWorkspacePage() {
 
           <Link
             href={`/candidate/targets/${targetId}/evidence`}
-            className="btn btn-primary"
+            className="btn btn-primary btn-mobile-full"
             style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}
           >
             <Plus size={15} />

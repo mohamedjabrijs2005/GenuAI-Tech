@@ -2741,27 +2741,57 @@ a.btn,
 }
 
 @media (max-width: 768px) {
-  .dashboard-main-content {
+  .dashboard-main-content,
+  .main-content,
+  .page-content {
     width: 100% !important;
     max-width: 100vw !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+  }
+  .desktop-table-only {
+    display: none !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-cards-only {
+    display: none !important;
   }
 }
 
 /* ── Mobile-first responsive utilities ───────────────────── */
 @media (max-width: 640px) {
+  html, body {
+    overflow-x: hidden;
+  }
   /* Tables scroll horizontally, never overflow page */
-  .table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+  .table-responsive,
+  .table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-width: 100% !important;
   }
   /* Stack flex rows into columns on small screens */
   .flex-mobile-col {
     flex-direction: column !important;
+    align-items: stretch !important;
   }
-  /* Full-width buttons on mobile */
-  .btn-mobile-full {
+  /* Stack 2-col grids to 1 col on mobile */
+  .grid-mobile-1 {
+    grid-template-columns: 1fr !important;
+  }
+  /* Full-width controls/buttons on mobile */
+  .btn-mobile-full,
+  .mobile-full {
     width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
     justify-content: center !important;
+  }
+  .search-box {
+    min-width: 0 !important;
+    width: 100% !important;
   }
   /* Card padding reduction on small screens */
   .card {
@@ -2773,13 +2803,21 @@ a.btn,
     padding-right: 12px !important;
   }
   /* Modals become full-screen sheets */
+  .modal-overlay {
+    padding: 0 !important;
+    align-items: stretch !important;
+  }
+  .modal,
+  .modal-card,
   .modal-sheet {
-    position: fixed !important;
-    inset: 0 !important;
+    position: relative !important;
     border-radius: 0 !important;
+    width: 100% !important;
     max-width: 100vw !important;
-    max-height: 100vh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
     overflow-y: auto !important;
+    margin: 0 !important;
   }
   /* Comparison side-by-side → stacked */
   .comparison-grid {
@@ -2791,7 +2829,7 @@ a.btn,
     gap: 8px !important;
   }
   /* Minimum 44px touch targets */
-  .btn, button, a.btn, select, input[type="button"], input[type="submit"] {
+  .btn, button, a.btn, select, input[type="button"], input[type="submit"], .form-input, .form-select, .input-field {
     min-height: 44px !important;
   }
   /* Prevent fixed-width columns from overflowing */
@@ -2809,9 +2847,19 @@ a.btn,
     gap: 12px !important;
     align-items: flex-start !important;
   }
-  /* Sidebar navigation remains accessible */
-  .sidebar-nav-label {
-    display: none;
+  /* Funnel stage rows stack cleanly */
+  .funnel-stage-row {
+    flex-wrap: wrap !important;
+    padding: 12px 14px !important;
+    gap: 10px !important;
+  }
+  .funnel-stage-label-wrap {
+    flex: 1 1 160px !important;
+    min-width: 0 !important;
+  }
+  .funnel-stage-bar-wrap {
+    flex: 1 1 100% !important;
+    order: 4;
   }
 }
 

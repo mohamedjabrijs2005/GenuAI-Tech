@@ -155,7 +155,7 @@ export default function ModerationCenterPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+      <div className="flex-mobile-col" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <ShieldAlert size={20} style={{ color: '#b45309' }} />
@@ -168,12 +168,12 @@ export default function ModerationCenterPage() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="flex-mobile-col mobile-full" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="form-select"
-            style={{ height: 34, fontSize: 12.5 }}
+            className="form-select mobile-full"
+            style={{ minHeight: 44, fontSize: 12.5 }}
           >
             <option value="ALL">All Statuses</option>
             <option value="pending">Pending</option>
@@ -185,7 +185,7 @@ export default function ModerationCenterPage() {
             type="button"
             onClick={loadRequests}
             disabled={loading}
-            className="btn btn-secondary btn-sm"
+            className="btn btn-secondary btn-sm btn-mobile-full"
             style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
             <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> Refresh

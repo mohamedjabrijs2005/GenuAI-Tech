@@ -138,12 +138,13 @@ export default function TargetCoveragePage() {
 
           {/* Transparent Counters */}
           <div
+            className="mobile-full"
             style={{
               background: 'rgba(255, 255, 255, 0.06)',
               border: '1px solid rgba(255, 255, 255, 0.12)',
               borderRadius: 12,
               padding: '16px 20px',
-              minWidth: 260,
+              minWidth: 'min(100%, 240px)',
             }}
           >
             <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 6 }}>
@@ -185,7 +186,7 @@ export default function TargetCoveragePage() {
           Requirement Coverage Ledger
         </h2>
 
-        <div className="table-responsive">
+        <div className="table-responsive desktop-table-only">
           <table className="data-table" style={{ width: '100%' }}>
             <thead>
               <tr>
@@ -284,6 +285,42 @@ export default function TargetCoveragePage() {
               })}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Cards (< 768px) */}
+        <div className="mobile-cards-only" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {requirements.map((req) => {
+            const reqEvidence = evidenceList.filter((e) => e.requirement_id === req.id);
+            const state = getReqState(req.id);
+            const isRequired = (req.importance || 'REQUIRED').toUpperCase() === 'REQUIRED';
+            return (
+              <div key={req.id} style={{ padding: 14, borderRadius: 10, border: '1px solid var(--border)', background: '#fafaf9', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text-primary)', wordBreak: 'break-word' }}>{req.name}</div>
+                  <span style={{ fontSize: 10.5, fontWeight: 700, padding: '2px 7px', borderRadius: 4, background: isRequired ? '#fee2e2' : '#fef3c7', color: isRequired ? '#991b1b' : '#92400e' }}>
+                    {req.importance || 'REQUIRED'}
+                  </span>
+                </div>
+                {req.description && <div style={{ fontSize: 12, color: '#64748b' }}>{req.description}</div>}
+                <div style={{ fontSize: 12, color: '#334155' }}>
+                  <strong>Evidence: </strong>
+                  {reqEvidence.length > 0 ? `${reqEvidence.length} item(s): ${reqEvidence.map((e) => e.title).join(', ')}` : 'None submitted'}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 6 }}>
+                  <span style={{
+                    fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
+                    background: state === 'SUPPORTED' ? '#ecfdf5' : state === 'PENDING' ? '#eff6ff' : state === 'LIMITED' ? '#fef3c7' : '#f1f5f9',
+                    color: state === 'SUPPORTED' ? '#059669' : state === 'PENDING' ? '#2563eb' : state === 'LIMITED' ? '#92400e' : '#64748b',
+                  }}>
+                    {state === 'SUPPORTED' ? 'Supported' : state === 'PENDING' ? 'Pending Review' : state === 'LIMITED' ? 'Limited' : 'Evidence Gap'}
+                  </span>
+                  <Link href={`/candidate/targets/${targetId}/evidence`} className="btn btn-secondary btn-mobile-full" style={{ fontSize: 12, textDecoration: 'none' }}>
+                    {state === 'EVIDENCE_GAP' ? '+ Submit Evidence' : 'View in Locker'}
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

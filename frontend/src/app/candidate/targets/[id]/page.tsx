@@ -165,9 +165,9 @@ export default function TargetWorkspacePage() {
       </div>
 
       {/* ── Hero Card ─────────────────────────────────────────────────────────── */}
-      <div style={{ background: '#ffffff', borderRadius: 12, padding: '28px 32px', border: '1px solid var(--border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
-          <div style={{ flex: 1 }}>
+      <div className="card" style={{ background: '#ffffff', borderRadius: 12, padding: '24px 28px', border: '1px solid var(--border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+        <div className="flex-mobile-col" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
               <span style={{ padding: '3px 10px', borderRadius: 99, background: '#fef3c7', border: '1px solid #fde68a', fontSize: 11, fontWeight: 700, color: '#b45309', textTransform: 'uppercase' }}>
                 Target Workspace
@@ -179,7 +179,7 @@ export default function TargetWorkspacePage() {
                 {target.vacancy_status || 'PUBLISHED'}
               </span>
             </div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 8px', color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>
+            <h1 style={{ fontSize: 22, fontWeight: 800, margin: '4px 0 8px', color: 'var(--text-primary)', letterSpacing: '-0.4px', wordBreak: 'break-word' }}>
               {target.vacancy_title} — {target.company_name}
             </h1>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, fontSize: 12.5, color: 'var(--text-secondary)' }}>
@@ -190,7 +190,7 @@ export default function TargetWorkspacePage() {
           </div>
 
           {/* Coverage pill */}
-          <div style={{ background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px', minWidth: 200, textAlign: 'center' }}>
+          <div className="mobile-full" style={{ background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px', minWidth: 'min(100%, 200px)', textAlign: 'center' }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 6 }}>Overall Coverage</div>
             <div style={{ fontSize: 32, fontWeight: 900, color: coverageColor(coveragePct), marginBottom: 4 }}>{coveragePct}%</div>
             <div style={{ height: 6, background: '#e2e8f0', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
@@ -227,15 +227,15 @@ export default function TargetWorkspacePage() {
         <h2 style={{ fontSize: 13, fontWeight: 800, margin: '0 0 16px', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
           Preparation Timeline
         </h2>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap', justifyContent: 'space-between' }}>
           <TimelineStep label="Learn" status={tlLearn} icon={<BookOpen size={16} />} />
-          <div style={{ flex: 0.5, height: 2, background: tlLearn === 'COMPLETED' ? '#bbf7d0' : '#e2e8f0', marginTop: 18 }} />
+          <div className="col-mobile-hide" style={{ flex: 0.5, height: 2, background: tlLearn === 'COMPLETED' ? '#bbf7d0' : '#e2e8f0', marginTop: 18 }} />
           <TimelineStep label="Practice" status={tlPractice} icon={<ClipboardCheck size={16} />} />
-          <div style={{ flex: 0.5, height: 2, background: tlPractice === 'COMPLETED' ? '#bbf7d0' : '#e2e8f0', marginTop: 18 }} />
+          <div className="col-mobile-hide" style={{ flex: 0.5, height: 2, background: tlPractice === 'COMPLETED' ? '#bbf7d0' : '#e2e8f0', marginTop: 18 }} />
           <TimelineStep label="Assessment" status={tlAssess} icon={<BadgeCheck size={16} />} />
-          <div style={{ flex: 0.5, height: 2, background: tlAssess === 'COMPLETED' ? '#bbf7d0' : '#e2e8f0', marginTop: 18 }} />
+          <div className="col-mobile-hide" style={{ flex: 0.5, height: 2, background: tlAssess === 'COMPLETED' ? '#bbf7d0' : '#e2e8f0', marginTop: 18 }} />
           <TimelineStep label="Evidence" status={tlEvidence} icon={<FileCheck size={16} />} />
-          <div style={{ flex: 0.5, height: 2, background: tlEvidence === 'COMPLETED' ? '#bbf7d0' : '#e2e8f0', marginTop: 18 }} />
+          <div className="col-mobile-hide" style={{ flex: 0.5, height: 2, background: tlEvidence === 'COMPLETED' ? '#bbf7d0' : '#e2e8f0', marginTop: 18 }} />
           <TimelineStep label="Coverage" status={tlCoverage} icon={<Shield size={16} />} />
         </div>
       </div>

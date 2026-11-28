@@ -139,7 +139,7 @@ export default function NotificationsPage() {
         {filtered.map(notif => (
           <div
             key={notif.id}
-            className="card"
+            className="card flex-mobile-col"
             style={{
               padding: '14px 18px',
               display: 'flex',
@@ -213,8 +213,8 @@ export default function NotificationsPage() {
             { label: 'Vacancy verified by GenuAI Admin', desc: 'When your vacancy is reviewed and approved', enabled: true },
             { label: 'Evidence gap alerts', desc: 'When a candidate lacks evidence for a requirement', enabled: false },
           ].map(pref => (
-            <div key={pref.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 8, background: 'var(--surface-container-low)', border: '1px solid var(--border)' }}>
-              <div>
+            <div key={pref.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, padding: '10px 14px', borderRadius: 8, background: 'var(--surface-container-low)', border: '1px solid var(--border)' }}>
+              <div style={{ flex: '1 1 200px', minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: 13 }}>{pref.label}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{pref.desc}</div>
               </div>

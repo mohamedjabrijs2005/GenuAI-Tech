@@ -134,8 +134,8 @@ export default function AuditTrailPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="filter-bar">
-        <div className="search-box">
+      <div className="filter-bar flex-mobile-col">
+        <div className="search-box mobile-full">
           <Search size={14} style={{ color: 'var(--text-muted)' }} />
           <input
             placeholder="Search actor, action, entity..."
@@ -144,7 +144,7 @@ export default function AuditTrailPage() {
             aria-label="Search audit logs"
           />
         </div>
-        <select value={entityFilter} onChange={e => setEntityFilter(e.target.value)} className="form-select" style={{ width: 'auto' }}>
+        <select value={entityFilter} onChange={e => setEntityFilter(e.target.value)} className="form-select mobile-full" style={{ width: 'auto' }}>
           <option value="all">All Entities</option>
           <option value="vacancy">Vacancy</option>
           <option value="application">Application</option>
@@ -158,8 +158,8 @@ export default function AuditTrailPage() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="table-wrapper">
+      {/* Table (Desktop >= 769px) */}
+      <div className="table-wrapper desktop-table-only">
         <table>
           <thead>
             <tr>
@@ -242,6 +242,48 @@ export default function AuditTrailPage() {
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Cards (< 768px) */}
+      <div className="mobile-cards-only" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {filtered.length === 0 ? (
+          <div className="card">
+            <div className="empty-state">
+              <div className="empty-icon"><Shield size={22} /></div>
+              <div className="empty-title">No audit events found</div>
+              <div className="empty-desc">Try adjusting your search or filters.</div>
+            </div>
+          </div>
+        ) : (
+          filtered.map(log => {
+            const badge = ACTION_BADGE[log.action] || { label: log.action, cls: 'badge-gray' };
+            const expanded = expandedId === log.id;
+            return (
+              <div
+                key={log.id}
+                className="card"
+                style={{ padding: 14, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 8 }}
+                onClick={() => setExpandedId(expanded ? null : log.id)}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span className={`badge ${badge.cls}`}>{badge.label}</span>
+                  <span className="td-mono" style={{ fontSize: 11, color: 'var(--text-muted)' }}>{formatTime(log.created_at)}</span>
+                </div>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', wordBreak: 'break-word' }}>
+                  {log.actor_name} <span style={{ fontWeight: 500, color: 'var(--text-muted)', fontSize: 12 }}>({log.entity_type})</span>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)', wordBreak: 'break-word' }}>
+                  {Object.entries(log.details || {}).map(([k, v]) => `${k}: ${v}`).join(' · ')}
+                </div>
+                {expanded && (
+                  <pre style={{ margin: 0, fontSize: 11, background: 'var(--surface-container)', padding: 10, borderRadius: 8, overflowX: 'auto', whiteSpace: 'pre-wrap' }}>
+                    {JSON.stringify({ id: log.id, actor: log.actor_name, email: log.actor_email, entity: log.entity_type, entity_id: log.entity_id, action: log.action, details: log.details, timestamp: log.created_at }, null, 2)}
+                  </pre>
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* GDPR Note */}

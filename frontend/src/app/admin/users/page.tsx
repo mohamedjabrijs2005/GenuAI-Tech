@@ -123,6 +123,7 @@ export default function PlatformUsersPage() {
 
       {/* Controls */}
       <div
+        className="filter-bar flex-mobile-col"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -135,7 +136,7 @@ export default function PlatformUsersPage() {
           border: '1px solid var(--border)',
         }}
       >
-        <div style={{ position: 'relative', width: '100%', maxWidth: '380px' }}>
+        <div className="mobile-full" style={{ position: 'relative', width: '100%', maxWidth: '380px' }}>
           <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
           <input
             type="text"
@@ -143,7 +144,7 @@ export default function PlatformUsersPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="form-input"
-            style={{ paddingLeft: '36px', height: '38px' }}
+            style={{ paddingLeft: '36px', minHeight: '44px' }}
           />
         </div>
       </div>
@@ -155,8 +156,8 @@ export default function PlatformUsersPage() {
         </div>
       )}
 
-      {/* Users Table */}
-      <div className="table-wrapper">
+      {/* Users Table (Desktop >= 769px) */}
+      <div className="table-wrapper desktop-table-only">
         <table>
           <thead>
             <tr>
@@ -256,6 +257,58 @@ export default function PlatformUsersPage() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Cards (< 768px) */}
+      <div className="mobile-cards-only" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {loading ? (
+          <div className="card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            Loading platform users from PostgreSQL...
+          </div>
+        ) : filteredUsers.length === 0 ? (
+          <div className="card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            No users found matching the search criteria.
+          </div>
+        ) : (
+          filteredUsers.map((u) => (
+            <div key={u.id} className="card" style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', flexWrap: 'wrap' }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '14px', wordBreak: 'break-word' }}>{u.name}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', wordBreak: 'break-all' }}>{u.email}</div>
+                </div>
+                <StatusBadge status={u.accountStatus || 'Active'} />
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                <strong>Role:</strong> {u.role || u.userType} · <strong>Org:</strong> {u.organization || 'GenuAI Platform'}
+              </div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', paddingTop: '6px' }}>
+                <button type="button" onClick={() => setSelectedUser(u)} className="btn btn-secondary btn-sm" style={{ flex: '1 1 auto' }}>
+                  <Eye size={13} /> View
+                </button>
+                {u.accountStatus === 'Active' ? (
+                  <button
+                    type="button"
+                    onClick={() => { setTargetUser(u); setDialogAction('Suspended'); }}
+                    className="btn btn-sm"
+                    style={{ flex: '1 1 auto', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', fontWeight: 700 }}
+                  >
+                    Suspend
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => { setTargetUser(u); setDialogAction('Active'); }}
+                    className="btn btn-sm"
+                    style={{ flex: '1 1 auto', background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', fontWeight: 700 }}
+                  >
+                    Reactivate
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* User Detail Drawer */}

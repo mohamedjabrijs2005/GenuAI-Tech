@@ -134,6 +134,7 @@ export default function PlatformIntegrityPage() {
 
       {/* Controls */}
       <div
+        className="filter-bar flex-mobile-col"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -146,7 +147,7 @@ export default function PlatformIntegrityPage() {
           border: '1px solid var(--border)',
         }}
       >
-        <div style={{ position: 'relative', width: '100%', maxWidth: '380px' }}>
+        <div className="mobile-full" style={{ position: 'relative', width: '100%', maxWidth: '380px' }}>
           <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
           <input
             type="text"
@@ -154,19 +155,19 @@ export default function PlatformIntegrityPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="form-input"
-            style={{ paddingLeft: '36px', height: '38px' }}
+            style={{ paddingLeft: '36px', minHeight: '44px' }}
           />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="flex-mobile-col mobile-full" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
             Status Filter:
           </span>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="form-select"
-            style={{ height: '38px', minWidth: '200px', fontSize: '13px' }}
+            className="form-select mobile-full"
+            style={{ minHeight: '44px', minWidth: '200px', fontSize: '13px' }}
           >
             <option value="ALL">All Statuses</option>
             <option value="New">New</option>
@@ -187,8 +188,8 @@ export default function PlatformIntegrityPage() {
         </div>
       )}
 
-      {/* Signals Table */}
-      <div className="table-wrapper">
+      {/* Signals Table (Desktop >= 769px) */}
+      <div className="table-wrapper desktop-table-only">
         <table>
           <thead>
             <tr>
@@ -271,6 +272,38 @@ export default function PlatformIntegrityPage() {
         </table>
       </div>
 
+      {/* Mobile Cards (< 768px) */}
+      <div className="mobile-cards-only" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {loading ? (
+          <div className="card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            Loading integrity signals from PostgreSQL...
+          </div>
+        ) : filteredSignals.length === 0 ? (
+          <div className="card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            No integrity signals recorded.
+          </div>
+        ) : (
+          filteredSignals.map((sig) => (
+            <div key={sig.id} className="card" style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 700, fontSize: '13.5px', color: 'var(--text-primary)' }}>{sig.signalType}</span>
+                <StatusBadge status={sig.status} />
+              </div>
+              <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', wordBreak: 'break-word' }}>
+                <strong>{sig.vacancyTitle}</strong> · {sig.companyName}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: 'var(--text-muted)' }}>
+                <span>{sig.severity} Severity</span>
+                <span>{sig.signalTime ? sig.signalTime.replace('T', ' ').substring(0, 16) : '—'}</span>
+              </div>
+              <button type="button" onClick={() => setSelectedSignal(sig)} className="btn btn-secondary btn-sm btn-mobile-full">
+                <Eye size={13} /> Review Context
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+
       {/* Signal Detail Drawer */}
       {selectedSignal && (
         <DetailDrawer
@@ -309,7 +342,7 @@ export default function PlatformIntegrityPage() {
               <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
                 Context & Related Entity
               </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div className="grid-mobile-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 <div style={{ padding: '8px 12px', background: '#ffffff', border: '1px solid var(--border)', borderRadius: '6px' }}>
                   <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>Company</span>
                   <strong>{selectedSignal.companyName}</strong>

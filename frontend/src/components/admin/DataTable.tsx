@@ -85,7 +85,7 @@ export function DataTable<T extends Record<string, any>>({
         flexDirection: 'column',
       }}
     >
-      <div style={{ overflowX: 'auto', width: '100%' }}>
+      <div className="desktop-table-only" style={{ overflowX: 'auto', width: '100%' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
           <thead>
             <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border)' }}>
@@ -190,16 +190,73 @@ export function DataTable<T extends Record<string, any>>({
         </table>
       </div>
 
+      {/* Mobile Cards View (< 768px) */}
+      <div className="mobile-cards-only" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {isLoading ? (
+          <div style={{ padding: '32px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
+            Loading governance records...
+          </div>
+        ) : paginatedData.length === 0 ? (
+          <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+            {emptyMessage}
+          </div>
+        ) : (
+          paginatedData.map((item, idx) => {
+            const id = keyExtractor(item);
+            const isSelected = selectedId === id;
+            return (
+              <div
+                key={id}
+                onClick={() => onRowClick && onRowClick(item)}
+                style={{
+                  border: isSelected ? '1.5px solid #d4af37' : '1px solid var(--border)',
+                  borderRadius: '10px',
+                  padding: '14px',
+                  background: isSelected ? 'rgba(212, 175, 55, 0.08)' : '#ffffff',
+                  cursor: onRowClick ? 'pointer' : 'default',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                }}
+              >
+                {columns.map((col) => (
+                  <div
+                    key={col.key}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      gap: '10px',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                      {col.header}
+                    </span>
+                    <div style={{ fontSize: '13px', color: 'var(--text-primary)', wordBreak: 'break-word', textAlign: 'right' }}>
+                      {col.render ? col.render(item, idx) : (item[col.key] ?? '—')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })
+        )}
+      </div>
+
       {/* Pagination Footer */}
       {!isLoading && sortedData.length > 0 && (
         <div
+          className="flex-mobile-col"
           style={{
-            padding: '12px 20px',
+            padding: '12px 16px',
             borderTop: '1px solid var(--border)',
             background: '#ffffff',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '10px',
             fontSize: '12.5px',
             color: 'var(--text-secondary)',
           }}

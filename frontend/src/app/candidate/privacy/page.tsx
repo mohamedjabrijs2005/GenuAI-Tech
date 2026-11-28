@@ -151,7 +151,7 @@ export default function CandidatePrivacyPage() {
           How GenuAI Protects Your Boundaries
         </h2>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 16 }}>
           <div style={{ padding: '16px', background: '#fafaf9', borderRadius: 8, border: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, color: 'var(--primary)' }}>
               <Building2 size={18} />
@@ -193,6 +193,7 @@ export default function CandidatePrivacyPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {/* Export Request */}
           <div
+            className="flex-mobile-col"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -218,7 +219,7 @@ export default function CandidatePrivacyPage() {
               type="button"
               onClick={handleExport}
               disabled={submitting !== null}
-              className="btn btn-secondary"
+              className="btn btn-secondary btn-mobile-full"
               style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}
             >
               <Download size={14} />
@@ -246,20 +247,20 @@ export default function CandidatePrivacyPage() {
                 Submit a correction request for inaccurate profile, claim, or application metadata.
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div className="flex-mobile-col" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <input
                 type="text"
                 value={correctionText}
                 onChange={(e) => setCorrectionText(e.target.value)}
                 placeholder="Describe what needs to be corrected..."
-                className="form-input"
-                style={{ flex: 1, minWidth: 220, height: 34, fontSize: 12.5 }}
+                className="form-input mobile-full"
+                style={{ flex: 1, minWidth: 'min(100%, 220px)', minHeight: 44, fontSize: 12.5 }}
               />
               <button
                 type="button"
                 disabled={submitting !== null || !correctionText.trim()}
                 onClick={() => handleRequest('correction', correctionText.trim())}
-                className="btn btn-secondary"
+                className="btn btn-secondary btn-mobile-full"
                 style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}
               >
                 <Edit3 size={14} />
@@ -270,6 +271,7 @@ export default function CandidatePrivacyPage() {
 
           {/* Account Deletion */}
           <div
+            className="flex-mobile-col"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -300,7 +302,7 @@ export default function CandidatePrivacyPage() {
                 type="button"
                 disabled={submitting !== null}
                 onClick={() => handleRequest('deletion', 'Candidate requested account erasure')}
-                className="btn btn-secondary"
+                className="btn btn-secondary btn-mobile-full"
                 style={{ fontSize: 12, color: '#ef4444', borderColor: '#fecaca', display: 'flex', alignItems: 'center', gap: 6 }}
               >
                 <Trash2 size={14} />

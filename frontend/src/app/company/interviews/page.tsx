@@ -50,17 +50,17 @@ export default function InterviewsPage() {
             <h1 className="page-title">Interviews</h1>
             <p className="page-subtitle">Track scheduled and completed interviews from your vacancy shortlists.</p>
           </div>
-          <button className="btn btn-secondary" onClick={load} style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 44 }}>
+          <button className="btn btn-secondary btn-mobile-full" onClick={load} style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 44 }}>
             <RefreshCw size={14} /> Refresh
           </button>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="filter-bar" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div className="filter-bar flex-mobile-col" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {(['all', 'scheduled', 'completed'] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)}
-            className={`btn ${filter === f ? 'btn-primary' : 'btn-secondary'}`}
+            className={`btn btn-mobile-full ${filter === f ? 'btn-primary' : 'btn-secondary'}`}
             style={{ minHeight: 44, textTransform: 'capitalize' }}>
             {f === 'all' ? 'All Interviews' : f.charAt(0).toUpperCase() + f.slice(1)}
           </button>

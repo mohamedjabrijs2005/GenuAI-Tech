@@ -104,7 +104,9 @@ export function DetailDrawer({
           <button
             onClick={onClose}
             style={{
-              padding: '6px',
+              minWidth: '44px',
+              minHeight: '44px',
+              padding: '8px',
               borderRadius: '6px',
               color: '#64748b',
               background: '#f8fafc',
@@ -113,6 +115,7 @@ export function DetailDrawer({
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
+              flexShrink: 0,
             }}
           >
             <X size={16} />

@@ -151,8 +151,8 @@ export default function VacanciesPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="filter-bar">
-        <div className="search-box">
+      <div className="filter-bar flex-mobile-col">
+        <div className="search-box mobile-full">
           <Search size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           <input
             placeholder="Search positions or departments..."
@@ -161,7 +161,7 @@ export default function VacanciesPage() {
             aria-label="Search vacancies"
           />
         </div>
-        <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
+        <div className="flex gap-2 mobile-full" style={{ flexWrap: 'wrap' }}>
           {['all', 'published', 'pending', 'draft', 'paused', 'closed'].map((s) => (
             <button
               key={s}
@@ -175,8 +175,8 @@ export default function VacanciesPage() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="table-wrapper">
+      {/* Table (Desktop >= 769px) */}
+      <div className="table-wrapper desktop-table-only">
         <table>
           <thead>
             <tr>
@@ -283,6 +283,64 @@ export default function VacanciesPage() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Cards (< 768px) */}
+      <div className="mobile-cards-only" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {filtered.length === 0 ? (
+          <div className="card">
+            <div className="empty-state">
+              <div className="empty-icon"><Briefcase size={22} /></div>
+              <div className="empty-title">No vacancies found</div>
+              <div className="empty-desc">Try changing your search filter or create a new vacancy.</div>
+            </div>
+          </div>
+        ) : (
+          filtered.map((v) => (
+            <div key={v.id} className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <Link href={`/company/vacancies/${v.id}`} style={{ fontWeight: 700, color: 'var(--brand-light)', fontSize: 15, textDecoration: 'none', wordBreak: 'break-word' }}>
+                    {v.title}
+                  </Link>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                    {v.dept} · {v.location || 'Remote'} · {v.openings} opening{v.openings !== 1 ? 's' : ''}
+                  </div>
+                </div>
+                <span className={`badge ${STATUS_BADGE[v.status] || 'badge-gray'}`}>
+                  {STATUS_LABEL[v.status] || v.status}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 12, color: 'var(--text-secondary)' }}>
+                <span><strong>{v.applications}</strong> Applicants</span>
+                <span><strong>{v.assessments}</strong> Assessed</span>
+                <span><strong>{v.interviews}</strong> Interviews</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingTop: 6, borderTop: '1px solid var(--border)' }}>
+                {(v.status === 'draft' || v.status === 'changes_requested') && (
+                  <button onClick={() => handleSubmitForVerification(v)} className="btn btn-gold btn-sm" style={{ flex: '1 1 auto' }}>
+                    <Shield size={12} /> <span>Submit</span>
+                  </button>
+                )}
+                {(v.status === 'verified' || v.raw_status === 'APPROVED') && (
+                  <button onClick={() => handlePublishVacancy(v)} className="btn btn-gold btn-sm" style={{ flex: '1 1 auto' }}>
+                    <Play size={12} /> <span>Publish</span>
+                  </button>
+                )}
+                <Link href={`/company/vacancies/${v.id}`} className="btn btn-secondary btn-sm" style={{ flex: '1 1 auto' }}>
+                  <Eye size={14} /> <span>Details</span>
+                </Link>
+                <Link
+                  href={`/company/vacancies/${v.id}/readiness`}
+                  className="btn btn-sm"
+                  style={{ flex: '1 1 auto', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, textDecoration: 'none', background: 'linear-gradient(135deg, #1e1b4b, #4338ca)', color: '#fff', border: 'none' }}
+                >
+                  <BarChart3 size={13} /> <span>Funnel</span>
+                </Link>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

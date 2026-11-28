@@ -29,7 +29,7 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
       }
       const role = (user.role || '').toUpperCase();
       if (role !== 'CANDIDATE' && role !== 'APPLICANT' && role !== 'USER') {
-        router.replace('/dashboard');
+        router.replace('/company');
         return;
       }
       if (!isOnboarding && !onboardingDone) {

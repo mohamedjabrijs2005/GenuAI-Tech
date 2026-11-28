@@ -276,12 +276,13 @@ export default function CandidateProfilePage() {
 
           {/* Profile Completion Checklist */}
           <div
+            className="mobile-full"
             style={{
               background: '#f8fafc',
               border: '1px solid #e2e8f0',
               borderRadius: 12,
               padding: '16px 20px',
-              minWidth: 260,
+              minWidth: 'min(100%, 240px)',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
@@ -779,13 +780,13 @@ export default function CandidateProfilePage() {
         </div>
 
         {/* Submit Actions */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 8 }}>
-          <Link href="/candidate" className="btn btn-secondary" style={{ textDecoration: 'none' }}>
+        <div className="flex-mobile-col" style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 8 }}>
+          <Link href="/candidate" className="btn btn-secondary btn-mobile-full" style={{ textDecoration: 'none' }}>
             Cancel
           </Link>
           <button
             type="submit"
-            className="btn btn-primary"
+            className="btn btn-primary btn-mobile-full"
             disabled={saving}
             style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 140, justifyContent: 'center' }}
           >

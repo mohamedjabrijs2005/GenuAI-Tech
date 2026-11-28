@@ -365,7 +365,7 @@ function RoleViewModal({ role, onClose, onEdit }: { role: Role; onClose: () => v
           <button className="modal-close" onClick={onClose} aria-label="Close"><X size={16} /></button>
         </div>
         <div className="modal-body">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 20px', marginBottom: 20 }}>
+          <div className="grid-mobile-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 20px', marginBottom: 20 }}>
             {[
               ['Department', role.department_name],
               ['Status', role.status],
@@ -711,7 +711,8 @@ function DepartmentsPageInner() {
               </div>
             </div>
           ) : (
-            <div className="table-wrapper">
+            <>
+            <div className="table-wrapper desktop-table-only">
               <table>
                 <thead>
                   <tr>
@@ -777,6 +778,41 @@ function DepartmentsPageInner() {
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile Cards (< 768px) */}
+            <div className="mobile-cards-only" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {roles.map(role => (
+                <div key={role.id} className="card" style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14 }}>{role.title}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                        {role.department_name} · {role.location || 'Remote'} · {role.vacancy_count} vacancies
+                      </div>
+                    </div>
+                    <span className={`badge badge-${role.status.toLowerCase()}`}>{role.status}</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                    {EXP_LABELS[role.experience_level] ?? role.experience_level} · {EMP_LABELS[role.employment_type] ?? role.employment_type}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingTop: 6, borderTop: '1px solid var(--border)' }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setViewRole(role)}><Eye size={13} /> View</button>
+                    <Link href={`/company/vacancies/${role.id}`} className="btn btn-secondary btn-sm" style={{ textDecoration: 'none' }}>
+                      <Briefcase size={13} /> Vacancy
+                    </Link>
+                    {role.status !== 'DEACTIVATED' && (
+                      <>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setRoleModal({ open: true, role })}><Edit2 size={13} /> Edit</button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setConfirm({ open: true, type: 'role-deactivate', id: role.id, name: role.title })}>
+                          <PowerOff size={13} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            </>
           )}
         </>
       )}

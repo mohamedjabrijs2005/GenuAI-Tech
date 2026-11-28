@@ -115,17 +115,17 @@ export default function CandidateVacanciesPage() {
 
       {/* Filter & Search Bar */}
       <div
-        className="card"
+        className="card filter-bar flex-mobile-col"
         style={{
           padding: '16px 20px',
           display: 'flex',
           flexWrap: 'wrap',
-          gap: 14,
+          gap: 12,
           alignItems: 'center',
           justifyContent: 'space-between',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', flex: '1 1 320px', minWidth: 260 }}>
+        <div className="mobile-full" style={{ display: 'flex', alignItems: 'center', flex: '1 1 240px', minWidth: 0 }}>
           <div style={{ position: 'relative', width: '100%' }}>
             <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
             <input
@@ -134,17 +134,17 @@ export default function CandidateVacanciesPage() {
               placeholder="Search by role title or company name..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ width: '100%', paddingLeft: 40, height: 42, fontSize: 13.5 }}
+              style={{ width: '100%', paddingLeft: 40, minHeight: 44, fontSize: 13.5 }}
             />
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="flex-mobile-col mobile-full" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <select
-            className="form-select input-field"
+            className="form-select input-field mobile-full"
             value={workMode}
             onChange={(e) => setWorkMode(e.target.value)}
-            style={{ width: 150, height: 42, cursor: 'pointer', fontSize: 13 }}
+            style={{ minWidth: 140, minHeight: 44, cursor: 'pointer', fontSize: 13 }}
           >
             <option value="ALL">All Work Modes</option>
             <option value="Remote">Remote</option>
@@ -153,10 +153,10 @@ export default function CandidateVacanciesPage() {
           </select>
 
           <select
-            className="form-select input-field"
+            className="form-select input-field mobile-full"
             value={level}
             onChange={(e) => setLevel(e.target.value)}
-            style={{ width: 140, height: 42, cursor: 'pointer', fontSize: 13 }}
+            style={{ minWidth: 140, minHeight: 44, cursor: 'pointer', fontSize: 13 }}
           >
             <option value="ALL">All Levels</option>
             <option value="Junior">Junior</option>
@@ -174,7 +174,7 @@ export default function CandidateVacanciesPage() {
           <div style={{ fontSize: 13, color: '#64748b' }}>Discovering verified vacancies...</div>
         </div>
       ) : vacancies.length > 0 ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: 16 }}>
           {vacancies.map((v) => {
             const isTargeted = targetedVacancyIds.has(v.id);
             const isInterested = interestedVacancyIds.has(v.id);
