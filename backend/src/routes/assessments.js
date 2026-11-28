@@ -523,6 +523,27 @@ router.post('/company/invite', requireApprovedCompany, async (req, res) => {
       );
     }
 
+    try {
+      const { createCandidateNotification } = require('../services/notificationService');
+      let candIdForNotif = null;
+      if (targetId) {
+        const tRow = await pool.query('SELECT candidate_id FROM targets WHERE id = $1', [targetId]);
+        candIdForNotif = tRow.rows[0]?.candidate_id || null;
+      } else if (candidateEmail) {
+        const cRow = await pool.query('SELECT id FROM candidates WHERE LOWER(email) = LOWER($1) LIMIT 1', [candidateEmail]);
+        candIdForNotif = cRow.rows[0]?.id || null;
+      }
+      if (candIdForNotif) {
+        await createCandidateNotification(pool, {
+          candidateId: candIdForNotif,
+          title: `Assessment Invitation: ${vac.title}`,
+          message: `${vac.company_name} invited you to complete the official assessment for ${vac.title}.`,
+          type: 'ASSESSMENT_INVITE',
+          link: targetId ? `/candidate/targets/${targetId}/assessment` : `/candidate/vacancies/${vacancyId}`,
+        });
+      }
+    } catch (_) {}
+
     const { sendAssessmentInvitation } = require('../services/email');
     const result = await sendAssessmentInvitation({
       to: candidateEmail,

@@ -1,5 +1,6 @@
 const pool = require('../database/pool');
 const { logAudit } = require('../services/auditService');
+const { computeTargetSkillProof } = require('../services/skillProofService');
 
 async function listCandidates(req, res) {
   try {
@@ -84,12 +85,28 @@ async function getCandidateDetail(req, res) {
 
     if (!appRes.rows[0]) return res.status(404).json({ error: 'Application not found' });
 
+    const app = appRes.rows[0];
+    let skillProof = [];
+    try {
+      const targetRes = await pool.query(
+        `SELECT id FROM targets WHERE candidate_id = $1 AND (vacancy_id = $2 OR role_id = $2) ORDER BY created_at DESC LIMIT 1`,
+        [app.candidate_id, app.role_id]
+      );
+      if (targetRes.rows[0]) {
+        const proof = await computeTargetSkillProof(pool, targetRes.rows[0].id);
+        skillProof = proof?.skills || [];
+      }
+    } catch (_) {
+      skillProof = [];
+    }
+
     return res.json({
-      application: appRes.rows[0],
+      application: app,
       assessmentResults: resultsRes.rows,
       evidence: evidenceRes.rows,
       interviews: interviewsRes.rows,
       integritySignals: signalsRes.rows,
+      skillProof,
     });
   } catch (err) {
     console.error('Get candidate detail error:', err);

@@ -9,6 +9,7 @@ import {
   AlertCircle, RefreshCw, Building2, Mail, Phone, MapPin,
 } from 'lucide-react';
 import api from '@/lib/api';
+import { SkillProofBadge, SkillProofItem } from '@/components/features/SkillProofBadge';
 import toast from 'react-hot-toast';
 
 export default function CandidateDetailPage() {
@@ -17,6 +18,8 @@ export default function CandidateDetailPage() {
   const candidateId = params?.id as string;
 
   const [candidate, setCandidate] = useState<any>(null);
+  const [skillProof, setSkillProof] = useState<SkillProofItem[]>([]);
+  const [evidence, setEvidence] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -24,7 +27,12 @@ export default function CandidateDetailPage() {
     if (!candidateId) return;
     setLoading(true);
     api.get(`/candidates/${candidateId}`)
-      .then(res => setCandidate(res.data?.candidate || res.data))
+      .then(res => {
+        const app = res.data?.application || res.data?.candidate || res.data;
+        setCandidate(app);
+        setSkillProof(res.data?.skillProof || []);
+        setEvidence(res.data?.evidence || []);
+      })
       .catch(err => setError(err.response?.data?.error || 'Failed to load candidate'))
       .finally(() => setLoading(false));
   }, [candidateId]);
@@ -115,6 +123,54 @@ export default function CandidateDetailPage() {
         </div>
       )}
 
+      {/* Skills / Proof Breakdown */}
+      {skillProof.length > 0 && (
+        <div className="card" style={{ padding: '20px 24px' }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 14px', color: 'var(--text-primary)' }}>
+            Verified Skill Proof (Claimed vs. Assessed vs. Verified)
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {skillProof.map((sp, idx) => (
+              <div key={sp.requirementId || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border)', background: '#fafaf9', flexWrap: 'wrap' }}>
+                <div style={{ minWidth: 0, flex: '1 1 220px' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text-primary)' }}>
+                    {sp.skillName || sp.skill_name}
+                    {sp.importance && (
+                      <span style={{ marginLeft: 8, fontSize: 10.5, fontWeight: 700, color: '#64748b' }}>
+                        ({sp.importance})
+                      </span>
+                    )}
+                  </div>
+                  {sp.reason && (
+                    <div style={{ fontSize: 12, color: '#475569', marginTop: 3 }}>{sp.reason}</div>
+                  )}
+                </div>
+                <SkillProofBadge item={sp} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Evidence Submitted */}
+      {evidence.length > 0 && (
+        <div className="card" style={{ padding: '20px 24px' }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 14px', color: 'var(--text-primary)' }}>
+            Submitted Evidence ({evidence.length})
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {evidence.map((ev: any) => (
+              <div key={ev.id} style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13 }}>
+                <div style={{ fontWeight: 700 }}>{ev.title || ev.requirement_name}</div>
+                <div style={{ fontSize: 12, color: '#64748b' }}>
+                  {ev.requirement_name} · Status: {ev.review_status || ev.status || 'SUBMITTED'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Skills / Proof Summary */}
       {candidate.skill_summary && (
         <div className="card" style={{ padding: '20px 24px' }}>
@@ -130,7 +186,7 @@ export default function CandidateDetailPage() {
       )}
 
       {/* Empty state */}
-      {!candidate.targets?.length && !candidate.skill_summary && (
+      {!candidate.targets?.length && !candidate.skill_summary && skillProof.length === 0 && (
         <div className="card" style={{ padding: 32, textAlign: 'center' }}>
           <Award size={32} style={{ color: 'var(--text-muted)', marginBottom: 10 }} />
           <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>No application data available for this candidate.</p>

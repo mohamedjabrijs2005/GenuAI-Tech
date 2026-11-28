@@ -15,6 +15,8 @@ import {
   Layers,
 } from 'lucide-react';
 import api from '@/lib/api';
+import { SkillProofBadge, SkillProofItem } from '@/components/features/SkillProofBadge';
+import toast from 'react-hot-toast';
 
 export default function TargetCoveragePage() {
   const params = useParams();
@@ -24,35 +26,61 @@ export default function TargetCoveragePage() {
   const [requirements, setRequirements] = useState<any[]>([]);
   const [evidenceList, setEvidenceList] = useState<any[]>([]);
   const [coverage, setCoverage] = useState<any>(null);
+  const [skillProofs, setSkillProofs] = useState<SkillProofItem[]>([]);
+  const [claimingSkill, setClaimingSkill] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let isMounted = true;
+  const loadCoverage = () => {
     setLoading(true);
-
     Promise.all([
       api.get(`/candidate-portal/targets/${targetId}`),
       api.get(`/candidate-portal/targets/${targetId}/evidence`).catch(() => ({ data: { evidence: [] } })),
       api.get(`/candidate-portal/targets/${targetId}/coverage`).catch(() => ({ data: { coverage: null } })),
+      api.get(`/candidate/skill-claims/targets/${targetId}/proof`).catch(() => ({ data: { skills: [] } })),
     ])
-      .then(([targetRes, evRes, covRes]) => {
-        if (!isMounted) return;
+      .then(([targetRes, evRes, covRes, proofRes]) => {
         setTarget(targetRes.data?.target);
         setRequirements(targetRes.data?.requirements || []);
         setEvidenceList(evRes.data?.evidence || []);
         setCoverage(covRes.data?.coverage || targetRes.data?.coverage);
+        setSkillProofs(proofRes.data?.skills || []);
       })
       .catch((err) => {
         console.error('Failed to load coverage:', err);
       })
       .finally(() => {
-        if (isMounted) setLoading(false);
+        setLoading(false);
       });
+  };
 
-    return () => {
-      isMounted = false;
-    };
+  useEffect(() => {
+    loadCoverage();
   }, [targetId]);
+
+  const handleConfirmSkillClaim = async (skillName: string) => {
+    setClaimingSkill(skillName);
+    try {
+      const createRes = await api.post('/candidate/skill-claims', {
+        claims: [{ skillName, source: 'manual' }],
+      });
+      const claimId = createRes.data?.claims?.[0]?.id;
+      if (claimId) {
+        await api.patch(`/candidate/skill-claims/${claimId}/confirm`);
+      }
+      toast.success(`Confirmed skill claim for ${skillName}`);
+      loadCoverage();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Could not confirm skill claim');
+    } finally {
+      setClaimingSkill(null);
+    }
+  };
+
+  const getProofForReq = (req: any): SkillProofItem | undefined => {
+    return skillProofs.find(
+      (p) => p.requirementId === req.id || (p.skillName || '').toLowerCase() === (req.name || '').toLowerCase()
+    );
+  };
 
   if (loading) {
     return (
@@ -192,8 +220,8 @@ export default function TargetCoveragePage() {
               <tr>
                 <th>Requirement</th>
                 <th>Importance</th>
+                <th>Proof Level (Claimed vs Verified)</th>
                 <th>Submitted Evidence</th>
-                <th>Coverage State</th>
                 <th style={{ textAlign: 'right' }}>Next Action</th>
               </tr>
             </thead>
@@ -201,6 +229,7 @@ export default function TargetCoveragePage() {
               {requirements.map((req) => {
                 const reqEvidence = evidenceList.filter((e) => e.requirement_id === req.id);
                 const state = getReqState(req.id);
+                const proof = getProofForReq(req);
                 const isRequired = (req.importance || 'REQUIRED').toUpperCase() === 'REQUIRED';
 
                 return (
@@ -211,6 +240,9 @@ export default function TargetCoveragePage() {
                       </div>
                       {req.description && (
                         <div style={{ fontSize: 11.5, color: '#64748b', maxWidth: 400 }}>{req.description}</div>
+                      )}
+                      {proof?.reason && (
+                        <div style={{ fontSize: 11.5, color: '#475569', marginTop: 4 }}>{proof.reason}</div>
                       )}
                     </td>
                     <td>
@@ -228,6 +260,9 @@ export default function TargetCoveragePage() {
                       </span>
                     </td>
                     <td>
+                      <SkillProofBadge item={proof || { skillName: req.name, proofLevel: state === 'SUPPORTED' ? 'verified' : 'not_assessed', status: state === 'SUPPORTED' ? 'meets' : 'missing' }} />
+                    </td>
+                    <td>
                       {reqEvidence.length > 0 ? (
                         <div style={{ fontSize: 12, color: '#334155' }}>
                           <span style={{ fontWeight: 700 }}>{reqEvidence.length} item(s): </span>
@@ -237,48 +272,27 @@ export default function TargetCoveragePage() {
                         <span style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>None submitted</span>
                       )}
                     </td>
-                    <td>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          padding: '3px 8px',
-                          borderRadius: 6,
-                          background:
-                            state === 'SUPPORTED'
-                              ? '#ecfdf5'
-                              : state === 'PENDING'
-                              ? '#eff6ff'
-                              : state === 'LIMITED'
-                              ? '#fef3c7'
-                              : '#f1f5f9',
-                          color:
-                            state === 'SUPPORTED'
-                              ? '#059669'
-                              : state === 'PENDING'
-                              ? '#2563eb'
-                              : state === 'LIMITED'
-                              ? '#92400e'
-                              : '#64748b',
-                        }}
-                      >
-                        {state === 'SUPPORTED'
-                          ? 'Supported'
-                          : state === 'PENDING'
-                          ? 'Pending Review'
-                          : state === 'LIMITED'
-                          ? 'Limited'
-                          : 'Evidence Gap'}
-                      </span>
-                    </td>
                     <td style={{ textAlign: 'right' }}>
-                      <Link
-                        href={`/candidate/targets/${targetId}/evidence`}
-                        className="btn btn-secondary"
-                        style={{ fontSize: 11.5, padding: '4px 10px', textDecoration: 'none' }}
-                      >
-                        {state === 'EVIDENCE_GAP' ? '+ Submit Evidence' : 'View in Locker'}
-                      </Link>
+                      <div style={{ display: 'inline-flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                        {(!proof || proof.proofLevel === 'not_assessed') && (
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            disabled={claimingSkill === req.name}
+                            onClick={() => handleConfirmSkillClaim(req.name)}
+                            style={{ fontSize: 11.5, padding: '4px 10px' }}
+                          >
+                            {claimingSkill === req.name ? 'Saving...' : 'Confirm Claim'}
+                          </button>
+                        )}
+                        <Link
+                          href={`/candidate/targets/${targetId}/evidence`}
+                          className="btn btn-secondary"
+                          style={{ fontSize: 11.5, padding: '4px 10px', textDecoration: 'none' }}
+                        >
+                          {state === 'EVIDENCE_GAP' ? '+ Submit Evidence' : 'View in Locker'}
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -292,6 +306,7 @@ export default function TargetCoveragePage() {
           {requirements.map((req) => {
             const reqEvidence = evidenceList.filter((e) => e.requirement_id === req.id);
             const state = getReqState(req.id);
+            const proof = getProofForReq(req);
             const isRequired = (req.importance || 'REQUIRED').toUpperCase() === 'REQUIRED';
             return (
               <div key={req.id} style={{ padding: 14, borderRadius: 10, border: '1px solid var(--border)', background: '#fafaf9', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -301,19 +316,18 @@ export default function TargetCoveragePage() {
                     {req.importance || 'REQUIRED'}
                   </span>
                 </div>
-                {req.description && <div style={{ fontSize: 12, color: '#64748b' }}>{req.description}</div>}
+                {proof?.reason && <div style={{ fontSize: 12, color: '#475569' }}>{proof.reason}</div>}
                 <div style={{ fontSize: 12, color: '#334155' }}>
                   <strong>Evidence: </strong>
                   {reqEvidence.length > 0 ? `${reqEvidence.length} item(s): ${reqEvidence.map((e) => e.title).join(', ')}` : 'None submitted'}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 6 }}>
-                  <span style={{
-                    fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
-                    background: state === 'SUPPORTED' ? '#ecfdf5' : state === 'PENDING' ? '#eff6ff' : state === 'LIMITED' ? '#fef3c7' : '#f1f5f9',
-                    color: state === 'SUPPORTED' ? '#059669' : state === 'PENDING' ? '#2563eb' : state === 'LIMITED' ? '#92400e' : '#64748b',
-                  }}>
-                    {state === 'SUPPORTED' ? 'Supported' : state === 'PENDING' ? 'Pending Review' : state === 'LIMITED' ? 'Limited' : 'Evidence Gap'}
-                  </span>
+                  <SkillProofBadge item={proof || { skillName: req.name, proofLevel: state === 'SUPPORTED' ? 'verified' : 'not_assessed', status: state === 'SUPPORTED' ? 'meets' : 'missing' }} />
+                  {(!proof || proof.proofLevel === 'not_assessed') && (
+                    <button type="button" className="btn btn-secondary btn-mobile-full" disabled={claimingSkill === req.name} onClick={() => handleConfirmSkillClaim(req.name)} style={{ fontSize: 12 }}>
+                      {claimingSkill === req.name ? 'Saving...' : 'Confirm Claim'}
+                    </button>
+                  )}
                   <Link href={`/candidate/targets/${targetId}/evidence`} className="btn btn-secondary btn-mobile-full" style={{ fontSize: 12, textDecoration: 'none' }}>
                     {state === 'EVIDENCE_GAP' ? '+ Submit Evidence' : 'View in Locker'}
                   </Link>

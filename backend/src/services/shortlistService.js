@@ -3,6 +3,7 @@ const { computeTargetSkillProof, computeOverallFit } = require('./skillProofServ
 const { recomputeTargetCoverage } = require('./evidenceService');
 const { logAudit } = require('./auditService');
 const { trackEvent } = require('./analyticsService');
+const { createCandidateNotification } = require('./notificationService');
 
 const FIT_ORDER = { strong: 0, promising: 1, partial: 2, not_ready: 3 };
 
@@ -233,6 +234,14 @@ async function overrideShortlistRank(vacancyId, targetId, companyId, user, { ove
       details: { vacancyId, candidateId, overrideRank, overrideFit },
     });
 
+    await createCandidateNotification(client, {
+      candidateId,
+      title: 'Application Review Updated',
+      message: `A recruiter updated your shortlist review status.${overrideFit ? ` Fit assessment: ${overrideFit}.` : ''}`,
+      type: 'SHORTLIST_OVERRIDE',
+      link: `/candidate/targets/${targetId}`,
+    });
+
     await client.query('COMMIT');
     await trackEvent('hr_override_used', {
       userId: user?.id || null,
@@ -319,6 +328,14 @@ async function recordHiringOutcome(vacancyId, targetId, companyId, user, { decis
       details: { vacancyId, applicationId, decision: normalized, reasonCode },
     });
 
+    await createCandidateNotification(client, {
+      candidateId: target.candidate_id,
+      title: `Hiring Outcome: ${normalized.replace(/_/g, ' ').toUpperCase()}`,
+      message: notes || `A hiring decision (${normalized.replace(/_/g, ' ')}) was recorded for your application.`,
+      type: 'HIRING_OUTCOME',
+      link: `/candidate/targets/${targetId}`,
+    });
+
     await client.query('COMMIT');
     await trackEvent('hiring_outcome_recorded', {
       userId: user?.id || null,
@@ -378,6 +395,14 @@ async function updateInterviewStage(vacancyId, targetId, companyId, user, { stag
       newStatus: normalized,
       reason: notes || `Interview stage updated to ${normalized}`,
       details: { vacancyId, candidateId: tRes.rows[0].candidate_id, stage: normalized },
+    });
+
+    await createCandidateNotification(client, {
+      candidateId: tRes.rows[0].candidate_id,
+      title: 'Interview Stage Updated',
+      message: `Your interview stage moved to ${normalized.replace(/_/g, ' ')}.`,
+      type: 'INTERVIEW_STAGE',
+      link: `/candidate/targets/${targetId}`,
     });
 
     await client.query('COMMIT');

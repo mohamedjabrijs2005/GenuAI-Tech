@@ -988,6 +988,16 @@ router.patch('/privacy-requests/:id', async (req, res) => {
       [status, req.body?.resolutionNote || null, req.user.id, id]
     );
     if (upd.rowCount === 0) return res.status(404).json({ error: 'Privacy request not found' });
+    try {
+      const { createCandidateNotification } = require('../services/notificationService');
+      await createCandidateNotification(pool, {
+        candidateId: upd.rows[0].candidate_id,
+        title: `Privacy Request ${status.replace(/_/g, ' ').toUpperCase()}`,
+        message: upd.rows[0].resolution_note || `Your ${upd.rows[0].request_type} privacy request is now ${status}.`,
+        type: 'PRIVACY_UPDATE',
+        link: '/candidate/privacy',
+      });
+    } catch (_) {}
     return res.json({ success: true, request: upd.rows[0] });
   } catch (err) {
     console.error('Admin update privacy request error:', err);

@@ -549,4 +549,16 @@ describe('Integration: Core Product Spine & Tenant Isolation', () => {
     assert.equal(res.status, 201, JSON.stringify(res.data));
     assert.equal(res.data.vacancy.work_mode, 'Remote');
   });
+
+  test('9. Recruiter decision (interview stage / override / outcome) creates candidate notification', async () => {
+    const notifRes = await requestJson(baseUrl, 'GET', '/api/candidate-portal/notifications', {
+      token: tokens.candA,
+    });
+    assert.equal(notifRes.status, 200, JSON.stringify(notifRes.data));
+    const titles = (notifRes.data.notifications || []).map((n) => n.title || '');
+    assert.ok(
+      titles.some((t) => t.includes('Application Review Updated') || t.includes('Hiring Outcome') || t.includes('Interview Stage')),
+      `Expected recruiter decision notification, got: ${JSON.stringify(titles)}`
+    );
+  });
 });
