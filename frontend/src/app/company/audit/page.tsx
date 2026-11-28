@@ -40,13 +40,22 @@ const ACTION_BADGE: Record<string, { label: string; cls: string }> = {
   deleted: { label: 'Deleted', cls: 'badge-red' },
 };
 
-function formatTime(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+function formatTime(iso?: string | null) {
+  if (!iso) return '—';
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return String(iso);
+    return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return String(iso);
+  }
 }
 
-function getInitials(name: string) {
-  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+function getInitials(name?: string | null) {
+  if (!name || typeof name !== 'string') return 'SY';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'SY';
+  return parts.map(n => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
 export default function AuditTrailPage() {
@@ -65,11 +74,23 @@ export default function AuditTrailPage() {
   }, []);
 
   const filtered = logs.filter(log => {
-    const matchSearch = log.actor_name.toLowerCase().includes(search.toLowerCase()) ||
-      log.entity_type.toLowerCase().includes(search.toLowerCase()) ||
-      log.action.toLowerCase().includes(search.toLowerCase()) ||
-      JSON.stringify(log.details).toLowerCase().includes(search.toLowerCase());
-    const matchEntity = entityFilter === 'all' || log.entity_type === entityFilter;
+    const actorLabel = (log.actor_name || log.actor_email || 'System').toString();
+    const actorEmail = (log.actor_email || '').toString();
+    const entityType = (log.entity_type || 'system').toString();
+    const action = (log.action || '').toString();
+    const entityId = (log.entity_id || '').toString();
+    const detailsStr = log.details ? JSON.stringify(log.details) : '';
+    const searchValue = search.toLowerCase();
+
+    const matchSearch =
+      actorLabel.toLowerCase().includes(searchValue) ||
+      actorEmail.toLowerCase().includes(searchValue) ||
+      entityType.toLowerCase().includes(searchValue) ||
+      action.toLowerCase().includes(searchValue) ||
+      entityId.toLowerCase().includes(searchValue) ||
+      detailsStr.toLowerCase().includes(searchValue);
+
+    const matchEntity = entityFilter === 'all' || entityType.toLowerCase() === entityFilter.toLowerCase();
     return matchSearch && matchEntity;
   });
 
@@ -121,9 +142,9 @@ export default function AuditTrailPage() {
       <div className="stats-grid" style={{ marginBottom: 24 }}>
         {[
           { label: 'Total Events', value: logs.length, icon: <Shield size={18} />, cls: 'stat-card-gold' },
-          { label: 'Today', value: logs.filter(l => l.created_at.startsWith('2026-10-01')).length, icon: <Clock size={18} />, cls: 'stat-card-brand' },
-          { label: 'Unique Actors', value: [...new Set(logs.map(l => l.actor_email))].length, icon: <User size={18} />, cls: 'stat-card-success' },
-          { label: 'Entity Types', value: [...new Set(logs.map(l => l.entity_type))].length, icon: <ClipboardList size={18} />, cls: 'stat-card-warning' },
+          { label: 'Today', value: logs.filter(l => (l.created_at || '').startsWith(new Date().toISOString().slice(0, 10))).length, icon: <Clock size={18} />, cls: 'stat-card-brand' },
+          { label: 'Unique Actors', value: [...new Set(logs.map(l => l.actor_email || l.actor_name || 'System'))].length, icon: <User size={18} />, cls: 'stat-card-success' },
+          { label: 'Entity Types', value: [...new Set(logs.map(l => l.entity_type || 'system'))].length, icon: <ClipboardList size={18} />, cls: 'stat-card-warning' },
         ].map(s => (
           <div key={s.label} className={`stat-card ${s.cls}`}>
             <div className="stat-icon">{s.icon}</div>
@@ -185,8 +206,14 @@ export default function AuditTrailPage() {
               </tr>
             )}
             {filtered.map(log => {
-              const badge = ACTION_BADGE[log.action] || { label: log.action, cls: 'badge-gray' };
+              const actionKey = (log.action || '').toString();
+              const badge = ACTION_BADGE[actionKey] || { label: actionKey || 'Event', cls: 'badge-gray' };
               const expanded = expandedId === log.id;
+              const actorLabel = log.actor_name || log.actor_email || 'System';
+              const entityType = log.entity_type || 'system';
+              const entityId = log.entity_id ? `${log.entity_id.slice(0, 12)}…` : '—';
+              const details = log.details && typeof log.details === 'object' ? log.details : {};
+
               return (
                 <Fragment key={log.id}>
                   <tr style={{ cursor: 'pointer' }} onClick={() => setExpandedId(expanded ? null : log.id)}>
@@ -199,27 +226,29 @@ export default function AuditTrailPage() {
                           color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: 10, fontWeight: 700, flexShrink: 0
                         }}>
-                          {getInitials(log.actor_name)}
+                          {getInitials(actorLabel)}
                         </div>
                         <div>
-                          <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>{log.actor_name}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{log.actor_email}</div>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>{actorLabel}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{log.actor_email || '—'}</div>
                         </div>
                       </div>
                     </td>
                     <td><span className={`badge ${badge.cls}`}>{badge.label}</span></td>
                     <td>
                       <div className="flex items-center gap-1.5">
-                        <span style={{ color: 'var(--text-muted)' }}>{ENTITY_ICON[log.entity_type] || <Info size={14} />}</span>
-                        <span style={{ fontWeight: 600, fontSize: 12, textTransform: 'capitalize' }}>{log.entity_type}</span>
+                        <span style={{ color: 'var(--text-muted)' }}>{ENTITY_ICON[entityType] || <Info size={14} />}</span>
+                        <span style={{ fontWeight: 600, fontSize: 12, textTransform: 'capitalize' }}>{entityType}</span>
                       </div>
                     </td>
                     <td className="td-mono" style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                      {log.entity_id?.slice(0, 12)}…
+                      {entityId}
                     </td>
                     <td style={{ maxWidth: 200 }}>
                       <div style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {Object.entries(log.details).map(([k, v]) => `${k}: ${v}`).join(' · ')}
+                        {Object.entries(details).length > 0
+                          ? Object.entries(details).map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(' · ')
+                          : '—'}
                       </div>
                     </td>
                     <td style={{ textAlign: 'right' }}>
@@ -231,7 +260,7 @@ export default function AuditTrailPage() {
                       <td colSpan={7} style={{ padding: '12px 20px' }}>
                         <div style={{ fontSize: 12, fontFamily: 'monospace', background: 'var(--surface-container)', padding: '10px 14px', borderRadius: 8, color: 'var(--text-primary)' }}>
                           <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-                            {JSON.stringify({ id: log.id, actor: log.actor_name, email: log.actor_email, entity: log.entity_type, entity_id: log.entity_id, action: log.action, details: log.details, timestamp: log.created_at }, null, 2)}
+                            {JSON.stringify({ id: log.id, actor: actorLabel, email: log.actor_email, entity: entityType, entity_id: log.entity_id, action: log.action, details: log.details, timestamp: log.created_at }, null, 2)}
                           </pre>
                         </div>
                       </td>
@@ -256,8 +285,13 @@ export default function AuditTrailPage() {
           </div>
         ) : (
           filtered.map(log => {
-            const badge = ACTION_BADGE[log.action] || { label: log.action, cls: 'badge-gray' };
+            const actionKey = (log.action || '').toString();
+            const badge = ACTION_BADGE[actionKey] || { label: actionKey || 'Event', cls: 'badge-gray' };
             const expanded = expandedId === log.id;
+            const actorLabel = log.actor_name || log.actor_email || 'System';
+            const entityType = log.entity_type || 'system';
+            const details = log.details && typeof log.details === 'object' ? log.details : {};
+
             return (
               <div
                 key={log.id}
@@ -270,14 +304,16 @@ export default function AuditTrailPage() {
                   <span className="td-mono" style={{ fontSize: 11, color: 'var(--text-muted)' }}>{formatTime(log.created_at)}</span>
                 </div>
                 <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', wordBreak: 'break-word' }}>
-                  {log.actor_name} <span style={{ fontWeight: 500, color: 'var(--text-muted)', fontSize: 12 }}>({log.entity_type})</span>
+                  {actorLabel} <span style={{ fontWeight: 500, color: 'var(--text-muted)', fontSize: 12 }}>({entityType})</span>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text-secondary)', wordBreak: 'break-word' }}>
-                  {Object.entries(log.details || {}).map(([k, v]) => `${k}: ${v}`).join(' · ')}
+                  {Object.entries(details).length > 0
+                    ? Object.entries(details).map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(' · ')
+                    : '—'}
                 </div>
                 {expanded && (
                   <pre style={{ margin: 0, fontSize: 11, background: 'var(--surface-container)', padding: 10, borderRadius: 8, overflowX: 'auto', whiteSpace: 'pre-wrap' }}>
-                    {JSON.stringify({ id: log.id, actor: log.actor_name, email: log.actor_email, entity: log.entity_type, entity_id: log.entity_id, action: log.action, details: log.details, timestamp: log.created_at }, null, 2)}
+                    {JSON.stringify({ id: log.id, actor: actorLabel, email: log.actor_email, entity: entityType, entity_id: log.entity_id, action: log.action, details: log.details, timestamp: log.created_at }, null, 2)}
                   </pre>
                 )}
               </div>

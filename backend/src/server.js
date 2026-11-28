@@ -32,6 +32,9 @@ const { sendSuccess, sendError } = require('./utils/apiResponse');
 
 const app = express();
 
+// Trust reverse proxy (e.g. Render, Cloudflare, load balancer) for accurate client IP resolution in rate limiting
+app.set('trust proxy', 1);
+
 // ============================================================
 // Security & Parsing
 // ============================================================

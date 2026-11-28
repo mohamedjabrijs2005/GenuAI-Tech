@@ -6,8 +6,8 @@ function validateBackendEnv() {
   const env = process.env.NODE_ENV || 'development';
   const isProd = env === 'production';
 
-  const requiredInProd = ['DATABASE_URL', 'JWT_SECRET'];
-  const recommended = ['FRONTEND_URL', 'APP_URL', 'PORT', 'JWT_EXPIRES_IN', 'DEADLINE_TZ'];
+  const requiredInProd = ['DATABASE_URL', 'JWT_SECRET', 'FRONTEND_URL', 'APP_URL'];
+  const recommended = ['PORT', 'JWT_EXPIRES_IN', 'DEADLINE_TZ'];
 
   const missingRequired = requiredInProd.filter((k) => !(process.env[k] || '').trim());
   const missingRecommended = recommended.filter((k) => !(process.env[k] || '').trim());
@@ -18,8 +18,26 @@ function validateBackendEnv() {
     console.warn('[ENV] DATABASE_URL points to retired Render host dpg-db4uf0bbc2fs73dlovbg-a; pool.js fallback active. Update Render env var.');
   }
 
-  if (missingRequired.length > 0) {
-    const msg = `[ENV] Missing critical environment variable(s): ${missingRequired.join(', ')}`;
+  // Check URL scheme in production for FRONTEND_URL and APP_URL
+  const frontendUrl = (process.env.FRONTEND_URL || '').trim();
+  const appUrl = (process.env.APP_URL || '').trim();
+
+  const invalidUrls = [];
+  if (isProd) {
+    if (frontendUrl && !frontendUrl.startsWith('https://')) {
+      invalidUrls.push(`FRONTEND_URL must use https:// in production (current: "${frontendUrl}")`);
+    }
+    if (appUrl && !appUrl.startsWith('https://')) {
+      invalidUrls.push(`APP_URL must use https:// in production (current: "${appUrl}")`);
+    }
+  }
+
+  if (missingRequired.length > 0 || invalidUrls.length > 0) {
+    const issues = [
+      missingRequired.length > 0 ? `Missing critical environment variable(s): ${missingRequired.join(', ')}` : null,
+      ...invalidUrls,
+    ].filter(Boolean);
+    const msg = `[ENV] ${issues.join('; ')}`;
     if (isProd) {
       console.error(msg);
       throw new Error(msg);

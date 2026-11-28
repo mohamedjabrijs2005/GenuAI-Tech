@@ -11,7 +11,7 @@ interface HealthData {
   database?: string;
   migrationVersion?: number;
   migrationCount?: number;
-  environment?: string;
+  environment?: any;
   timestamp?: string;
 }
 
@@ -39,6 +39,11 @@ export default function AdminSystemPage() {
 
   const ok = health?.status === 'ok';
 
+  const environmentLabel =
+    typeof health?.environment === 'object' && health.environment !== null
+      ? (health.environment.env || 'Unknown')
+      : (health?.environment || 'Unknown');
+
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div className="page-header">
@@ -58,9 +63,9 @@ export default function AdminSystemPage() {
           {[
             { label: 'API Status', value: health.status?.toUpperCase() || '—', icon: <Server size={16} />, ok: ok },
             { label: 'Database', value: health.database || '—', icon: <Database size={16} />, ok: health.database === 'connected' },
-            { label: 'Migration Version', value: `v${health.migrationVersion || '—'}`, icon: <CheckCircle2 size={16} />, ok: !!health.migrationVersion },
-            { label: 'Migration Count', value: health.migrationCount?.toString() || '—', icon: <CheckCircle2 size={16} />, ok: !!health.migrationCount },
-            { label: 'Environment', value: health.environment || '—', icon: <Clock size={16} />, ok: true },
+            { label: 'Migration Version', value: health.migrationVersion ? `v${health.migrationVersion}` : '—', icon: <CheckCircle2 size={16} />, ok: !!health.migrationVersion },
+            { label: 'Migration Count', value: typeof health.migrationCount === 'number' ? health.migrationCount.toString() : (health.migrationCount || '—'), icon: <CheckCircle2 size={16} />, ok: !!health.migrationCount },
+            { label: 'Environment', value: String(environmentLabel), icon: <Clock size={16} />, ok: true },
             { label: 'Last Checked', value: health.timestamp ? new Date(health.timestamp).toLocaleString() : new Date().toLocaleString(), icon: <Clock size={16} />, ok: true },
           ].map(row => (
             <div key={row.label} className="card" style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
