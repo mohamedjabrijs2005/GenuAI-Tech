@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/api';
 import { SkillProofBadge, SkillProofItem } from '@/components/features/SkillProofBadge';
+import { findSkillProofForRequirement } from '@/lib/skillProof';
 import toast from 'react-hot-toast';
 
 export default function CandidateDetailPage() {
@@ -20,6 +21,7 @@ export default function CandidateDetailPage() {
   const [candidate, setCandidate] = useState<any>(null);
   const [skillProof, setSkillProof] = useState<SkillProofItem[]>([]);
   const [evidence, setEvidence] = useState<any[]>([]);
+  const [proofLoading, setProofLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -32,6 +34,14 @@ export default function CandidateDetailPage() {
         setCandidate(app);
         setSkillProof(res.data?.skillProof || []);
         setEvidence(res.data?.evidence || []);
+        const targetId = res.data?.targetId || app.target_id || app.targets?.[0]?.id;
+        if (targetId && !res.data?.skillProof?.length) {
+          setProofLoading(true);
+          api.get(`/company/skill-claims/targets/${targetId}/proof`)
+            .then(proofRes => setSkillProof(Array.isArray(proofRes.data?.skills) ? proofRes.data.skills : []))
+            .catch(() => setSkillProof([]))
+            .finally(() => setProofLoading(false));
+        }
       })
       .catch(err => setError(err.response?.data?.error || 'Failed to load candidate'))
       .finally(() => setLoading(false));
@@ -124,12 +134,15 @@ export default function CandidateDetailPage() {
       )}
 
       {/* Skills / Proof Breakdown */}
-      {skillProof.length > 0 && (
+      {(proofLoading || skillProof.length > 0 || evidence.length > 0) && (
         <div className="card" style={{ padding: '20px 24px' }}>
           <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 14px', color: 'var(--text-primary)' }}>
-            Verified Skill Proof (Claimed vs. Assessed vs. Verified)
+            Skill Proof (Claimed, Assessed, Verified &amp; Gaps)
           </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {proofLoading ? (
+            <div role="status" style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Loading skill proof…</div>
+          ) : skillProof.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {skillProof.map((sp, idx) => (
               <div key={sp.requirementId || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border)', background: '#fafaf9', flexWrap: 'wrap' }}>
                 <div style={{ minWidth: 0, flex: '1 1 220px' }}>
@@ -148,12 +161,15 @@ export default function CandidateDetailPage() {
                 <SkillProofBadge item={sp} />
               </div>
             ))}
-          </div>
+            </div>
+          ) : (
+            <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>No per-requirement proof records are available for this application.</div>
+          )}
         </div>
       )}
 
       {/* Evidence Submitted */}
-      {evidence.length > 0 && (
+      {(evidence.length > 0 || skillProof.length > 0) && (
         <div className="card" style={{ padding: '20px 24px' }}>
           <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 14px', color: 'var(--text-primary)' }}>
             Submitted Evidence ({evidence.length})

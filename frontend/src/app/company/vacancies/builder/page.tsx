@@ -74,11 +74,11 @@ interface EvidenceTypeItem {
 }
 
 const STEPS = [
-  { id: 1, title: 'Role & Vacancy Info', icon: FileText },
-  { id: 2, title: 'Requirements Matrix & AI Blueprint', icon: Target },
-  { id: 3, title: 'Assessment', icon: ClipboardList },
-  { id: 4, title: 'Candidate Settings', icon: UsersIcon },
-  { id: 5, title: 'Review & Submit', icon: Shield },
+  { id: 1, title: 'Role & Vacancy Info', shortTitle: 'Role Info', icon: FileText },
+  { id: 2, title: 'Requirements Matrix & AI Blueprint', shortTitle: 'Requirements', icon: Target },
+  { id: 3, title: 'Assessment', shortTitle: 'Assessment', icon: ClipboardList },
+  { id: 4, title: 'Candidate Settings', shortTitle: 'Candidates', icon: UsersIcon },
+  { id: 5, title: 'Review & Submit', shortTitle: 'Review', icon: Shield },
 ];
 
 const EXP_OPTIONS = [
@@ -784,7 +784,7 @@ export default function VacancyBuilderPage() {
         <div className="flex items-center justify-between gap-4 mb-4 pb-3 border-b border-slate-200">
           <div>
             <div className="text-xs font-bold text-amber-800 uppercase tracking-wider">
-              Step {currentStep} of 5 — {STEPS[currentStep - 1].title}
+              Step {currentStep} of 5 — {STEPS[currentStep - 1].shortTitle}
             </div>
             <div className="text-sm font-semibold text-slate-700 mt-0.5">
               Vacancy Creation Wizard
@@ -834,7 +834,8 @@ export default function VacancyBuilderPage() {
                 }`}>
                   {isDone ? <Check size={12} /> : step.id}
                 </div>
-                <span className="whitespace-nowrap">{step.title}</span>
+                <span className="hidden sm:inline whitespace-nowrap">{step.title}</span>
+                <span className="sm:hidden whitespace-nowrap">{step.shortTitle}</span>
               </button>
             );
           })}

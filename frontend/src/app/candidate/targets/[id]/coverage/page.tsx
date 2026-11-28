@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/api';
 import { SkillProofBadge, SkillProofItem } from '@/components/features/SkillProofBadge';
+import { findSkillProofForRequirement, getProofNextAction } from '@/lib/skillProof';
 import toast from 'react-hot-toast';
 
 export default function TargetCoveragePage() {
@@ -76,11 +77,7 @@ export default function TargetCoveragePage() {
     }
   };
 
-  const getProofForReq = (req: any): SkillProofItem | undefined => {
-    return skillProofs.find(
-      (p) => p.requirementId === req.id || (p.skillName || '').toLowerCase() === (req.name || '').toLowerCase()
-    );
-  };
+  const getProofForReq = (req: any): SkillProofItem | undefined => findSkillProofForRequirement(skillProofs, req);
 
   if (loading) {
     return (
@@ -241,9 +238,7 @@ export default function TargetCoveragePage() {
                       {req.description && (
                         <div style={{ fontSize: 11.5, color: '#64748b', maxWidth: 400 }}>{req.description}</div>
                       )}
-                      {proof?.reason && (
-                        <div style={{ fontSize: 11.5, color: '#475569', marginTop: 4 }}>{proof.reason}</div>
-                      )}
+                      <div style={{ fontSize: 11.5, color: '#475569', marginTop: 4 }}>{proof?.reason || getProofNextAction(proof)}</div>
                     </td>
                     <td>
                       <span
@@ -316,7 +311,7 @@ export default function TargetCoveragePage() {
                     {req.importance || 'REQUIRED'}
                   </span>
                 </div>
-                {proof?.reason && <div style={{ fontSize: 12, color: '#475569' }}>{proof.reason}</div>}
+                <div style={{ fontSize: 12, color: '#475569' }}>{proof?.reason || getProofNextAction(proof)}</div>
                 <div style={{ fontSize: 12, color: '#334155' }}>
                   <strong>Evidence: </strong>
                   {reqEvidence.length > 0 ? `${reqEvidence.length} item(s): ${reqEvidence.map((e) => e.title).join(', ')}` : 'None submitted'}

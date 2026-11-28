@@ -19,6 +19,8 @@ import {
   Info,
 } from 'lucide-react';
 import api from '@/lib/api';
+import { SkillProofBadge, SkillProofItem } from '@/components/features/SkillProofBadge';
+import { findSkillProofForRequirement, getProofNextAction } from '@/lib/skillProof';
 
 export default function RequirementWorkspacePage() {
   const params = useParams();
@@ -28,6 +30,7 @@ export default function RequirementWorkspacePage() {
   const [requirements, setRequirements] = useState<any[]>([]);
   const [coverage, setCoverage] = useState<any>(null);
   const [evidenceList, setEvidenceList] = useState<any[]>([]);
+  const [skillProofs, setSkillProofs] = useState<SkillProofItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,13 +41,15 @@ export default function RequirementWorkspacePage() {
       api.get(`/candidate-portal/targets/${targetId}`),
       api.get(`/candidate-portal/targets/${targetId}/evidence`).catch(() => ({ data: { evidence: [] } })),
       api.get(`/candidate-portal/targets/${targetId}/coverage`).catch(() => ({ data: { coverage: null } })),
+      api.get(`/candidate/skill-claims/targets/${targetId}/proof`).catch(() => ({ data: { skills: [] } })),
     ])
-      .then(([targetRes, evRes, covRes]) => {
+      .then(([targetRes, evRes, covRes, proofRes]) => {
         if (!isMounted) return;
         setTarget(targetRes.data?.target);
         setRequirements(targetRes.data?.requirements || []);
         setEvidenceList(evRes.data?.evidence || []);
         setCoverage(covRes.data?.coverage || targetRes.data?.coverage);
+        setSkillProofs(Array.isArray(proofRes.data?.skills) ? proofRes.data.skills : []);
       })
       .catch((err) => {
         console.error('Failed to load requirement workspace:', err);
@@ -72,6 +77,8 @@ export default function RequirementWorkspacePage() {
   const getRequirementEvidence = (reqId: string) => {
     return evidenceList.filter((e) => e.requirement_id === reqId);
   };
+
+  const getProofForReq = (req: any): SkillProofItem | undefined => findSkillProofForRequirement(skillProofs, req);
 
   const getCoverageState = (reqId: string) => {
     const ev = getRequirementEvidence(reqId);
@@ -175,6 +182,7 @@ export default function RequirementWorkspacePage() {
         {requirements.map((req, idx) => {
           const reqEvidence = getRequirementEvidence(req.id);
           const state = getCoverageState(req.id);
+          const proof = getProofForReq(req);
           const isRequired = (req.importance || 'REQUIRED').toUpperCase() === 'REQUIRED';
 
           return (
@@ -253,6 +261,16 @@ export default function RequirementWorkspacePage() {
                       ? 'Limited Evidence'
                       : 'Evidence Gap'}
                   </span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b' }}>Skill proof</span>
+                  <SkillProofBadge item={proof || { skillName: req.name, proofLevel: 'not_assessed', status: state === 'LIMITED' ? 'partial' : 'missing' }} />
+                </div>
+                <div style={{ fontSize: 12, color: '#475569' }}>
+                  {proof?.reason || getProofNextAction(proof)}
                 </div>
               </div>
 
