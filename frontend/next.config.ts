@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
       { source: "/for-candidates", destination: "/#candidates", permanent: false },
       { source: "/for-companies", destination: "/#companies", permanent: false },
       { source: "/subscription", destination: "/candidate/subscription", permanent: false },
+      { source: "/dashboard", destination: "/company", permanent: false },
+      { source: "/dashboard/:path*", destination: "/company/:path*", permanent: false },
       { source: "/vacancies", destination: "/#vacancies", permanent: false },
       { source: "/genuai-landing/vacancies", destination: "/#vacancies", permanent: false },
       { source: "/genuai-landing/pricing", destination: "/#pricing", permanent: false },
@@ -52,8 +54,8 @@ const nextConfig: NextConfig = {
       { source: "/candidate-dashboard/accessibility", destination: "/candidate/accessibility" },
 
       // ─── Company Dashboard ───────────────────────────────────────────
-      { source: "/company-dashboard", destination: "/dashboard" },
-      { source: "/company-dashboard/:path*", destination: "/dashboard/:path*" },
+      { source: "/company-dashboard", destination: "/company" },
+      { source: "/company-dashboard/:path*", destination: "/company/:path*" },
 
       // ─── Info & Landing Routes ───────────────────────────────────────
       { source: "/genuai-landing/subscription", destination: "/candidate/subscription" },

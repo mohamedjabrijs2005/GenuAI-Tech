@@ -7,9 +7,10 @@ export default function DashboardRedirect({ children }: { children: React.ReactN
   const pathname = usePathname();
 
   useEffect(() => {
-    // Redirect /dashboard and all sub-paths to /company equivalent
-    const newPath = pathname.replace(/^\/dashboard/, '/company');
-    router.replace(newPath);
+    // Redirect /dashboard and all sub-paths to /company equivalent, preserving query params
+    const newPath = pathname.replace(/^\/dashboard/, '/company') || '/company';
+    const search = typeof window !== 'undefined' ? window.location.search : '';
+    router.replace(`${newPath}${search}`);
   }, [pathname, router]);
 
   return null;
