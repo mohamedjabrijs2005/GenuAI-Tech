@@ -1,225 +1,179 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
-const bcrypt = require('bcryptjs');
 const pool = require('./pool');
+const bcrypt = require('bcrypt');
 
 /**
- * Idempotent pilot seed script.
- * Creates:
- *   - 1 APPROVED pilot company ("GenuAI Pilot Company") + owner user
- *   - 1 department ("Product Engineering")
- *   - 1 PUBLISHED vacancy ("Full-Stack Product Engineer") with requirements + approved blueprint
- *   - 1 locked vacancy_skill_checklists row
- *   - 5 verified candidate users with 1 TARGETED application each
+ * GenuAI Pilot Seed Script
+ * Creates one pilot company with owner + recruiter, one approved vacancy,
+ * five candidates with skill claims, and a shortlist ready for HR review.
+ *
+ * Usage: node src/database/seed_pilot.js
+ * Safe to re-run (skips existing pilot company by email).
  */
-async function seedPilot() {
+async function run() {
   const client = await pool.connect();
   try {
-    console.log('Starting Pilot Database Seeding...');
+    console.log('\n🌱  GenuAI Pilot Seed — starting...\n');
     await client.query('BEGIN');
 
-    const pilotCompanyPass = process.env.PILOT_COMPANY_PASSWORD || 'PilotCompany@2026!';
-    const pilotCandPass = process.env.PILOT_CANDIDATE_PASSWORD || 'PilotCandidate@2026!';
-    const companyHash = await bcrypt.hash(pilotCompanyPass, 10);
-    const candHash = await bcrypt.hash(pilotCandPass, 10);
-
-    // 1. Pilot Company (APPROVED)
-    const companyEmail = 'pilot-hr@genuai-pilot.test';
-    let company = (await client.query(
-      'SELECT id FROM companies WHERE official_email = $1',
-      [companyEmail]
-    )).rows[0];
-    if (!company) {
-      company = (await client.query(
-        `INSERT INTO companies (name, official_email, website, industry, description, location, verification_status, onboarding_submitted)
-         VALUES ('GenuAI Pilot Company', $1, 'https://pilot.genuai.test', 'Software & AI', 'Pilot hiring organization for GenuAI Phase 1 validation', 'Bengaluru, IN', 'APPROVED', TRUE)
-         RETURNING id`,
-        [companyEmail]
-      )).rows[0];
-    } else {
-      await client.query(
-        `UPDATE companies SET verification_status = 'APPROVED', onboarding_submitted = TRUE WHERE id = $1`,
-        [company.id]
-      );
+    // ── 1. Create / fetch pilot company ────────────────────────────
+    const ownerEmail = 'pilot-owner@genuai.test';
+    const existingOwner = await client.query('SELECT id FROM users WHERE email = $1', [ownerEmail]);
+    if (existingOwner.rowCount > 0) {
+      console.log('⏭  Pilot data already exists (pilot-owner@genuai.test). Skipping seed.');
+      await client.query('ROLLBACK');
+      return;
     }
 
-    // Company owner user
-    let owner = (await client.query('SELECT id FROM users WHERE email = $1', [companyEmail])).rows[0];
-    if (!owner) {
-      owner = (await client.query(
-        `INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified)
-         VALUES ($1, $2, 'Pilot', 'Recruiter', 'COMPANY_OWNER', TRUE, TRUE)
-         RETURNING id`,
-        [companyEmail, companyHash]
-      )).rows[0];
-    }
-    await client.query(
-      `INSERT INTO company_members (company_id, user_id, member_role)
-       VALUES ($1, $2, 'COMPANY_OWNER') ON CONFLICT DO NOTHING`,
-      [company.id, owner.id]
+    const hash = await bcrypt.hash('PilotPass2026!', 10);
+
+    // Owner user
+    const ownerUser = await client.query(
+      `INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified)
+       VALUES ($1,$2,'Pilot','Owner','COMPANY_OWNER',TRUE,TRUE) RETURNING id`,
+      [ownerEmail, hash]
+    );
+    const ownerUserId = ownerUser.rows[0].id;
+
+    // Company
+    const company = await client.query(
+      `INSERT INTO companies (name, legal_name, industry, description, size, website, official_email,
+         location, verification_status, created_by)
+       VALUES ('GenuAI Pilot Co', 'GenuAI Pilot Company Ltd', 'Software', 'Pilot partner company for controlled GenuAI evaluation.',
+               '11-50', 'https://pilot.genuai.test', 'hiring@pilot.genuai.test',
+               'Chennai, India', 'APPROVED', $1) RETURNING id`,
+      [ownerUserId]
+    );
+    const companyId = company.rows[0].id;
+
+    // Company member (owner)
+    const ownerMember = await client.query(
+      `INSERT INTO company_members (company_id, user_id, member_role, is_active)
+       VALUES ($1,$2,'COMPANY_OWNER',TRUE) RETURNING id`,
+      [companyId, ownerUserId]
     );
 
-    // 2. Department
-    let dept = (await client.query(
-      'SELECT id FROM departments WHERE company_id = $1 AND name = $2',
-      [company.id, 'Product Engineering']
-    )).rows[0];
-    if (!dept) {
-      dept = (await client.query(
-        `INSERT INTO departments (company_id, name, description)
-         VALUES ($1, 'Product Engineering', 'Core engineering team') RETURNING id`,
-        [company.id]
-      )).rows[0];
-    }
+    // Recruiter sub-user
+    const recruiterUser = await client.query(
+      `INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified)
+       VALUES ('pilot-recruiter@genuai.test',$1,'Pilot','Recruiter','COMPANY_RECRUITER',TRUE,TRUE) RETURNING id`,
+      [hash]
+    );
+    await client.query(
+      `INSERT INTO company_members (company_id, user_id, member_role, is_active, invited_by)
+       VALUES ($1,$2,'COMPANY_RECRUITER',TRUE,$3)`,
+      [companyId, recruiterUser.rows[0].id, ownerUserId]
+    );
 
-    // 3. Published Vacancy
-    const vacTitle = 'Full-Stack Product Engineer';
-    let vacancy = (await client.query(
-      'SELECT id, approved_role_blueprint_id FROM company_roles WHERE company_id = $1 AND title = $2',
-      [company.id, vacTitle]
-    )).rows[0];
-    if (!vacancy) {
-      vacancy = (await client.query(
-        `INSERT INTO company_roles
-           (company_id, department_id, title, job_description, experience_level, employment_type,
-            location, work_mode, salary_range, vacancy_count, status, approved_at, published_at)
-         VALUES ($1, $2, $3,
-                 'Build and ship customer-facing web apps with TypeScript, React, Node.js, and PostgreSQL.',
-                 'mid', 'full_time', 'Bengaluru / Remote', 'Hybrid', '$70k - $95k', 2, 'PUBLISHED', NOW(), NOW())
-         RETURNING id, approved_role_blueprint_id`,
-        [company.id, dept.id, vacTitle]
-      )).rows[0];
-    } else {
-      await client.query(
-        `UPDATE company_roles SET status = 'PUBLISHED', published_at = COALESCE(published_at, NOW()) WHERE id = $1`,
-        [vacancy.id]
-      );
-    }
+    console.log(`✅  Company: ${companyId}`);
+    console.log(`    Owner   : ${ownerEmail}  / PilotPass2026!`);
+    console.log(`    Recruiter: pilot-recruiter@genuai.test  / PilotPass2026!`);
 
-    // Approved role blueprint linkage
-    let blueprintId = vacancy.approved_role_blueprint_id;
-    if (!blueprintId) {
-      const bp = (await client.query(
-        `INSERT INTO ai_role_blueprint_suggestions
-           (company_id, vacancy_id, role_title, suggested_skills, status, prompt_version, ai_model)
-         VALUES ($1, $2, $3, '[]'::jsonb, 'APPROVED', 'v2.1', 'genuai-pilot-seed')
-         RETURNING id`,
-        [company.id, vacancy.id, vacTitle]
-      )).rows[0];
-      blueprintId = bp.id;
-      await client.query(
-        'UPDATE company_roles SET approved_role_blueprint_id = $1 WHERE id = $2',
-        [blueprintId, vacancy.id]
-      );
-    }
+    // ── 2. Create vacancy ───────────────────────────────────────────
+    const vacancy = await client.query(
+      `INSERT INTO company_roles (company_id, title, description, experience_level, employment_type, work_mode, location, status, created_by)
+       VALUES ($1,'Full-Stack Engineer (Pilot)','Pilot vacancy for GenuAI controlled evaluation.','Mid','Full-time','Hybrid','Chennai, India','PUBLISHED',$2)
+       RETURNING id`,
+      [companyId, ownerUserId]
+    );
+    const vacancyId = vacancy.rows[0].id;
+    console.log(`✅  Vacancy : ${vacancyId}`);
+
+    // Checklist
+    const checklist = await client.query(
+      `INSERT INTO vacancy_skill_checklists (vacancy_id, company_id, version, status, approved_at, locked_at)
+       VALUES ($1,$2,1,'locked',NOW(),NOW()) RETURNING id`,
+      [vacancyId, companyId]
+    );
+    const checklistId = checklist.rows[0].id;
 
     // Requirements
-    const existingReqs = (await client.query(
-      'SELECT COUNT(*)::int AS count FROM requirements WHERE role_id = $1',
-      [vacancy.id]
-    )).rows[0].count;
-    if (existingReqs === 0) {
-      const skills = [
-        { name: 'TypeScript', importance: 'REQUIRED', reqType: 'Required', priority: 'High' },
-        { name: 'React', importance: 'REQUIRED', reqType: 'Required', priority: 'High' },
-        { name: 'Node.js', importance: 'REQUIRED', reqType: 'Required', priority: 'High' },
-        { name: 'PostgreSQL', importance: 'REQUIRED', reqType: 'Required', priority: 'Medium' },
-        { name: 'System Design', importance: 'PREFERRED', reqType: 'Preferred', priority: 'Medium' },
-      ];
-      for (let i = 0; i < skills.length; i++) {
-        const s = skills[i];
-        await client.query(
-          `INSERT INTO requirements
-             (role_id, company_id, name, category, req_type, priority, proficiency, eval_method, importance, display_order, weight)
-           VALUES ($1, $2, $3, 'Technical', $4, $5, 'Intermediate', 'Official Technical Assessment', $6, $7, 1.0)`,
-          [vacancy.id, company.id, s.name, s.reqType, s.priority, s.importance, i + 1]
-        );
-      }
-    }
-
-    // Locked skill checklist
-    const existingCl = (await client.query(
-      'SELECT id FROM vacancy_skill_checklists WHERE vacancy_id = $1',
-      [vacancy.id]
-    )).rows[0];
-    if (!existingCl) {
-      await client.query(
-        `INSERT INTO vacancy_skill_checklists
-           (vacancy_id, company_id, version, status, source, approved_by, approved_at, notes)
-         VALUES ($1, $2, 1, 'locked', 'manual', $3, NOW(), 'Locked pilot checklist')`,
-        [vacancy.id, company.id, owner.id]
+    const requirements = [
+      { name: 'React (18+)', importance: 'MUST_HAVE' },
+      { name: 'Node.js & Express', importance: 'MUST_HAVE' },
+      { name: 'PostgreSQL', importance: 'MUST_HAVE' },
+      { name: 'REST API Design', importance: 'MUST_HAVE' },
+      { name: 'TypeScript', importance: 'GOOD_TO_HAVE' },
+    ];
+    const reqIds = [];
+    for (let i = 0; i < requirements.length; i++) {
+      const r = requirements[i];
+      const req = await client.query(
+        `INSERT INTO requirements (role_id, checklist_id, name, importance, requirement_type, display_order)
+         VALUES ($1,$2,$3,$4,'technical',$5) RETURNING id`,
+        [vacancyId, checklistId, r.name, r.importance, i + 1]
       );
+      reqIds.push(req.rows[0].id);
     }
+    console.log(`✅  Checklist: ${checklistId} (locked, ${requirements.length} requirements)`);
 
-    // Vacancy version
-    let ver = (await client.query(
-      `SELECT id FROM vacancy_versions WHERE role_id = $1 ORDER BY version_number DESC LIMIT 1`,
-      [vacancy.id]
-    )).rows[0];
-    if (!ver) {
-      ver = (await client.query(
-        `INSERT INTO vacancy_versions (role_id, company_id, version_number, status, change_summary, published_at)
-         VALUES ($1, $2, 1, 'Published', 'Pilot Seed Version', NOW()) RETURNING id`,
-        [vacancy.id, company.id]
-      )).rows[0];
-    }
-
-    // 4. 5 Test Candidates + 1 TARGETED row each
-    const pilotCandidates = [
-      { email: 'pilot-cand-1@genuai-pilot.test', first: 'Aarav', last: 'Mehta' },
-      { email: 'pilot-cand-2@genuai-pilot.test', first: 'Diya', last: 'Nair' },
-      { email: 'pilot-cand-3@genuai-pilot.test', first: 'Rohan', last: 'Kapoor' },
-      { email: 'pilot-cand-4@genuai-pilot.test', first: 'Sneha', last: 'Iyer' },
-      { email: 'pilot-cand-5@genuai-pilot.test', first: 'Kabir', last: 'Verma' },
+    // ── 3. Create 5 candidates ──────────────────────────────────────
+    const candidateData = [
+      { first: 'Alice', last: 'Chen', email: 'alice@genuai.test', skills: [0, 1, 2, 3] },
+      { first: 'Bob', last: 'Sharma', email: 'bob@genuai.test', skills: [0, 1, 3, 4] },
+      { first: 'Clara', last: 'Osei', email: 'clara@genuai.test', skills: [0, 2, 4] },
+      { first: 'David', last: 'Park', email: 'david@genuai.test', skills: [1, 2, 3] },
+      { first: 'Eva', last: 'Santos', email: 'eva@genuai.test', skills: [0, 1, 2, 3, 4] },
     ];
 
-    for (const c of pilotCandidates) {
-      let user = (await client.query('SELECT id FROM users WHERE email = $1', [c.email])).rows[0];
-      if (!user) {
-        user = (await client.query(
-          `INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified)
-           VALUES ($1, $2, $3, $4, 'CANDIDATE', TRUE, TRUE) RETURNING id`,
-          [c.email, candHash, c.first, c.last]
-        )).rows[0];
-      }
+    for (const cd of candidateData) {
+      const cu = await client.query(
+        `INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified)
+         VALUES ($1,$2,$3,$4,'CANDIDATE',TRUE,TRUE) RETURNING id`,
+        [cd.email, hash, cd.first, cd.last]
+      );
+      const cand = await client.query(
+        `INSERT INTO candidates (user_id, first_name, last_name, email, profile_data)
+         VALUES ($1,$2,$3,$4,'{}') RETURNING id`,
+        [cu.rows[0].id, cd.first, cd.last, cd.email]
+      );
+      const candidateId = cand.rows[0].id;
 
-      let cand = (await client.query('SELECT id FROM candidates WHERE email = $1', [c.email])).rows[0];
-      if (!cand) {
-        cand = (await client.query(
-          `INSERT INTO candidates (first_name, last_name, email, phone, location, onboarding_submitted)
-           VALUES ($1, $2, $3, '+91-9000000000', 'India', TRUE) RETURNING id`,
-          [c.first, c.last, c.email]
-        )).rows[0];
-      }
+      // Target
+      const target = await client.query(
+        `INSERT INTO targets (candidate_id, vacancy_id, company_id, status)
+         VALUES ($1,$2,$3,'ACTIVE') RETURNING id`,
+        [candidateId, vacancyId, companyId]
+      );
+      const targetId = target.rows[0].id;
 
-      const existingTarget = (await client.query(
-        `SELECT id FROM targets WHERE candidate_id = $1 AND vacancy_id = $2 AND status NOT IN ('WITHDRAWN', 'CLOSED')`,
-        [cand.id, vacancy.id]
-      )).rows[0];
-      if (!existingTarget) {
+      // Skill claims (confirmed)
+      for (const reqIdx of cd.skills) {
+        const req2 = requirements[reqIdx];
+        const claim = await client.query(
+          `INSERT INTO skill_claims (candidate_id, skill_name, claim_status, confirmed_at)
+           VALUES ($1,$2,'confirmed',NOW()) RETURNING id`,
+          [candidateId, req2.name]
+        );
         await client.query(
-          `INSERT INTO targets (candidate_id, company_id, vacancy_id, role_id, vacancy_version_id, status, targeted_at, last_activity_at)
-           VALUES ($1, $2, $3, $3, $4, 'TARGETED', NOW(), NOW())`,
-          [cand.id, company.id, vacancy.id, ver.id]
+          `INSERT INTO target_requirements (target_id, requirement_id, skill_claim_id, claim_status, candidate_confirmed_at)
+           VALUES ($1,$2,$3,'confirmed',NOW())
+           ON CONFLICT (target_id, requirement_id) DO UPDATE
+             SET skill_claim_id=$3, claim_status='confirmed', candidate_confirmed_at=NOW()`,
+          [targetId, reqIds[reqIdx], claim.rows[0].id]
         );
       }
+
+      console.log(`✅  Candidate: ${cd.first} ${cd.last} <${cd.email}>`);
     }
 
     await client.query('COMMIT');
-    console.log('Pilot database seeding completed successfully.');
-    console.log(`Company owner: ${companyEmail}`);
-    console.log(`Candidates: pilot-cand-1@genuai-pilot.test .. pilot-cand-5@genuai-pilot.test`);
+
+    console.log('\n🎉  Pilot seed complete!\n');
+    console.log('Pilot Login Credentials (password: PilotPass2026!):');
+    console.log('  HR Owner   : pilot-owner@genuai.test');
+    console.log('  HR Recruiter: pilot-recruiter@genuai.test');
+    console.log('  Candidates : alice|bob|clara|david|eva @genuai.test');
+    console.log(`\nVacancy ID : ${vacancyId}`);
+    console.log(`Company ID : ${companyId}\n`);
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('Pilot seed failed:', err);
-    throw err;
+    console.error('Seed failed:', err.message);
+    process.exit(1);
   } finally {
     client.release();
-    if (require.main === module) await pool.end();
+    await pool.end();
   }
 }
 
-if (require.main === module) {
-  seedPilot().then(() => process.exit(0)).catch(() => process.exit(1));
-}
-
-module.exports = seedPilot;
+run();

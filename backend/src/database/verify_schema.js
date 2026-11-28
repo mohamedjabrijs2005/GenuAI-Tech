@@ -36,6 +36,7 @@ const REQUIRED_TABLES = [
   'shortlist_overrides',
   'analytics_events',
   'candidate_privacy_requests',
+  'pilot_feedback',
   'schema_migrations'
 ];
 

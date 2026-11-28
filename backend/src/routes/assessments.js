@@ -544,6 +544,15 @@ router.post('/company/invite', requireApprovedCompany, async (req, res) => {
       ipAddress: req.ip || null,
     }).catch(() => {});
 
+    const { trackEvent } = require('../services/analyticsService');
+    await trackEvent('assessment_invited', {
+      userId: req.user.id,
+      companyId,
+      vacancyId,
+      targetId: targetId || null,
+      properties: { candidateEmail },
+    });
+
     return res.json({
       success: true,
       message: 'Assessment invitation dispatched successfully',

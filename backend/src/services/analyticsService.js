@@ -6,6 +6,8 @@ const CORE_EVENTS = new Set([
   'candidate_applied',
   'skill_claim_confirmed',
   'shortlist_viewed',
+  'assessment_invited',
+  'interview_stage_updated',
   'hr_override_used',
   'hiring_outcome_recorded',
 ]);

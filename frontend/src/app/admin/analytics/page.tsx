@@ -35,6 +35,8 @@ const EVENT_LABELS: Record<string, string> = {
   candidate_applied: 'Candidate Applied',
   skill_claim_confirmed: 'Skill Claim Confirmed',
   shortlist_viewed: 'Shortlist Viewed',
+  assessment_invited: 'Assessment Invited',
+  interview_stage_updated: 'Interview Stage Updated',
   hr_override_used: 'HR Override Used',
   hiring_outcome_recorded: 'Hiring Outcome Recorded',
 };

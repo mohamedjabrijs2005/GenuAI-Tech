@@ -118,21 +118,34 @@ app.get('/', (req, res) => {
 app.get('/api/health', async (req, res) => {
   let dbStatus = 'disconnected';
   let dbError = null;
+  let migrationVersion = null;
+  let migrationCount = 0;
   try {
     const pool = require('./database/pool');
     await pool.query('SELECT 1');
     dbStatus = 'connected';
+    const migRes = await pool.query(
+      `SELECT version FROM schema_migrations ORDER BY applied_at DESC, id DESC LIMIT 1`
+    ).catch(() => null);
+    const countRes = await pool.query(`SELECT COUNT(*)::int AS cnt FROM schema_migrations`).catch(() => null);
+    migrationVersion = migRes?.rows?.[0]?.version || null;
+    migrationCount = countRes?.rows?.[0]?.cnt ?? 0;
   } catch (e) {
     dbStatus = 'error';
     dbError = e.message;
   }
-  res.json({
-    status: 'ok',
+  const { validateBackendEnv } = require('./config/env');
+  const envReadiness = validateBackendEnv();
+  const isHealthy = dbStatus === 'connected' && envReadiness.dbConfigured && envReadiness.jwtConfigured;
+  res.status(dbStatus === 'connected' ? 200 : 503).json({
+    status: isHealthy ? 'ok' : 'degraded',
     service: 'GenuAI API',
     version: '2.0',
     database: dbStatus,
     databaseError: dbError,
-    dbConfigured: !!process.env.DATABASE_URL,
+    migrationVersion,
+    migrationCount,
+    environment: envReadiness,
     timestamp: new Date().toISOString()
   });
 });

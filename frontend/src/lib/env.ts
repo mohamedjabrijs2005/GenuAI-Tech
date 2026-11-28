@@ -12,6 +12,13 @@ export function validateFrontendEnv() {
   if (frontendEnv.nodeEnv === 'production' && !frontendEnv.apiUrl) {
     warnings.push('NEXT_PUBLIC_API_URL is not set; api.ts will fall back to https://genuai-backend.onrender.com/api.');
   }
+  if (frontendEnv.apiUrl) {
+    try {
+      new URL(frontendEnv.apiUrl);
+    } catch {
+      warnings.push(`NEXT_PUBLIC_API_URL "${frontendEnv.apiUrl}" is not a valid URL.`);
+    }
+  }
   return {
     ok: warnings.length === 0,
     warnings,

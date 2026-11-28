@@ -26,6 +26,7 @@ import {
 import api from '@/lib/api';
 import { ExplainableShortlistPanel } from '@/components/features/ExplainableShortlistPanel';
 import { InterestedCandidatesPanel } from '@/components/features/InterestedCandidatesPanel';
+import { PilotFeedbackCard } from '@/components/features/PilotFeedbackCard';
 
 /* ─── Types ────────────────────────────────────────────────────── */
 interface FunnelData {
@@ -717,6 +718,9 @@ export default function RoleReadinessFunnelPage() {
 
       {/* ── Explainable Shortlist (Phase 1 Proof Engine) ─────────── */}
       <ExplainableShortlistPanel vacancyId={vacancyId} />
+
+      {/* ── Pilot Feedback ──────────────────────────────────────── */}
+      <PilotFeedbackCard vacancyId={vacancyId} />
 
       {/* ── Business Value Explainer ─────────────────────────────── */}
       <div style={{
