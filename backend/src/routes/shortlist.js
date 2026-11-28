@@ -5,6 +5,7 @@ const {
   shortlistGetValidator,
   shortlistOverrideValidator,
   hiringOutcomeValidator,
+  interviewStageValidator,
 } = require('../validators/shortlistValidator');
 
 const router = express.Router();
@@ -38,6 +39,14 @@ router.post(
   requireCompany,
   hiringOutcomeValidator,
   shortlistController.recordHiringOutcome
+);
+
+router.patch(
+  '/:vacancyId/candidates/:targetId/interview-stage',
+  authenticate,
+  requireCompany,
+  interviewStageValidator,
+  shortlistController.updateInterviewStage
 );
 
 module.exports = { router };

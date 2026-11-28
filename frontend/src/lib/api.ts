@@ -1,4 +1,12 @@
 import axios from 'axios';
+import { validateFrontendEnv } from './env';
+
+if (typeof window !== 'undefined') {
+  const envCheck = validateFrontendEnv();
+  if (!envCheck.ok) {
+    envCheck.warnings.forEach((w) => console.warn('[GenuAI Env]', w));
+  }
+}
 
 const getBaseUrl = () => {
   const configuredUrl = process.env.NEXT_PUBLIC_API_URL?.trim();

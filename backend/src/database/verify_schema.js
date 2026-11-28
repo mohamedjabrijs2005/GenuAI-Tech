@@ -35,6 +35,7 @@ const REQUIRED_TABLES = [
   'consent_records',
   'shortlist_overrides',
   'analytics_events',
+  'candidate_privacy_requests',
   'schema_migrations'
 ];
 
@@ -49,7 +50,10 @@ const REQUIRED_COLUMNS = [
   { table: 'assessment_requirement_scores', column: 'grading_revision_count' },
   { table: 'assessment_requirement_scores', column: 'last_graded_at' },
   { table: 'company_roles', column: 'role_master_id' },
-  { table: 'company_roles', column: 'approved_role_blueprint_id' }
+  { table: 'company_roles', column: 'approved_role_blueprint_id' },
+  { table: 'company_members', column: 'is_active' },
+  { table: 'targets', column: 'interview_stage' },
+  { table: 'targets', column: 'assessment_invited_at' }
 ];
 
 async function verifySchema() {

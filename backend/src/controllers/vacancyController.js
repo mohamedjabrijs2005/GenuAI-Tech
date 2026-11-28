@@ -1,17 +1,18 @@
 const pool = require('../database/pool');
 const vacancyChecklistService = require('../services/vacancyChecklistService');
+const { sendSuccess, sendError } = require('../utils/apiResponse');
 
 async function getChecklist(req, res) {
   try {
     const companyId = req.companyMembership.company_id;
     const data = await vacancyChecklistService.getChecklist(req.params.id, companyId);
     if (!data) {
-      return res.status(404).json({ error: 'Vacancy not found or access denied' });
+      return sendError(res, { statusCode: 404, error: 'Vacancy not found or access denied', code: 'NOT_FOUND' });
     }
-    return res.json(data);
+    return sendSuccess(res, data);
   } catch (err) {
     console.error('Get checklist error:', err);
-    return res.status(err.statusCode || 500).json({ error: err.message || 'Failed to load checklist' });
+    return sendError(res, { statusCode: err.statusCode || 500, error: err.message || 'Failed to load checklist', code: 'CHECKLIST_ERROR' });
   }
 }
 
@@ -24,13 +25,13 @@ async function generateChecklist(req, res) {
       req.user,
       req.body || {}
     );
-    return res.status(201).json({
+    return sendSuccess(res, {
       ...result,
       message: 'Skill checklist generated',
-    });
+    }, 201);
   } catch (err) {
     console.error('Generate checklist error:', err);
-    return res.status(err.statusCode || 500).json({ error: err.message || 'Failed to generate checklist' });
+    return sendError(res, { statusCode: err.statusCode || 500, error: err.message || 'Failed to generate checklist', code: 'CHECKLIST_ERROR' });
   }
 }
 
@@ -43,13 +44,13 @@ async function updateChecklistItems(req, res) {
       req.user,
       req.body.items
     );
-    return res.json({
+    return sendSuccess(res, {
       ...result,
       message: 'Checklist items updated',
     });
   } catch (err) {
     console.error('Update checklist items error:', err);
-    return res.status(err.statusCode || 500).json({ error: err.message || 'Failed to update checklist' });
+    return sendError(res, { statusCode: err.statusCode || 500, error: err.message || 'Failed to update checklist', code: 'CHECKLIST_ERROR' });
   }
 }
 
@@ -62,13 +63,13 @@ async function approveChecklist(req, res) {
       req.user,
       { notes: req.body?.notes, lockNow: Boolean(req.body?.lockNow) }
     );
-    return res.json({
+    return sendSuccess(res, {
       ...result,
       message: result.checklist.status === 'locked' ? 'Checklist approved and locked' : 'Checklist approved',
     });
   } catch (err) {
     console.error('Approve checklist error:', err);
-    return res.status(err.statusCode || 500).json({ error: err.message || 'Failed to approve checklist' });
+    return sendError(res, { statusCode: err.statusCode || 500, error: err.message || 'Failed to approve checklist', code: 'CHECKLIST_ERROR' });
   }
 }
 
@@ -81,13 +82,13 @@ async function lockChecklist(req, res) {
       req.user,
       { notes: req.body?.notes }
     );
-    return res.json({
+    return sendSuccess(res, {
       ...result,
       message: 'Checklist locked',
     });
   } catch (err) {
     console.error('Lock checklist error:', err);
-    return res.status(err.statusCode || 500).json({ error: err.message || 'Failed to lock checklist' });
+    return sendError(res, { statusCode: err.statusCode || 500, error: err.message || 'Failed to lock checklist', code: 'CHECKLIST_ERROR' });
   }
 }
 
@@ -100,10 +101,10 @@ async function getRequirements(req, res) {
        WHERE r.role_id = $1 AND cr.company_id = $2 ORDER BY r.display_order ASC, r.created_at ASC`,
       [req.params.id, companyId]
     );
-    return res.json({ requirements: result.rows });
+    return sendSuccess(res, { requirements: result.rows });
   } catch (err) {
     console.error('Get requirements error:', err);
-    return res.status(500).json({ error: 'Failed to fetch requirements' });
+    return sendError(res, { statusCode: 500, error: 'Failed to fetch requirements' });
   }
 }
 

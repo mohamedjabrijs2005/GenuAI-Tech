@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const pool = require('../database/pool');
-const { authenticate, requireCompany } = require('../middleware/auth');
+const { authenticate, requireCompany, requireApprovedCompany, requireRole } = require('../middleware/auth');
 const vacancyController = require('../controllers/vacancyController');
 const { uuidParam, handleValidationErrors } = require('../validators/common');
 const {
@@ -589,7 +589,7 @@ router.post('/:id/submit', async (req, res) => {
 // ============================================================
 // POST /api/vacancies/:id/publish — Publish an APPROVED vacancy
 // ============================================================
-router.post('/:id/publish', async (req, res) => {
+router.post('/:id/publish', requireApprovedCompany, requireRole('COMPANY_OWNER'), async (req, res) => {
   let client;
   try {
     client = await pool.connect();
@@ -786,7 +786,7 @@ router.post('/:id/pause', async (req, res) => {
 // ============================================================
 // POST /api/vacancies/:id/close — Close a PUBLISHED or PAUSED vacancy
 // ============================================================
-router.post('/:id/close', async (req, res) => {
+router.post('/:id/close', requireRole('COMPANY_OWNER'), async (req, res) => {
   try {
     const companyId = req.companyMembership.company_id;
     const { id } = req.params;
@@ -822,7 +822,7 @@ router.get('/:id/checklist', [uuidParam('id'), handleValidationErrors], vacancyC
 router.post('/:id/checklist/generate', vacancyChecklistGenerateValidator, vacancyController.generateChecklist);
 router.put('/:id/checklist/items', vacancyChecklistUpdateItemsValidator, vacancyController.updateChecklistItems);
 router.post('/:id/checklist/approve', vacancyChecklistActionValidator, vacancyController.approveChecklist);
-router.post('/:id/checklist/lock', vacancyChecklistActionValidator, vacancyController.lockChecklist);
+router.post('/:id/checklist/lock', requireRole('COMPANY_OWNER'), vacancyChecklistActionValidator, vacancyController.lockChecklist);
 
 // ============================================================
 // GET /api/vacancies/:id/requirements — List requirements

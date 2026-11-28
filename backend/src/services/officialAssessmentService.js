@@ -1,5 +1,5 @@
 const pool = require('../database/pool');
-const { recomputeTargetCoverage } = require('../routes/evidenceService');
+const { recomputeTargetCoverage } = require('./evidenceService');
 
 /**
  * Ensures official assessment questions exist for the given role and its requirements.

@@ -28,6 +28,7 @@ const { router: shortlistRoutes } = require('./routes/shortlist');
 const { router: skillClaimRoutes } = require('./routes/skillClaims');
 
 const { requestLogger } = require('./middleware/requestLogger');
+const { sendSuccess, sendError } = require('./utils/apiResponse');
 
 const app = express();
 
@@ -138,7 +139,7 @@ app.get('/api/health', async (req, res) => {
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).json({ error: `Route ${req.method} ${req.path} not found` });
+  return sendError(res, { statusCode: 404, error: `Route ${req.method} ${req.path} not found`, code: 'NOT_FOUND' });
 });
 
 // Global error handler
@@ -164,7 +165,8 @@ app.use((err, req, res, next) => {
       if (path.startsWith('/api/company')) return res.json({ company: null });
       return res.json({});
     }
-    return res.status(503).json({
+    return sendError(res, {
+      statusCode: 503,
       error: 'Database temporarily unavailable. Please try again later.',
       code: 'DB_UNAVAILABLE',
       requestId,
@@ -173,7 +175,8 @@ app.use((err, req, res, next) => {
   }
 
   console.error(`[requestId=${requestId}] Unhandled error:`, err);
-  res.status(500).json({
+  return sendError(res, {
+    statusCode: 500,
     error: 'Internal server error',
     code: 'INTERNAL_ERROR',
     requestId,

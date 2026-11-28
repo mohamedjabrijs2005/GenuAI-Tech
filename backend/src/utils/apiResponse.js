@@ -8,13 +8,15 @@ function sendSuccess(res, payload = {}, statusCode = 200) {
   });
 }
 
-function sendError(res, { statusCode = 500, error = 'Internal server error', code = 'INTERNAL_ERROR', details = undefined, requestId = undefined }) {
+function sendError(res, { statusCode = 500, error = 'Internal server error', code = 'INTERNAL_ERROR', details = undefined, errors = undefined, requestId = undefined, guidance = undefined }) {
   return res.status(statusCode).json({
     success: false,
     error,
     code,
     ...(details ? { details } : {}),
+    ...(errors ? { errors } : {}),
     ...(requestId ? { requestId } : {}),
+    ...(guidance ? { guidance } : {}),
   });
 }
 

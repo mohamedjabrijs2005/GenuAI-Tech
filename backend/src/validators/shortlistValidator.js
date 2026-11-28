@@ -28,8 +28,21 @@ const hiringOutcomeValidator = [
   handleValidationErrors,
 ];
 
+const interviewStageValidator = [
+  uuidParam('vacancyId'),
+  uuidParam('targetId'),
+  body('stage')
+    .trim()
+    .notEmpty().withMessage('Interview stage is required')
+    .custom((v) => ['not_started', 'screening', 'technical_round', 'final_round', 'offer_stage', 'completed'].includes(String(v).toLowerCase()))
+    .withMessage('Invalid interview stage'),
+  body('notes').optional({ nullable: true }).isString().isLength({ max: 2000 }),
+  handleValidationErrors,
+];
+
 module.exports = {
   shortlistGetValidator,
   shortlistOverrideValidator,
   hiringOutcomeValidator,
+  interviewStageValidator,
 };

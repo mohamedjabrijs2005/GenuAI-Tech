@@ -945,10 +945,53 @@ router.post('/ai-suggestions/:id/review', async (req, res) => {
 router.get('/analytics/pilot-funnel', async (req, res) => {
   try {
     const data = await getPilotFunnelSummary(req.query.companyId || null);
-    return res.json({ funnel: data });
+    return res.json({ success: true, funnel: data });
   } catch (err) {
     console.error('Pilot funnel analytics error:', err);
     return res.status(500).json({ error: 'Failed to load pilot funnel analytics' });
+  }
+});
+
+// ============================================================
+// Privacy & Correction Requests Queue (Candidate Data Governance)
+// ============================================================
+router.get('/privacy-requests', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT pr.*, c.first_name, c.last_name, c.email
+       FROM candidate_privacy_requests pr
+       JOIN candidates c ON c.id = pr.candidate_id
+       ORDER BY pr.created_at DESC
+       LIMIT 100`
+    );
+    return res.json({ success: true, requests: result.rows });
+  } catch (err) {
+    console.error('Admin list privacy requests error:', err);
+    return res.status(500).json({ error: 'Failed to fetch privacy requests' });
+  }
+});
+
+router.patch('/privacy-requests/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const status = String(req.body?.status || '').trim().toLowerCase();
+    if (!['pending', 'in_review', 'completed', 'rejected'].includes(status)) {
+      return res.status(422).json({ error: 'Invalid status' });
+    }
+    const upd = await pool.query(
+      `UPDATE candidate_privacy_requests
+       SET status = $1, resolution_note = COALESCE($2, resolution_note), resolved_by = $3,
+           resolved_at = CASE WHEN $1 IN ('completed', 'rejected') THEN NOW() ELSE resolved_at END,
+           updated_at = NOW()
+       WHERE id = $4
+       RETURNING *`,
+      [status, req.body?.resolutionNote || null, req.user.id, id]
+    );
+    if (upd.rowCount === 0) return res.status(404).json({ error: 'Privacy request not found' });
+    return res.json({ success: true, request: upd.rows[0] });
+  } catch (err) {
+    console.error('Admin update privacy request error:', err);
+    return res.status(500).json({ error: 'Failed to update privacy request' });
   }
 });
 

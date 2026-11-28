@@ -1,11 +1,12 @@
 const pool = require('../database/pool');
 const { logAudit } = require('../services/auditService');
+const { sendSuccess, sendError } = require('../utils/apiResponse');
 
 async function getCompanyProfile(req, res) {
   try {
     const companyId = req.companyMembership?.company_id;
     if (!companyId) {
-      return res.status(404).json({ error: 'No company associated with user' });
+      return sendError(res, { statusCode: 404, error: 'No company associated with user', code: 'NOT_FOUND' });
     }
     const result = await pool.query(
       `SELECT id, name, legal_name, industry, description, size, website,
@@ -20,20 +21,20 @@ async function getCompanyProfile(req, res) {
     );
 
     if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'Company not found' });
+      return sendError(res, { statusCode: 404, error: 'Company not found', code: 'NOT_FOUND' });
     }
 
-    return res.json({ company: result.rows[0] });
+    return sendSuccess(res, { company: result.rows[0] });
   } catch (err) {
     console.error('Get company error:', err);
-    return res.status(500).json({ error: 'Failed to fetch company' });
+    return sendError(res, { statusCode: 500, error: 'Failed to fetch company' });
   }
 }
 
 async function updateCompanyProfile(req, res) {
   const companyId = req.companyMembership?.company_id;
   if (!companyId) {
-    return res.status(404).json({ error: 'No company associated with user' });
+    return sendError(res, { statusCode: 404, error: 'No company associated with user', code: 'NOT_FOUND' });
   }
 
   const name = req.body.name || req.body.companyName;
@@ -51,7 +52,9 @@ async function updateCompanyProfile(req, res) {
   const hiringContactRole = req.body.hiringContactRole || req.body.hiring_contact_role;
   const registrationNumber = req.body.registrationNumber || req.body.registration_number;
   const verificationDocumentUrl = req.body.verificationDocumentUrl || req.body.verification_document_url;
-  const verificationStatus = req.body.verificationStatus || req.body.verification_status;
+  // Companies can re-request review (PENDING_VERIFICATION) but never self-approve
+  const rawVerif = String(req.body.verificationStatus || req.body.verification_status || '').toUpperCase();
+  const verificationStatus = rawVerif === 'PENDING_VERIFICATION' ? 'PENDING_VERIFICATION' : null;
 
   try {
     const result = await pool.query(

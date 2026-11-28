@@ -438,4 +438,102 @@ describe('Integration: Core Product Spine & Tenant Isolation', () => {
     assert.ok(actions.includes('SHORTLIST_RANK_OVERRIDDEN'));
     assert.ok(actions.includes('RECRUITER_HIRING_OUTCOME'));
   });
+
+  test('6. RBAC: Owner invites recruiter; recruiter permissions & deactivation enforced', async () => {
+    const recruiterEmail = `coretest-recruiter-${runTag}@genuai.test`;
+    const inviteRes = await requestJson(baseUrl, 'POST', '/api/company/members/invite', {
+      token: tokens.ownerA,
+      body: { email: recruiterEmail, role: 'COMPANY_RECRUITER' },
+    });
+    assert.equal(inviteRes.status, 201, JSON.stringify(inviteRes.data));
+    const recruiterMemberId = inviteRes.data.member.member_id || inviteRes.data.member.id;
+    const tempPassword = inviteRes.data.temporaryPassword;
+    assert.ok(tempPassword);
+
+    // Login as recruiter
+    const loginRes = await requestJson(baseUrl, 'POST', '/api/auth/login', {
+      body: { email: recruiterEmail, password: tempPassword },
+    });
+    assert.equal(loginRes.status, 200, JSON.stringify(loginRes.data));
+    const recruiterToken = loginRes.data.token;
+
+    // Recruiter CANNOT invite team members -> 403
+    const forbiddenInvite = await requestJson(baseUrl, 'POST', '/api/company/members/invite', {
+      token: recruiterToken,
+      body: { email: `blocked-${runTag}@genuai.test`, role: 'COMPANY_RECRUITER' },
+    });
+    assert.equal(forbiddenInvite.status, 403);
+
+    // Recruiter CANNOT publish vacancy -> 403
+    const forbiddenPublish = await requestJson(baseUrl, 'POST', `/api/vacancies/${ids.vacancyId}/publish`, {
+      token: recruiterToken,
+    });
+    assert.equal(forbiddenPublish.status, 403);
+
+    // Recruiter CAN view shortlist -> 200
+    const recShortlist = await requestJson(baseUrl, 'GET', `/api/company/vacancies/${ids.vacancyId}/shortlist`, {
+      token: recruiterToken,
+    });
+    assert.equal(recShortlist.status, 200);
+
+    // Recruiter CAN update interview stage -> 200
+    const stageRes = await requestJson(
+      baseUrl,
+      'PATCH',
+      `/api/company/vacancies/${ids.vacancyId}/candidates/${ids.targetId}/interview-stage`,
+      { token: recruiterToken, body: { stage: 'technical_round', notes: 'Moved to tech round' } }
+    );
+    assert.equal(stageRes.status, 200, JSON.stringify(stageRes.data));
+    assert.equal(stageRes.data.interview_stage, 'technical_round');
+
+    // Shortlist filter by proofLevel=claimed returns candidate
+    const filteredRes = await requestJson(
+      baseUrl,
+      'GET',
+      `/api/company/vacancies/${ids.vacancyId}/shortlist?proofLevel=claimed`,
+      { token: recruiterToken }
+    );
+    assert.equal(filteredRes.status, 200);
+    assert.equal(filteredRes.data.candidates.length, 1);
+
+    // Owner deactivates recruiter -> recruiter is blocked with 403
+    const deactivateRes = await requestJson(baseUrl, 'PATCH', `/api/company/members/${recruiterMemberId}/status`, {
+      token: tokens.ownerA,
+      body: { isActive: false },
+    });
+    assert.equal(deactivateRes.status, 200);
+
+    const blockedAfterDeactivate = await requestJson(baseUrl, 'GET', `/api/company/vacancies/${ids.vacancyId}/shortlist`, {
+      token: recruiterToken,
+    });
+    assert.equal(blockedAfterDeactivate.status, 403);
+  });
+
+  test('7. Candidate privacy: export & deletion requests work and are isolated', async () => {
+    const delRes = await requestJson(baseUrl, 'POST', '/api/candidate-portal/privacy-requests', {
+      token: tokens.candA,
+      body: { requestType: 'deletion', reason: 'Test deletion request' },
+    });
+    assert.equal(delRes.status, 201, JSON.stringify(delRes.data));
+    assert.equal(delRes.data.request.request_type, 'deletion');
+
+    const listRes = await requestJson(baseUrl, 'GET', '/api/candidate-portal/privacy-requests', {
+      token: tokens.candA,
+    });
+    assert.equal(listRes.status, 200);
+    assert.ok(listRes.data.requests.some((r) => r.request_type === 'deletion'));
+
+    // Candidate B does not see Candidate A's privacy request
+    const listBRes = await requestJson(baseUrl, 'GET', '/api/candidate-portal/privacy-requests', {
+      token: tokens.candB,
+    });
+    assert.equal(listBRes.status, 200);
+    assert.equal(listBRes.data.requests.length, 0);
+
+    const exportRes = await requestJson(baseUrl, 'GET', '/api/candidate-portal/privacy-export', {
+      token: tokens.candA,
+    });
+    assert.equal(exportRes.status, 200);
+    assert.ok(exportRes.data.exportedAt);
+  });
 });

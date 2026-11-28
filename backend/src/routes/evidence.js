@@ -429,7 +429,7 @@ router.post('/generate/:appId', async (req, res) => {
 // RECRUITER TARGET EVIDENCE REVIEW ENDPOINTS (Phase 2)
 // ============================================================
 
-const { recomputeTargetCoverage } = require('./evidenceService');
+const { recomputeTargetCoverage } = require('../services/evidenceService');
 
 // GET /api/evidence/targets  — Recruiter lists targets for own company
 router.get('/targets', async (req, res) => {

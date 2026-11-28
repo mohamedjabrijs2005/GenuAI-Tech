@@ -34,7 +34,8 @@ const MIGRATIONS = [
   { version: 'v27', file: 'migrate_v27.js' },
   { version: 'v28', file: 'migrate_v28.js' },
   { version: 'v29', file: 'migrate_v29.js' },
-  { version: 'v30', file: 'migrate_v30.js' }
+  { version: 'v30', file: 'migrate_v30.js' },
+  { version: 'v31', file: 'migrate_v31.js' }
 ];
 
 // Advisory lock key to serialize concurrent deployment migration runs

@@ -1,7 +1,7 @@
 const express = require('express');
 const pool = require('../database/pool');
 const { authenticate } = require('../middleware/auth');
-const { recomputeTargetCoverage } = require('./evidenceService');
+const { recomputeTargetCoverage } = require('../services/evidenceService');
 const { computeTargetSkillProof } = require('../services/skillProofService');
 const { sendEmail } = require('../services/email');
 const { trackEvent } = require('../services/analyticsService');
@@ -3350,6 +3350,106 @@ router.get('/targets/:id/requirement-status', authenticate, requireCandidate, as
   } catch (err) {
     console.error('Requirement status error:', err);
     return res.status(500).json({ error: 'Failed to fetch requirement status' });
+  }
+});
+
+// ============================================================
+// Candidate Privacy Requests: Export, Deletion & Correction
+// ============================================================
+router.get('/privacy-requests', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, request_type, status, details, resolution_note, resolved_at, created_at, updated_at
+       FROM candidate_privacy_requests
+       WHERE candidate_id = $1
+       ORDER BY created_at DESC`,
+      [req.candidateId]
+    );
+    return res.json({ success: true, requests: result.rows });
+  } catch (err) {
+    console.error('List privacy requests error:', err);
+    return res.status(500).json({ error: 'Failed to load privacy requests' });
+  }
+});
+
+router.post('/privacy-requests', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const requestType = String(req.body?.requestType || '').trim().toLowerCase();
+    if (!['export', 'deletion', 'correction'].includes(requestType)) {
+      return res.status(422).json({ error: 'requestType must be export, deletion, or correction' });
+    }
+    const details = req.body?.details && typeof req.body.details === 'object'
+      ? req.body.details
+      : { message: String(req.body?.message || req.body?.reason || '').trim() };
+
+    const ins = await pool.query(
+      `INSERT INTO candidate_privacy_requests (candidate_id, user_id, request_type, status, details)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, request_type, status, details, created_at`,
+      [req.candidateId, req.user.id, requestType, requestType === 'export' ? 'completed' : 'pending', JSON.stringify(details)]
+    );
+
+    await pool.query(
+      `INSERT INTO audit_logs (actor_user_id, actor_role, action, entity_type, entity_id, new_status, metadata, ip_address)
+       VALUES ($1, 'CANDIDATE', $2, 'CandidatePrivacyRequest', $3, $4, $5, $6)`,
+      [
+        req.user.id,
+        `CANDIDATE_PRIVACY_${requestType.toUpperCase()}`,
+        ins.rows[0].id,
+        ins.rows[0].status.toUpperCase(),
+        JSON.stringify({ candidateId: req.candidateId, requestType, details }),
+        req.ip || null,
+      ]
+    ).catch(() => {});
+
+    return res.status(201).json({
+      success: true,
+      request: ins.rows[0],
+      message: `${requestType} request recorded`,
+    });
+  } catch (err) {
+    console.error('Create privacy request error:', err);
+    return res.status(500).json({ error: 'Failed to submit privacy request' });
+  }
+});
+
+router.get('/privacy-export', authenticate, requireCandidate, async (req, res) => {
+  try {
+    const [candRes, targetsRes, claimsRes, evidenceRes, privacyRes] = await Promise.all([
+      pool.query('SELECT id, first_name, last_name, email, phone, location, profile_data, created_at FROM candidates WHERE id = $1', [req.candidateId]),
+      pool.query(
+        `SELECT t.id, t.status, t.interview_stage, t.targeted_at, cr.title AS vacancy_title, c.name AS company_name
+         FROM targets t
+         JOIN company_roles cr ON cr.id = t.vacancy_id
+         JOIN companies c ON c.id = t.company_id
+         WHERE t.candidate_id = $1`,
+        [req.candidateId]
+      ),
+      pool.query('SELECT * FROM skill_claims WHERE candidate_id = $1', [req.candidateId]),
+      pool.query('SELECT id, target_id, requirement_id, evidence_type, title, review_status, file_hash, created_at FROM evidence WHERE candidate_id = $1', [req.candidateId]),
+      pool.query('SELECT id, request_type, status, created_at FROM candidate_privacy_requests WHERE candidate_id = $1 ORDER BY created_at DESC', [req.candidateId]),
+    ]);
+
+    await pool.query(
+      `INSERT INTO audit_logs (actor_user_id, actor_role, action, entity_type, entity_id, metadata, ip_address)
+       VALUES ($1, 'CANDIDATE', 'CANDIDATE_DATA_EXPORTED', 'Candidate', $2, $3, $4)`,
+      [req.user.id, req.candidateId, JSON.stringify({ targetsCount: targetsRes.rowCount, claimsCount: claimsRes.rowCount }), req.ip || null]
+    ).catch(() => {});
+
+    return res.json({
+      success: true,
+      exportedAt: new Date().toISOString(),
+      data: {
+        profile: candRes.rows[0] || null,
+        targets: targetsRes.rows,
+        skillClaims: claimsRes.rows,
+        evidence: evidenceRes.rows,
+        privacyRequests: privacyRes.rows,
+      },
+    });
+  } catch (err) {
+    console.error('Export candidate data error:', err);
+    return res.status(500).json({ error: 'Failed to export candidate data' });
   }
 });
 

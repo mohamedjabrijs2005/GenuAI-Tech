@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Shield,
@@ -12,13 +12,80 @@ import {
   Building2,
   Layers,
   Info,
+  Edit3,
+  Clock,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import api from '@/lib/api';
+import toast from 'react-hot-toast';
+
+interface PrivacyRequest {
+  id: string;
+  request_type: 'export' | 'deletion' | 'correction' | string;
+  status: 'pending' | 'in_review' | 'completed' | 'rejected' | string;
+  reason?: string | null;
+  created_at: string;
+}
 
 export default function CandidatePrivacyPage() {
   const { user } = useAuth();
-  const [downloadRequested, setDownloadRequested] = useState(false);
-  const [deleteRequested, setDeleteRequested] = useState(false);
+  const [requests, setRequests] = useState<PrivacyRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState<string | null>(null);
+  const [correctionText, setCorrectionText] = useState('');
+
+  const loadRequests = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/candidate-portal/privacy-requests');
+      setRequests(res.data?.requests || []);
+    } catch {
+      // non-fatal
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadRequests();
+  }, [loadRequests]);
+
+  const handleExport = async () => {
+    setSubmitting('export');
+    try {
+      await api.post('/candidate-portal/privacy-requests', { requestType: 'export' });
+      const res = await api.get('/candidate-portal/privacy-export');
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `genuai-data-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Data export downloaded and logged');
+      await loadRequests();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to export data');
+    } finally {
+      setSubmitting(null);
+    }
+  };
+
+  const handleRequest = async (requestType: 'deletion' | 'correction', reason?: string) => {
+    setSubmitting(requestType);
+    try {
+      await api.post('/candidate-portal/privacy-requests', { requestType, reason: reason || null });
+      toast.success(`${requestType === 'deletion' ? 'Deletion' : 'Correction'} request submitted`);
+      if (requestType === 'correction') setCorrectionText('');
+      await loadRequests();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to submit privacy request');
+    } finally {
+      setSubmitting(null);
+    }
+  };
+
+  const hasPendingDeletion = requests.some((r) => r.request_type === 'deletion' && (r.status === 'pending' || r.status === 'in_review'));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 900, margin: '0 auto' }}>
@@ -147,21 +214,58 @@ export default function CandidatePrivacyPage() {
               </div>
             </div>
 
-            {downloadRequested ? (
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#059669', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <CheckCircle2 size={14} /> Request Queued
-              </span>
-            ) : (
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={submitting !== null}
+              className="btn btn-secondary"
+              style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <Download size={14} />
+              <span>{submitting === 'export' ? 'Exporting...' : 'Download Data Export'}</span>
+            </button>
+          </div>
+
+          {/* Correction Request */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+              padding: '14px 18px',
+              borderRadius: 8,
+              background: '#fafaf9',
+              border: '1px solid var(--border)',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)' }}>
+                Request Data Correction
+              </div>
+              <div style={{ fontSize: 12, color: '#64748b' }}>
+                Submit a correction request for inaccurate profile, claim, or application metadata.
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                value={correctionText}
+                onChange={(e) => setCorrectionText(e.target.value)}
+                placeholder="Describe what needs to be corrected..."
+                className="form-input"
+                style={{ flex: 1, minWidth: 220, height: 34, fontSize: 12.5 }}
+              />
               <button
                 type="button"
-                onClick={() => setDownloadRequested(true)}
+                disabled={submitting !== null || !correctionText.trim()}
+                onClick={() => handleRequest('correction', correctionText.trim())}
                 className="btn btn-secondary"
                 style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}
               >
-                <Download size={14} />
-                <span>Request Data Export</span>
+                <Edit3 size={14} />
+                <span>{submitting === 'correction' ? 'Submitting...' : 'Submit Correction'}</span>
               </button>
-            )}
+            </div>
           </div>
 
           {/* Account Deletion */}
@@ -187,23 +291,69 @@ export default function CandidatePrivacyPage() {
               </div>
             </div>
 
-            {deleteRequested ? (
+            {hasPendingDeletion ? (
               <span style={{ fontSize: 12, fontWeight: 700, color: '#dc2626' }}>
                 Deactivation Request Pending
               </span>
             ) : (
               <button
                 type="button"
-                onClick={() => setDeleteRequested(true)}
+                disabled={submitting !== null}
+                onClick={() => handleRequest('deletion', 'Candidate requested account erasure')}
                 className="btn btn-secondary"
                 style={{ fontSize: 12, color: '#ef4444', borderColor: '#fecaca', display: 'flex', alignItems: 'center', gap: 6 }}
               >
                 <Trash2 size={14} />
-                <span>Request Deletion</span>
+                <span>{submitting === 'deletion' ? 'Submitting...' : 'Request Deletion'}</span>
               </button>
             )}
           </div>
         </div>
+      </div>
+
+      {/* Past Privacy Requests */}
+      <div className="card" style={{ padding: '24px' }}>
+        <h2 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 12px', color: 'var(--text-primary)' }}>
+          Privacy Request History
+        </h2>
+        {loading ? (
+          <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Loading request history...</p>
+        ) : requests.length === 0 ? (
+          <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>No privacy requests submitted yet.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {requests.map((req) => (
+              <div
+                key={req.id}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  background: '#fafaf9',
+                  border: '1px solid var(--border)',
+                  fontSize: 12.5,
+                  gap: 12,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <div>
+                  <strong style={{ textTransform: 'capitalize' }}>{req.request_type}</strong>
+                  {req.reason && <span style={{ color: '#64748b' }}> — {req.reason}</span>}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: req.status === 'completed' ? '#ecfdf5' : '#fffbeb', color: req.status === 'completed' ? '#065f46' : '#854d0e', textTransform: 'uppercase' }}>
+                    {req.status}
+                  </span>
+                  <span style={{ fontSize: 11.5, color: '#94a3b8', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <Clock size={12} /> {new Date(req.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

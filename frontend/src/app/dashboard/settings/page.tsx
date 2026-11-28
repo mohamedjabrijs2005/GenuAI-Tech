@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Bell, Lock, User, Building2, ChevronRight, Shield,
-  ShieldCheck, Plus, CheckCircle2,
+  ShieldCheck, Plus, CheckCircle2, Trash2, UserX, UserCheck, X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import api from '@/lib/api';
 
 const TABS = ['Account', 'Team & RBAC', 'Notifications', 'Privacy & Data'];
 
@@ -19,49 +20,107 @@ const NOTIFICATIONS = [
   { label: 'Vacancy status change', desc: 'When admin verifies or rejects a vacancy', enabled: true },
 ];
 
-const OTHER_TEAM_MEMBERS = [
-  {
-    name: 'David Park',
-    email: 'david.park@company.example',
-    role: 'Recruiter',
-    assignedVacancies: 'Software Developer, Senior DevOps',
-    status: 'Active',
-  },
-  {
-    name: 'David Kim',
-    email: 'david.kim@company.example',
-    role: 'Interviewer',
-    assignedVacancies: 'Software Developer (Round 1 & 2)',
-    status: 'Active',
-  },
-  {
-    name: 'Lisa Chen',
-    email: 'lisa.chen@company.example',
-    role: 'Interviewer',
-    assignedVacancies: 'Product Designer',
-    status: 'Active',
-  },
-];
+interface TeamMember {
+  member_id: string;
+  user_id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  member_role: string;
+  is_active: boolean;
+}
 
 export default function SettingsPage() {
   const { user, company } = useAuth();
   const [tab, setTab] = useState('Account');
   const [notifs, setNotifs] = useState(NOTIFICATIONS);
 
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviteForm, setInviteForm] = useState({
+    email: '',
+    firstName: '',
+    lastName: '',
+    memberRole: 'COMPANY_RECRUITER',
+    password: '',
+  });
+  const [inviting, setInviting] = useState(false);
+  const [lastTempPassword, setLastTempPassword] = useState<string | null>(null);
+
   const fullName = user ? `${user.firstName} ${user.lastName}`.trim() : '';
   const userEmail = user?.email ?? '';
   const companyName = company?.name ?? '';
 
-  const teamMembers = [
-    ...(user ? [{
-      name: fullName || 'You',
-      email: userEmail,
-      role: 'Company Admin',
-      assignedVacancies: 'All Vacancies (Full Company Access)',
-      status: 'Active',
-    }] : []),
-    ...OTHER_TEAM_MEMBERS,
-  ];
+  const loadMembers = useCallback(async () => {
+    setLoadingMembers(true);
+    try {
+      const res = await api.get('/company/members');
+      setMembers(res.data?.members || []);
+    } catch {
+      setMembers([]);
+    } finally {
+      setLoadingMembers(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'Team & RBAC') {
+      loadMembers();
+    }
+  }, [tab, loadMembers]);
+
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteForm.email.trim()) {
+      toast.error('Email is required');
+      return;
+    }
+    setInviting(true);
+    try {
+      const res = await api.post('/company/members/invite', inviteForm);
+      toast.success('Team member invited');
+      setLastTempPassword(res.data?.temporaryPassword || null);
+      setInviteForm({ email: '', firstName: '', lastName: '', memberRole: 'COMPANY_RECRUITER', password: '' });
+      setShowInvite(false);
+      await loadMembers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to invite team member');
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  const handleRoleChange = async (memberId: string, memberRole: string) => {
+    try {
+      await api.patch(`/company/members/${memberId}/role`, { memberRole });
+      toast.success('Role updated');
+      await loadMembers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Could not update role');
+    }
+  };
+
+  const handleStatusToggle = async (memberId: string, isActive: boolean) => {
+    try {
+      await api.patch(`/company/members/${memberId}/status`, { isActive });
+      toast.success(isActive ? 'Member activated' : 'Member deactivated');
+      await loadMembers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Could not update member status');
+    }
+  };
+
+  const handleRemove = async (memberId: string, email: string) => {
+    if (!confirm(`Remove ${email} from your company workspace?`)) return;
+    try {
+      await api.delete(`/company/members/${memberId}`);
+      toast.success('Team member removed');
+      await loadMembers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Could not remove team member');
+    }
+  };
 
   const toggle = (i: number) => {
     setNotifs(prev => prev.map((n, idx) => idx === i ? { ...n, enabled: !n.enabled } : n));
@@ -105,67 +164,29 @@ export default function SettingsPage() {
             </div>
             <div className="form-group">
               <label className="form-label">Company Name</label>
-              <input className="form-input" defaultValue={companyName} placeholder="Your company name" />
+              <input className="form-input" defaultValue={companyName} placeholder="Your company name" readOnly />
             </div>
-            <div className="form-group">
-              <label className="form-label">Industry</label>
-              <input className="form-input" defaultValue="" placeholder="e.g. Enterprise Software & AI" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Website</label>
-              <input className="form-input" defaultValue="" placeholder="https://yourcompany.com" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Company Size</label>
-              <select className="form-select" defaultValue="">
-                <option value="">Select size...</option>
-                <option>1-10</option>
-                <option>11-50</option>
-                <option>50-200 employees</option>
-                <option>200-1000</option>
-                <option>1000+</option>
-              </select>
-            </div>
-            <button className="btn btn-gold w-full" onClick={() => toast.success('Company info saved')}>
-              Save Changes
-            </button>
+            <p className="text-xs text-slate-500">
+              Update official company verification details from the Company Profile page.
+            </p>
           </div>
 
-          <div>
-            <div className="card" style={{ marginBottom: 16 }}>
-              <div className="card-header">
-                <div className="card-title">Recruiter Account</div>
-                <User size={16} style={{ color: 'var(--text-muted)' }} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Full Name</label>
-                <input className="form-input" defaultValue={fullName} placeholder="Your full name" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Work Email</label>
-                <input className="form-input" defaultValue={userEmail} type="email" placeholder="your@email.com" />
-              </div>
-              <button className="btn btn-secondary w-full" onClick={() => toast.success('Profile updated')}>
-                Update Profile
-              </button>
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">Signed-In Account</div>
+              <User size={16} style={{ color: 'var(--text-muted)' }} />
             </div>
-
-            <div className="card">
-              <div className="card-header">
-                <div className="card-title">Security & Credentials</div>
-                <Lock size={16} style={{ color: 'var(--text-muted)' }} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Current Password</label>
-                <input className="form-input" type="password" placeholder="••••••••" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">New Password</label>
-                <input className="form-input" type="password" placeholder="••••••••" />
-              </div>
-              <button className="btn btn-secondary w-full" onClick={() => toast.success('Password updated')}>
-                Change Password
-              </button>
+            <div className="form-group">
+              <label className="form-label">Full Name</label>
+              <input className="form-input" value={fullName} readOnly />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Work Email</label>
+              <input className="form-input" value={userEmail} type="email" readOnly />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Role</label>
+              <input className="form-input" value={user?.role || 'COMPANY_OWNER'} readOnly />
             </div>
           </div>
         </div>
@@ -179,79 +200,182 @@ export default function SettingsPage() {
               <div className="leading-relaxed">
                 <strong>Organization Tenant Isolation Enforced:</strong>{' '}
                 {companyName || 'Your company'} is assigned an isolated workspace.
-                Company data, candidate evaluations, and assessment banks are fully separated between tenants.
+                <strong> COMPANY_OWNER</strong> manages team members, company profile, checklist lock, and vacancy publish.{' '}
+                <strong>COMPANY_RECRUITER</strong> manages candidate evaluations, skill checklists, shortlists, overrides, and outcomes.
               </div>
             </div>
           </div>
 
+          {lastTempPassword && (
+            <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 flex items-center justify-between gap-4 text-xs text-amber-950">
+              <div>
+                <strong>Temporary sign-in password generated:</strong>{' '}
+                <code className="px-2 py-0.5 bg-white rounded border border-amber-200 font-mono">{lastTempPassword}</code>
+                {' '}(Share securely with the invited recruiter.)
+              </div>
+              <button className="btn btn-secondary btn-xs" onClick={() => setLastTempPassword(null)}>
+                <X size={12} /> Dismiss
+              </button>
+            </div>
+          )}
+
+          {showInvite && (
+            <form onSubmit={handleInvite} className="card space-y-4">
+              <div className="card-header">
+                <h3 className="card-title">Invite Team Member</h3>
+                <button type="button" className="btn btn-secondary btn-xs" onClick={() => setShowInvite(false)}>
+                  <X size={13} /> Close
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="form-group">
+                  <label className="form-label">Work Email *</label>
+                  <input
+                    className="form-input"
+                    type="email"
+                    required
+                    value={inviteForm.email}
+                    onChange={e => setInviteForm({ ...inviteForm, email: e.target.value })}
+                    placeholder="recruiter@company.com"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Role *</label>
+                  <select
+                    className="form-select"
+                    value={inviteForm.memberRole}
+                    onChange={e => setInviteForm({ ...inviteForm, memberRole: e.target.value })}
+                  >
+                    <option value="COMPANY_RECRUITER">COMPANY_RECRUITER (Recruiter)</option>
+                    <option value="COMPANY_OWNER">COMPANY_OWNER (Full Admin)</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">First Name</label>
+                  <input
+                    className="form-input"
+                    value={inviteForm.firstName}
+                    onChange={e => setInviteForm({ ...inviteForm, firstName: e.target.value })}
+                    placeholder="First name"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Last Name</label>
+                  <input
+                    className="form-input"
+                    value={inviteForm.lastName}
+                    onChange={e => setInviteForm({ ...inviteForm, lastName: e.target.value })}
+                    placeholder="Last name"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowInvite(false)}>Cancel</button>
+                <button type="submit" disabled={inviting} className="btn btn-gold btn-sm">
+                  {inviting ? 'Inviting...' : 'Send Invite'}
+                </button>
+              </div>
+            </form>
+          )}
+
           <div className="card">
             <div className="card-header">
               <div>
-                <h2 className="card-title">Team Access & RBAC Roles</h2>
+                <h2 className="card-title">Team Access &amp; RBAC Roles</h2>
                 <p className="card-subtitle">
-                  Define permissions: Company Admin (Full access), Recruiter (Assigned vacancies & evidence), Interviewer (Assigned interviews & rubric evaluation).
+                  Active team members in {companyName || 'your organization'}.
                 </p>
               </div>
-              <button className="btn btn-gold btn-sm" onClick={() => toast('Invite modal would open here')}>
+              <button className="btn btn-gold btn-sm" onClick={() => setShowInvite(true)}>
                 <Plus size={14} /> Invite Team Member
               </button>
             </div>
 
-            <div className="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Member</th>
-                    <th>Role</th>
-                    <th>Assigned Vacancies</th>
-                    <th>Status</th>
-                    <th style={{ textAlign: 'right' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {teamMembers.map((m) => (
-                    <tr key={m.email}>
-                      <td>
-                        <div className="flex items-center gap-2.5">
-                          <div
-                            style={{
-                              width: 32, height: 32, borderRadius: '50%',
-                              background: '#fefce8', border: '1px solid rgba(212,175,55,0.4)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 11, fontWeight: 700, color: '#a16207'
-                            }}
-                          >
-                            {m.name.split(' ').map(n => n[0]).join('')}
-                          </div>
-                          <div>
-                            <div className="font-bold text-slate-900 text-xs">{m.name}</div>
-                            <div className="text-[11px] text-slate-500">{m.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`badge ${
-                          m.role === 'Company Admin' ? 'badge-yellow' : m.role === 'Recruiter' ? 'badge-blue' : 'badge-gray'
-                        } text-[11px] font-bold`}>
-                          {m.role}
-                        </span>
-                      </td>
-                      <td className="text-xs text-slate-600 font-medium">{m.assignedVacancies}</td>
-                      <td>
-                        <span className="badge badge-green text-[10px] font-bold">
-                          <CheckCircle2 size={10} /> {m.status}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <button className="btn btn-secondary btn-sm" onClick={() => toast(`Editing permissions for ${m.name}`)}>
-                          Edit Role
-                        </button>
-                      </td>
+            {loadingMembers ? (
+              <div className="p-6 text-center text-xs text-slate-500">Loading company team members...</div>
+            ) : members.length === 0 ? (
+              <div className="p-6 text-center text-xs text-slate-500">No team members found yet.</div>
+            ) : (
+              <div className="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Member</th>
+                      <th>Role</th>
+                      <th>Status</th>
+                      <th style={{ textAlign: 'right' }}>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {members.map((m) => {
+                      const name = `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.email;
+                      const isSelf = m.user_id === user?.id;
+                      const isOwner = ['COMPANY_OWNER', 'COMPANY_ADMIN', 'ADMIN'].includes((m.member_role || '').toUpperCase());
+                      return (
+                        <tr key={m.member_id}>
+                          <td>
+                            <div className="flex items-center gap-2.5">
+                              <div
+                                style={{
+                                  width: 32, height: 32, borderRadius: '50%',
+                                  background: '#fefce8', border: '1px solid rgba(212,175,55,0.4)',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  fontSize: 11, fontWeight: 700, color: '#a16207',
+                                }}
+                              >
+                                {name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="font-bold text-slate-900 text-xs">{name} {isSelf && '(You)'}</div>
+                                <div className="text-[11px] text-slate-500">{m.email}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <select
+                              className="form-select text-xs"
+                              style={{ height: 30, padding: '2px 8px', width: 175 }}
+                              value={isOwner ? 'COMPANY_OWNER' : 'COMPANY_RECRUITER'}
+                              disabled={isSelf}
+                              onChange={e => handleRoleChange(m.member_id, e.target.value)}
+                            >
+                              <option value="COMPANY_OWNER">COMPANY_OWNER</option>
+                              <option value="COMPANY_RECRUITER">COMPANY_RECRUITER</option>
+                            </select>
+                          </td>
+                          <td>
+                            <span className={`badge ${m.is_active ? 'badge-green' : 'badge-gray'} text-[10px] font-bold`}>
+                              <CheckCircle2 size={10} /> {m.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <div className="flex justify-end gap-2">
+                              <button
+                                className="btn btn-secondary btn-xs"
+                                disabled={isSelf}
+                                onClick={() => handleStatusToggle(m.member_id, !m.is_active)}
+                                title={m.is_active ? 'Deactivate member' : 'Activate member'}
+                              >
+                                {m.is_active ? <UserX size={12} /> : <UserCheck size={12} />}
+                                {m.is_active ? 'Deactivate' : 'Activate'}
+                              </button>
+                              <button
+                                className="btn btn-secondary btn-xs"
+                                disabled={isSelf}
+                                style={{ color: '#dc2626' }}
+                                onClick={() => handleRemove(m.member_id, m.email)}
+                              >
+                                <Trash2 size={12} /> Remove
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -305,7 +429,7 @@ export default function SettingsPage() {
         <div className="card" style={{ maxWidth: 680 }}>
           <div className="card-header">
             <div>
-              <h2 className="card-title">Data Privacy & Governance</h2>
+              <h2 className="card-title">Data Privacy &amp; Governance</h2>
               <p className="card-subtitle">Configure data isolation, consent retention policies, and export capabilities.</p>
             </div>
             <Shield size={16} style={{ color: 'var(--text-muted)' }} />
@@ -313,10 +437,9 @@ export default function SettingsPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {[
               { title: 'Candidate Data Access Control', desc: 'Restrict assessment transcripts and telemetry to authorized recruiters only', action: 'Manage Access' },
-              { title: 'Cross-Company Role Intelligence Permission', desc: 'Permission B: Allow non-confidential requirement metadata to contribute to aggregated role profiles', action: 'Review Agreement' },
+              { title: 'Cross-Company Role Intelligence Permission', desc: 'Allow non-confidential requirement metadata to contribute to aggregated role profiles', action: 'Review Agreement' },
               { title: 'Data Retention & Purging', desc: 'Retain candidate evaluation data for 180 days post-hiring cycle completion', action: 'Configure Policy' },
-              { title: 'Cryptographic Audit Trail Export', desc: 'Export full SHA-256 evidence ledgers and timestamped recruiter decisions', action: 'Export Audit Log' },
-              { title: 'Tenant Isolation Verification', desc: 'Verify PostgreSQL schema separation and row-level tenant barriers', action: 'Verify Tenant ID' },
+              { title: 'Cryptographic Audit Trail Export', desc: 'View timestamped recruiter decisions and verification audit logs', action: 'View Audit Log', href: '/dashboard/audit' },
             ].map((item) => (
               <div key={item.title} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
@@ -327,14 +450,20 @@ export default function SettingsPage() {
                   <div style={{ fontWeight: 600, fontSize: 13.5, marginBottom: 2, color: 'var(--text-primary)' }}>{item.title}</div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{item.desc}</div>
                 </div>
-                <button
-                  className="btn btn-secondary btn-sm"
-                  style={{ flexShrink: 0 }}
-                  onClick={() => toast(`Action: ${item.action}`)}
-                >
-                  {item.action}
-                  <ChevronRight size={12} />
-                </button>
+                {item.href ? (
+                  <a href={item.href} className="btn btn-secondary btn-sm" style={{ flexShrink: 0 }}>
+                    {item.action} <ChevronRight size={12} />
+                  </a>
+                ) : (
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    style={{ flexShrink: 0 }}
+                    onClick={() => toast.success(`${item.title} policy active`)}
+                  >
+                    {item.action}
+                    <ChevronRight size={12} />
+                  </button>
+                )}
               </div>
             ))}
           </div>

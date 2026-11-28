@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../database/pool');
-const { authenticate, requireCompany } = require('../middleware/auth');
+const { authenticate, requireCompany, requireApprovedCompany } = require('../middleware/auth');
+const { logAudit } = require('../services/auditService');
 
 const router = express.Router();
 router.use(authenticate, requireCompany);
@@ -457,7 +458,7 @@ router.post('/company/attempts/:attemptId/evaluate', async (req, res) => {
     );
 
     // Recompute target requirement coverage with final committed grading state
-    const { recomputeTargetCoverage } = require('./evidenceService');
+    const { recomputeTargetCoverage } = require('../services/evidenceService');
     await recomputeTargetCoverage(client, attempt.target_id);
 
     await client.query('COMMIT');
@@ -486,7 +487,7 @@ router.post('/company/attempts/:attemptId/evaluate', async (req, res) => {
 // POST /api/assessments/company/invite
 // Company recruiter invites a candidate to an assessment
 // ============================================================
-router.post('/company/invite', async (req, res) => {
+router.post('/company/invite', requireApprovedCompany, async (req, res) => {
   const companyId = req.companyMembership.company_id;
   const { candidateEmail, candidateName, vacancyId, targetId, durationMinutes } = req.body;
 
@@ -513,6 +514,15 @@ router.post('/company/invite', async (req, res) => {
       ? `${frontendUrl}/candidate/targets/${targetId}/assessment`
       : `${frontendUrl}/candidate/vacancies/${vacancyId}`;
 
+    if (targetId) {
+      await pool.query(
+        `UPDATE targets
+         SET assessment_invited_at = NOW(), assessment_invited_by = $1, last_activity_at = NOW()
+         WHERE id = $2 AND company_id = $3`,
+        [req.user.id, targetId, companyId]
+      );
+    }
+
     const { sendAssessmentInvitation } = require('../services/email');
     const result = await sendAssessmentInvitation({
       to: candidateEmail,
@@ -523,9 +533,20 @@ router.post('/company/invite', async (req, res) => {
       durationMinutes: durationMinutes || 60,
     });
 
+    await logAudit(pool, {
+      companyId,
+      user: req.user,
+      actorRole: req.companyMembership.member_role || req.user.role,
+      action: 'ASSESSMENT_INVITED',
+      entityType: targetId ? 'Target' : 'Vacancy',
+      entityId: targetId || vacancyId,
+      details: { candidateEmail, vacancyId, targetId: targetId || null },
+      ipAddress: req.ip || null,
+    }).catch(() => {});
+
     return res.json({
       success: true,
-      message: 'Assessment invitation email dispatched successfully',
+      message: 'Assessment invitation dispatched successfully',
       delivery: result,
     });
   } catch (err) {

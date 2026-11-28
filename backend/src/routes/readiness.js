@@ -641,7 +641,7 @@ router.post('/:vacancyId/candidates/:targetId/evidence/:evidenceId/review', asyn
     if (evUpdate.rowCount === 0) return res.status(404).json({ error: 'Evidence not found.' });
 
     // Recompute target coverage
-    const { recomputeTargetCoverage } = require('./evidenceService');
+    const { recomputeTargetCoverage } = require('../services/evidenceService');
     const updatedCoverage = await recomputeTargetCoverage(pool, targetId).catch(() => null);
 
     return res.json({

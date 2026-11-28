@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/api';
 import { ExplainableShortlistPanel } from '@/components/features/ExplainableShortlistPanel';
+import { InterestedCandidatesPanel } from '@/components/features/InterestedCandidatesPanel';
 
 /* ─── Types ────────────────────────────────────────────────────── */
 interface FunnelData {
@@ -710,6 +711,9 @@ export default function RoleReadinessFunnelPage() {
           </div>
         </div>
       )}
+
+      {/* ── Interested Candidates ───────────────────────────────── */}
+      <InterestedCandidatesPanel vacancyId={vacancyId} />
 
       {/* ── Explainable Shortlist (Phase 1 Proof Engine) ─────────── */}
       <ExplainableShortlistPanel vacancyId={vacancyId} />

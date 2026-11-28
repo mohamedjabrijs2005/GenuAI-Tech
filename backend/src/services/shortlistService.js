@@ -1,6 +1,6 @@
 const pool = require('../database/pool');
 const { computeTargetSkillProof, computeOverallFit } = require('./skillProofService');
-const { recomputeTargetCoverage } = require('../routes/evidenceService');
+const { recomputeTargetCoverage } = require('./evidenceService');
 const { logAudit } = require('./auditService');
 const { trackEvent } = require('./analyticsService');
 
@@ -20,7 +20,7 @@ const OUTCOME_TO_TARGET_DECISION = {
   on_hold: 'PENDING_REVIEW',
 };
 
-async function getExplainableShortlist(vacancyId, companyId) {
+async function getExplainableShortlist(vacancyId, companyId, filters = {}) {
   const vacRes = await pool.query(
     `SELECT cr.id, cr.title, cr.company_id, cr.status
      FROM company_roles cr
@@ -45,7 +45,8 @@ async function getExplainableShortlist(vacancyId, companyId) {
     ),
     pool.query(
       `SELECT t.id, t.candidate_id, t.status, t.recruiter_decision,
-              c.first_name, c.last_name
+              t.interview_stage, t.interview_stage_updated_at, t.assessment_invited_at,
+              c.first_name, c.last_name, c.email AS candidate_email
        FROM targets t
        JOIN candidates c ON c.id = t.candidate_id
        WHERE t.vacancy_id = $1 AND t.company_id = $2
@@ -90,7 +91,7 @@ async function getExplainableShortlist(vacancyId, companyId) {
     }
     try {
       await recomputeTargetCoverage(pool, t.id);
-    } catch (_) {}
+    } catch (_) { }
 
     const skills = proof.skills.map((s) => {
       const checklistItem = checklist.find((c) => c.requirementId === s.requirementId);
@@ -124,17 +125,21 @@ async function getExplainableShortlist(vacancyId, companyId) {
       targetId: t.id,
       candidateId: t.candidate_id,
       displayName: `${t.first_name || ''} ${t.last_name || ''}`.trim() || 'Candidate',
+      candidateEmail: t.candidate_email || null,
       targetStatus: t.status,
       recruiterDecision: t.recruiter_decision || null,
+      interviewStage: t.interview_stage || 'not_started',
+      interviewStageUpdatedAt: t.interview_stage_updated_at || null,
+      assessmentInvitedAt: t.assessment_invited_at || null,
       overallFit: override?.override_fit || systemFit,
       systemFit,
       override: override
         ? {
-            overrideRank: override.override_rank,
-            overrideFit: override.override_fit,
-            reason: override.reason,
-            updatedAt: override.updated_at,
-          }
+          overrideRank: override.override_rank,
+          overrideFit: override.override_fit,
+          reason: override.reason,
+          updatedAt: override.updated_at,
+        }
         : null,
       hiringOutcome: outcome || null,
       skills,
@@ -152,10 +157,24 @@ async function getExplainableShortlist(vacancyId, companyId) {
     return (FIT_ORDER[a.overallFit] ?? 99) - (FIT_ORDER[b.overallFit] ?? 99);
   });
 
+  const totalCount = candidates.length;
+  const filtered = candidates.filter((c) => {
+    if (filters.proofLevel && !c.skills.some((s) => s.proofLevel === filters.proofLevel)) return false;
+    if (filters.assessmentStatus === 'invited' && !c.assessmentInvitedAt) return false;
+    if (filters.assessmentStatus === 'not_invited' && c.assessmentInvitedAt) return false;
+    if (filters.assessmentStatus === 'assessed' && !c.skills.some((s) => s.proofLevel === 'assessed' || s.proofLevel === 'verified')) return false;
+    if (filters.missingSkill) {
+      const q = String(filters.missingSkill).toLowerCase();
+      if (!c.missingSkills.some((m) => m.toLowerCase().includes(q))) return false;
+    }
+    if (filters.trainableOnly && c.trainableGaps.length === 0) return false;
+    return true;
+  });
+
   await trackEvent('shortlist_viewed', {
     companyId,
     vacancyId,
-    properties: { candidateCount: candidates.length },
+    properties: { candidateCount: filtered.length, totalCount },
   });
 
   return {
@@ -164,8 +183,9 @@ async function getExplainableShortlist(vacancyId, companyId) {
     vacancyStatus: vacancy.status,
     checklistStatus: clRes.rows[0]?.status || 'draft',
     checklist,
-    candidates,
-    count: candidates.length,
+    candidates: filtered,
+    count: filtered.length,
+    totalCount,
     note: 'Fit is measured only against this specific vacancy. No universal job-readiness score is used.',
   };
 }
@@ -223,7 +243,7 @@ async function overrideShortlistRank(vacancyId, targetId, companyId, user, { ove
     });
     return upRes.rows[0];
   } catch (err) {
-    try { await client.query('ROLLBACK'); } catch (_) {}
+    try { await client.query('ROLLBACK'); } catch (_) { }
     throw err;
   } finally {
     client.release();
@@ -309,6 +329,67 @@ async function recordHiringOutcome(vacancyId, targetId, companyId, user, { decis
     });
     return insRes.rows[0];
   } catch (err) {
+    try { await client.query('ROLLBACK'); } catch (_) { }
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function updateInterviewStage(vacancyId, targetId, companyId, user, { stage, notes = null }) {
+  const normalized = String(stage).toLowerCase();
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const tRes = await client.query(
+      `SELECT id, candidate_id, interview_stage
+       FROM targets
+       WHERE id = $1 AND vacancy_id = $2 AND company_id = $3 FOR UPDATE`,
+      [targetId, vacancyId, companyId]
+    );
+    if (tRes.rowCount === 0) {
+      await client.query('ROLLBACK');
+      const err = new Error('Target not found for this vacancy/company');
+      err.statusCode = 404;
+      throw err;
+    }
+    const prevStage = tRes.rows[0].interview_stage || 'not_started';
+
+    const upRes = await client.query(
+      `UPDATE targets
+       SET interview_stage = $1,
+           interview_stage_updated_at = NOW(),
+           recruiter_notes = COALESCE($2, recruiter_notes),
+           updated_at = NOW()
+       WHERE id = $3
+       RETURNING id, candidate_id, interview_stage, interview_stage_updated_at`,
+      [normalized, notes, targetId]
+    );
+
+    await logAudit(client, {
+      companyId,
+      user,
+      actorRole: user?.role || 'RECRUITER',
+      action: 'INTERVIEW_STAGE_UPDATED',
+      entityType: 'Target',
+      entityId: targetId,
+      oldStatus: prevStage,
+      newStatus: normalized,
+      reason: notes || `Interview stage updated to ${normalized}`,
+      details: { vacancyId, candidateId: tRes.rows[0].candidate_id, stage: normalized },
+    });
+
+    await client.query('COMMIT');
+    await trackEvent('interview_stage_updated', {
+      userId: user?.id || null,
+      companyId,
+      vacancyId,
+      targetId,
+      properties: { prevStage, stage: normalized },
+    });
+    return upRes.rows[0];
+  } catch (err) {
     try { await client.query('ROLLBACK'); } catch (_) {}
     throw err;
   } finally {
@@ -320,4 +401,5 @@ module.exports = {
   getExplainableShortlist,
   overrideShortlistRank,
   recordHiringOutcome,
+  updateInterviewStage,
 };

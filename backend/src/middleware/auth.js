@@ -40,7 +40,7 @@ async function authenticate(req, res, next) {
       if (userResult.rowCount > 0) {
         user = userResult.rows[0];
         const memberResult = await pool.query(
-          `SELECT cm.company_id, cm.member_role, c.name AS company_name, c.verification_status, c.suspended_at
+          `SELECT cm.company_id, cm.member_role, COALESCE(cm.is_active, TRUE) AS is_active, c.name AS company_name, c.verification_status, c.suspended_at
            FROM company_members cm
            JOIN companies c ON c.id = cm.company_id
            WHERE cm.user_id = $1
@@ -85,6 +85,12 @@ async function authenticate(req, res, next) {
 function requireCompany(req, res, next) {
   if (!req.companyMembership) {
     return res.status(403).json({ error: 'Forbidden: No company membership found' });
+  }
+  if (req.companyMembership.is_active === false) {
+    return res.status(403).json({
+      error: 'Forbidden: Your company team membership has been deactivated.',
+      code: 'MEMBER_DEACTIVATED',
+    });
   }
   if (req.companyMembership.verification_status === 'SUSPENDED') {
     return res.status(403).json({
@@ -131,8 +137,12 @@ function requireRole(...allowedRoles) {
     if (normalizedAllowed.includes('COMPANY_ADMIN') || normalizedAllowed.includes('COMPANY_OWNER')) {
       normalizedAllowed.push('COMPANY_OWNER', 'COMPANY_ADMIN', 'ADMIN');
     }
+    if (normalizedAllowed.includes('COMPANY_RECRUITER')) {
+      normalizedAllowed.push('COMPANY_RECRUITER', 'RECRUITER', 'COMPANY_OWNER', 'COMPANY_ADMIN', 'ADMIN');
+    }
 
-    const isAllowed = normalizedAllowed.includes(userRole) || (memberRole && normalizedAllowed.includes(memberRole));
+    const effectiveRoles = [userRole, memberRole].filter(Boolean);
+    const isAllowed = effectiveRoles.some((r) => normalizedAllowed.includes(r));
     if (!isAllowed) {
       return res.status(403).json({ error: `Forbidden: Requires one of [${allowedRoles.join(', ')}]` });
     }
